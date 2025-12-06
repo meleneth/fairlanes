@@ -108,7 +108,7 @@ mutations?
 
 # Entity Component Types
 
-please generate the documentation and refer to fairlanes::ecs::components
+please generate the documentation and refer to fl::ecs::components
 
 # Areas
 

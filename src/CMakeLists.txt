@@ -16,8 +16,13 @@ target_link_libraries(fairlanes PRIVATE fl)
 target_include_directories(fairlanes PRIVATE
   ${entt_SOURCE_DIR}/single_include
 )
+target_include_directories(fairlanes
+  SYSTEM PRIVATE
+    ${eventpp_SOURCE_DIR}/include
+)
 
 target_link_libraries(fairlanes PRIVATE
+  pcg-cpp
   ftxui::screen
   ftxui::dom
   ftxui::component
@@ -27,7 +32,6 @@ target_link_libraries(fairlanes PRIVATE
   CLI11
   spdlog::spdlog
   fmt::fmt
-  eventpp::eventpp
   PUBLIC
   TracyClient
 )

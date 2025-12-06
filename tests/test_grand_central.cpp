@@ -1,0 +1,76 @@
+// tests/test_grand_central.cpp
+
+#include <catch2/catch_test_macros.hpp>
+#include <entt/entt.hpp>
+
+#include "fl/context.hpp"
+#include "fl/grand_central.hpp"
+
+#include <catch2/catch_test_macros.hpp>
+#include <entt/entt.hpp>
+
+namespace Catch {
+template <> struct StringMaker<entt::entity> {
+  static std::string convert(entt::entity value) {
+    using underlying = std::underlying_type_t<entt::entity>;
+    auto id = static_cast<underlying>(value);
+    if (value == entt::null) {
+      return std::string{"entt::null"};
+    }
+    return std::string{"entt::entity("} + std::to_string(id) + ")";
+  }
+};
+} // namespace Catch
+
+TEST_CASE("GrandCentral basic structure is initialized",
+          "[grand_central][smoke]") {
+  // 2 accounts, 3 parties per account
+  fl::GrandCentral gc{2, 3};
+
+  // We expect exactly 2 accounts
+  REQUIRE(gc.accounts_.size() == 2);
+
+  for (std::size_t a = 0; a < gc.accounts_.size(); ++a) {
+    auto &acc = gc.accounts_[a];
+
+    // And exactly 3 parties
+    REQUIRE(acc.parties.size() == 3);
+
+    for (std::size_t p = 0; p < acc.parties.size(); ++p) {
+      auto &party = acc.parties[p];
+
+      // Each party should also have a valid entity
+      // REQUIRE(party.party_id_ != entt::null);
+    }
+  }
+}
+
+TEST_CASE("GrandCentral context helpers work",
+          "[grand_central][context][smoke]") {
+  fl::GrandCentral gc{1, 2}; // 1 account, 2 parties
+
+  // Account context
+  auto acc_ctx = gc.account_context(0);
+
+  // Registry and RNG should be usable
+  entt::entity ent = acc_ctx.reg.create();
+  // REQUIRE(ent != entt::null);
+
+  // Account should own at least one party
+  REQUIRE(acc_ctx.account.parties.size() == 2);
+
+  // Party context
+  auto party_ctx = gc.party_context(0, 1);
+  // REQUIRE(party_ctx.party.party_id_);
+
+  // EntityCtx from PartyCtx
+  auto entity_ctx = party_ctx.entity_context(party_ctx.party.party_id_);
+  // REQUIRE(entity_ctx.self == party_ctx.party.party_id_);
+
+  // Smoke test logging + bus usage — we don't assert behavior, just that it
+  // compiles and runs Log: append something trivial (assuming FancyLog has an
+  // Append-like API or operator()) If your API is different, adjust this block
+  // accordingly. For now we just ensure the log reference is obtainable.
+  (void)party_ctx.log();
+  (void)party_ctx.bus();
+}

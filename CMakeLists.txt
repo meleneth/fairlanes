@@ -173,6 +173,16 @@ CPMAddPackage(
   GIT_TAG master
 )
 
+# pcg-cpp is header-only, so we make a tiny INTERFACE target for it
+if(pcg-cpp_ADDED)
+  add_library(pcg-cpp INTERFACE)
+  target_include_directories(pcg-cpp INTERFACE
+    ${pcg-cpp_SOURCE_DIR}/include       # contains pcg_extras/
+    ${pcg-cpp_SOURCE_DIR}               # fallback
+  )
+endif()
+
+
 # CLI11 as pure headers via CPM — no add_subdirectory, no policy spam
 CPMAddPackage(
   NAME CLI11
@@ -230,6 +240,10 @@ GIT_PROGRESS true
 )
 
 FetchContent_MakeAvailable(tracy)
+
+include(CTest)       # or: enable CTest integration
+enable_testing()     # actually turn on test support
+
 # --- Your code ---------------------------------------------------------------
 add_subdirectory(src)
 add_subdirectory(tests)

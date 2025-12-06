@@ -16,8 +16,8 @@ ftxui::Decorator on_not_black(uint8_t r, uint8_t g, uint8_t b) {
 }
 
 /*std::string FancyLog::name_tag_for(entt::handle target) {
-  using fairlanes::ecs::components::PartyMember;
-  using fairlanes::ecs::components::Stats;
+  using fl::ecs::components::PartyMember;
+  using fl::ecs::components::Stats;
   auto &target_stats = target.get<Stats>();
   if (target.any_of<PartyMember>()) {
     return fmt::format("[player_name]({})", target_stats.name_);

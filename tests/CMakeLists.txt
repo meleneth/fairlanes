@@ -36,6 +36,5 @@ target_include_directories(fairlanes_tests
 
 
 # Test discovery integration
-include(CTest)
 include(Catch)
 catch_discover_tests(fairlanes_tests)

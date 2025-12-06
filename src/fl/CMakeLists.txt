@@ -16,6 +16,7 @@ target_include_directories(fl
 # Link FTXUI (required by battle_screen.cpp)
 target_link_libraries(fl
 PUBLIC
+  pcg-cpp
   EnTT::EnTT
   Boost::sml::system
   ftxui::screen
