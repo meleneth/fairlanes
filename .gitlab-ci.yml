@@ -1,0 +1,58 @@
+stages:
+  - build
+  - test
+
+variables:
+  DEBIAN_FRONTEND: noninteractive
+  CC: gcc
+  CXX: g++
+  BUILD_DIR: build
+
+# ---------------------------------------------------------------
+# Global before_script — installs build toolchain & dependencies
+# ---------------------------------------------------------------
+.before_debian_trixie: &before_debian_trixie
+  before_script:
+    - apt-get update -y
+    - apt-get install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        ninja-build \
+        pkg-config \
+        git \
+        gcc \
+        g++ \
+        libstdc++-14-dev \
+        ca-certificates
+
+    # Optional: if using CPM.cmake, ensure git works inside jobs
+    - git config --global advice.detachedHead false
+
+# ---------------------------------------------------------------
+# Build job
+# ---------------------------------------------------------------
+build:
+  stage: build
+  image: debian:trixie
+  <<: *before_debian_trixie
+  script:
+    # Configure
+    - cmake -S . -B ${BUILD_DIR} -G Ninja -DCMAKE_BUILD_TYPE=Release
+    # Build
+    - cmake --build ${BUILD_DIR} --target all
+  artifacts:
+    paths:
+      - ${BUILD_DIR}
+    expire_in: 1 week
+
+# ---------------------------------------------------------------
+# Test job
+# ---------------------------------------------------------------
+test:
+  stage: test
+  image: debian:trixie
+  needs: ["build"]
+  <<: *before_debian_trixie
+  script:
+    - cmake --build ${BUILD_DIR} --target fairlanes_tests
+    - ${BUILD_DIR}/tests/fairlanes_tests
