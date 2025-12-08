@@ -2,32 +2,33 @@
 
 #include <entt/entt.hpp>
 
-#include "fl/account_data.hpp"
-#include "fl/random_hub.hpp"
+#include "fl/events/account_bus.hpp"
+#include "fl/primitives/account_data.hpp"
+#include "fl/primitives/party_data.hpp"
+#include "fl/primitives/random_hub.hpp"
 #include "fl/widgets/fancy_log.hpp"
-#include "party_data.hpp"
 
 namespace fl::context {
 
 struct EntityCtx {
-  entt::registry &reg;
-  fl::RandomHub &rng;
-  fl::widgets::FancyLog &log;
-  entt::entity self;
+  entt::registry &reg_;
+  fl::primitives::RandomHub &rng_;
+  fl::widgets::FancyLog &log_;
+  entt::entity self_;
 
   EntityCtx entity_context(entt::entity ent) const {
-    return EntityCtx{reg, rng, log, ent};
+    return EntityCtx{reg_, rng_, log_, ent};
   }
 };
 
 struct PartyCtx {
   entt::registry &reg;
-  fl::RandomHub &rng;
-  fl::AccountData &acc;
-  fl::PartyData &party;
+  fl::primitives::RandomHub &rng;
+  fl::primitives::AccountData &acc;
+  fl::primitives::PartyData &party;
 
   fl::widgets::FancyLog &log() const { return party.log_; }
-  fl::PartyBus &bus() const { return party.bus_; }
+  fl::primitives::PartyBus &bus() const { return party.bus_; }
 
   EntityCtx entity_context(entt::entity ent) const {
     return EntityCtx{reg, rng, party.log_, ent};
@@ -35,19 +36,19 @@ struct PartyCtx {
 };
 
 struct AccountCtx {
-  entt::registry &reg;
-  fl::RandomHub &rng;
-  fl::AccountData &account;
+  entt::registry &reg_;
+  fl::primitives::RandomHub &rng_;
+  fl::primitives::AccountData &account_;
 
-  fl::widgets::FancyLog &log() const { return account.log; }
-  fl::AccountBus &bus() const { return account.bus; }
+  fl::widgets::FancyLog &log() const { return account_.log_; }
+  fl::events::AccountBus &bus() const { return account_.bus_; }
 
   PartyCtx party_context(std::size_t idx) const {
-    return PartyCtx{reg, rng, account, account.parties.at(idx)};
+    return PartyCtx{reg_, rng_, account_, account_.parties_.at(idx)};
   }
 
   EntityCtx entity_context(entt::entity ent) const {
-    return EntityCtx{reg, rng, account.log, ent};
+    return EntityCtx{reg_, rng_, account_.log_, ent};
   }
 };
 

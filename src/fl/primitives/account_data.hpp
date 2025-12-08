@@ -4,18 +4,19 @@
 #include <deque>
 #include <entt/entt.hpp>
 
-#include "fl/bus_types.hpp"
-#include "fl/party_data.hpp"
-#include "fl/random_hub.hpp"
+#include "fl/events/account_bus.hpp"
 #include "fl/widgets/fancy_log.hpp"
+#include "logging.hpp"
+#include "party_data.hpp"
+#include "random_hub.hpp"
 
-namespace fl {
+namespace fl::primitives {
 
 struct AccountData {
-  entt::entity account_entity{entt::null};
-  widgets::FancyLog log;             // per-account log
-  AccountBus bus;                    // per-account event bus
-  std::deque<fl::PartyData> parties; // owned parties
+  entt::entity account_entity_{entt::null};
+  widgets::FancyLog log_;         // per-account log
+  fl::events::AccountBus bus_;    // per-account event bus
+  std::deque<PartyData> parties_; // owned parties
 
   AccountData() = default;
 
@@ -26,4 +27,4 @@ struct AccountData {
   AccountData &operator=(const AccountData &) = delete;
 };
 
-} // namespace fl
+} // namespace fl::primitives

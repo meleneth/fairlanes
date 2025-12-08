@@ -4,11 +4,12 @@
 #include <entt/entt.hpp>
 #include <vector>
 
-#include "fl/bus_types.hpp"
-#include "fl/random_hub.hpp"
+#include "fl/events/party_bus.hpp"
 #include "fl/widgets/fancy_log.hpp"
+#include "logging.hpp"
+#include "random_hub.hpp"
 
-namespace fl {
+namespace fl::primitives {
 
 struct PartyData {
   entt::entity party_id_{entt::null};
@@ -25,4 +26,4 @@ struct PartyData {
   PartyData &operator=(const PartyData &) = delete;
 };
 
-} // namespace fl
+} // namespace fl::primitives

@@ -12,7 +12,7 @@
 
 #include <pcg_random.hpp>
 
-namespace fl {
+namespace fl::primitives {
 
 // Choose your engine here.
 using Engine = pcg64;
@@ -137,4 +137,4 @@ private:
   uint64_t base_sequence_;
 };
 
-} // namespace fl
+} // namespace fl::primitives
