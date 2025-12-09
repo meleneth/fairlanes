@@ -4,10 +4,11 @@ stages:
 
 variables:
   DEBIAN_FRONTEND: noninteractive
-  CC: gcc
-  CXX: g++
   BUILD_DIR: build
 
+# ------------------------------------------------------------
+# Shared setup for Debian Trixie jobs
+# ------------------------------------------------------------
 .before_debian_trixie: &before_debian_trixie
   before_script:
     - apt-get update -y
@@ -17,15 +18,12 @@ variables:
         ninja-build \
         pkg-config \
         git \
-        gcc \
-        g++ \
-        libstdc++-14-dev \
         ca-certificates
     - git config --global advice.detachedHead false
 
-# ----------------------------------------------
+# ------------------------------------------------------------
 # BUILD JOB
-# ----------------------------------------------
+# ------------------------------------------------------------
 build:
   stage: build
   image: debian:trixie
@@ -35,19 +33,19 @@ build:
     - cmake --build build --target all
   artifacts:
     paths:
-      - build   # IMPORTANT: literal path, NOT ${BUILD_DIR}
+      - build
     expire_in: 1 week
 
-# ----------------------------------------------
+# ------------------------------------------------------------
 # TEST JOB
-# ----------------------------------------------
+# ------------------------------------------------------------
 test:
   stage: test
   image: debian:trixie
   needs: ["build"]
   <<: *before_debian_trixie
   script:
-    # Reconfigure so the absolute paths in CMakeCache.txt are correct
+    # Re-run configure so absolute paths inside CMakeCache.txt are valid
     - cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
     - cmake --build build --target fairlanes_tests
     - ./build/tests/fairlanes_tests
