@@ -8,50 +8,46 @@ variables:
   CXX: g++
   BUILD_DIR: build
 
-# ---------------------------------------------------------------
-# Global before_script — installs build toolchain & dependencies
-# ---------------------------------------------------------------
 .before_debian_trixie: &before_debian_trixie
   before_script:
-    - apt-get update -y && apt-get install -y --no-install-recommends \
+    - apt-get update -y
+    - apt-get install -y --no-install-recommends \
         build-essential \
         cmake \
         ninja-build \
         pkg-config \
         git \
         gcc \
-        g\+\+ \
-        libstdc\+\+\-14\-dev \
+        g++ \
+        libstdc++-14-dev \
         ca-certificates
-
-    # Optional: if using CPM.cmake, ensure git works inside jobs
     - git config --global advice.detachedHead false
 
-# ---------------------------------------------------------------
-# Build job
-# ---------------------------------------------------------------
+# ----------------------------------------------
+# BUILD JOB
+# ----------------------------------------------
 build:
   stage: build
   image: debian:trixie
   <<: *before_debian_trixie
   script:
-    # Configure
-    - cmake -S . -B ${BUILD_DIR} -G Ninja -DCMAKE_BUILD_TYPE=Release
-    # Build
-    - cmake --build ${BUILD_DIR} --target all
+    - cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+    - cmake --build build --target all
   artifacts:
     paths:
-      - ${BUILD_DIR}
+      - build   # IMPORTANT: literal path, NOT ${BUILD_DIR}
     expire_in: 1 week
 
-# ---------------------------------------------------------------
-# Test job
-# ---------------------------------------------------------------
+# ----------------------------------------------
+# TEST JOB
+# ----------------------------------------------
 test:
   stage: test
   image: debian:trixie
   needs: ["build"]
   <<: *before_debian_trixie
   script:
-    - cmake --build ${BUILD_DIR} --target fairlanes_tests
-    - ${BUILD_DIR}/tests/fairlanes_tests
+    # Reconfigure so the absolute paths in CMakeCache.txt are correct
+    - cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+    - cmake --build build --target fairlanes_tests
+    - ./build/tests/fairlanes_tests
