@@ -12,13 +12,7 @@ variables:
 .before_debian_trixie: &before_debian_trixie
   before_script:
     - apt-get update -y
-    - apt-get install -y --no-install-recommends \
-        build-essential \
-        cmake \
-        ninja-build \
-        pkg-config \
-        git \
-        ca-certificates
+    - apt-get install -y --no-install-recommends build-essential cmake ninja-build pkg-config git ca-certificates
     - git config --global advice.detachedHead false
 
 # ------------------------------------------------------------
