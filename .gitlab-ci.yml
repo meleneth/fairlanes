@@ -21,8 +21,8 @@ variables:
         pkg-config \
         git \
         gcc \
-        g++ \
-        libstdc++-14-dev \
+        g\+\+ \
+        libstdc\+\+\-14\-dev \
         ca-certificates
 
     # Optional: if using CPM.cmake, ensure git works inside jobs
