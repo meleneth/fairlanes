@@ -3,11 +3,13 @@
 
 #include <deque>
 #include <memory>
+#include <mutex>
 
 #include <entt/entt.hpp>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>
+#include <tracy/Tracy.hpp>
 
 #include "fl/context.hpp"
 #include "fl/primitives/account_data.hpp"
@@ -21,13 +23,15 @@ namespace fl {
 
 class GrandCentral {
 public:
+  uint8_t num_accounts_{8};
+  uint8_t num_parties_per_account_{5};
   entt::registry reg_;
   fl::primitives::RandomHub rng_;
 
   fl::primitives::LogBus log_bus_;
   fl::primitives::Logger logger_;
-  uint8_t num_accounts_{8};
-  uint8_t num_parties_per_account_{5};
+
+  std::mutex frame_mutex;
 
   std::vector<fl::primitives::AccountData> accounts_;
 
@@ -35,7 +39,7 @@ public:
   std::shared_ptr<fl::widgets::FancyLog> fancy_log_;
   std::unique_ptr<fl::primitives::FancyLogSink> fancy_log_sink_;
 
-  GrandCentral(int num_accounts, int num_parties_per_account)
+  GrandCentral(uint8_t num_accounts, uint8_t num_parties_per_account)
       : num_accounts_(num_accounts),
         num_parties_per_account_(num_parties_per_account), reg_(), rng_(),
         log_bus_(), logger_{log_bus_},
@@ -67,7 +71,7 @@ public:
       using clock = std::chrono::steady_clock;
       static auto last = clock::now();
       const auto now = clock::now();
-      float dt = std::chrono::duration<float>(now - last).count();
+      // float dt = std::chrono::duration<float>(now - last).count();
       last = now;
 
       // tick_party_fsms(dt);
@@ -85,10 +89,28 @@ public:
 
     // wake UI at ~60Hz
     std::atomic<bool> running = true;
-    std::thread ticker([&] {
+
+    std::thread render_ticker([&] {
       using namespace std::chrono_literals;
       while (running) {
-        screen.PostEvent(Event::Custom); // kick a rerender (~60 Hz)
+        {
+          ZoneScopedN("Render");
+          std::scoped_lock lock(frame_mutex);
+          screen.PostEvent(Event::Custom); // kick a rerender (~60 Hz)
+        }
+
+        std::this_thread::sleep_for(16ms);
+      }
+    });
+
+    std::thread update_ticker([&] {
+      using namespace std::chrono_literals;
+      while (running) {
+        {
+          ZoneScopedN("GameTick");
+          std::scoped_lock lock(frame_mutex);
+        }
+
         // TODO 16
         // ZoneScopedN("GameTick");
         //      std::this_thread::sleep_for(16ms);
@@ -99,7 +121,8 @@ public:
 
     screen.Loop(ui);
     running = false;
-    ticker.join();
+    render_ticker.join();
+    update_ticker.join();
   }
 };
 
