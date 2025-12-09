@@ -6,14 +6,14 @@
 
 #include <entt/entt.hpp>
 #include <ftxui/component/component.hpp>
+#include <ftxui/component/screen_interactive.hpp>
+#include <ftxui/dom/elements.hpp>
 
 #include "fl/context.hpp"
 #include "fl/primitives/account_data.hpp"
-#include "fl/primitives/party_data.hpp"
-#include "fl/primitives/random_hub.hpp"
-
 #include "fl/primitives/fancy_log_sink.hpp"
 #include "fl/primitives/logging.hpp"
+#include "fl/primitives/party_data.hpp"
 #include "fl/primitives/random_hub.hpp"
 #include "fl/widgets/fancy_log.hpp"
 
@@ -52,9 +52,54 @@ public:
 
   // Little helper to show logs are working
   void bootstrap_logs() {
-    logger_.info("[name](GrandCentral) online.");
+    logger_.info("[player_name](GrandCentral) online.");
     logger_.debug("Debug: registry currently empty.");
     logger_.warn("No encounters loaded yet.");
+  }
+
+  void main_loop() {
+    using namespace ftxui;
+
+    ScreenInteractive screen = ScreenInteractive::Fullscreen();
+    screen.SetCursor(Screen::Cursor{.shape = Screen::Cursor::Hidden});
+
+    auto ui = Renderer((ftxui::Component)root_component(), [&] {
+      using clock = std::chrono::steady_clock;
+      static auto last = clock::now();
+      const auto now = clock::now();
+      float dt = std::chrono::duration<float>(now - last).count();
+      last = now;
+
+      // tick_party_fsms(dt);
+
+      return root_component()->Render();
+    });
+
+    ui = CatchEvent(ui, [&](Event e) {
+      if (e == Event::Character('q') || e == Event::Escape) {
+        screen.Exit();
+        return true;
+      }
+      return false;
+    });
+
+    // wake UI at ~60Hz
+    std::atomic<bool> running = true;
+    std::thread ticker([&] {
+      using namespace std::chrono_literals;
+      while (running) {
+        screen.PostEvent(Event::Custom); // kick a rerender (~60 Hz)
+        // TODO 16
+        // ZoneScopedN("GameTick");
+        //      std::this_thread::sleep_for(16ms);
+
+        std::this_thread::sleep_for(250ms);
+      }
+    });
+
+    screen.Loop(ui);
+    running = false;
+    ticker.join();
   }
 };
 

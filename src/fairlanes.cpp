@@ -12,5 +12,7 @@ int main() {
 
   std::cout << "You are a young hero, and you live in a village";
 
+  gc.main_loop();
+
   return 0;
 }
