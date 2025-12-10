@@ -13,12 +13,14 @@
 namespace fl::primitives {
 
 struct AccountData {
-  entt::entity account_entity_{entt::null};
-  widgets::FancyLog log_;         // per-account log
-  fl::events::AccountBus bus_;    // per-account event bus
-  std::deque<PartyData> parties_; // owned parties
+  entt::entity account_id_{entt::null};
+  std::shared_ptr<fl::widgets::FancyLog> log_;
+  fl::events::AccountBus bus_;     // per-account event bus
+  std::vector<PartyData> parties_; // owned parties
 
-  AccountData() = default;
+  AccountData(entt::entity account_id)
+      : account_id_(account_id),
+        log_(std::make_shared<fl::widgets::FancyLog>()) {}
 
   AccountData(AccountData &&) noexcept = default;
   AccountData &operator=(AccountData &&) noexcept = default;

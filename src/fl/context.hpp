@@ -27,11 +27,11 @@ struct PartyCtx {
   fl::primitives::AccountData &acc;
   fl::primitives::PartyData &party;
 
-  fl::widgets::FancyLog &log() const { return party.log_; }
+  fl::widgets::FancyLog &log() const { return *party.log_; }
   fl::primitives::PartyBus &bus() const { return party.bus_; }
 
   EntityCtx entity_context(entt::entity ent) const {
-    return EntityCtx{reg, rng, party.log_, ent};
+    return EntityCtx{reg, rng, *party.log_, ent};
   }
 };
 
@@ -40,7 +40,7 @@ struct AccountCtx {
   fl::primitives::RandomHub &rng_;
   fl::primitives::AccountData &account_;
 
-  fl::widgets::FancyLog &log() const { return account_.log_; }
+  fl::widgets::FancyLog &log() const { return *account_.log_; }
   fl::events::AccountBus &bus() const { return account_.bus_; }
 
   PartyCtx party_context(std::size_t idx) const {
@@ -48,7 +48,7 @@ struct AccountCtx {
   }
 
   EntityCtx entity_context(entt::entity ent) const {
-    return EntityCtx{reg_, rng_, account_.log_, ent};
+    return EntityCtx{reg_, rng_, *account_.log_, ent};
   }
 };
 

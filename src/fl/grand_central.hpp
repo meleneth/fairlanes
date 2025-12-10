@@ -14,7 +14,9 @@
 #include "fl/context.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/fancy_log_sink.hpp"
+#include "fl/primitives/hero_names.hpp"
 #include "fl/primitives/logging.hpp"
+#include "fl/primitives/member_data.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/random_hub.hpp"
 #include "fl/widgets/fancy_log.hpp"
@@ -39,13 +41,49 @@ public:
   std::shared_ptr<fl::widgets::FancyLog> fancy_log_;
   std::unique_ptr<fl::primitives::FancyLogSink> fancy_log_sink_;
 
+  void _create_initial_accounts() {
+    int player_index = 0;
+    for (std::size_t a = 0; a < num_accounts_; ++a) {
+      fl::primitives::AccountData account{reg_.create()};
+      logger_.info(
+          "[yellow](Account initialized with ID " +
+          std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
+              account.account_id_)) +
+          ")");
+      for (std::size_t p = 0; p < num_parties_per_account_; ++p) {
+        fl::primitives::PartyData party{reg_.create()};
+
+        logger_.info(
+            "[green](Party initialized with ID " +
+            std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
+                party.party_id_)) +
+            ")");
+
+        fl::primitives::MemberData member{reg_.create(),
+                                          hero_names[player_index]};
+        player_index++;
+        logger_.info(
+            "[blue](Player initialized with ID " +
+            std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
+                member.member_id_)) +
+            ") as [player_name](" + hero_names[player_index - 1] + ")");
+
+        account.parties_.push_back(std::move(party));
+      }
+
+      accounts_.push_back(std::move(account));
+    }
+  }
+
   GrandCentral(uint8_t num_accounts, uint8_t num_parties_per_account)
       : num_accounts_(num_accounts),
         num_parties_per_account_(num_parties_per_account), reg_(), rng_(),
         log_bus_(), logger_{log_bus_},
         fancy_log_(std::make_shared<fl::widgets::FancyLog>()),
         fancy_log_sink_(std::make_unique<fl::primitives::FancyLogSink>(
-            log_bus_, *fancy_log_, fl::primitives::LogLevel::trace)) {}
+            log_bus_, *fancy_log_, fl::primitives::LogLevel::trace)) {
+    _create_initial_accounts();
+  }
 
   // Convenience accessor if you want the root FTXUI component:
   ftxui::Component root_component() { return fancy_log_; }

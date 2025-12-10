@@ -38,6 +38,8 @@ FancyLog::FancyLog(Options opt) : opts(opt) {
                {"ability", on_not_black(0, 139, 139)},
                {"ok", on_not_black(90, 181, 82)},
                {"orange", on_not_black(243, 168, 51)},
+               {"green", on_not_black(0, 139, 139)},
+               {"blue", on_not_black(109, 234, 214)},
                {"yellow", on_not_black(247, 243, 183)},
                {"red", on_not_black(250, 110, 121)},
                {"bravo", on_not_black(109, 234, 214)},

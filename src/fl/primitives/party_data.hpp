@@ -12,13 +12,14 @@
 namespace fl::primitives {
 
 struct PartyData {
-  entt::entity party_id_{entt::null};
-  fl::widgets::FancyLog log_;
+  entt::entity party_id_;
+  std::shared_ptr<fl::widgets::FancyLog> log_;
+
   PartyBus bus_;
 
-  PartyData() = default;
+  PartyData(entt::entity party_id)
+      : party_id_(party_id), log_(std::make_shared<fl::widgets::FancyLog>()) {}
 
-  // move-only is fine, vector will use move
   PartyData(PartyData &&) noexcept = default;
   PartyData &operator=(PartyData &&) noexcept = default;
 
