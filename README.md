@@ -1,4 +1,32 @@
-FTXThing
+Fairlanes
+
+One day, a Field Mouse thumped me.
+
+
+
+
+tl:dir
+
+8 accounts.
+5 parties per account
+5 players per party
+5 skills per player
+
+dynamic TUI animation effects?
+
+up next: event driven w/animation timed combat simulation
+see!  field mouse flash twice!
+see!  targetted player flash the result! (crit/dmg/heal)
+
+
+
+
+
+
+
+
+
+
 
 to build:
 

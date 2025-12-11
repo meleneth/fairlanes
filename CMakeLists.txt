@@ -244,6 +244,34 @@ FetchContent_MakeAvailable(tracy)
 include(CTest)       # or: enable CTest integration
 enable_testing()     # actually turn on test support
 
+# top-level CMakeLists.txt
+
+option(ENABLE_COVERAGE "Build with coverage instrumentation" OFF)
+
+if(ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  message(STATUS "Building with GCC coverage flags")
+  add_compile_options(--coverage -O0 -g)
+  add_link_options(--coverage)
+endif()
+
+find_program(GCOVR_EXECUTABLE gcovr)
+
+if(GCOVR_EXECUTABLE)
+  add_custom_target(coverage-lcov
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+    COMMAND ${GCOVR_EXECUTABLE}
+      -r ${CMAKE_SOURCE_DIR}
+      --exclude-directories ${CMAKE_BINARY_DIR}
+      --lcov
+      -o ${CMAKE_BINARY_DIR}/lcov.info
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Running tests and generating lcov.info with gcovr"
+  )
+else()
+  message(STATUS "gcovr not found; coverage-lcov target disabled")
+endif()
+
+
 # --- Your code ---------------------------------------------------------------
 add_subdirectory(src)
 add_subdirectory(tests)

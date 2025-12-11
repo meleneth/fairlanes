@@ -29,6 +29,7 @@ target_link_libraries(fairlanes PRIVATE
   Boost::sml::system
   EnTT::EnTT::system
   ExprTk::exprtk
+  eventpp::eventpp
   CLI11
   spdlog::spdlog
   fmt::fmt

@@ -22,16 +22,19 @@ struct EntityCtx {
 };
 
 struct PartyCtx {
-  entt::registry &reg;
-  fl::primitives::RandomHub &rng;
-  fl::primitives::AccountData &acc;
-  fl::primitives::PartyData &party;
+  entt::registry &reg_;
+  fl::primitives::RandomHub &rng_;
 
-  fl::widgets::FancyLog &log() const { return *party.log_; }
-  fl::primitives::PartyBus &bus() const { return party.bus_; }
+  fl::primitives::AccountData &acc_;
+  fl::primitives::PartyData &party_;
+
+  fl::widgets::FancyLog &log() const { return *party_.log_; }
+  fl::primitives::PartyBus &bus() const { return party_.bus_; }
+
+  entt::entity self_() const { return party_.party_id_; }
 
   EntityCtx entity_context(entt::entity ent) const {
-    return EntityCtx{reg, rng, *party.log_, ent};
+    return EntityCtx{reg_, rng_, *party_.log_, ent};
   }
 };
 

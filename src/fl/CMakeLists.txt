@@ -24,8 +24,9 @@ PUBLIC
   ftxui::component
   ExprTk::exprtk
   spdlog::spdlog
+  eventpp::eventpp
   CLI11
-   nlohmann_json::nlohmann_json
+  nlohmann_json::nlohmann_json
   TracyClient
 )
 

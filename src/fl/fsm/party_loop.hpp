@@ -1,0 +1,54 @@
+#pragma once
+#include <boost/sml.hpp>
+#include <entt/entt.hpp>
+#include <spdlog/spdlog.h>
+
+#include "fl/context.hpp"
+#include "fl/ecs/systems/grant_xp_to_party.hpp"
+#include "fl/primitives/encounter_builder.hpp"
+
+
+namespace fl::fsm {
+namespace sml = boost::sml;
+
+struct NextEvent {};
+
+struct PartyLoop {
+  void enter_idle(fl::context::PartyCtx &ctx);
+  void enter_farming(fl::context::PartyCtx &ctx);
+  void exit_farming(fl::context::PartyCtx &ctx);
+  void enter_fixing(fl::context::PartyCtx &ctx);
+
+  void combat_tick(fl::context::PartyCtx &ctx);
+  void next_event(fl::context::PartyCtx &ctx);
+
+  bool needs_town(fl::context::PartyCtx &ctx);
+  bool in_combat(fl::context::PartyCtx &ctx);
+
+  auto operator()() const {
+    using namespace sml;
+    using namespace fl::ecs::components;
+
+    struct Idle {};
+    struct Farming {};
+    struct Fixing {};
+    struct CombatIdle {};
+
+    return make_transition_table(
+        *state<Idle> + on_entry<_> / &PartyLoop::enter_idle,
+        state<Farming> + on_entry<_> / &PartyLoop::enter_farming,
+        state<Farming> + sml::on_exit<_> / &PartyLoop::exit_farming,
+        state<Fixing> + on_entry<_> / &PartyLoop::enter_fixing,
+
+        state<Idle> + event<NextEvent> = state<Farming>,
+        state<Farming> + event<NextEvent>[&PartyLoop::needs_town] =
+            state<Fixing>,
+        state<Farming> +
+            event<NextEvent>[&PartyLoop::in_combat] / &PartyLoop::combat_tick,
+        state<Farming> + event<NextEvent> = state<CombatIdle>,
+        state<CombatIdle> + event<NextEvent> = state<Farming>,
+        state<Fixing> + event<NextEvent> = state<Idle>);
+  }
+};
+
+} // namespace fl::fsm

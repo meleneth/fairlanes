@@ -1,4 +1,4 @@
-// tests/fairlanes/widgets/fancy_log_tests.cpp
+// tests/fl/widgets/fancy_log_tests.cpp
 #include <catch2/catch_test_macros.hpp>
 
 #include "fl/widgets/fancy_log.hpp"
