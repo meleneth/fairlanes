@@ -5,7 +5,7 @@ One day, a Field Mouse thumped me.
 
 
 
-tl:dir
+tl:dr
 
 8 accounts.
 5 parties per account
@@ -19,7 +19,9 @@ see!  field mouse flash twice!
 see!  targetted player flash the result! (crit/dmg/heal)
 
 
-
+step one: get the code compiling with enough pieces it could maybe eventually work
+step two: write tests for major classes to prove functionality works as expected
+step thr: Observe Thump from a Field Mouse, and be Enlightened
 
 
 
