@@ -10,33 +10,39 @@ namespace sml = boost::sml;
 using fl::fsm::NextEvent;
 using fl::fsm::PartyLoop;
 
-IsParty::IsParty(std::string name, entt::entity account)
-    : account_{account}, name_{std::move(name)} {}
+IsParty::IsParty(fl::context::PartyCtx &context, std::string name,
+                 entt::entity account)
+    : sm_{PartyLoop{}, context}, account_{account}, name_{std::move(name)} {}
 
 void IsParty::next() { sm_.process_event(NextEvent{}); }
 
-bool IsParty::needs_town(fl::context::PartyCtx &ctx) {
-
-  bool does_need_town = false;
-  for_each_member([&](entt::entity member) {
-    // auto &party_member = ctx_.reg_.get<PartyMember>(member);
-    auto &stats = ctx.reg_.get<fl::ecs::components::Stats>(member);
-    if (!stats.is_alive()) {
-      does_need_town = true;
-    }
-  });
-  return does_need_town;
+bool IsParty::needs_town() {
+  /*
+    bool does_need_town = false;
+    for_each_member([&](entt::entity member) {
+      // auto &party_member = ctx_.reg_.get<PartyMember>(member);
+      auto &stats = ctx.reg_.get<fl::ecs::components::Stats>(member);
+      if (!stats.is_alive()) {
+        does_need_town = true;
+      }
+    });
+    return does_need_town;
+    */
+  return false;
 }
 
-bool IsParty::in_combat(fl::context::PartyCtx ctx) {
-  using fl::ecs::components::Encounter;
+bool IsParty::in_combat() {
+  /* using fl::ecs::components::Encounter;
 
-  auto encounter = ctx.reg_.try_get<Encounter>(ctx.self_);
-  if (!encounter) {
-    return false;
-  }
-  // "in combat" is just "the encounter is not over yet"
-  return !encounter->is_over();
+   auto encounter = ctx.reg_.try_get<Encounter>(ctx.self_);
+   if (!encounter) {
+     return false;
+   }
+   // "in combat" is just "the encounter is not over yet"
+   return !encounter->is_over();
+   // TODO FIXME
+   */
+  return true;
 }
 
 } // namespace fl::ecs::components

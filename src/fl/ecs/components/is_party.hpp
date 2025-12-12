@@ -20,7 +20,7 @@ struct IsParty {
   std::string name_;
   std::vector<entt::entity> party_members_;
 
-  IsParty(fl::context::PartyCtx ctx, std::string name, entt::entity account);
+  IsParty(fl::context::PartyCtx &ctx, std::string name, entt::entity account);
 
   void next();
   entt::entity create_member(std::string name);

@@ -2,12 +2,14 @@
 #include <entt/entt.hpp>
 #include <vector>
 
+#include "fl/primitives/team.hpp"
+
 namespace fl::ecs::components {
 
 struct Encounter {
 
-  std::unique_ptr<fl::concepts::Team> attackers_ = nullptr;
-  std::unique_ptr<fl::concepts::Team> defenders_ = nullptr;
+  std::unique_ptr<fl::primitives::Team> attackers_{nullptr};
+  std::unique_ptr<fl::primitives::Team> defenders_{nullptr};
   std::vector<entt::entity> e_to_cleanup_;
   bool has_alive_enemies();
   bool is_over();

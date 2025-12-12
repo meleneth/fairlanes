@@ -11,11 +11,11 @@
 #include "fl/primitives/component_builder.hpp"
 
 class EntityBuilder {
-  fl::context::PartyCtx ctx_;
+  fl::context::BuildCtx &ctx_;
   entt::entity ent_{entt::null};
 
 public:
-  explicit EntityBuilder(fl::context::PartyCtx context)
+  explicit EntityBuilder(fl::context::BuildCtx &context)
       : ctx_(context), ent_(ctx_.reg_.create()) {}
 
   template <typename C> EntityBuilder &with(C c) {
@@ -30,8 +30,8 @@ public:
   }
 
   // ---- New: accessors so archetype functions can poke internals ----
-  fl::context::PartyCtx &ctx() { return ctx_; }
-  const fl::context::PartyCtx &ctx() const { return ctx_; }
+  fl::context::BuildCtx &ctx() { return ctx_; }
+  const fl::context::BuildCtx &ctx() const { return ctx_; }
 
   entt::entity entity() const { return ent_; }
   // ------------------------------------------------------------------

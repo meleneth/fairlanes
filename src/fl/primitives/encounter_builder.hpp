@@ -7,12 +7,13 @@
 namespace fl::concepts {
 
 struct EncounterBuilder {
+  fl::context::PartyCtx &ctx_;
 
-  EncounterBuilder();
+  EncounterBuilder(fl::context::PartyCtx &ctx) : ctx_(ctx) {};
 
-  void thump_it_out(fl::context::PartyCtx &ctx);
+  void thump_it_out();
 
-  void add_field_mouse(fl::context::PartyCtx &ctx);
+  void add_field_mouse();
 
   void add_to_enemy_team(entt::entity entity);
 };

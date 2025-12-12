@@ -2,10 +2,10 @@
 
 #include <algorithm>
 
-#include "entities/component_builder.hpp"
-#include "entities/entity_builder.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/monsters/monster_registry.hpp"
+#include "fl/primitives/component_builder.hpp"
+#include "fl/primitives/entity_builder.hpp"
 
 namespace fl::monster {
 
