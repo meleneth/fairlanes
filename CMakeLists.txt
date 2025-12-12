@@ -248,11 +248,22 @@ enable_testing()     # actually turn on test support
 
 option(ENABLE_COVERAGE "Build with coverage instrumentation" OFF)
 
-if(ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  message(STATUS "Building with GCC coverage flags")
-  add_compile_options(--coverage -O0 -g)
-  add_link_options(--coverage)
+if (ENABLE_COVERAGE)
+  if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    message(STATUS "Building with coverage instrumentation")
+
+    add_compile_options(
+      -O0
+      -g
+      --coverage
+      -fno-inline
+      -fno-omit-frame-pointer
+    )
+
+    add_link_options(--coverage)
+  endif()
 endif()
+
 
 find_program(GCOVR_EXECUTABLE gcovr)
 
@@ -270,6 +281,46 @@ if(GCOVR_EXECUTABLE)
 else()
   message(STATUS "gcovr not found; coverage-lcov target disabled")
 endif()
+
+
+if (ENABLE_COVERAGE)
+  find_program(PERL_EXECUTABLE perl)
+  find_program(LCOV_SCRIPT lcov)
+  find_program(GENHTML_SCRIPT genhtml)
+
+  if (NOT PERL_EXECUTABLE)
+    message(FATAL_ERROR "perl not found (required for lcov)")
+  endif()
+
+  if (NOT LCOV_SCRIPT OR NOT GENHTML_SCRIPT)
+    message(FATAL_ERROR "lcov/genhtml not found")
+  endif()
+
+  add_custom_target(coverage
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+
+    COMMAND ${PERL_EXECUTABLE} ${LCOV_SCRIPT}
+            --capture
+            --directory .
+            --output-file coverage.info
+
+    COMMAND ${PERL_EXECUTABLE} ${LCOV_SCRIPT}
+            --remove coverage.info
+            "*/_deps/*"
+            "*/tests/*"
+            "/usr/*"
+            "*build-coverage*"
+            "*15.2.0*"
+            --output-file coverage.cleaned.info
+
+    COMMAND ${PERL_EXECUTABLE} ${GENHTML_SCRIPT}
+            coverage.cleaned.info
+            --output-directory coverage-html
+
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  )
+endif()
+
 
 
 # --- Your code ---------------------------------------------------------------

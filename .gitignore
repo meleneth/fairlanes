@@ -1,5 +1,7 @@
 docs/html
 
+*.html
+
 ##### Windows
 # Windows thumbnail cache files
 Thumbs.db
