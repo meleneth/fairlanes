@@ -315,7 +315,7 @@ if (ENABLE_COVERAGE)
 
     COMMAND ${PERL_EXECUTABLE} ${GENHTML_SCRIPT}
             coverage.cleaned.info
-            --output-directory coverage-html
+            --output-directory coverage/html
 
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   )
@@ -327,6 +327,10 @@ endif()
 add_subdirectory(src)
 add_subdirectory(tests)
 # add_subdirectory(external)  # only if you actually have it
+if (ENABLE_COVERAGE)
+
+add_dependencies(coverage fairlanes_tests)
+endif()
 
 if (EMSCRIPTEN)
   target_compile_definitions(fairlanes PRIVATE __EMSCRIPTEN__)
