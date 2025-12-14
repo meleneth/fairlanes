@@ -10,6 +10,8 @@
 namespace fl::monster {
 
 using fl::ecs::components::Stats;
+using fl::primitives::EntityBuilder;
+
 void FieldMouse::apply(EntityBuilder &b) {
   // Ensure Stats exists (either defaulted elsewhere or create fresh)
   auto &s = b.ctx().reg_.get<Stats>(b.entity());

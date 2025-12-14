@@ -11,6 +11,8 @@
 
 namespace fl::concepts {
 
+using fl::primitives::EntityBuilder;
+
 void EncounterBuilder::thump_it_out() {
   using namespace fl::ecs::components;
 

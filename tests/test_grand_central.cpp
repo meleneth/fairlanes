@@ -5,6 +5,7 @@
 
 #include "fl/context.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/primitives/party_data.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <entt/entt.hpp>
@@ -25,7 +26,7 @@ template <> struct StringMaker<entt::entity> {
 TEST_CASE("GrandCentral basic structure is initialized",
           "[grand_central][smoke]") {
   // 2 accounts, 3 parties per account
-  fl::GrandCentral gc{2, 3};
+  fl::GrandCentral gc{2, 3, 1};
 
   // We expect exactly 2 accounts
   // REQUIRE(gc.accounts_.size() == 2);
@@ -47,33 +48,27 @@ TEST_CASE("GrandCentral basic structure is initialized",
 
 TEST_CASE("GrandCentral context helpers work",
           "[grand_central][context][smoke]") {
-  fl::GrandCentral gc{1, 2}; // 1 account, 2 parties
-  /*
-    // Account context
-    auto acc_ctx = gc.account_context(0);
+  fl::GrandCentral gc{1, 2, 1}; // 1 account, 2 parties
 
-    // Registry and RNG should be usable
-    entt::entity ent = acc_ctx.reg_.create();
-    // REQUIRE(ent != entt::null);
-      // Account should own at least one party
-      REQUIRE(acc_ctx.account_.parties_.size() == 2);
+  // Account context
+  auto acc_ctx = gc.account_context(0);
 
-      // Party context
-      auto party_ctx = acc_ctx.party_context(0);
-      // REQUIRE(party_ctx.party.party_id_);
+  // Registry and RNG should be usable
+  entt::entity ent = acc_ctx.reg().create();
+  // REQUIRE(ent != entt::null);
+  // Account should own at least one party
+  REQUIRE(acc_ctx.account_.parties_.size() == 2);
 
-      // EntityCtx from PartyCtx
-      auto entity_ctx = party_ctx.entity_context(party_ctx.party.party_id_);
-      // REQUIRE(entity_ctx.self == party_ctx.party.party_id_);
+  // Party context
+  auto party_ctx = acc_ctx.party_context(0);
+  // REQUIRE(party_ctx.party.party_id_);
 
-      // Smoke test logging + bus usage — we don't assert behavior, just that it
-      // compiles and runs Log: append something trivial (assuming FancyLog has
-    an
-      // Append-like API or operator()) If your API is different, adjust this
-      block
-      // accordingly. For now we just ensure the log reference is obtainable.
+  // EntityCtx from PartyCtx
+  auto entity_ctx = party_ctx.entity_context(party_ctx.party_->party_id_);
+  // REQUIRE(entity_ctx.self == party_ctx.party.party_id_);
 
-      (void)party_ctx.log();
-      (void)party_ctx.bus();
-    */
+  // Smoke test logging + bus usage — we don't assert behavior, just that it
+  // compiles and runs Log: append something trivial (assuming FancyLog has an
+  // Append-like API or operator()) If your API is different, adjust this block
+  // accordingly. For now we just ensure the log reference is obtainable.
 }

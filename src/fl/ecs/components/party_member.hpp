@@ -6,7 +6,6 @@
 #include "fl/context.hpp"
 #include "fl/ecs/fwd.hpp"
 
-
 namespace fl::ecs::components {
 
 struct PartyMember {
@@ -37,7 +36,7 @@ inline void for_each_member(entt::registry *reg, entt::entity party_e,
 
 template <typename Ctx, typename PM = PartyMember, typename Fn>
 inline void for_each_member(Ctx &ctx, entt::entity party_e, Fn &&fn) {
-  for_each_member<PM>(*ctx.reg_, party_e, std::forward<Fn>(fn));
+  for_each_member<PM>(*ctx.reg(), party_e, std::forward<Fn>(fn));
 }
 
 } // namespace fl::ecs::components

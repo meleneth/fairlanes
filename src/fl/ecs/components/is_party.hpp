@@ -2,26 +2,24 @@
 #include <boost/sml.hpp>
 #include <string>
 
-// #include "fl/ecs/fwd.hpp"
-#include "fl/context.hpp"
 #include "fl/fsm/party_loop.hpp"
+#include "fl/fwd.hpp"
 
 namespace fl::ecs::components {
-struct PartyMember;
+
 namespace sml = boost::sml;
 
 // Marks an entity as a Party (party itself is an entity)
-using fl::fsm::PartyLoop;
 
 struct IsParty {
-  sml::sm<PartyLoop> sm_;
+  sml::sm<fl::fsm::PartyLoop> sm_;
   entt::entity account_;
   entt::entity self_;
   std::string name_;
   std::vector<entt::entity> party_members_;
 
-  IsParty(fl::context::PartyCtx &ctx, std::string name, entt::entity account);
-
+  IsParty(fl::context::PartyCtx context, std::string name,
+          entt::entity account);
   void next();
   entt::entity create_member(std::string name);
   bool needs_town();

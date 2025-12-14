@@ -4,8 +4,10 @@
 #include <vector>
 
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/tags.hpp"
 #include "fl/ecs/components/track_xp.hpp"
 
+namespace fl::primitives {
 template <typename T> struct ComponentBuilder; // primary template
 
 // ---- Components ----
@@ -29,7 +31,7 @@ template <> struct ComponentBuilder<Stats> {
     // Or: s.hp = j.value("hp", s.hp); s.mp = j.value("mp", s.mp);
   }
 };
-/*
+
 using fl::ecs::components::Tags;
 template <> struct ComponentBuilder<Tags> {
   static Tags defaults(fl::context::EntityCtx &ctx) {
@@ -42,7 +44,7 @@ template <> struct ComponentBuilder<Tags> {
     }
   }
 };
-*/
+
 template <> struct ComponentBuilder<TrackXP> {
   static TrackXP defaults(fl::context::EntityCtx const &ctx) {
     return TrackXP{ctx.entity_context(ctx.self_), 0};
@@ -52,3 +54,4 @@ template <> struct ComponentBuilder<TrackXP> {
     (void)j;
   }
 };
+} // namespace fl::primitives

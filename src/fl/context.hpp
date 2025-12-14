@@ -1,13 +1,15 @@
 #pragma once
 
+#include <concepts>
+
 #include <entt/entt.hpp>
 
 #include "fl/events/account_bus.hpp"
+#include "fl/events/party_bus.hpp"
+#include "fl/fsm/party_loop_ctx.hpp"
+#include "fl/fwd.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/damage.hpp"
-#include "fl/primitives/party_data.hpp"
-#include "fl/primitives/random_hub.hpp"
-#include "fl/widgets/fancy_log.hpp"
 
 namespace fl::context {
 
@@ -18,19 +20,15 @@ struct EntityCtx {
   entt::entity self_;
 
   EntityCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
-            fl::widgets::FancyLog &log, entt::entity self)
-      : reg_(reg), rng_(rng), log_(log), self_(self) {}
+            fl::widgets::FancyLog &log, entt::entity self);
 
   EntityCtx(const EntityCtx &) = default;
 
-  EntityCtx &operator=(const EntityCtx &rhs) {
-    self_ = rhs.self_;
-    return *this;
-  }
+  entt::registry &reg() const { return reg_; }
 
-  EntityCtx entity_context(entt::entity ent) const {
-    return EntityCtx{reg_, rng_, log_, ent};
-  }
+  EntityCtx &operator=(const EntityCtx &rhs);
+
+  EntityCtx entity_context(entt::entity ent) const;
 };
 
 struct BuildCtx {
@@ -38,9 +36,8 @@ struct BuildCtx {
   fl::primitives::RandomHub &rng_;
   fl::widgets::FancyLog &log_;
 
-  EntityCtx entity_context(entt::entity ent) const {
-    return EntityCtx{reg_, rng_, log_, ent};
-  }
+  entt::registry &reg() const { return reg_; }
+  EntityCtx entity_context(entt::entity ent) const;
 };
 
 struct PartyCtx {
@@ -48,23 +45,20 @@ struct PartyCtx {
   fl::primitives::RandomHub &rng_;
 
   fl::primitives::AccountData &acc_;
-  fl::primitives::PartyData &party_;
+  fl::primitives::PartyData *party_;
 
   fl::widgets::FancyLog &log_;
-  fl::primitives::PartyBus &bus_;
-
-  entt::entity self_() const { return party_.party_id_; }
+  fl::events::PartyBus &bus_;
+  entt::registry &reg() const { return reg_; }
+  entt::entity self_() const;
 
   PartyCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
-           fl::primitives::AccountData &acc, fl::primitives::PartyData &party)
-      : reg_(reg), rng_(rng), acc_(acc), party_(party), log_(*party.log_),
-        bus_(party.bus_) {}
+           fl::primitives::AccountData &acc, fl::primitives::PartyData &party);
+  PartyCtx &operator=(const PartyCtx &rhs);
 
-  EntityCtx entity_context(entt::entity ent) const {
-    return EntityCtx{reg_, rng_, *party_.log_, ent};
-  }
-
-  BuildCtx build_context() const { return BuildCtx{reg_, rng_, *party_.log_}; }
+  EntityCtx entity_context(entt::entity ent) const;
+  fl::fsm::PartyLoopCtx party_loop_context() const;
+  BuildCtx build_context() const;
 };
 
 struct AccountCtx {
@@ -72,16 +66,13 @@ struct AccountCtx {
   fl::primitives::RandomHub &rng_;
   fl::primitives::AccountData &account_;
 
-  fl::widgets::FancyLog &log() const { return *account_.log_; }
-  fl::events::AccountBus &bus() const { return account_.bus_; }
+  fl::widgets::FancyLog &log() const;
+  fl::events::AccountBus &bus() const;
 
-  PartyCtx party_context(std::size_t idx) const {
-    return PartyCtx{reg_, rng_, account_, account_.parties_.at(idx)};
-  }
-
-  EntityCtx entity_context(entt::entity ent) const {
-    return EntityCtx{reg_, rng_, *account_.log_, ent};
-  }
+  PartyCtx party_context(std::size_t idx) const;
+  PartyCtx party_context(fl::primitives::PartyData &data) const;
+  entt::registry &reg() const { return reg_; }
+  EntityCtx entity_context(entt::entity ent) const;
 };
 
 struct AttackCtx {
@@ -94,27 +85,21 @@ struct AttackCtx {
 
   AttackCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
             fl::widgets::FancyLog &log, entt::entity attacker,
-            entt::entity defender)
-      : reg_(reg), rng_(rng), log_(log), attacker_(attacker),
-        defender_(defender) {}
+            entt::entity defender);
 
-  fl::context::EntityCtx entity_context(entt::entity e) const {
-    return fl::context::EntityCtx{reg_, rng_, log_, e};
-  }
-
+  fl::context::EntityCtx entity_context(entt::entity e) const;
+  entt::registry &reg() const { return reg_; }
   static AttackCtx make_attack(PartyCtx &ctx, entt::entity attacker,
-                               entt::entity defender) {
-    return AttackCtx{ctx.reg_, ctx.rng_, ctx.log_, attacker, defender};
-  }
+                               entt::entity defender);
 
   // MARK_CLASS_M OVEONLY(AttackCtx);
 };
 
 template <typename C>
 concept WorldCoreCtx = requires(C c) {
-  { c.reg_ } -> std::same_as<entt::registry &>;
-  { c.log_ } -> std::same_as<fl::widgets::FancyLog &>;
-  { c.rng_ } -> std::same_as<fl::primitives::RandomHub &>;
+  { c.reg() } -> std::same_as<entt::registry &>;
+  { c.log() } -> std::same_as<fl::widgets::FancyLog &>;
+  { c.rng() } -> std::same_as<fl::primitives::RandomHub &>;
 };
 
 } // namespace fl::context

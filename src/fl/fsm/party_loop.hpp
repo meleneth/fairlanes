@@ -7,23 +7,22 @@
 #include "fl/ecs/systems/grant_xp_to_party.hpp"
 #include "fl/primitives/encounter_builder.hpp"
 
-
 namespace fl::fsm {
 namespace sml = boost::sml;
 
 struct NextEvent {};
 
 struct PartyLoop {
-  void enter_idle(fl::context::PartyCtx &ctx);
-  void enter_farming(fl::context::PartyCtx &ctx);
-  void exit_farming(fl::context::PartyCtx &ctx);
-  void enter_fixing(fl::context::PartyCtx &ctx);
+  void enter_idle(fl::fsm::PartyLoopCtx &ctx);
+  void enter_farming(fl::fsm::PartyLoopCtx &ctx);
+  void exit_farming(fl::fsm::PartyLoopCtx &ctx);
+  void enter_fixing(fl::fsm::PartyLoopCtx &ctx);
 
-  void combat_tick(fl::context::PartyCtx &ctx);
-  void next_event(fl::context::PartyCtx &ctx);
+  void combat_tick(fl::fsm::PartyLoopCtx &ctx);
+  void next_event(fl::fsm::PartyLoopCtx &ctx);
 
-  bool needs_town(fl::context::PartyCtx &ctx);
-  bool in_combat(fl::context::PartyCtx &ctx);
+  bool needs_town(fl::fsm::PartyLoopCtx &ctx);
+  bool in_combat(fl::fsm::PartyLoopCtx &ctx);
 
   auto operator()() const {
     using namespace sml;

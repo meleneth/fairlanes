@@ -4,7 +4,7 @@
 
 #include <eventpp/eventdispatcher.h>
 
-namespace fl::primitives {
+namespace fl::events {
 
 /// Events that occur within a specific Party.
 ///
@@ -32,4 +32,4 @@ using PartyPayload = std::any;
 using PartyBus =
     eventpp::EventDispatcher<PartyEvent, void(const PartyPayload &)>;
 
-} // namespace fl::primitives
+} // namespace fl::events

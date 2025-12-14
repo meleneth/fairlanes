@@ -7,7 +7,7 @@
 int main() {
   using fl::GrandCentral;
 
-  GrandCentral gc{1, 1};
+  GrandCentral gc{1, 1, 1};
   gc.bootstrap_logs();
 
   std::cout << "You are a young hero, and you live in a village";

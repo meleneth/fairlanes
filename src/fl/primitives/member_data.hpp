@@ -16,7 +16,7 @@ struct MemberData {
   std::string name_; // TODO WHAT THE FUCK
   std::shared_ptr<fl::widgets::FancyLog> log_;
 
-  PartyBus bus_;
+  fl::events::PartyBus bus_;
 
   MemberData(entt::entity member_id, const std::string &name)
       : member_id_(member_id), name_(name),

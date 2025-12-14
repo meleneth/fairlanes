@@ -8,6 +8,7 @@
 #include "fl/context.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/move_only.hpp"
+#include "fl/primitives/random_hub.hpp"
 
 namespace fl::primitives {
 
@@ -21,7 +22,7 @@ struct Team {
     using fl::ecs::components::Stats;
 
     for (auto e : members_) {
-      if (auto *stats = ctx.reg_.template try_get<Stats>(e)) {
+      if (auto *stats = ctx.reg().template try_get<Stats>(e)) {
         if (stats->is_alive()) {
           std::forward<Fn>(fn)(e);
         }
@@ -55,7 +56,7 @@ struct Team {
     std::vector<entt::entity> out;
     out.reserve(members_.size());
     for (auto e : members_) {
-      if (auto stats = ctx.reg_.template try_get<Stats>(e);
+      if (auto stats = ctx.reg().template try_get<Stats>(e);
           stats && stats->hp_ > 0) {
         out.push_back(e);
       }

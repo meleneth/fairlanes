@@ -4,11 +4,11 @@
 #include <unordered_map>
 
 #include "fl/monsters/monster_kind.hpp"
-
+namespace fl::primitives {
 class EntityBuilder;
-
+}
 namespace fl::monster {
-
+using fl::primitives::EntityBuilder;
 using MonsterArchetypeFn = std::function<void(EntityBuilder &)>;
 
 // Accessor for a global registry.

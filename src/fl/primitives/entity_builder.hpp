@@ -10,6 +10,7 @@
 #include "fl/monsters/monster_registry.hpp"
 #include "fl/primitives/component_builder.hpp"
 
+namespace fl::primitives {
 class EntityBuilder {
   fl::context::BuildCtx &ctx_;
   entt::entity ent_{entt::null};
@@ -24,8 +25,9 @@ public:
   }
 
   template <typename C> EntityBuilder &with_default() {
-    ctx_.reg_.emplace_or_replace<C>(
-        ent_, ComponentBuilder<C>::defaults(ctx_.entity_context(ent_)));
+    auto entity_ctx = ctx_.entity_context(ent_);
+    ctx_.reg_.emplace_or_replace<C>(ent_,
+                                    ComponentBuilder<C>::defaults(entity_ctx));
     return *this;
   }
 
@@ -65,3 +67,4 @@ public:
     return *this;
   }
 };
+} // namespace fl::primitives
