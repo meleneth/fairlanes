@@ -42,7 +42,7 @@ TEST_CASE("EncounterBuilder::thump_it_out wires Encounter teams and members",
 
   // defenders should contain the party members (order matters if IsParty
   // enumerates in order)
-  /*
+
   REQUIRE(enc.defenders_->members_.size() == 3);
 
   // attackers should contain exactly one enemy: the field mouse
@@ -53,6 +53,5 @@ TEST_CASE("EncounterBuilder::thump_it_out wires Encounter teams and members",
   // cleanup list should include the spawned enemy
   REQUIRE(enc.e_to_cleanup_.size() == 1);
   CHECK(enc.e_to_cleanup_.front() == enemy);
-  */
 }
 } // namespace

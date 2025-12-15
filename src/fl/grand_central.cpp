@@ -11,6 +11,7 @@
 #include <tracy/Tracy.hpp>
 
 #include "fl/context.hpp"
+#include "fl/ecs/components/is_party.hpp"
 #include "fl/monsters/register_monsters.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/fancy_log_sink.hpp"
@@ -66,6 +67,11 @@ void GrandCentral::_create_initial_accounts() {
         // 3) Create the member IN the party’s owning container first
         auto &member = party_data.members_.emplace_back(
             reg_.create(), hero_names[player_index]);
+
+        auto &is_party =
+            reg_.get<fl::ecs::components::IsParty>(party_data.party_id_);
+
+        is_party.party_members_.push_back(member.member_id_);
 
         logger_.info(
             "[blue](Player initialized with ID " +
