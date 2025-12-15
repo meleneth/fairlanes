@@ -27,23 +27,23 @@ EntityCtx BuildCtx::entity_context(entt::entity ent) const {
   return EntityCtx{reg(), rng_, log_, ent};
 }
 
-entt::entity PartyCtx::self_() const { return party_->party_id_; }
+entt::entity PartyCtx::self_() const { return party_data_->party_id_; }
 
 PartyCtx::PartyCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
                    fl::primitives::AccountData &acc,
                    fl::primitives::PartyData &party)
-    : reg_(reg), rng_(rng), acc_(acc), party_(&party), log_(*party.log_),
-      bus_(party.bus_) {}
+    : reg_(reg), rng_(rng), account_data_(acc), party_data_(&party),
+      log_(*party.log_), bus_(party.bus_) {}
 
 EntityCtx PartyCtx::entity_context(entt::entity ent) const {
-  return EntityCtx{reg(), rng_, *party_->log_, ent};
+  return EntityCtx{reg(), rng_, *party_data_->log_, ent};
 }
 
 BuildCtx PartyCtx::build_context() const {
-  return BuildCtx{reg(), rng_, *party_->log_};
+  return BuildCtx{reg(), rng_, *party_data_->log_};
 }
 
-fl::fsm::PartyLoopCtx PartyCtx::party_loop_context() const {
+fl::fsm::PartyLoopCtx PartyCtx::party_loop_context() {
   return fl::fsm::PartyLoopCtx{*this};
 }
 
@@ -64,7 +64,7 @@ EntityCtx AccountCtx::entity_context(entt::entity ent) const {
 
 PartyCtx &PartyCtx::operator=(const PartyCtx &rhs) {
   // references are intentionally NOT reassigned
-  party_ = rhs.party_;
+  party_data_ = rhs.party_data_;
   return *this;
 }
 AttackCtx::AttackCtx(entt::registry &reg, fl::primitives::RandomHub &rng,

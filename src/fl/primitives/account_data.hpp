@@ -18,12 +18,12 @@
 namespace fl::primitives {
 
 struct AccountData {
-  entt::entity account_id_{entt::null};
+  entt::entity account_id_;
   std::shared_ptr<fl::widgets::FancyLog> log_;
   fl::events::AccountBus bus_;    // per-account event bus
   std::deque<PartyData> parties_; // owned parties
 
-  AccountData(entt::registry &reg);
+  AccountData(entt::entity account_id);
 
   AccountData(AccountData &&) noexcept = default;
   AccountData &operator=(AccountData &&) noexcept = default;

@@ -15,23 +15,17 @@
 
 namespace fl::primitives {
 
-PartyData::PartyData(fl::context::AccountCtx &ctx, std::string name)
-    : party_id_(ctx.reg().create()),
-      log_(std::make_shared<fl::widgets::FancyLog>()) {
+PartyData::PartyData(entt::entity party_id)
+    : party_id_(party_id), log_(std::make_shared<fl::widgets::FancyLog>()) {
 
-  // Assuming your AccountCtx can provide PartyCtx for this PartyData:
-  auto pctx =
-      ctx.party_context(*this); // returns fl::context::PartyCtx by value
+  // auto party_loop_ctx = ctx.party_context().party_loop_context();
+}
 
-  fl::fsm::PartyLoopCtx loop_ctx{
-      .reg_ = &pctx.reg(),
-      .rng_ = &pctx.rng_,
-      .account_ = &pctx.account_data.account_id_,
-      .party_ = &pctx.party_, // if PartyCtx holds PartyData& party_;
-  };
-
-  ctx.reg().emplace<fl::ecs::components::IsParty>(loop_ctx, std::move(name),
-                                                  ctx.account_.account_id_);
+void PartyData::init_party(fl::fsm::PartyLoopCtx &party_loop_ctx,
+                           std::string name) {
+  party_loop_ctx.reg().emplace<fl::ecs::components::IsParty>(
+      party_id_, party_loop_ctx, std::move(name),
+      party_loop_ctx.account_->account_id_);
 }
 
 } // namespace fl::primitives

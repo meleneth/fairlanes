@@ -44,12 +44,13 @@ struct PartyCtx {
   entt::registry &reg_;
   fl::primitives::RandomHub &rng_;
 
-  fl::primitives::AccountData &acc_;
-  fl::primitives::PartyData *party_;
+  fl::primitives::AccountData &account_data_;
+  fl::primitives::PartyData *party_data_;
 
   fl::widgets::FancyLog &log_;
   fl::events::PartyBus &bus_;
   entt::registry &reg() const { return reg_; }
+  fl::widgets::FancyLog &log() const { return log_; }
   entt::entity self_() const;
 
   PartyCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
@@ -57,7 +58,7 @@ struct PartyCtx {
   PartyCtx &operator=(const PartyCtx &rhs);
 
   EntityCtx entity_context(entt::entity ent) const;
-  fl::fsm::PartyLoopCtx party_loop_context() const;
+  fl::fsm::PartyLoopCtx party_loop_context();
   BuildCtx build_context() const;
 };
 

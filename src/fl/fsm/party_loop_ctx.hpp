@@ -17,11 +17,13 @@ struct PartyLoopCtx {
   fl::primitives::PartyData *party_{};
   fl::widgets::FancyLog &log_;
 
+  PartyLoopCtx(fl::context::PartyCtx &ctx);
   entt::registry &reg() const { return *reg_; }
+  fl::widgets::FancyLog &log() const { return log_; };
+  fl::primitives::RandomHub &rng() const { return *rng_; }
+  entt::entity self_() const;
 
-  entt::entity self_() const { return party_->party_id_; }
-
-  fl::context::PartyCtx party_ctx() const;
+  fl::context::PartyCtx party_context() const;
 };
 
 } // namespace fl::fsm

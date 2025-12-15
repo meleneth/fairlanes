@@ -5,6 +5,7 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/systems/grant_xp_to_party.hpp"
+#include "fl/fsm/party_loop_ctx.hpp"
 #include "fl/primitives/encounter_builder.hpp"
 
 namespace fl::fsm {
@@ -13,6 +14,8 @@ namespace sml = boost::sml;
 struct NextEvent {};
 
 struct PartyLoop {
+  PartyLoop(PartyLoopCtx &context) : ctx_(context) {}
+
   void enter_idle(fl::fsm::PartyLoopCtx &ctx);
   void enter_farming(fl::fsm::PartyLoopCtx &ctx);
   void exit_farming(fl::fsm::PartyLoopCtx &ctx);
@@ -48,6 +51,9 @@ struct PartyLoop {
         state<CombatIdle> + event<NextEvent> = state<Farming>,
         state<Fixing> + event<NextEvent> = state<Idle>);
   }
+
+private:
+  PartyLoopCtx &ctx_;
 };
 
 } // namespace fl::fsm

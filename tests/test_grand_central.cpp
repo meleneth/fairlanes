@@ -64,7 +64,7 @@ TEST_CASE("GrandCentral context helpers work",
   // REQUIRE(party_ctx.party.party_id_);
 
   // EntityCtx from PartyCtx
-  auto entity_ctx = party_ctx.entity_context(party_ctx.party_->party_id_);
+  auto entity_ctx = party_ctx.entity_context(party_ctx.party_data_->party_id_);
   // REQUIRE(entity_ctx.self == party_ctx.party.party_id_);
 
   // Smoke test logging + bus usage — we don't assert behavior, just that it

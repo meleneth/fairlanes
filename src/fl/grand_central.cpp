@@ -28,34 +28,44 @@ void GrandCentral::_create_initial_accounts() {
   int party_index = 0;
   int player_index = 0;
 
+  // The Pattern
+  // create ID
+  // pass to Data ctor
+  // Data ctor takes a context?
+  // Data can upgrade your context -
+  // account_data.account_context(WorldCoreCtx &ctx)
+  // party_data.party_context(AccountCtx &ctx);
+  // party_ctx.party_loop_ctx();
+
   for (std::size_t a = 0; a < num_accounts_; ++a) {
-    // 1) Create the account IN the owning container first (stable address)
-    auto &account = accounts_.emplace_back(reg_);
+    auto &account_data = accounts_.emplace_back(reg_.create());
 
     logger_.info(
         "[yellow](Account initialized with ID " +
         std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
-            account.account_id_)) +
+            account_data.account_id_)) +
         ")");
 
     for (std::size_t p = 0; p < num_parties_per_account_; ++p) {
-      // 2) Create the party IN the account’s owning container first
-      auto account_ctx = account_context(account);
-      auto &party = account.parties_.emplace_back(
-          account_ctx, party_names[party_index], account.account_id_);
+
+      auto &party_data = account_data.parties_.emplace_back(reg_.create());
+      auto account_ctx = account_context(account_data);
+      auto party_ctx = account_ctx.party_context(party_data);
+      auto party_loop_ctx = party_ctx.party_loop_context();
+      party_data.init_party(party_loop_ctx, party_names[party_index]);
 
       ++party_index;
 
       logger_.info(
           "[green](Party initialized with ID " +
           std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
-              party.party_id_)) +
+              party_data.party_id_)) +
           ")");
 
       for (std::size_t m = 0; m < num_members_per_party_; ++m) {
         // 3) Create the member IN the party’s owning container first
-        auto &member = party.members_.emplace_back(reg_.create(),
-                                                   hero_names[player_index]);
+        auto &member = party_data.members_.emplace_back(
+            reg_.create(), hero_names[player_index]);
 
         logger_.info(
             "[blue](Player initialized with ID " +

@@ -23,7 +23,7 @@ void PartyLoop::enter_farming(fl::fsm::PartyLoopCtx &ctx) {
 
   using fl::concepts::EncounterBuilder;
   using fl::ecs::components::Encounter;
-  auto party_ctx = ctx.party_ctx();
+  auto party_ctx = ctx.party_context();
   EncounterBuilder{party_ctx}.thump_it_out();
 };
 
@@ -49,16 +49,18 @@ void PartyLoop::combat_tick(fl::fsm::PartyLoopCtx &ctx) {
   encounter.attackers_->for_each_alive_member(ctx, [&](entt::entity attacker) {
     auto defender = encounter.defenders_->random_alive_member(ctx);
     if (defender) {
-      in_the_night.thump(
-          fl::context::AttackCtx::make_attack(ctx, attacker, *defender));
+      auto party_context = ctx.party_context();
+      in_the_night.thump(fl::context::AttackCtx::make_attack(
+          party_context, attacker, *defender));
     }
   });
 
   encounter.defenders_->for_each_alive_member(ctx, [&](entt::entity attacker) {
     auto defender = encounter.attackers_->random_alive_member(ctx);
     if (defender) {
-      in_the_night.thump(
-          fl::context::AttackCtx::make_attack(ctx, attacker, *defender));
+      auto party_context = ctx.party_context();
+      in_the_night.thump(fl::context::AttackCtx::make_attack(
+          party_context, attacker, *defender));
     }
   });
 };

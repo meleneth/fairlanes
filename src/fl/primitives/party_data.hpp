@@ -7,6 +7,7 @@
 #include "fl/fwd.hpp"
 
 #include "fl/events/party_bus.hpp"
+#include "fl/fsm/party_loop_ctx.hpp"
 #include "member_data.hpp"
 namespace fl::primitives {
 
@@ -16,8 +17,10 @@ struct PartyData {
   std::deque<fl::primitives::MemberData> members_;
   fl::events::PartyBus bus_;
   // Assuming your AccountCtx can provide PartyCtx for this PartyData:
+  void init_party(fl::fsm::PartyLoopCtx &party_loop_ctx, entt::entity party_id,
+                  std::string name);
 
-  PartyData(fl::context::AccountCtx &ctx, std::string name);
+  PartyData(entt::entity party_id);
 
   PartyData(PartyData &&) noexcept = default;
   PartyData &operator=(PartyData &&) noexcept = default;

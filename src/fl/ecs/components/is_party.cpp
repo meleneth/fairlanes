@@ -11,10 +11,9 @@ namespace sml = boost::sml;
 using fl::fsm::NextEvent;
 using fl::fsm::PartyLoop;
 
-IsParty::IsParty(fl::context::PartyCtx context, std::string name,
+IsParty::IsParty(fl::fsm::PartyLoopCtx context, std::string name,
                  entt::entity account)
-    : sm_{context.party_loop_context(), std::move(context)}, account_{account},
-      name_{std::move(name)} {}
+    : sm_(PartyLoop{context}), account_{account}, name_{std::move(name)} {}
 
 void IsParty::next() { sm_.process_event(NextEvent{}); }
 

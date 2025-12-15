@@ -16,8 +16,8 @@
 
 namespace fl::primitives {
 
-AccountData::AccountData(entt::registry &reg)
-    : account_id_(reg.create()),
-      log_(std::make_shared<fl::widgets::FancyLog>()) {}
+AccountData::AccountData(entt::entity account_id)
+    : account_id_(account_id), log_(std::make_shared<fl::widgets::FancyLog>()) {
+}
 
 } // namespace fl::primitives
