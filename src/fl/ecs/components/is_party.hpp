@@ -12,6 +12,8 @@ namespace sml = boost::sml;
 // Marks an entity as a Party (party itself is an entity)
 
 struct IsParty {
+  fl::fsm::PartyLoopCtx ctx_;
+  fl::fsm::PartyLoop machine_;
   sml::sm<fl::fsm::PartyLoop> sm_;
   entt::entity account_;
   entt::entity self_;
