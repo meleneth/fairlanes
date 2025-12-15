@@ -17,8 +17,7 @@ struct PartyData {
   std::deque<fl::primitives::MemberData> members_;
   fl::events::PartyBus bus_;
   // Assuming your AccountCtx can provide PartyCtx for this PartyData:
-  void init_party(fl::fsm::PartyLoopCtx &party_loop_ctx, entt::entity party_id,
-                  std::string name);
+  void init_party(fl::fsm::PartyLoopCtx &party_loop_ctx, std::string name);
 
   PartyData(entt::entity party_id);
 
