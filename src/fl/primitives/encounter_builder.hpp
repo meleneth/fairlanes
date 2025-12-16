@@ -4,7 +4,7 @@
 
 #include "fl/context.hpp"
 
-namespace fl::concepts {
+namespace fl::primitives {
 
 struct EncounterBuilder {
   fl::context::PartyCtx &ctx_;
@@ -18,4 +18,4 @@ struct EncounterBuilder {
   void add_to_enemy_team(entt::entity entity);
 };
 
-} // namespace fl::concepts
+} // namespace fl::primitives

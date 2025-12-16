@@ -30,7 +30,7 @@ TEST_CASE("EncounterBuilder::thump_it_out wires Encounter teams and members",
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
 
-  fl::concepts::EncounterBuilder builder(party_ctx);
+  fl::primitives::EncounterBuilder builder(party_ctx);
   builder.thump_it_out();
 
   // ---- asserts ----

@@ -9,14 +9,12 @@
 #include "fl/primitives/entity_builder.hpp"
 #include "fl/primitives/team.hpp"
 
-namespace fl::concepts {
-
-using fl::primitives::EntityBuilder;
+namespace fl::primitives {
 
 void EncounterBuilder::thump_it_out() {
   using namespace fl::ecs::components;
 
-  auto &enc = ctx_.reg_.emplace<Encounter>(ctx_.self_());
+  auto &enc = ctx_.reg_.emplace<fl::ecs::components::Encounter>(ctx_.self_());
   auto &is_party = ctx_.reg_.get<IsParty>(ctx_.self_());
 
   enc.attackers_ = std::make_unique<fl::primitives::Team>();
@@ -46,4 +44,4 @@ void EncounterBuilder::add_to_enemy_team(entt::entity entity) {
   enc.e_to_cleanup_.push_back(entity);
 }
 
-} // namespace fl::concepts
+} // namespace fl::primitives

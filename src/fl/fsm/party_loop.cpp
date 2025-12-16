@@ -21,15 +21,12 @@ void PartyLoop::enter_idle(fl::fsm::PartyLoopCtx &ctx) {
 void PartyLoop::enter_farming(fl::fsm::PartyLoopCtx &ctx) {
   // Also set the label for the party tied to this FSM (nice for local UI)
 
-  using fl::concepts::EncounterBuilder;
-  using fl::ecs::components::Encounter;
   auto party_ctx = ctx.party_context();
-  EncounterBuilder{party_ctx}.thump_it_out();
+  fl::primitives::EncounterBuilder{party_ctx}.thump_it_out();
 };
 
 void PartyLoop::exit_farming(fl::fsm::PartyLoopCtx &ctx) {
-  using fl::ecs::components::Encounter;
-  ctx.reg().remove<Encounter>(ctx.self_());
+  ctx.reg().remove<fl::ecs::components::Encounter>(ctx.self_());
   // ctx.log_.append_plain("Returned to town.");
   entt::handle h{ctx.reg(), ctx.self_()};
   // TODO FIXME
