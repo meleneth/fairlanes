@@ -7,11 +7,10 @@
 #include "fl/ecs/components/color_override.hpp"
 
 namespace fl::ecs::components {
+entt::registry reg;
 
 TEST_CASE("ColorOverride: safe_add_color does nothing for invalid entity",
           "[ecs][components][color_override]") {
-  entt::registry reg;
-
   // entt::null is always invalid
   safe_add_color(reg, entt::null, ftxui::Color::Red);
 
@@ -20,8 +19,6 @@ TEST_CASE("ColorOverride: safe_add_color does nothing for invalid entity",
 
 TEST_CASE("ColorOverride: safe_clear_color does nothing for invalid entity",
           "[ecs][components][color_override]") {
-  entt::registry reg;
-
   // Should not throw / crash
   safe_clear_color(reg, entt::null);
 
@@ -31,7 +28,6 @@ TEST_CASE("ColorOverride: safe_clear_color does nothing for invalid entity",
 TEST_CASE(
     "ColorOverride: safe_add_color adds the component with the given color",
     "[ecs][components][color_override]") {
-  entt::registry reg;
   const entt::entity e = reg.create();
 
   safe_add_color(reg, e, ftxui::Color::Red);
@@ -42,7 +38,6 @@ TEST_CASE(
 
 TEST_CASE("ColorOverride: safe_add_color replaces existing ColorOverride",
           "[ecs][components][color_override]") {
-  entt::registry reg;
   const entt::entity e = reg.create();
 
   safe_add_color(reg, e, ftxui::Color::Red);
@@ -54,7 +49,6 @@ TEST_CASE("ColorOverride: safe_add_color replaces existing ColorOverride",
 
 TEST_CASE("ColorOverride: safe_clear_color removes the component if present",
           "[ecs][components][color_override]") {
-  entt::registry reg;
   const entt::entity e = reg.create();
 
   safe_add_color(reg, e, ftxui::Color::Red);
@@ -67,7 +61,6 @@ TEST_CASE("ColorOverride: safe_clear_color removes the component if present",
 
 TEST_CASE("ColorOverride: safe_clear_color is idempotent",
           "[ecs][components][color_override]") {
-  entt::registry reg;
   const entt::entity e = reg.create();
 
   // No component yet; should be fine.
