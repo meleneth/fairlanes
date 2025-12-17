@@ -2,7 +2,11 @@
 #include <entt/entt.hpp>
 #include <vector>
 
+#include "fl/events/battle_bus.hpp"
+#include "fl/events/ready_queue.hpp"
+#include "fl/events/timed_event_queue.hpp"
 #include "fl/primitives/team.hpp"
+
 
 namespace fl::ecs::components {
 
@@ -14,6 +18,10 @@ struct Encounter {
   bool has_alive_enemies();
   bool is_over();
   void finalize();
+
+  fl::events::BattleBus battle_bus_;
+  fl::events::TimedEventQueue timed_events_;
+  fl::events::ReadyQueue ready_queue_;
 };
 
 struct InEncounter {                   // attach to the party
