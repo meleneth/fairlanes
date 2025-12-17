@@ -234,7 +234,7 @@ set(TRACY_NO_EXIT OFF CACHE BOOL "Tracy persists after disconnect" FORCE)
 FetchContent_Declare(
 tracy
 GIT_REPOSITORY https://github.com/wolfpld/tracy.git
-GIT_TAG master
+GIT_REVISION 05cceee
 GIT_SHALLOW true
 GIT_PROGRESS true
 )
