@@ -11,6 +11,7 @@
 #include <ftxui/dom/elements.hpp>
 #include <tracy/Tracy.hpp>
 
+#include "fl/events/beat_bus.hpp"
 #include "fl/fwd.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/logging.hpp"
@@ -41,11 +42,14 @@ public:
   std::deque<fl::primitives::AccountData> accounts_;
   std::shared_ptr<fl::widgets::FancyLog> fancy_log_;
   std::unique_ptr<fl::primitives::FancyLogSink> fancy_log_sink_;
+  fl::events::BeatBus beat_bus_;
 
   void _create_initial_accounts();
   GrandCentral(uint8_t num_accounts, uint8_t num_parties_per_account,
                uint8_t num_members_per_party);
   ftxui::Component root_component();
+  void innervate_event_system();
+
   fl::context::AccountCtx account_context(std::size_t idx);
   fl::context::AccountCtx account_context(fl::primitives::AccountData &account);
 

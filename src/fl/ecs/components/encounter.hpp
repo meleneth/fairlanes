@@ -18,7 +18,7 @@ struct Encounter {
   bool has_alive_enemies();
   bool is_over();
   void finalize();
-
+  void innervate_event_system();
   fl::events::BattleBus battle_bus_;
   fl::events::TimedEventQueue timed_events_;
   fl::events::ReadyQueue ready_queue_;

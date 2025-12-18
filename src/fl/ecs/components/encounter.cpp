@@ -17,6 +17,8 @@ void install_encounter_hooks(entt::registry &reg) {
   reg.on_destroy<Encounter>().connect<&on_encounter_destroy>();
 }
 
+void Encounter::innervate_event_system() {}
+
 void Encounter::finalize() {
   /* for (auto e_cleanup : e_to_cleanup_) {
       ctx_.reg_.destroy(e_cleanup);

@@ -159,18 +159,65 @@ void GrandCentral::main_loop() {
   });
 
   std::thread update_ticker([&] {
+    using clock = std::chrono::steady_clock;
     using namespace std::chrono_literals;
-    while (running) {
-      {
-        ZoneScopedN("GameTick");
-        std::scoped_lock lock(frame_mutex);
+
+    constexpr auto fixed_dt = 16ms; // 60 Hz
+    constexpr auto max_frame_dt =
+        250ms; // clamp huge stalls (debugger, tab out)
+    constexpr int max_catchup_steps = 8; // avoid spiral-of-death
+
+    auto last = clock::now();
+    std::chrono::nanoseconds accumulator{0};
+    std::uint64_t beat_index = 0;
+
+    while (running.load(std::memory_order_relaxed)) {
+      ZoneScopedN("UpdateTicker");
+
+      const auto now = clock::now();
+      auto frame_dt =
+          std::chrono::duration_cast<std::chrono::nanoseconds>(now - last);
+      last = now;
+
+      // Clamp giant dt spikes so we don't try to "simulate the weekend"
+      if (frame_dt > max_frame_dt)
+        frame_dt = max_frame_dt;
+
+      accumulator += frame_dt;
+
+      int steps = 0;
+      while (accumulator >= fixed_dt && steps < max_catchup_steps) {
+        {
+          ZoneScopedN("GameTick");
+
+          // Keep lock scope tight: only protect whatever truly needs it.
+          std::scoped_lock lock(frame_mutex);
+
+          fl::events::Beat beat{
+              .now = now, // you can also use clock::now() here if you want
+                          // per-step "now"
+              .dt = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                  fixed_dt),
+              .index = beat_index++,
+          };
+
+          beat_bus_(beat); // broadcast to listeners
+        }
+
+        accumulator -= fixed_dt;
+        ++steps;
       }
 
-      // TODO 16
-      // ZoneScopedN("GameTick");
-      //      std::this_thread::sleep_for(16ms);
+      // If we hit the catch-up cap, drop remaining accumulated time.
+      // This keeps the sim responsive under load instead of falling behind
+      // forever.
+      if (steps == max_catchup_steps) {
+        accumulator = 0ns;
+      }
 
-      std::this_thread::sleep_for(250ms);
+      // Sleep a bit to avoid burning a core. The fixed step loop handles
+      // pacing.
+      std::this_thread::sleep_for(1ms);
     }
   });
 
@@ -179,5 +226,7 @@ void GrandCentral::main_loop() {
   render_ticker.join();
   update_ticker.join();
 }
+
+void GrandCentral::innervate_event_system() {}
 
 } // namespace fl
