@@ -240,7 +240,9 @@ GIT_PROGRESS true
 )
 
 FetchContent_MakeAvailable(tracy)
-
+if (MINGW)
+  target_compile_definitions(TracyClient PRIVATE TRACY_NO_SYSTEM_TRACING)
+endif()
 include(CTest)       # or: enable CTest integration
 enable_testing()     # actually turn on test support
 
