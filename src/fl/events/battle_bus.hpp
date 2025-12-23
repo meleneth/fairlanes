@@ -57,9 +57,9 @@ using BattleDispatcher =
 class BattleBus {
 public:
   using Listener = std::function<void(const BattleEvent &)>;
-
+  using Handle = BattleDispatcher::Handle;
   // Listener mgmt
-  void add_listener(BattleEventId id, Listener listener);
+  [[nodiscard]] Handle add_listener(BattleEventId id, Listener listener);
 
   // Emit
   void emit(const BattleEvent &ev);

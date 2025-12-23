@@ -1,7 +1,6 @@
 // timed_event_queue.test.cpp
 #include <catch2/catch_test_macros.hpp>
 
-#include <chrono>
 #include <vector>
 
 #include "fl/events/timed_event_queue.hpp"

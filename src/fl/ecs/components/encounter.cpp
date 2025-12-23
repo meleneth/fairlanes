@@ -1,10 +1,6 @@
 #include "encounter.hpp"
-#include "fl/ecs/components/is_party.hpp"
-#include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
-#include "fl/primitives/random_hub.hpp"
-#include "fl/primitives/team.hpp"
-#include "fl/widgets/fancy_log.hpp"
+#include "fl/events/beat_bus.hpp"
 
 namespace fl::ecs::components {
 
@@ -17,7 +13,20 @@ void install_encounter_hooks(entt::registry &reg) {
   reg.on_destroy<Encounter>().connect<&on_encounter_destroy>();
 }
 
-void Encounter::innervate_event_system() {}
+void Encounter::innervate_event_system(fl::events::BeatBus &beat_bus) {
+  // Upstream: global heartbeat drives battle bus.
+  // Incorrect. PARTY subscribes to heart beat
+  /*
+    beat_tick_handle_ = beat_bus.add_listener(
+        fl::events::BeatEventId::Beat, [this](const fl::events::BeatEvent &ev) {
+          const auto &beat = std::get<fl::events::BeatPulse>(ev.data).beat;
+
+          battle_bus_.tick(beat.dt);
+          timed_events_.advance(beat.dt);
+        });
+        */
+  (void)beat_bus;
+}
 
 void Encounter::finalize() {
   /* for (auto e_cleanup : e_to_cleanup_) {

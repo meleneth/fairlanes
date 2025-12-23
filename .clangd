@@ -1,0 +1,4 @@
+CompileFlags:
+  Remove:
+    - -ftrack-macro-expansion=0
+    - -fno-diagnostics-show-caret

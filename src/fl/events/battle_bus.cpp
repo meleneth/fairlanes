@@ -24,8 +24,10 @@ BattleEvent BattleEvent::make_end(entt::entity encounter,
   return ev;
 }
 
-void BattleBus::add_listener(BattleEventId id, Listener listener) {
-  dispatcher_.appendListener(id, std::move(listener));
+BattleDispatcher::Handle BattleBus::add_listener(BattleEventId id,
+                                                 Listener listener) {
+  auto handle = dispatcher_.appendListener(id, std::move(listener));
+  return handle;
 }
 
 void BattleBus::emit(const BattleEvent &ev) { dispatcher_.dispatch(ev.id, ev); }

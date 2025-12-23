@@ -201,7 +201,7 @@ void GrandCentral::main_loop() {
               .index = beat_index++,
           };
 
-          beat_bus_(beat); // broadcast to listeners
+          beat_bus_.beat(beat); // broadcast to listeners
         }
 
         accumulator -= fixed_dt;
