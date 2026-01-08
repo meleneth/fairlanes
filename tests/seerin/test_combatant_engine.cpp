@@ -34,7 +34,8 @@ template <typename T> static bool saw(const std::vector<OutputEvent> &evs) {
 }
 } // namespace
 
-TEST_CASE("Charging -> Ready on beats emits BecameReady and StateChanged",
+TEST_CASE("[CombatantEngine] Charging -> Ready on beats emits BecameReady and "
+          "StateChanged",
           "[seerin][atb]") {
   seerin::Bus<Event> in;
   seerin::Bus<OutputEvent> out;
@@ -63,7 +64,8 @@ TEST_CASE("Charging -> Ready on beats emits BecameReady and StateChanged",
   REQUIRE(saw<StateChanged>(rec.events));
 }
 
-TEST_CASE("Ready + CommandSelected -> Acting, Beat finishes -> Charging and "
+TEST_CASE("[CombatantEngine] Ready + CommandSelected -> Acting, Beat finishes "
+          "-> Charging and "
           "emits ActionFinished",
           "[seerin][atb]") {
   seerin::Bus<Event> in;
@@ -92,8 +94,9 @@ TEST_CASE("Ready + CommandSelected -> Acting, Beat finishes -> Charging and "
   REQUIRE(saw<ActionFinished>(rec.events));
 }
 
-TEST_CASE("Stun pauses progress and returns to correct base state",
-          "[seerin][atb]") {
+TEST_CASE(
+    "[CombatantEngine] Stun pauses progress and returns to correct base state",
+    "[seerin][atb]") {
   seerin::Bus<Event> in;
   seerin::Bus<OutputEvent> out;
 
@@ -124,7 +127,8 @@ TEST_CASE("Stun pauses progress and returns to correct base state",
   REQUIRE(eng.is_acting());
 }
 
-TEST_CASE("Killed -> Dead ignores beats; Revived returns Charging or Ready",
+TEST_CASE("[CombatantEngine] Killed -> Dead ignores beats; Revived returns "
+          "Charging or Ready",
           "[seerin][atb]") {
   seerin::Bus<Event> in;
   seerin::Bus<OutputEvent> out;

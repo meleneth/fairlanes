@@ -128,11 +128,11 @@ struct CombatantFsmDef {
 
         // Charging: Beat either fills -> Ready, else stay Charging
         *state<Charging> + event<Beat>[charge_will_fill] / (charge_to_full, emit_state(StateTag::Charging, StateTag::Ready)) = state<Ready>,
-        state<Charging> + event<Beat>                    / charge_tick = state<Charging>,
+        state<Charging>  + event<Beat>                   / charge_tick = state<Charging>,
 
         // Ready: command chosen -> Acting or instant -> Charging
         state<Ready> + event<CommandSelected>[is_instant] / (instant_action, emit_state(StateTag::Ready, StateTag::Charging)) = state<Charging>,
-        state<Ready> + event<CommandSelected>             / (start_action, emit_state(StateTag::Ready, StateTag::Acting)) = state<Acting>,
+        state<Ready> + event<CommandSelected>             / (start_action, emit_state(StateTag::Ready, StateTag::Acting))     = state<Acting>,
 
         // Acting: Beat either finishes -> Charging, else keep Acting
         state<Acting> + event<Beat>[action_will_finish] / (finish_action, emit_state(StateTag::Acting, StateTag::Charging)) = state<Charging>,
@@ -140,30 +140,30 @@ struct CombatantFsmDef {
 
         // Stun transitions (mirror states)
         state<Charging> + event<StunApplied> / (apply_stun, emit_state(StateTag::Charging, StateTag::ChargingStunned)) = state<ChargingStunned>,
-        state<Ready> + event<StunApplied>    / (apply_stun, emit_state(StateTag::Ready, StateTag::ReadyStunned)) = state<ReadyStunned>,
-        state<Acting> + event<StunApplied>   / (apply_stun, emit_state(StateTag::Acting, StateTag::ActingStunned)) = state<ActingStunned>,
+        state<Ready>    + event<StunApplied> / (apply_stun, emit_state(StateTag::Ready,    StateTag::ReadyStunned))    = state<ReadyStunned>,
+        state<Acting>   + event<StunApplied> / (apply_stun, emit_state(StateTag::Acting,   StateTag::ActingStunned))   = state<ActingStunned>,
 
         state<ChargingStunned> + event<Beat>[stun_will_end] / (stun_tick, emit_state(StateTag::ChargingStunned, StateTag::Charging)) = state<Charging>,
-        state<ChargingStunned> + event<Beat>                / stun_tick = state<ChargingStunned>,
+        state<ChargingStunned> + event<Beat>                / stun_tick                                                                       = state<ChargingStunned>,
 
         state<ReadyStunned> + event<Beat>[stun_will_end] / (stun_tick, emit_state(StateTag::ReadyStunned, StateTag::Ready)) = state<Ready>,
-        state<ReadyStunned> + event<Beat>                / stun_tick = state<ReadyStunned>,
+        state<ReadyStunned> + event<Beat>                / stun_tick                                                                 = state<ReadyStunned>,
 
         state<ActingStunned> + event<Beat>[stun_will_end] / (stun_tick, emit_state(StateTag::ActingStunned, StateTag::Acting)) = state<Acting>,
-        state<ActingStunned> + event<Beat> / stun_tick = state<ActingStunned>,
+        state<ActingStunned> + event<Beat>                / stun_tick                                                                   = state<ActingStunned>,
         
         // Kill from any live state
-        state<Charging> + event<Killed> / (kill, emit_state(StateTag::Charging, StateTag::Dead)) = state<Dead>,
-        state<Ready> + event<Killed> / (kill, emit_state(StateTag::Ready, StateTag::Dead)) = state<Dead>,
-        state<Acting> + event<Killed> / (kill, emit_state(StateTag::Acting, StateTag::Dead)) = state<Dead>,
+        state<Charging>        + event<Killed> / (kill, emit_state(StateTag::Charging, StateTag::Dead))        = state<Dead>,
+        state<Ready>           + event<Killed> / (kill, emit_state(StateTag::Ready, StateTag::Dead))           = state<Dead>,
+        state<Acting>          + event<Killed> / (kill, emit_state(StateTag::Acting, StateTag::Dead))          = state<Dead>,
         state<ChargingStunned> + event<Killed> / (kill, emit_state(StateTag::ChargingStunned, StateTag::Dead)) = state<Dead>,
-        state<ReadyStunned> + event<Killed> / (kill, emit_state(StateTag::ReadyStunned, StateTag::Dead)) = state<Dead>,
-        state<ActingStunned> + event<Killed> / (kill, emit_state(StateTag::ActingStunned, StateTag::Dead)) = state<Dead>,
+        state<ReadyStunned>    + event<Killed> / (kill, emit_state(StateTag::ReadyStunned, StateTag::Dead))    = state<Dead>,
+        state<ActingStunned>   + event<Killed> / (kill, emit_state(StateTag::ActingStunned, StateTag::Dead))   = state<Dead>,
 
         // Dead ignores Beat/Command/Stun (no transitions needed), but can be
         // Revived
         state<Dead> + event<Revived>[revive_full] / (revive, emit_ready, emit_state(StateTag::Dead, StateTag::Ready)) = state<Ready>,
-        state<Dead> + event<Revived> / (revive, emit_state(StateTag::Dead, StateTag::Charging)) = state<Charging>
+        state<Dead> + event<Revived>              / (revive, emit_state(StateTag::Dead, StateTag::Charging))          = state<Charging>
       );
     // clang-format on
   }
