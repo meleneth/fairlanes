@@ -16,7 +16,7 @@ target_precompile_headers(fairlanes_tests PRIVATE
   <catch2/matchers/catch_matchers_floating_point.hpp>
 )
 
-target_link_libraries(fairlanes_tests PRIVATE fl)
+target_link_libraries(fairlanes_tests PRIVATE fl sr) 
 
 # Link test binary with main code + test framework
 target_link_libraries(fairlanes_tests

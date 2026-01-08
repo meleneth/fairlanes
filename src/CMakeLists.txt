@@ -8,10 +8,11 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 endif()
 
 add_subdirectory(fl)
+add_subdirectory(sr)
 
 add_executable(fairlanes fairlanes.cpp)
 
-target_link_libraries(fairlanes PRIVATE fl)
+target_link_libraries(fairlanes PRIVATE fl sr)
 
 target_include_directories(fairlanes PRIVATE
   ${entt_SOURCE_DIR}/single_include

@@ -160,73 +160,75 @@ void GrandCentral::main_loop() {
 
   std::thread update_ticker([&] {
     using clock = std::chrono::steady_clock;
-    using namespace std::chrono_literals;
 
-    constexpr auto fixed_dt = 16ms; // 60 Hz
-    constexpr auto max_frame_dt =
-        250ms; // clamp huge stalls (debugger, tab out)
-    constexpr int max_catchup_steps = 8; // avoid spiral-of-death
+    // 12 Hz fixed step (exact as duration<double>, converted once)
+    const auto fixed_dt = std::chrono::duration_cast<clock::duration>(
+        std::chrono::duration<double>(1.0 / 12.0));
+
+    const auto max_frame_dt = std::chrono::milliseconds(250);
+    constexpr int max_catchup_steps = 8;
 
     auto last = clock::now();
-    std::chrono::nanoseconds accumulator{0};
+    auto sim_time = last;             // authoritative "step time"
+    auto next_tick = last + fixed_dt; // for sleep_until pacing
+    clock::duration accumulator{0};
+
     std::uint64_t beat_index = 0;
 
     while (running.load(std::memory_order_relaxed)) {
       ZoneScopedN("UpdateTicker");
 
       const auto now = clock::now();
-      auto frame_dt =
-          std::chrono::duration_cast<std::chrono::nanoseconds>(now - last);
+      auto frame_dt = now - last;
       last = now;
 
-      // Clamp giant dt spikes so we don't try to "simulate the weekend"
       if (frame_dt > max_frame_dt)
         frame_dt = max_frame_dt;
-
       accumulator += frame_dt;
 
       int steps = 0;
       while (accumulator >= fixed_dt && steps < max_catchup_steps) {
+        ZoneScopedN("GameTick");
+
+        sim_time += fixed_dt; // advance deterministic sim clock
+
+        fl::events::Beat beat{
+            .now = sim_time,
+            .dt =
+                std::chrono::duration_cast<std::chrono::nanoseconds>(fixed_dt),
+            .index = beat_index++,
+        };
+
         {
-          ZoneScopedN("GameTick");
-
-          // Keep lock scope tight: only protect whatever truly needs it.
+          // Ideally: do NOT hold a mutex while calling listeners,
+          // but if you must, keep it tiny.
           std::scoped_lock lock(frame_mutex);
-
-          fl::events::Beat beat{
-              .now = now, // you can also use clock::now() here if you want
-                          // per-step "now"
-              .dt = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                  fixed_dt),
-              .index = beat_index++,
-          };
-
-          beat_bus_.beat(beat); // broadcast to listeners
+          beat_bus_.beat(beat);
         }
 
         accumulator -= fixed_dt;
         ++steps;
+        next_tick = sim_time + fixed_dt;
       }
 
-      // If we hit the catch-up cap, drop remaining accumulated time.
-      // This keeps the sim responsive under load instead of falling behind
-      // forever.
       if (steps == max_catchup_steps) {
-        accumulator = 0ns;
+        // drop time to stay responsive
+        accumulator = clock::duration{0};
+        next_tick = clock::now() + fixed_dt;
       }
 
-      // Sleep a bit to avoid burning a core. The fixed step loop handles
-      // pacing.
-      std::this_thread::sleep_for(1ms);
+      // Pace: sleep until the next tick boundary (much saner than
+      // sleep_for(1ms))
+      const auto sleep_target = next_tick;
+      if (sleep_target > clock::now()) {
+        std::this_thread::sleep_until(sleep_target);
+      } else {
+        // we're behind; yield so we don't pin a core
+        std::this_thread::yield();
+      }
     }
   });
-
-  screen.Loop(ui);
-  running = false;
-  render_ticker.join();
-  update_ticker.join();
 }
-
 void GrandCentral::innervate_event_system() {}
 
 } // namespace fl
