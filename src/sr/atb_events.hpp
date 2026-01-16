@@ -1,53 +1,24 @@
 #pragma once
-// atb_events.hpp
-
-#include <chrono>
-#include <cstdint>
 #include <variant>
 
-namespace seerin::atb {
+namespace seerin {
 
-using ns = std::chrono::nanoseconds;
-
-struct Beat {
-  ns dt{0};
+// InBus events (external)
+struct Beat {}; // payload-free: one beat happened
+struct AddCombatant {
+  int id;
 };
 
-struct CommandSelected {
-  ns action_time{0};
-};
-struct StunApplied {
-  ns duration{0};
-};
-struct Killed {};
-struct Revived {
-  std::int64_t initial_charge_units{0};
+using AtbInEvent = std::variant<Beat, AddCombatant>;
+
+// OutBus events (observable)
+struct BecameReady {
+  int id;
 };
 
-using Event = std::variant<Beat, CommandSelected, StunApplied, Killed, Revived>;
+using AtbOutEvent = std::variant<BecameReady>;
 
-// Output domain (also id-less)
-enum class StateTag : std::uint8_t {
-  Charging,
-  Ready,
-  Acting,
-  ChargingStunned,
-  ReadyStunned,
-  ActingStunned,
-  Dead,
-};
+// FSM-only event (internal fact)
+struct BeatTick {}; // one ATB tick for a combatant FSM
 
-struct BecameReady {};
-struct ActionStarted {
-  ns action_time{0};
-};
-struct ActionFinished {};
-struct StateChanged {
-  StateTag from;
-  StateTag to;
-};
-
-using OutputEvent =
-    std::variant<BecameReady, ActionStarted, ActionFinished, StateChanged>;
-
-} // namespace seerin::atb
+} // namespace seerin

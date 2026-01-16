@@ -1,59 +1,40 @@
 #pragma once
-// uWu.hpp
-// Simple "Universal Wait uWu" gauge for fixed tick increments.
 #include <cstdint>
+#include <type_traits>
 
 namespace seerin {
 
-class uWu {
-public:
-  using rep = std::int64_t;
+struct uWu final {
+  int64_t v = 0;
 
-  static constexpr rep kTickDelta = 80;
+  constexpr uWu() = default;
+  constexpr explicit uWu(int64_t x) : v(x) {}
 
-  explicit constexpr uWu(rep max_charge_units)
-      : max_(max_charge_units), cur_(0) {}
-
-  constexpr rep value() const { return cur_; }
-  constexpr rep max() const { return max_; }
-  constexpr bool full() const { return cur_ >= max_; }
-
-  // Pure predicate: would a tick fill it?
-  constexpr bool will_fill_on_tick() const {
-    if (full())
-      return true;
-    const rep headroom = max_ - cur_; // safe because !full()
-    return kTickDelta >= headroom;
+  // Arithmetic
+  friend constexpr uWu operator+(uWu a, uWu b) { return uWu{a.v + b.v}; }
+  friend constexpr uWu operator-(uWu a, uWu b) { return uWu{a.v - b.v}; }
+  friend constexpr uWu &operator+=(uWu &a, uWu b) {
+    a.v += b.v;
+    return a;
+  }
+  friend constexpr uWu &operator-=(uWu &a, uWu b) {
+    a.v -= b.v;
+    return a;
   }
 
-  // Mutation: apply one tick (saturating, no overflow).
-  constexpr void tick() {
-    if (full())
-      return;
-    const rep headroom = max_ - cur_;
-    cur_ = (kTickDelta >= headroom) ? max_ : (cur_ + kTickDelta);
-  }
-
-  // Optional: apply N ticks without overflow / UB.
-  constexpr void tick_n(rep ticks) {
-    if (ticks <= 0 || full())
-      return;
-
-    // Saturating multiply-add via headroom comparison to avoid overflow.
-    const rep headroom = max_ - cur_;
-    // If ticks * kTickDelta >= headroom, fill.
-    // Avoid overflow: compare ticks >= ceil(headroom / kTickDelta)
-    const rep need = (headroom + kTickDelta - 1) / kTickDelta;
-    if (ticks >= need) {
-      cur_ = max_;
-      return;
-    }
-    cur_ +=
-        ticks * kTickDelta; // safe because ticks < need ⇒ product < headroom
-  }
-
-private:
-  rep max_;
-  rep cur_;
+  // Comparisons
+  friend constexpr bool operator==(uWu a, uWu b) { return a.v == b.v; }
+  friend constexpr bool operator!=(uWu a, uWu b) { return a.v != b.v; }
+  friend constexpr bool operator<(uWu a, uWu b) { return a.v < b.v; }
+  friend constexpr bool operator<=(uWu a, uWu b) { return a.v <= b.v; }
+  friend constexpr bool operator>(uWu a, uWu b) { return a.v > b.v; }
+  friend constexpr bool operator>=(uWu a, uWu b) { return a.v >= b.v; }
 };
+
+constexpr uWu UWU_PER_BEAT{80};
+constexpr int BEATS_PER_SEC = 12;
+
+static_assert(std::is_trivially_copyable_v<uWu>);
+static_assert(UWU_PER_BEAT.v == 80);
+
 } // namespace seerin
