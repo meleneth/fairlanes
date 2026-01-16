@@ -8,7 +8,8 @@
 #include "fl/primitives/encounter_builder.hpp"
 #include "fl/primitives/random_hub.hpp"
 
-TEST_CASE("Encounter innervate wires BattleBus::Tick into TimedEventQueue",
+TEST_CASE("Encounter:: Encounter innervate wires BattleBus::Tick into "
+          "TimedEventQueue",
           "[encounter][wiring]") {
   fl::GrandCentral gc{1, 1, 3};
   auto account_ctx = gc.account_context(0);
@@ -46,7 +47,7 @@ TEST_CASE("Encounter innervate wires BattleBus::Tick into TimedEventQueue",
 }
 /*
 
-TEST_CASE("Encounter emits battle events on its battle bus",
+TEST_CASE("Encounter:: Encounter emits battle events on its battle bus",
           "[encounter][bus]") {
   fl::GrandCentral gc{1, 1, 3};
 

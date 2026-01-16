@@ -13,6 +13,11 @@ target_include_directories(fl
         ${PROJECT_SOURCE_DIR}/src
 )
 
+target_compile_definitions(fl
+  PUBLIC
+    FL_ENABLE_ASSERTS=$<BOOL:${FL_ENABLE_ASSERTS}>
+)
+
 # Link FTXUI (required by battle_screen.cpp)
 target_link_libraries(fl
 PUBLIC

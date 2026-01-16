@@ -10,6 +10,7 @@
 #include <ftxui/dom/elements.hpp>
 #include <tracy/Tracy.hpp>
 
+#include "fl/assert.hpp"
 #include "fl/context.hpp"
 #include "fl/ecs/components/is_party.hpp"
 #include "fl/monsters/register_monsters.hpp"
@@ -158,77 +159,58 @@ void GrandCentral::main_loop() {
     }
   });
 
-  std::thread update_ticker([&] {
+  std::jthread update_ticker([&](std::stop_token st) {
     using clock = std::chrono::steady_clock;
 
-    // 12 Hz fixed step (exact as duration<double>, converted once)
-    const auto fixed_dt = std::chrono::duration_cast<clock::duration>(
+    constexpr auto kFrameDt = std::chrono::duration_cast<clock::duration>(
         std::chrono::duration<double>(1.0 / 12.0));
 
-    const auto max_frame_dt = std::chrono::milliseconds(250);
-    constexpr int max_catchup_steps = 8;
+    constexpr auto kOverrunBudget = std::chrono::milliseconds(5);
 
-    auto last = clock::now();
-    auto sim_time = last;             // authoritative "step time"
-    auto next_tick = last + fixed_dt; // for sleep_until pacing
-    clock::duration accumulator{0};
+    auto next_tick = clock::now();
+    auto sim_time = next_tick;
 
     std::uint64_t beat_index = 0;
 
-    while (running.load(std::memory_order_relaxed)) {
-      ZoneScopedN("UpdateTicker");
+    while (!st.stop_requested() && running.load(std::memory_order_relaxed)) {
+
+      ZoneScopedN("FrameTick");
 
       const auto now = clock::now();
-      auto frame_dt = now - last;
-      last = now;
 
-      if (frame_dt > max_frame_dt)
-        frame_dt = max_frame_dt;
-      accumulator += frame_dt;
+      // ---- Budget enforcement ----
+      if (now > next_tick + kOverrunBudget) {
+        const auto over = now - next_tick;
+        const auto over_us =
+            std::chrono::duration_cast<std::chrono::microseconds>(over).count();
 
-      int steps = 0;
-      while (accumulator >= fixed_dt && steps < max_catchup_steps) {
-        ZoneScopedN("GameTick");
-
-        sim_time += fixed_dt; // advance deterministic sim clock
-
-        fl::events::Beat beat{
-            .now = sim_time,
-            .dt =
-                std::chrono::duration_cast<std::chrono::nanoseconds>(fixed_dt),
-            .index = beat_index++,
-        };
-
-        {
-          // Ideally: do NOT hold a mutex while calling listeners,
-          // but if you must, keep it tiny.
-          std::scoped_lock lock(frame_mutex);
-          beat_bus_.beat(beat);
-        }
-
-        accumulator -= fixed_dt;
-        ++steps;
-        next_tick = sim_time + fixed_dt;
+        fl::assert_fmt(false, std::source_location::current(),
+                       FMT_STRING("Frame tick over bdget by {} us"), over_us);
       }
 
-      if (steps == max_catchup_steps) {
-        // drop time to stay responsive
-        accumulator = clock::duration{0};
-        next_tick = clock::now() + fixed_dt;
+      // ---- Advance authoritative sim time ----
+      sim_time += kFrameDt;
+
+      fl::events::Beat beat{
+          .now = sim_time,
+          .dt = std::chrono::duration_cast<std::chrono::nanoseconds>(kFrameDt),
+          .index = beat_index++,
+      };
+
+      {
+        std::scoped_lock lock(frame_mutex);
+        beat_bus_.beat(beat);
       }
 
-      // Pace: sleep until the next tick boundary (much saner than
-      // sleep_for(1ms))
-      const auto sleep_target = next_tick;
-      if (sleep_target > clock::now()) {
-        std::this_thread::sleep_until(sleep_target);
-      } else {
-        // we're behind; yield so we don't pin a core
-        std::this_thread::yield();
-      }
+      // ---- Schedule next tick ----
+      next_tick += kFrameDt;
+
+      // ---- Pace ----
+      std::this_thread::sleep_until(next_tick);
     }
   });
 }
+
 void GrandCentral::innervate_event_system() {}
 
 } // namespace fl

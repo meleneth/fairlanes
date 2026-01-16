@@ -22,6 +22,12 @@ target_include_directories(fairlanes
     ${eventpp_SOURCE_DIR}/include
 )
 
+target_compile_definitions(fairlanes
+  PUBLIC
+    FL_ENABLE_ASSERTS=$<BOOL:${FL_ENABLE_ASSERTS}>
+)
+
+
 target_link_libraries(fairlanes PRIVATE
   pcg-cpp
   ftxui::screen

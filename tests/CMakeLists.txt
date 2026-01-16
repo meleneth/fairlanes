@@ -18,6 +18,11 @@ target_precompile_headers(fairlanes_tests PRIVATE
 
 target_link_libraries(fairlanes_tests PRIVATE fl sr) 
 
+target_compile_definitions(fairlanes_tests
+  PUBLIC
+    FL_ENABLE_ASSERTS=$<BOOL:${FL_ENABLE_ASSERTS}>
+)
+
 # Link test binary with main code + test framework
 target_link_libraries(fairlanes_tests
   PRIVATE

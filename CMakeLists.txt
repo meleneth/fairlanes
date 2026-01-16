@@ -28,6 +28,20 @@ elseif (MSVC)
   set(BIGOBJ_FLAG "/bigobj")
 endif()
 
+option(FL_ENABLE_ASSERTS "Enable runtime asserts" ON)
+
+# Default behavior:
+# - Debug / RelWithDebInfo: ON
+# - Release: OFF
+if(NOT DEFINED FL_ENABLE_ASSERTS)
+  if(CMAKE_BUILD_TYPE MATCHES "Debug|RelWithDebInfo")
+    set(FL_ENABLE_ASSERTS ON)
+  else()
+    set(FL_ENABLE_ASSERTS OFF)
+  endif()
+endif()
+
+
 include(cmake/CPM.cmake)
 
 CPMAddPackage("gh:catchorg/Catch2@3.5.2")
