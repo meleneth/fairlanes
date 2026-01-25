@@ -1,6 +1,7 @@
 #include "is_party.hpp"
 #include "fl/context.hpp"
 #include "fl/ecs/components/encounter.hpp"
+#include "fl/ecs/components/is_account.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/fsm/party_loop.hpp"
@@ -46,5 +47,15 @@ bool IsParty::in_combat() {
    */
   return true;
 }
+void IsParty::add_party_member(entt::entity member) {
+  auto &account = ctx_.reg().get<fl::ecs::components::IsAccount>(account_);
+
+  account.log_->append_markup(
+      "[cyan](IsParty) adding member ID " +
+      std::to_string(
+          static_cast<std::underlying_type_t<entt::entity>>(member)) +
+      " to party [party_name](" + name_ + ")");
+  party_members_.push_back(member);
+};
 
 } // namespace fl::ecs::components

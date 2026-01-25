@@ -27,6 +27,8 @@ struct IsParty {
   bool needs_town();
   bool in_combat();
 
+  void add_party_member(entt::entity member);
+
   // Call `fn(entt::handle)` for each member of this party
   template <typename PM = PartyMember, typename Fn>
   inline void for_each_member(Fn &&fn) {

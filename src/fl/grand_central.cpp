@@ -12,6 +12,7 @@
 
 #include "fl/assert.hpp"
 #include "fl/context.hpp"
+#include "fl/ecs/components/is_account.hpp"
 #include "fl/ecs/components/is_party.hpp"
 #include "fl/monsters/register_monsters.hpp"
 #include "fl/primitives/account_data.hpp"
@@ -48,6 +49,9 @@ void GrandCentral::_create_initial_accounts() {
         std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
             account_data.account_id_)) +
         ")");
+    reg_.emplace<fl::ecs::components::IsAccount>(account_data.account_id_,
+                                                 account_data.account_id_,
+                                                 account_data.log_.get());
 
     for (std::size_t p = 0; p < num_parties_per_account_; ++p) {
 
@@ -72,8 +76,7 @@ void GrandCentral::_create_initial_accounts() {
 
         auto &is_party =
             reg_.get<fl::ecs::components::IsParty>(party_data.party_id_);
-
-        is_party.party_members_.push_back(member.member_id_);
+        is_party.add_party_member(member.member_id_);
 
         logger_.info(
             "[blue](Player initialized with ID " +
