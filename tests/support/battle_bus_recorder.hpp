@@ -3,7 +3,6 @@
 #include <chrono>
 #include <vector>
 
-
 #include "fl/events/battle_bus.hpp" // adjust include path
 
 namespace fl::test_support {
@@ -17,12 +16,15 @@ class BattleBusRecorder {
 public:
   void attach(fl::events::BattleBus &bus) {
     // Record every event id we care about.
-    bus.add_listener(fl::events::BattleEventId::StartCombat,
-                     [this](const fl::events::BattleEvent &ev) { record(ev); });
-    bus.add_listener(fl::events::BattleEventId::Tick,
-                     [this](const fl::events::BattleEvent &ev) { record(ev); });
-    bus.add_listener(fl::events::BattleEventId::EndCombat,
-                     [this](const fl::events::BattleEvent &ev) { record(ev); });
+    (void)bus.add_listener(
+        fl::events::BattleEventId::StartCombat,
+        [this](const fl::events::BattleEvent &ev) { record(ev); });
+    (void)bus.add_listener(
+        fl::events::BattleEventId::Tick,
+        [this](const fl::events::BattleEvent &ev) { record(ev); });
+    (void)bus.add_listener(
+        fl::events::BattleEventId::EndCombat,
+        [this](const fl::events::BattleEvent &ev) { record(ev); });
   }
 
   void clear() { events_.clear(); }
