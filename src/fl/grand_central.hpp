@@ -17,7 +17,6 @@
 #include "fl/primitives/logging.hpp"
 #include "fl/primitives/random_hub.hpp"
 
-
 /*#include "fl/context.hpp"
 #include "fl/monsters/register_monsters.hpp"
 #include "fl/primitives/fancy_log_sink.hpp"
@@ -40,21 +39,26 @@ public:
   fl::primitives::Logger logger_;
   std::mutex frame_mutex;
   std::deque<fl::primitives::AccountData> accounts_;
-  std::shared_ptr<fl::widgets::FancyLog> fancy_log_;
+  std::unique_ptr<fl::widgets::FancyLog> fancy_log_;
   std::unique_ptr<fl::primitives::FancyLogSink> fancy_log_sink_;
   fl::events::BeatBus beat_bus_;
+  ftxui::Component log_wall_;
 
   void _create_initial_accounts();
   GrandCentral(uint8_t num_accounts, uint8_t num_parties_per_account,
                uint8_t num_members_per_party);
+  ~GrandCentral();
   ftxui::Component root_component();
   void innervate_event_system();
 
   fl::context::AccountCtx account_context(std::size_t idx);
   fl::context::AccountCtx account_context(fl::primitives::AccountData &account);
 
-  void bootstrap_logs();
   void main_loop();
+
+private:
+  void bootstrap_logs();
+  void build_ui();
 };
 
 } // namespace fl

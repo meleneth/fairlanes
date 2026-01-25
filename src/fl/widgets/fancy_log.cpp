@@ -46,7 +46,6 @@ FancyLog::FancyLog(Options opt) : opts(opt) {
                {"hint", dim},
                {"black", on_not_black(16, 18, 28)}};
 }
-
 // ---- append ---------------------------------------------------------------
 
 void FancyLog::append_markup(std::string_view utf8_line) {

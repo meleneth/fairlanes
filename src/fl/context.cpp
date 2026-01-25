@@ -63,7 +63,6 @@ EntityCtx AccountCtx::entity_context(entt::entity ent) const {
 }
 
 PartyCtx &PartyCtx::operator=(const PartyCtx &rhs) {
-  // references are intentionally NOT reassigned
   party_data_ = rhs.party_data_;
   return *this;
 }

@@ -23,6 +23,7 @@
 #include "fl/primitives/party_names.hpp"
 #include "fl/primitives/random_hub.hpp"
 #include "fl/widgets/fancy_log.hpp"
+#include "fl/widgets/log_wall.hpp"
 
 namespace fl {
 
@@ -92,15 +93,19 @@ GrandCentral::GrandCentral(uint8_t num_accounts,
     : num_accounts_(num_accounts),
       num_parties_per_account_(num_parties_per_account),
       num_members_per_party_(num_members_per_party), reg_(), rng_(), log_bus_(),
-      logger_{log_bus_}, fancy_log_(std::make_shared<fl::widgets::FancyLog>()),
+      logger_{log_bus_}, fancy_log_(std::make_unique<fl::widgets::FancyLog>()),
       fancy_log_sink_(std::make_unique<fl::primitives::FancyLogSink>(
           log_bus_, *fancy_log_, fl::primitives::LogLevel::trace)) {
   fl::monster::register_all_monsters();
   _create_initial_accounts();
+  bootstrap_logs();
+  build_ui();
 }
 
+GrandCentral::~GrandCentral() { fancy_log_sink_.reset(); }
+
 // Convenience accessor if you want the root FTXUI component:
-ftxui::Component GrandCentral::root_component() { return fancy_log_; }
+ftxui::Component GrandCentral::root_component() { return log_wall_; }
 
 fl::context::AccountCtx GrandCentral::account_context(std::size_t idx) {
   return fl::context::AccountCtx{reg_, rng_, accounts_.at(idx)};
@@ -109,12 +114,6 @@ fl::context::AccountCtx GrandCentral::account_context(std::size_t idx) {
 fl::context::AccountCtx
 GrandCentral::account_context(fl::primitives::AccountData &account) {
   return fl::context::AccountCtx{reg_, rng_, account};
-}
-// Little helper to show logs are working
-void GrandCentral::bootstrap_logs() {
-  logger_.info("[player_name](GrandCentral) online.");
-  logger_.debug("Debug: registry currently empty.");
-  logger_.warn("No encounters loaded yet.");
 }
 
 void GrandCentral::main_loop() {
@@ -130,7 +129,9 @@ void GrandCentral::main_loop() {
     // float dt = std::chrono::duration<float>(now - last).count();
     last = now;
 
+    ZoneScopedN("Render");
     // tick_party_fsms(dt);
+    std::scoped_lock lock(frame_mutex);
 
     return root_component()->Render();
   });
@@ -146,15 +147,10 @@ void GrandCentral::main_loop() {
   // wake UI at ~60Hz
   std::atomic<bool> running = true;
 
-  std::thread render_ticker([&] {
+  std::jthread render_ticker([&](std::stop_token st) {
     using namespace std::chrono_literals;
-    while (running) {
-      {
-        ZoneScopedN("Render");
-        std::scoped_lock lock(frame_mutex);
-        screen.PostEvent(Event::Custom); // kick a rerender (~60 Hz)
-      }
-
+    while (!st.stop_requested() && running.load(std::memory_order_relaxed)) {
+      screen.PostEvent(ftxui::Event::Custom);
       std::this_thread::sleep_for(16ms);
     }
   });
@@ -165,7 +161,7 @@ void GrandCentral::main_loop() {
     constexpr auto kFrameDt = std::chrono::duration_cast<clock::duration>(
         std::chrono::duration<double>(1.0 / 12.0));
 
-    constexpr auto kOverrunBudget = std::chrono::milliseconds(5);
+    // constexpr auto kOverrunBudget = std::chrono::milliseconds(5);
 
     auto next_tick = clock::now();
     auto sim_time = next_tick;
@@ -176,10 +172,11 @@ void GrandCentral::main_loop() {
 
       ZoneScopedN("FrameTick");
 
-      const auto now = clock::now();
+      //      const auto now = clock::now();
 
       // ---- Budget enforcement ----
-      if (now > next_tick + kOverrunBudget) {
+      // FIXME seems bad to not have it
+      /*if (now > next_tick + kOverrunBudget) {
         const auto over = now - next_tick;
         const auto over_us =
             std::chrono::duration_cast<std::chrono::microseconds>(over).count();
@@ -187,6 +184,7 @@ void GrandCentral::main_loop() {
         fl::assert_fmt(false, std::source_location::current(),
                        FMT_STRING("Frame tick over bdget by {} us"), over_us);
       }
+                       */
 
       // ---- Advance authoritative sim time ----
       sim_time += kFrameDt;
@@ -209,8 +207,38 @@ void GrandCentral::main_loop() {
       std::this_thread::sleep_until(next_tick);
     }
   });
+  screen.Loop(ui);
 }
 
+void GrandCentral::bootstrap_logs() {
+  fancy_log_->append_plain("master: boot");
+
+  for (auto &acct : accounts_) {
+    acct.log_->append_plain("account: boot");
+  }
+
+  std::vector<fl::widgets::FancyLog *> panes;
+  panes.reserve(accounts_.size());
+
+  for (auto &acct : accounts_) {
+    panes.push_back(acct.log_.get());
+  }
+
+  log_wall_ = ftxui::Make<fl::widgets::LogWall>(*fancy_log_, panes);
+
+  logger_.info("[player_name](GrandCentral) online.");
+  logger_.debug("Debug: registry currently empty.");
+  logger_.warn("No encounters loaded yet.");
+}
 void GrandCentral::innervate_event_system() {}
+
+void GrandCentral::build_ui() {
+  std::vector<fl::widgets::FancyLog *> panes;
+  panes.reserve(accounts_.size());
+  for (auto &acct : accounts_)
+    panes.push_back(acct.log_.get());
+
+  log_wall_ = ftxui::Make<fl::widgets::LogWall>(*fancy_log_, panes);
+}
 
 } // namespace fl
