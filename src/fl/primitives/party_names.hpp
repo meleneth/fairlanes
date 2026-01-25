@@ -15,4 +15,5 @@ std::vector<std::string> party_names{
     "Redwater Assembly",    "The Emberforge Outfit",  "Wildwhisper Patrol",
     "Runebarrow Company",   "The Ironwild Coterie",   "Suntide Expedition",
     "The Mossgate Walkers", "The Stormcliff Runners", "Duskbloom Vanguard",
-    "The Shalecrest Ward",  "Brinewind Advance",      "The Tallspire Band"};
+    "The Shalecrest Ward",  "Brinewind Advance",      "The Tallspire Band",
+    "The Emberwatch Union"};
