@@ -92,20 +92,24 @@ bool FancyLog::empty() const { return log.empty(); }
 
 // ---- ComponentBase --------------------------------------------------------
 ftxui::Element FancyLog::Render() {
-  size_t rows_to_take =
-      (opts.max_rows <= 0)
-          ? log.size()
-          : std::min(log.size(), static_cast<size_t>(opts.max_rows));
+  using namespace ftxui;
 
-  std::vector<Element> last;
-  last.reserve(rows_to_take);
+  // Build full content (or you can still cap entries via max_entries, which you
+  // already do).
+  Element content = vbox(Elements(log.begin(), log.end()));
 
-  auto begin = (log.size() > rows_to_take)
-                   ? log.end() - static_cast<std::ptrdiff_t>(rows_to_take)
-                   : log.begin();
-  std::copy(begin, log.end(), std::back_inserter(last));
+  // Make it scrollable and pin view to bottom (tail-follow).
+  // focusPositionRelative(1.0f) biases the frame toward the end.
+  content =
+      content | yframe | focusPositionRelative(0.0f, 1.0f) | vscroll_indicator;
 
-  return vbox(std::move(last)); // <- no inner size() clamp here
+  // Now enforce "max_rows" as a MAX height, not a baked-in height.
+  if (opts.max_rows > 0) {
+    content = content | ftxui::size(HEIGHT, LESS_THAN, opts.max_rows);
+  }
+
+  // Let parent allocate space.
+  return content | flex;
 }
 
 // ---- internals ------------------------------------------------------------

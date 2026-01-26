@@ -21,7 +21,7 @@ public:
   using StyleMap = std::unordered_map<std::string, Decorator>;
 
   struct Options {
-    int max_rows = 42;        // visual height (rows)
+    int max_rows = 3;         // visual height (rows)
     size_t max_entries = 512; // ring-buffer size
     bool autoscroll = true;   // keep view pinned to end on append
   };

@@ -218,16 +218,12 @@ void GrandCentral::bootstrap_logs() {
 
   for (auto &acct : accounts_) {
     acct.log_->append_plain("account: boot");
+    for (auto &party : acct.parties_) {
+      party.log_->append_plain("party: boot");
+    }
   }
 
-  std::vector<fl::widgets::FancyLog *> panes;
-  panes.reserve(accounts_.size());
-
-  for (auto &acct : accounts_) {
-    panes.push_back(acct.log_.get());
-  }
-
-  log_wall_ = ftxui::Make<fl::widgets::LogWall>(*fancy_log_, panes);
+  log_wall_ = ftxui::Make<fl::widgets::LogWall>(*fancy_log_, accounts_);
 
   logger_.info("[player_name](GrandCentral) online.");
   logger_.debug("Debug: registry currently empty.");
@@ -236,12 +232,8 @@ void GrandCentral::bootstrap_logs() {
 void GrandCentral::innervate_event_system() {}
 
 void GrandCentral::build_ui() {
-  std::vector<fl::widgets::FancyLog *> panes;
-  panes.reserve(accounts_.size());
-  for (auto &acct : accounts_)
-    panes.push_back(acct.log_.get());
 
-  log_wall_ = ftxui::Make<fl::widgets::LogWall>(*fancy_log_, panes);
+  log_wall_ = ftxui::Make<fl::widgets::LogWall>(*fancy_log_, accounts_);
 }
 
 } // namespace fl

@@ -69,4 +69,11 @@ std::vector<std::string> hero_names{
     "Paerin Ashbriar",    "Quill Thornfield",   "Ryn Ashwalker",
     "Syla Marshrose",     "Tovren Stonebrand",  "Uska Embercut",
     "Variel Dawnflower",  "Wren Thornridge",    "Xevra Shadowfall",
-    "Ylric Emberstream",  "Zyra Stormcut"};
+    "Ylric Emberstream",  "Zyra Stormcut",
+
+    "Aethan Crowvale",    "Brelia Sunmere",     "Corin Blackfen",
+    "Daelis Runehart",    "Eryk Stormvale",     "Faelin Ashgrove",
+    "Gorren Deepwatch",   "Helia Frostmere",    "Irik Thornfall",
+    "Jessa Valeweft",     "Korin Emberwatch",   "Lyra Nightwillow",
+    "Mordyn Stoneveil",   "Nyssa Brightfen",    "Orin Duskmarch",
+    "Pella Windmere",     "Quorin Ashwatch",    "Rhea Starfall"};
