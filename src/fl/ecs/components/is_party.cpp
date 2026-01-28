@@ -48,9 +48,9 @@ bool IsParty::in_combat() {
   return true;
 }
 void IsParty::add_party_member(entt::entity member) {
-  auto &account = ctx_.reg().get<fl::ecs::components::IsAccount>(account_);
+  // auto &account = ctx_.reg().get<fl::ecs::components::IsAccount>(account_);
 
-  account.log_->append_markup(
+  ctx_.party_->log_->append_markup(
       "[cyan](IsParty) adding member ID " +
       std::to_string(
           static_cast<std::underlying_type_t<entt::entity>>(member)) +

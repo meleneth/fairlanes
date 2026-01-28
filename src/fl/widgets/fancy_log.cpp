@@ -104,9 +104,9 @@ ftxui::Element FancyLog::Render() {
       content | yframe | focusPositionRelative(0.0f, 1.0f) | vscroll_indicator;
 
   // Now enforce "max_rows" as a MAX height, not a baked-in height.
-  if (opts.max_rows > 0) {
-    content = content | ftxui::size(HEIGHT, LESS_THAN, opts.max_rows);
-  }
+  // if (opts.max_rows > 0) {
+  //  content = content | ftxui::size(HEIGHT, LESS_THAN, opts.max_rows);
+  //}
 
   // Let parent allocate space.
   return content | flex;

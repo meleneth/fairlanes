@@ -7,7 +7,8 @@
 int main() {
   using fl::GrandCentral;
 
-  GrandCentral gc{8, 5, 1};
+  GrandCentral gc{8, 5, 5};
+  // GrandCentral gc{1, 1, 1};
 
   std::cout << "You are a young hero, and you live in a village";
 

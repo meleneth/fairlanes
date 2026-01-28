@@ -16,7 +16,7 @@ struct PartyData {
   std::shared_ptr<fl::widgets::FancyLog> log_;
   std::deque<fl::primitives::MemberData> members_;
   fl::events::PartyBus bus_;
-  // Assuming your AccountCtx can provide PartyCtx for this PartyData:
+
   void init_party(fl::fsm::PartyLoopCtx &party_loop_ctx, std::string name);
 
   PartyData(entt::entity party_id);

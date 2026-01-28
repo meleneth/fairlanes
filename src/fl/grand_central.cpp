@@ -45,7 +45,7 @@ void GrandCentral::_create_initial_accounts() {
     auto &account_data = accounts_.emplace_back(reg_.create());
 
     logger_.info(
-        "[yellow](Account initialized with ID " +
+        "[yellow](Account " + std::to_string(a) + " initialized with ID " +
         std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
             account_data.account_id_)) +
         ")");
@@ -60,11 +60,12 @@ void GrandCentral::_create_initial_accounts() {
       auto party_ctx = account_ctx.party_context(party_data);
       auto party_loop_ctx = party_ctx.party_loop_context();
       party_data.init_party(party_loop_ctx, party_names[party_index]);
+      auto party_name = party_names[party_index];
 
       ++party_index;
 
-      logger_.info(
-          "[green](Party initialized with ID " +
+      account_data.log_->append_markup(
+          "[green](Party " + party_name + " initialized with ID " +
           std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
               party_data.party_id_)) +
           ")");
@@ -78,7 +79,7 @@ void GrandCentral::_create_initial_accounts() {
             reg_.get<fl::ecs::components::IsParty>(party_data.party_id_);
         is_party.add_party_member(member.member_id_);
 
-        logger_.info(
+        party_data.log_->append_markup(
             "[blue](Player initialized with ID " +
             std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
                 member.member_id_)) +
@@ -214,14 +215,6 @@ void GrandCentral::main_loop() {
 }
 
 void GrandCentral::bootstrap_logs() {
-  fancy_log_->append_plain("master: boot");
-
-  for (auto &acct : accounts_) {
-    acct.log_->append_plain("account: boot");
-    for (auto &party : acct.parties_) {
-      party.log_->append_plain("party: boot");
-    }
-  }
 
   log_wall_ = ftxui::Make<fl::widgets::LogWall>(*fancy_log_, accounts_);
 
