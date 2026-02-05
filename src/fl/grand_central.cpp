@@ -170,8 +170,6 @@ void GrandCentral::main_loop() {
     auto next_tick = clock::now();
     auto sim_time = next_tick;
 
-    std::uint64_t beat_index = 0;
-
     while (!st.stop_requested() && running.load(std::memory_order_relaxed)) {
 
       ZoneScopedN("FrameTick");
@@ -193,15 +191,11 @@ void GrandCentral::main_loop() {
       // ---- Advance authoritative sim time ----
       sim_time += kFrameDt;
 
-      fl::events::Beat beat{
-          .now = sim_time,
-          .dt = std::chrono::duration_cast<std::chrono::nanoseconds>(kFrameDt),
-          .index = beat_index++,
-      };
-
       {
         std::scoped_lock lock(frame_mutex);
-        beat_bus_.beat(beat);
+        //  logger_.info("[player_name](Beat) event.");
+
+        beat_bus_.emit(seerin::BeatEvent{seerin::Beat{}});
       }
 
       // ---- Schedule next tick ----
@@ -222,7 +216,16 @@ void GrandCentral::bootstrap_logs() {
   logger_.debug("Debug: registry currently empty.");
   logger_.warn("No encounters loaded yet.");
 }
-void GrandCentral::innervate_event_system() {}
+void GrandCentral::innervate_event_system() {
+  // Parties hook to main beat (accounts do not).
+  logger_.info("[spell_name](innervate) event system.");
+
+  for (auto &account : accounts_) {
+    for (auto &party : account.parties_) {
+      party.hook_to_beat(beat_bus_);
+    }
+  }
+}
 
 void GrandCentral::build_ui() {
 

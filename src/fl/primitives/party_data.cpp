@@ -12,7 +12,7 @@
 #include "fl/widgets/fancy_log.hpp"
 #include "logging.hpp"
 #include "random_hub.hpp"
-
+#include "sr/wire.hpp"
 namespace fl::primitives {
 
 PartyData::PartyData(entt::entity party_id)
@@ -26,6 +26,14 @@ void PartyData::init_party(fl::fsm::PartyLoopCtx &party_loop_ctx,
   party_loop_ctx.reg().emplace<fl::ecs::components::IsParty>(
       party_id_, party_loop_ctx, std::move(name),
       party_loop_ctx.account_->account_id_);
+}
+
+void PartyData::hook_to_beat(seerin::BeatBus &bus) {
+  beat_sub_ = bus.on<seerin::Beat>([this](const seerin::Beat &) {
+    // Beat{} on both sides, as requested:
+    // log_->append_markup("PartyData received beat");
+    beat_bus_.emit(seerin::BeatEvent{seerin::Beat{}});
+  });
 }
 
 } // namespace fl::primitives

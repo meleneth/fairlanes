@@ -33,7 +33,7 @@ PartyCtx::PartyCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
                    fl::primitives::AccountData &acc,
                    fl::primitives::PartyData &party)
     : reg_(reg), rng_(rng), account_data_(acc), party_data_(&party),
-      log_(*party.log_), bus_(party.bus_) {}
+      log_(*party.log_), bus_(party.party_bus_) {}
 
 EntityCtx PartyCtx::entity_context(entt::entity ent) const {
   return EntityCtx{reg(), rng_, *party_data_->log_, ent};

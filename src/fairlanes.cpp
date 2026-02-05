@@ -7,9 +7,9 @@
 int main() {
   using fl::GrandCentral;
 
-  GrandCentral gc{8, 5, 5};
-  // GrandCentral gc{1, 1, 1};
-
+  // GrandCentral gc{8, 5, 5};
+  GrandCentral gc{1, 1, 1};
+  gc.innervate_event_system();
   std::cout << "You are a young hero, and you live in a village";
 
   gc.main_loop();

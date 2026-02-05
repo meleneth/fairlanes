@@ -11,11 +11,12 @@
 #include <ftxui/dom/elements.hpp>
 #include <tracy/Tracy.hpp>
 
-#include "fl/events/beat_bus.hpp"
 #include "fl/fwd.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/logging.hpp"
 #include "fl/primitives/random_hub.hpp"
+
+#include "sr/beat_bus.hpp"
 
 /*#include "fl/context.hpp"
 #include "fl/monsters/register_monsters.hpp"
@@ -41,7 +42,7 @@ public:
   std::deque<fl::primitives::AccountData> accounts_;
   std::unique_ptr<fl::widgets::FancyLog> fancy_log_;
   std::unique_ptr<fl::primitives::FancyLogSink> fancy_log_sink_;
-  fl::events::BeatBus beat_bus_;
+  seerin::BeatBus beat_bus_;
   ftxui::Component log_wall_;
 
   void _create_initial_accounts();
