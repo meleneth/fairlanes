@@ -42,7 +42,7 @@ public:
   std::deque<fl::primitives::AccountData> accounts_;
   std::unique_ptr<fl::widgets::FancyLog> fancy_log_;
   std::unique_ptr<fl::primitives::FancyLogSink> fancy_log_sink_;
-  seerin::BeatBus beat_bus_;
+  seerin::BeatBus gc_beat_bus_;
   ftxui::Component log_wall_;
 
   void _create_initial_accounts();

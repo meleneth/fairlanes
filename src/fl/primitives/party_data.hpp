@@ -32,12 +32,12 @@ struct PartyData {
 
   void hook_to_beat(seerin::BeatBus &gc_beat_bus);
 
-  seerin::BeatBus &beat_bus() { return beat_bus_; }
-  const seerin::BeatBus &beat_bus() const { return beat_bus_; }
+  seerin::BeatBus &party_beat_bus() { return party_beat_bus_; }
+  const seerin::BeatBus &party_beat_bus() const { return party_beat_bus_; }
 
 private:
-  seerin::BeatBus beat_bus_{};
-  seerin::BeatSub beat_sub_{};
+  seerin::BeatBus party_beat_bus_{};
+  seerin::BeatSub gc_forward_sub_{};
 };
 
 } // namespace fl::primitives

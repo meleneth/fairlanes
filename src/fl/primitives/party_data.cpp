@@ -29,10 +29,10 @@ void PartyData::init_party(fl::fsm::PartyLoopCtx &party_loop_ctx,
 }
 
 void PartyData::hook_to_beat(seerin::BeatBus &bus) {
-  beat_sub_ = bus.on<seerin::Beat>([this](const seerin::Beat &) {
+  gc_forward_sub_ = bus.on<seerin::Beat>([this](const seerin::Beat &) {
     // Beat{} on both sides, as requested:
     // log_->append_markup("PartyData received beat");
-    beat_bus_.emit(seerin::BeatEvent{seerin::Beat{}});
+    party_beat_bus_.emit(seerin::BeatEvent{seerin::Beat{}});
   });
 }
 

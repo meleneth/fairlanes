@@ -195,7 +195,7 @@ void GrandCentral::main_loop() {
         std::scoped_lock lock(frame_mutex);
         //  logger_.info("[player_name](Beat) event.");
 
-        beat_bus_.emit(seerin::BeatEvent{seerin::Beat{}});
+        gc_beat_bus_.emit(seerin::BeatEvent{seerin::Beat{}});
       }
 
       // ---- Schedule next tick ----
@@ -222,7 +222,7 @@ void GrandCentral::innervate_event_system() {
 
   for (auto &account : accounts_) {
     for (auto &party : account.parties_) {
-      party.hook_to_beat(beat_bus_);
+      party.hook_to_beat(gc_beat_bus_);
     }
   }
 }
