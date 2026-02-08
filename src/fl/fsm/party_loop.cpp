@@ -13,19 +13,19 @@
 #include <spdlog/spdlog.h>
 
 namespace fl::fsm {
-void PartyLoop::enter_idle(fl::fsm::PartyLoopCtx &ctx) {
+void PartyLoop::Ops::enter_idle(fl::fsm::PartyLoopCtx &ctx) {
   // Mark the party attached to this FSM as idle.
   (void)ctx;
 };
 
-void PartyLoop::enter_farming(fl::fsm::PartyLoopCtx &ctx) {
+void PartyLoop::Ops::enter_farming(fl::fsm::PartyLoopCtx &ctx) {
   // Also set the label for the party tied to this FSM (nice for local UI)
 
   auto party_ctx = ctx.party_context();
   fl::primitives::EncounterBuilder{party_ctx}.thump_it_out();
 };
 
-void PartyLoop::exit_farming(fl::fsm::PartyLoopCtx &ctx) {
+void PartyLoop::Ops::exit_farming(fl::fsm::PartyLoopCtx &ctx) {
   ctx.reg().remove<fl::ecs::components::Encounter>(ctx.self_());
   // ctx.log_.append_plain("Returned to town.");
   entt::handle h{ctx.reg(), ctx.self_()};
@@ -34,9 +34,9 @@ void PartyLoop::exit_farming(fl::fsm::PartyLoopCtx &ctx) {
   // ReplenishParty::commit(h);
 };
 
-void PartyLoop::enter_fixing(fl::fsm::PartyLoopCtx &ctx) { (void)ctx; };
+void PartyLoop::Ops::enter_fixing(fl::fsm::PartyLoopCtx &ctx) { (void)ctx; };
 
-void PartyLoop::combat_tick(fl::fsm::PartyLoopCtx &ctx) {
+void PartyLoop::Ops::combat_tick(fl::fsm::PartyLoopCtx &ctx) {
   using fl::skills::Thump;
   Thump in_the_night;
 
@@ -61,12 +61,12 @@ void PartyLoop::combat_tick(fl::fsm::PartyLoopCtx &ctx) {
     }
   });
 };
-bool PartyLoop::in_combat(fl::fsm::PartyLoopCtx &ctx) {
+bool PartyLoop::Ops::in_combat(fl::fsm::PartyLoopCtx &ctx) {
   auto &is_party = ctx.reg().get<fl::ecs::components::IsParty>(ctx.self_());
   return is_party.in_combat();
 }
 
-bool PartyLoop::needs_town(fl::fsm::PartyLoopCtx &ctx) {
+bool PartyLoop::Ops::needs_town(fl::fsm::PartyLoopCtx &ctx) {
   auto &is_party = ctx.reg().get<fl::ecs::components::IsParty>(ctx.self_());
   return is_party.needs_town();
 }

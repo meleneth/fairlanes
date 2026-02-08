@@ -1,8 +1,9 @@
 #pragma once
-#include <boost/sml.hpp>
 #include <string>
 
 #include "fl/fsm/party_loop.hpp"
+#include "fl/fsm/party_loop_machine.hpp"
+
 #include "fl/fwd.hpp"
 
 namespace fl::ecs::components {
@@ -12,12 +13,11 @@ namespace sml = boost::sml;
 // Marks an entity as a Party (party itself is an entity)
 
 struct IsParty {
-  fl::fsm::PartyLoopCtx ctx_;
-  fl::fsm::PartyLoop machine_;
-  sml::sm<fl::fsm::PartyLoop> sm_;
+  std::unique_ptr<fl::fsm::PartyLoopMachine> party_loop_machine_;
+
+  std::string name_;
   entt::entity account_;
   entt::entity self_;
-  std::string name_;
   std::vector<entt::entity> party_members_;
 
   IsParty(fl::fsm::PartyLoopCtx context, std::string name,

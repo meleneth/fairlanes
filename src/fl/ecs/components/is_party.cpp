@@ -6,6 +6,7 @@
 #include "fl/ecs/components/stats.hpp"
 #include "fl/fsm/party_loop.hpp"
 #include "fl/fsm/party_loop_ctx.hpp"
+#include "fl/fsm/party_loop_machine.hpp"
 
 namespace fl::ecs::components {
 namespace sml = boost::sml;
@@ -14,10 +15,10 @@ using fl::fsm::PartyLoop;
 
 IsParty::IsParty(fl::fsm::PartyLoopCtx ctx, std::string name,
                  entt::entity account)
-    : ctx_{std::move(ctx)}, machine_{ctx_}, sm_{machine_, ctx_},
-      account_{account}, name_{std::move(name)} {}
+    : party_loop_machine_{std::make_unique<fl::fsm::PartyLoopMachine>(ctx)},
+      name_{std::move(name)}, account_{account} {}
 
-void IsParty::next() { sm_.process_event(NextEvent{}); }
+void IsParty::next() { party_loop_machine_->start(name_); }
 
 bool IsParty::needs_town() {
   /*
@@ -49,13 +50,13 @@ bool IsParty::in_combat() {
 }
 void IsParty::add_party_member(entt::entity member) {
   // auto &account = ctx_.reg().get<fl::ecs::components::IsAccount>(account_);
-
-  ctx_.party_->log().append_markup(
-      "[cyan](IsParty) adding member ID " +
-      std::to_string(
-          static_cast<std::underlying_type_t<entt::entity>>(member)) +
-      " to party [party_name](" + name_ + ")");
-  party_members_.push_back(member);
+  (void)member;
+  // ctx_.party_->log().append_markup(
+  //    "[cyan](IsParty) adding member ID " +
+  //   std::to_string(
+  //      static_cast<std::underlying_type_t<entt::entity>>(member)) +
+  //  " to party [party_name](" + name_ + ")");
+  // party_members_.push_back(member);
 };
 
 } // namespace fl::ecs::components
