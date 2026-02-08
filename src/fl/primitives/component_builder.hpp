@@ -47,7 +47,7 @@ template <> struct ComponentBuilder<Tags> {
 
 template <> struct ComponentBuilder<TrackXP> {
   static TrackXP defaults(fl::context::EntityCtx const &ctx) {
-    return TrackXP{ctx.entity_context(ctx.self_), 0};
+    return TrackXP{ctx.entity_context(ctx.self()), 0};
   }
   static void apply(TrackXP &t, const json &j) {
     (void)t;

@@ -28,7 +28,7 @@ void TrackXP::add_xp(entt::handle self, int amount) {
     ++level_;
     next_level_at = xp_for_level(level_ + 1);
     if (auto info = self.try_get<Stats>()) {
-      ctx_.log_.append_markup(fmt::format(
+      ctx_.log().append_markup(fmt::format(
           "[name]({}) Level up! level=[level]({}) in next=[xp]({}) XP",
           info->name_, level_, next_level_at));
     } // spdlog::debug("Level up! level={} next={}", level, next_level_at);

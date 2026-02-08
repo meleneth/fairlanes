@@ -17,17 +17,17 @@ class EntityBuilder {
 
 public:
   explicit EntityBuilder(fl::context::BuildCtx &context)
-      : ctx_(context), ent_(ctx_.reg_.create()) {}
+      : ctx_(context), ent_(ctx_.reg().create()) {}
 
   template <typename C> EntityBuilder &with(C c) {
-    ctx_.reg_.emplace_or_replace<C>(ent_, std::move(c));
+    ctx_.reg().emplace_or_replace<C>(ent_, std::move(c));
     return *this;
   }
 
   template <typename C> EntityBuilder &with_default() {
     auto entity_ctx = ctx_.entity_context(ent_);
-    ctx_.reg_.emplace_or_replace<C>(ent_,
-                                    ComponentBuilder<C>::defaults(entity_ctx));
+    ctx_.reg().emplace_or_replace<C>(ent_,
+                                     ComponentBuilder<C>::defaults(entity_ctx));
     return *this;
   }
 

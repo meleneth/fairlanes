@@ -31,14 +31,14 @@ TEST_CASE("GrandCentral basic structure is initialized",
   // We expect exactly 2 accounts
   // REQUIRE(gc.accounts_.size() == 2);
 
-  for (std::size_t a = 0; a < gc.accounts_.size(); ++a) {
-    auto &acc = gc.accounts_[a];
+  for (std::size_t a = 0; a < gc.accounts().size(); ++a) {
+    auto &acc = gc.accounts()[a];
 
     // And exactly 3 parties
-    REQUIRE(acc.parties_.size() == 3);
+    REQUIRE(acc.parties().size() == 3);
 
-    for (std::size_t p = 0; p < acc.parties_.size(); ++p) {
-      auto &party = acc.parties_[p];
+    for (std::size_t p = 0; p < acc.parties().size(); ++p) {
+      auto &party = acc.parties()[p];
 
       // Each party should also have a valid entity
       // REQUIRE(party.party_id_ != entt::null);
@@ -57,14 +57,14 @@ TEST_CASE("GrandCentral context helpers work",
   entt::entity ent = acc_ctx.reg().create();
   // REQUIRE(ent != entt::null);
   // Account should own at least one party
-  REQUIRE(acc_ctx.account_.parties_.size() == 2);
+  REQUIRE(acc_ctx.account().parties().size() == 2);
 
   // Party context
   auto party_ctx = acc_ctx.party_context(0);
   // REQUIRE(party_ctx.party.party_id_);
 
   // EntityCtx from PartyCtx
-  auto entity_ctx = party_ctx.entity_context(party_ctx.party_data_->party_id_);
+  auto entity_ctx = party_ctx.entity_context(party_ctx.party_data().party_id());
   // REQUIRE(entity_ctx.self == party_ctx.party.party_id_);
 
   // Smoke test logging + bus usage — we don't assert behavior, just that it

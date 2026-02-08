@@ -11,14 +11,14 @@ using fl::context::EntityCtx;
 
 void GrantXPToParty::commit(const EntityCtx &ctx, int amount) {
   using namespace fl::ecs::components;
-  ctx.log_.append_markup(fmt::format("Party received [xp]({}) XP.", amount));
+  ctx.log().append_markup(fmt::format("Party received [xp]({}) XP.", amount));
 
   auto view = ctx.reg().view<PartyMember, TrackXP>();
   for (auto entity : view) {
     auto &member = view.get<PartyMember>(entity);
     auto &track = view.get<TrackXP>(entity);
 
-    if (member.party_ == ctx.self_) {
+    if (member.party_ == ctx.self()) {
       entt::handle h{ctx.reg(), entity};
       track.add_xp(h, amount);
     }

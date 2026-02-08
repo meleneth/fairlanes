@@ -1,85 +1,105 @@
 #include <entt/entt.hpp>
 
 #include "context.hpp"
+
+#include "fl/fsm/party_loop_ctx.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/random_hub.hpp"
 
-/*
-#include "fl/widgets/fancy_log.hpp"
-*/
+// If FancyLog is only forward-declared in context.hpp, you may need this here:
+// #include "fl/widgets/fancy_log.hpp"
+
 namespace fl::context {
+
+fl::widgets::FancyLog &AccountCtx::log() const {
+  // FL_ASSERT(log_);
+  return account_->log();
+}
+fl::events::AccountBus &AccountCtx::bus() const {
+  // FL_ASSERT(bus_);
+  return account_->bus();
+}
 
 EntityCtx::EntityCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
                      fl::widgets::FancyLog &log, entt::entity self)
-    : reg_(reg), rng_(rng), log_(log), self_(self) {}
+    : reg_(&reg), rng_(&rng), log_(&log), self_(self) {}
 
 EntityCtx &EntityCtx::operator=(const EntityCtx &rhs) {
+  reg_ = rhs.reg_;
+  rng_ = rhs.rng_;
+  log_ = rhs.log_;
   self_ = rhs.self_;
   return *this;
 }
 
 EntityCtx EntityCtx::entity_context(entt::entity ent) const {
-  return EntityCtx{reg(), rng_, log_, ent};
+  return EntityCtx{reg(), rng(), log(), ent};
 }
 
 EntityCtx BuildCtx::entity_context(entt::entity ent) const {
-  return EntityCtx{reg(), rng_, log_, ent};
+  return EntityCtx{reg(), rng(), log(), ent};
 }
 
-entt::entity PartyCtx::self_() const { return party_data_->party_id_; }
+entt::entity PartyCtx::self() const { return party_data().party_id(); }
 
 PartyCtx::PartyCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
                    fl::primitives::AccountData &acc,
                    fl::primitives::PartyData &party)
-    : reg_(reg), rng_(rng), account_data_(acc), party_data_(&party),
-      log_(*party.log_), bus_(party.party_bus_) {}
+    : reg_(&reg), rng_(&rng), account_data_(&acc), party_data_(&party),
+      log_(&party.log()), // assumes PartyData stores FancyLog* log_
+      bus_(&party.party_bus()) {
+} // assumes PartyData stores PartyBus party_bus_
+
+PartyCtx &PartyCtx::operator=(const PartyCtx &rhs) {
+  reg_ = rhs.reg_;
+  rng_ = rhs.rng_;
+  account_data_ = rhs.account_data_;
+  party_data_ = rhs.party_data_;
+  log_ = rhs.log_;
+  bus_ = rhs.bus_;
+  return *this;
+}
 
 EntityCtx PartyCtx::entity_context(entt::entity ent) const {
-  return EntityCtx{reg(), rng_, *party_data_->log_, ent};
+  return EntityCtx{reg(), rng(), log(), ent};
 }
 
 BuildCtx PartyCtx::build_context() const {
-  return BuildCtx{reg(), rng_, *party_data_->log_};
+  return BuildCtx{reg(), rng(), log()};
 }
 
 fl::fsm::PartyLoopCtx PartyCtx::party_loop_context() {
   return fl::fsm::PartyLoopCtx{*this};
 }
 
-fl::widgets::FancyLog &AccountCtx::log() const { return *account_.log_; }
-fl::events::AccountBus &AccountCtx::bus() const { return account_.bus_; }
-
 PartyCtx AccountCtx::party_context(std::size_t idx) const {
-  return PartyCtx{reg(), rng_, account_, account_.parties_.at(idx)};
+  return PartyCtx{reg(), rng(), account(), account().parties().at(idx)};
 }
 
 PartyCtx AccountCtx::party_context(fl::primitives::PartyData &data) const {
-  return PartyCtx{reg(), rng_, account_, data};
+  return PartyCtx{reg(), rng(), account(), data};
 }
 
 EntityCtx AccountCtx::entity_context(entt::entity ent) const {
-  return EntityCtx{reg(), rng_, *account_.log_, ent};
+  return EntityCtx{reg(), rng(), log(), ent};
 }
 
-PartyCtx &PartyCtx::operator=(const PartyCtx &rhs) {
-  party_data_ = rhs.party_data_;
-  return *this;
-}
 AttackCtx::AttackCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
                      fl::widgets::FancyLog &log, entt::entity attacker,
                      entt::entity defender)
-    : reg_(reg), rng_(rng), log_(log), attacker_(attacker),
+    : reg_(&reg), rng_(&rng), log_(&log), attacker_(attacker),
       defender_(defender) {}
 
 EntityCtx AttackCtx::entity_context(entt::entity e) const {
-  return EntityCtx{reg(), rng_, log_, e};
+  return EntityCtx{reg(), rng(), log(), e};
 }
 
 AttackCtx AttackCtx::make_attack(PartyCtx &ctx, entt::entity attacker,
                                  entt::entity defender) {
-  return AttackCtx{ctx.reg(), ctx.rng_, ctx.log_, attacker, defender};
+  return AttackCtx{ctx.reg(), ctx.rng(), ctx.log(), attacker, defender};
 }
 
-// MARK_CLASS_M OVEONLY(AttackCtx);
+// MARK_CLASS_MOVEONLY(AttackCtx);
+
 } // namespace fl::context

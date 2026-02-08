@@ -49,14 +49,14 @@ public:
 
       // Account log pane
       stack.push_back(window(text(" Account " + std::to_string(ai + 1) + " "),
-                             render_log_or_blank(acct.log_.get())) |
+                             render_log_or_blank(&acct.log())) |
                       flex);
 
       // Party panes
-      for (size_t pi = 0; pi < acct.parties_.size(); ++pi) {
-        auto &party = acct.parties_[pi];
+      for (size_t pi = 0; pi < acct.parties().size(); ++pi) {
+        auto &party = acct.parties()[pi];
         stack.push_back(window(text(" Party " + std::to_string(pi + 1) + " "),
-                               render_log_or_blank(party.log_.get())) |
+                               render_log_or_blank(&party.log())) |
                         flex);
       }
 

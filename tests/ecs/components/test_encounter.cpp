@@ -23,7 +23,7 @@ TEST_CASE("Encounter:: Encounter innervate wires BattleBus::Tick into "
   builder.thump_it_out();
 
   auto &reg = party_ctx.reg(); // adjust to your actual registry accessor
-  auto &enc = reg.get<fl::ecs::components::Encounter>(party_ctx.self_());
+  auto &enc = reg.get<fl::ecs::components::Encounter>(party_ctx.self());
 
   // The subject: patch cables in.
   enc.innervate_event_system(beat_bus);

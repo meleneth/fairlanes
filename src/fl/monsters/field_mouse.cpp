@@ -14,7 +14,7 @@ using fl::primitives::EntityBuilder;
 
 void FieldMouse::apply(EntityBuilder &b) {
   // Ensure Stats exists (either defaulted elsewhere or create fresh)
-  auto &s = b.ctx().reg_.get<Stats>(b.entity());
+  auto &s = b.ctx().reg().get<Stats>(b.entity());
   s.name_ = "Field Mouse";
   s.hp_ = 5;
   s.max_hp_ = 5;

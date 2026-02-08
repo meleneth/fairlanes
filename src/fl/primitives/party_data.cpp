@@ -16,7 +16,7 @@
 namespace fl::primitives {
 
 PartyData::PartyData(entt::entity party_id)
-    : party_id_(party_id), log_(std::make_shared<fl::widgets::FancyLog>()) {
+    : party_id_(party_id), log_(std::make_unique<fl::widgets::FancyLog>()) {
 
   // auto party_loop_ctx = ctx.party_context().party_loop_context();
 }
@@ -25,7 +25,7 @@ void PartyData::init_party(fl::fsm::PartyLoopCtx &party_loop_ctx,
                            std::string name) {
   party_loop_ctx.reg().emplace<fl::ecs::components::IsParty>(
       party_id_, party_loop_ctx, std::move(name),
-      party_loop_ctx.account_->account_id_);
+      party_loop_ctx.account_->id());
 }
 
 void PartyData::hook_to_beat(seerin::BeatBus &bus) {

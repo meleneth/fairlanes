@@ -14,8 +14,8 @@ namespace fl::primitives {
 void EncounterBuilder::thump_it_out() {
   using namespace fl::ecs::components;
 
-  auto &enc = ctx_.reg_.emplace<fl::ecs::components::Encounter>(ctx_.self_());
-  auto &is_party = ctx_.reg_.get<IsParty>(ctx_.self_());
+  auto &enc = ctx_.reg().emplace<fl::ecs::components::Encounter>(ctx_.self());
+  auto &is_party = ctx_.reg().get<IsParty>(ctx_.self());
 
   enc.attackers_ = std::make_unique<fl::primitives::Team>();
   enc.defenders_ = std::make_unique<fl::primitives::Team>();
@@ -38,7 +38,7 @@ void EncounterBuilder::add_field_mouse() {
 
 void EncounterBuilder::add_to_enemy_team(entt::entity entity) {
   // First strike wen?
-  auto &enc = ctx_.reg_.get<fl::ecs::components::Encounter>(ctx_.self_());
+  auto &enc = ctx_.reg().get<fl::ecs::components::Encounter>(ctx_.self());
 
   enc.attackers_->members_.push_back(entity);
   enc.e_to_cleanup_.push_back(entity);

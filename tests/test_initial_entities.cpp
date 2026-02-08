@@ -22,7 +22,7 @@ TEST_CASE("EntityBuilder + ComponentBuilder basics", "[entity][builder]") {
   fl::GrandCentral gc{1, 1, 1};
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &reg = gc.reg_;
+  auto &reg = gc.reg();
 
   SECTION("Stats defaults are installed") {
     auto build_ctx = party_ctx.build_context();

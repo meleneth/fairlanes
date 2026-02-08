@@ -10,7 +10,7 @@
 #include <ftxui/dom/elements.hpp>
 #include <tracy/Tracy.hpp>
 
-#include "fl/assert.hpp"
+// #include "fl/assert.hpp"
 #include "fl/context.hpp"
 #include "fl/ecs/components/is_account.hpp"
 #include "fl/ecs/components/is_party.hpp"
@@ -47,15 +47,15 @@ void GrandCentral::_create_initial_accounts() {
     logger_.info(
         "[yellow](Account " + std::to_string(a) + " initialized with ID " +
         std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
-            account_data.account_id_)) +
+            account_data.id())) +
         ")");
-    reg_.emplace<fl::ecs::components::IsAccount>(account_data.account_id_,
-                                                 account_data.account_id_,
-                                                 account_data.log_.get());
+    auto entity = account_data.id();
+    reg_.emplace<fl::ecs::components::IsAccount>(entity, entity,
+                                                 &account_data.log());
 
     for (std::size_t p = 0; p < num_parties_per_account_; ++p) {
 
-      auto &party_data = account_data.parties_.emplace_back(reg_.create());
+      auto &party_data = account_data.parties().emplace_back(reg_.create());
       auto account_ctx = account_context(account_data);
       auto party_ctx = account_ctx.party_context(party_data);
       auto party_loop_ctx = party_ctx.party_loop_context();
@@ -64,22 +64,22 @@ void GrandCentral::_create_initial_accounts() {
 
       ++party_index;
 
-      account_data.log_->append_markup(
+      account_data.log().append_markup(
           "[green](Party " + party_name + " initialized with ID " +
           std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
-              party_data.party_id_)) +
+              party_data.party_id())) +
           ")");
 
       for (std::size_t m = 0; m < num_members_per_party_; ++m) {
         // 3) Create the member IN the party’s owning container first
-        auto &member = party_data.members_.emplace_back(
+        auto &member = party_data.members().emplace_back(
             reg_.create(), hero_names[player_index]);
 
         auto &is_party =
-            reg_.get<fl::ecs::components::IsParty>(party_data.party_id_);
+            reg_.get<fl::ecs::components::IsParty>(party_data.party_id());
         is_party.add_party_member(member.member_id_);
 
-        party_data.log_->append_markup(
+        party_data.log().append_markup(
             "[blue](Player initialized with ID " +
             std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
                 member.member_id_)) +
@@ -135,7 +135,7 @@ void GrandCentral::main_loop() {
 
     ZoneScopedN("Render");
     // tick_party_fsms(dt);
-    std::scoped_lock lock(frame_mutex);
+    std::scoped_lock lock(frame_mutex_);
 
     return root_component()->Render();
   });
@@ -192,7 +192,7 @@ void GrandCentral::main_loop() {
       sim_time += kFrameDt;
 
       {
-        std::scoped_lock lock(frame_mutex);
+        std::scoped_lock lock(frame_mutex_);
         //  logger_.info("[player_name](Beat) event.");
 
         gc_beat_bus_.emit(seerin::BeatEvent{seerin::Beat{}});
@@ -221,7 +221,7 @@ void GrandCentral::innervate_event_system() {
   logger_.info("[spell_name](innervate) event system.");
 
   for (auto &account : accounts_) {
-    for (auto &party : account.parties_) {
+    for (auto &party : account.parties()) {
       party.hook_to_beat(gc_beat_bus_);
     }
   }

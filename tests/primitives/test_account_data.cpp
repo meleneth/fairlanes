@@ -13,10 +13,8 @@ TEST_CASE("AccountData creates a valid entity and log",
 
   fl::primitives::AccountData acc(ent);
 
-  REQUIRE(acc.account_id_ != static_cast<entt::entity>(entt::null));
-  REQUIRE(reg.valid(acc.account_id_));
-
-  REQUIRE(acc.log_ != nullptr);
+  REQUIRE(acc.id() != static_cast<entt::entity>(entt::null));
+  REQUIRE(reg.valid(acc.id()));
 }
 
 TEST_CASE("AccountData creates unique entity ids per instance",
@@ -27,10 +25,10 @@ TEST_CASE("AccountData creates unique entity ids per instance",
 
   fl::primitives::AccountData a(ent_a);
   fl::primitives::AccountData b(ent_b);
-  REQUIRE(a.account_id_ != static_cast<entt::entity>(entt::null));
-  REQUIRE(b.account_id_ != static_cast<entt::entity>(entt::null));
-  REQUIRE(a.account_id_ != b.account_id_);
+  REQUIRE(a.id() != static_cast<entt::entity>(entt::null));
+  REQUIRE(b.id() != static_cast<entt::entity>(entt::null));
+  REQUIRE(a.id() != b.id());
 
-  REQUIRE(reg.valid(a.account_id_));
-  REQUIRE(reg.valid(b.account_id_));
+  REQUIRE(reg.valid(a.id()));
+  REQUIRE(reg.valid(b.id()));
 }

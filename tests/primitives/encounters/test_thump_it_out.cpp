@@ -10,6 +10,7 @@
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/monsters/register_monsters.hpp"
+#include "fl/primitives/damage.hpp"
 #include "fl/primitives/encounter_builder.hpp"
 #include "fl/primitives/entity_builder.hpp"
 #include "fl/primitives/random_hub.hpp"
@@ -34,8 +35,8 @@ TEST_CASE("EncounterBuilder::thump_it_out wires Encounter teams and members",
   builder.thump_it_out();
 
   // ---- asserts ----
-  REQUIRE(gc.reg_.all_of<fl::ecs::components::Encounter>(party_ctx.self_()));
-  auto &enc = gc.reg_.get<fl::ecs::components::Encounter>(party_ctx.self_());
+  REQUIRE(gc.reg().all_of<fl::ecs::components::Encounter>(party_ctx.self()));
+  auto &enc = gc.reg().get<fl::ecs::components::Encounter>(party_ctx.self());
 
   REQUIRE(enc.attackers_ != nullptr);
   REQUIRE(enc.defenders_ != nullptr);
@@ -48,7 +49,7 @@ TEST_CASE("EncounterBuilder::thump_it_out wires Encounter teams and members",
   // attackers should contain exactly one enemy: the field mouse
   REQUIRE(enc.attackers_->members_.size() == 1);
   const entt::entity enemy = enc.attackers_->members_.front();
-  CHECK(gc.reg_.valid(enemy));
+  CHECK(gc.reg().valid(enemy));
 
   // cleanup list should include the spawned enemy
   REQUIRE(enc.e_to_cleanup_.size() == 1);
@@ -65,7 +66,7 @@ TEST_CASE("thump_it_out attaches Encounter to the party entity",
   builder.thump_it_out();
 
   auto &reg = party_ctx.reg(); // adjust accessor
-  entt::entity party_e = party_ctx.self_();
+  entt::entity party_e = party_ctx.self();
 
   REQUIRE(reg.valid(party_e));
   REQUIRE(reg.any_of<fl::ecs::components::Encounter>(party_e));
