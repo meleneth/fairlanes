@@ -6,7 +6,7 @@
 #include <variant>
 #include <vector>
 
-#include "uwu.hpp"
+#include "uWu.hpp"
 
 namespace seerin {
 

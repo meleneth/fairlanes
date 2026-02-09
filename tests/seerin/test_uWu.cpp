@@ -1,4 +1,4 @@
-#include "sr/uwu.hpp"
+#include "sr/uWu.hpp"
 #include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("uWu is a simple strong type with sane arithmetic and comparisons") {
