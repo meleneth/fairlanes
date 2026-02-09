@@ -20,10 +20,6 @@ namespace fl::widgets {
 class FancyLog;
 }
 
-namespace fl::fsm {
-struct PartyLoopCtx;
-}
-
 namespace fl::context {
 
 struct EntityCtx {
@@ -111,12 +107,8 @@ public:
     return *bus_;
   }
 
-  entt::entity
-  self() const; // renamed from self_() because underscore is a landmine
-
+  entt::entity self() const;
   EntityCtx entity_context(entt::entity ent) const;
-  fl::fsm::PartyLoopCtx
-  party_loop_context(); // can be defined in .cpp with full type
   BuildCtx build_context() const;
 
 private:

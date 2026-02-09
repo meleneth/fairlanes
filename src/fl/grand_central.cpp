@@ -47,20 +47,22 @@ void GrandCentral::_create_initial_accounts() {
     logger_.info(
         "[yellow](Account " + std::to_string(a) + " initialized with ID " +
         std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
-            account_data.id())) +
+            account_data.account_id())) +
         ")");
-    auto entity = account_data.id();
+    auto entity = account_data.account_id();
     reg_.emplace<fl::ecs::components::IsAccount>(entity, entity,
                                                  &account_data.log());
 
     for (std::size_t p = 0; p < num_parties_per_account_; ++p) {
+      auto party_name = party_names.at(party_index);
 
-      auto &party_data = account_data.parties().emplace_back(reg_.create());
       auto account_ctx = account_context(account_data);
-      auto party_ctx = account_ctx.party_context(party_data);
-      auto party_loop_ctx = party_ctx.party_loop_context();
-      party_data.init_party(party_loop_ctx, party_names[party_index]);
-      auto party_name = party_names[party_index];
+
+      auto party_id = reg_.create();
+      auto &party_data = account_data.parties().emplace_back(
+          party_id, account_ctx, party_name);
+      reg_.emplace<fl::ecs::components::IsParty>(party_id, party_id,
+                                                 party_data);
 
       ++party_index;
 

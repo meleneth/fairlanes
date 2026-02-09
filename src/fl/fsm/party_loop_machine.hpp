@@ -2,15 +2,16 @@
 #include <memory>
 #include <string>
 
-namespace fl::fsm {
-struct PartyLoopCtx;
-}
+namespace fl::context {
+struct PartyCtx;
+
+} // namespace fl::context
 
 namespace fl::fsm {
 
 class PartyLoopMachine {
 public:
-  explicit PartyLoopMachine(PartyLoopCtx &ctx);
+  explicit PartyLoopMachine(fl::context::PartyCtx &ctx);
   ~PartyLoopMachine();
 
   PartyLoopMachine(PartyLoopMachine &&) noexcept;

@@ -38,7 +38,6 @@ struct TimerPolicy;
 
 namespace fl::fsm {
 struct PartyLoop;
-struct PartyLoopCtx;
 } // namespace fl::fsm
 
 namespace fl::monster {

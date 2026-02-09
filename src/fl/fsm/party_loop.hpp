@@ -1,7 +1,7 @@
 #pragma once
 #include <boost/sml.hpp>
 
-#include "fl/fsm/party_loop_ctx.hpp"
+#include "fl/context.hpp"
 
 namespace fl::fsm {
 namespace sml = boost::sml;
@@ -11,16 +11,16 @@ struct NextEvent {};
 struct PartyLoop {
   // Put all behavior in a ctx-only “ops” namespace/struct.
   struct Ops {
-    static void enter_idle(PartyLoopCtx &ctx);
-    static void enter_farming(PartyLoopCtx &ctx);
-    static void exit_farming(PartyLoopCtx &ctx);
-    static void enter_fixing(PartyLoopCtx &ctx);
+    static void enter_idle(fl::context::PartyCtx &ctx);
+    static void enter_farming(fl::context::PartyCtx &ctx);
+    static void exit_farming(fl::context::PartyCtx &ctx);
+    static void enter_fixing(fl::context::PartyCtx &ctx);
 
-    static void combat_tick(PartyLoopCtx &ctx);
-    static void next_event(PartyLoopCtx &ctx);
+    static void combat_tick(fl::context::PartyCtx &ctx);
+    static void next_event(fl::context::PartyCtx &ctx);
 
-    static bool needs_town(PartyLoopCtx &ctx);
-    static bool in_combat(PartyLoopCtx &ctx);
+    static bool needs_town(fl::context::PartyCtx &ctx);
+    static bool in_combat(fl::context::PartyCtx &ctx);
   };
   auto operator()() const {
     using namespace sml;
@@ -31,19 +31,27 @@ struct PartyLoop {
     struct CombatIdle {};
 
     // Actions
-    const auto enter_idle = [](PartyLoopCtx &ctx) { Ops::enter_idle(ctx); };
-    const auto enter_farming = [](PartyLoopCtx &ctx) {
+    const auto enter_idle = [](fl::context::PartyCtx &ctx) {
+      Ops::enter_idle(ctx);
+    };
+    const auto enter_farming = [](fl::context::PartyCtx &ctx) {
       Ops::enter_farming(ctx);
     };
-    const auto exit_farming = [](PartyLoopCtx &ctx) { Ops::exit_farming(ctx); };
-    const auto enter_fixing = [](PartyLoopCtx &ctx) { Ops::enter_fixing(ctx); };
-    const auto combat_tick = [](PartyLoopCtx &ctx) { Ops::combat_tick(ctx); };
+    const auto exit_farming = [](fl::context::PartyCtx &ctx) {
+      Ops::exit_farming(ctx);
+    };
+    const auto enter_fixing = [](fl::context::PartyCtx &ctx) {
+      Ops::enter_fixing(ctx);
+    };
+    const auto combat_tick = [](fl::context::PartyCtx &ctx) {
+      Ops::combat_tick(ctx);
+    };
 
     // Guards
-    const auto needs_town = [](PartyLoopCtx &ctx) {
+    const auto needs_town = [](fl::context::PartyCtx &ctx) {
       return Ops::needs_town(ctx);
     };
-    const auto in_combat = [](PartyLoopCtx &ctx) {
+    const auto in_combat = [](fl::context::PartyCtx &ctx) {
       return Ops::in_combat(ctx);
     };
 
