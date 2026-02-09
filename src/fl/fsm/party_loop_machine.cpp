@@ -22,7 +22,7 @@ PartyLoopMachine &
 PartyLoopMachine::operator=(PartyLoopMachine &&) noexcept = default;
 
 void PartyLoopMachine::beat_event() {
-  impl_->sm_.process_event(seerin::Beat{});
+  impl_->sm_.process_event(fl::fsm::NextEvent{});
 }
 
 void PartyLoopMachine::dispatch_party_bus() {}

@@ -27,7 +27,7 @@ void PartyLoop::Ops::enter_farming(fl::context::PartyCtx &ctx) {
 
 void PartyLoop::Ops::exit_farming(fl::context::PartyCtx &ctx) {
   ctx.reg().remove<fl::ecs::components::Encounter>(ctx.self());
-  // ctx.log_.append_plain("Returned to town.");
+  ctx.log().append_plain("Returned to town.");
   entt::handle h{ctx.reg(), ctx.self()};
   // TODO FIXME
   // using fl::systems::ReplenishParty;
