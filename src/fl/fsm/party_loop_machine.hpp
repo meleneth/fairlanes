@@ -19,14 +19,9 @@ public:
   PartyLoopMachine(const PartyLoopMachine &) = delete;
   PartyLoopMachine &operator=(const PartyLoopMachine &) = delete;
 
-  // minimal surface to match what IsParty currently does
   void start(std::string party_name);
-  void on_beat();            // or on_beat(const seerin::BeatEvent&) etc
-  void dispatch_party_bus(); // optional: if you have a pump step
-
-  // add verbs as needed later:
-  // void member_added(entt::entity);
-  // void request_action(...);
+  void on_beat();
+  void dispatch_party_bus();
 
 private:
   struct Impl;

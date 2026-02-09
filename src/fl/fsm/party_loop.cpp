@@ -15,11 +15,12 @@
 namespace fl::fsm {
 void PartyLoop::Ops::enter_idle(fl::fsm::PartyLoopCtx &ctx) {
   // Mark the party attached to this FSM as idle.
-  (void)ctx;
+  ctx.log().append_markup("[cyan](PartyLoop) Entering idle state.");
 };
 
 void PartyLoop::Ops::enter_farming(fl::fsm::PartyLoopCtx &ctx) {
   // Also set the label for the party tied to this FSM (nice for local UI)
+  ctx.log().append_markup("[cyan](PartyLoop) Entering farming state.");
 
   auto party_ctx = ctx.party_context();
   fl::primitives::EncounterBuilder{party_ctx}.thump_it_out();

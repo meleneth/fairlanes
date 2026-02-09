@@ -1,17 +1,10 @@
 #include "is_party.hpp"
 #include "fl/context.hpp"
-#include "fl/ecs/components/encounter.hpp"
-#include "fl/ecs/components/is_account.hpp"
-#include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
-#include "fl/fsm/party_loop.hpp"
 #include "fl/fsm/party_loop_ctx.hpp"
 #include "fl/fsm/party_loop_machine.hpp"
 
 namespace fl::ecs::components {
-namespace sml = boost::sml;
-using fl::fsm::NextEvent;
-using fl::fsm::PartyLoop;
 
 IsParty::IsParty(fl::fsm::PartyLoopCtx ctx, std::string name,
                  entt::entity account)

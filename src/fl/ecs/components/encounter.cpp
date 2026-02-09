@@ -5,7 +5,7 @@
 namespace fl::ecs::components {
 
 void on_encounter_destroy(entt::registry &reg, entt::entity e) {
-  auto &enc = reg.get<Encounter>(e); // valid: signal fires before removal
+  auto &enc = reg.get<Encounter>(e);
   enc.finalize();
 }
 
@@ -54,8 +54,5 @@ bool Encounter::has_alive_enemies() {
   return false;
 }
 
-bool Encounter::is_over() {
-  // For now, "over" simply means there are no alive enemies.
-  return !has_alive_enemies();
-}
+bool Encounter::is_over() { return !has_alive_enemies(); }
 } // namespace fl::ecs::components

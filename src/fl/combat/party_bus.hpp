@@ -4,14 +4,11 @@
 #include "sr/variant_bus.hpp"
 #include <variant>
 
-
 namespace fl::combat {
 
 using PartyInEvent = std::variant<seerin::Beat>;
 
-// Start small, expand later.
-using PartyOutEvent =
-    std::variant<seerin::BecameReady /*, seerin::ApplyEffect, ... */>;
+using PartyOutEvent = std::variant<seerin::BecameReady>;
 
 using PartyInBus = seerin::VariantBus<PartyInEvent>;
 using PartyOutBus = seerin::VariantBus<PartyOutEvent>;

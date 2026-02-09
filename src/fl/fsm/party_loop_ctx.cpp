@@ -9,7 +9,6 @@
 namespace fl::fsm {
 
 PartyLoopCtx::PartyLoopCtx(fl::context::PartyCtx &ctx) {
-  // Adjust these to whatever PartyCtx exposes.
   reg_ = &ctx.reg();
   rng_ = &ctx.rng();
   account_data_ = &ctx.account_data();
@@ -20,7 +19,6 @@ PartyLoopCtx::PartyLoopCtx(fl::context::PartyCtx &ctx) {
 entt::entity PartyLoopCtx::self() const { return party().party_id(); }
 
 fl::context::PartyCtx PartyLoopCtx::party_context() const {
-  // Adjust to PartyCtx's constructor/factory.
   return fl::context::PartyCtx{reg(), rng(), account_data(), party()};
 }
 
