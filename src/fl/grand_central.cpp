@@ -77,10 +77,6 @@ void GrandCentral::_create_initial_accounts() {
         auto &member = party_data.members().emplace_back(
             reg_.create(), hero_names[player_index]);
 
-        auto &is_party =
-            reg_.get<fl::ecs::components::IsParty>(party_data.party_id());
-        is_party.add_party_member(member.member_id_);
-
         party_data.log().append_markup(
             "[blue](Player initialized with ID " +
             std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
@@ -195,9 +191,9 @@ void GrandCentral::main_loop() {
 
       {
         std::scoped_lock lock(frame_mutex_);
-        //  logger_.info("[player_name](Beat) event.");
+        logger_.info("[player_name](Beat) event.");
 
-        gc_beat_bus_.emit(seerin::BeatEvent{seerin::Beat{}});
+        gc_beat_bus_.emit(seerin::Beat{});
       }
 
       // ---- Schedule next tick ----

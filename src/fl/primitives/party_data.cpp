@@ -1,39 +1,32 @@
-#include "party_data.hpp"
-
-#include <entt/entt.hpp>
-#include <vector>
+#include <fmt/core.h>
 
 #include "fl/context.hpp"
-#include "fl/ecs/components/is_party.hpp"
-#include "fl/events/party_bus.hpp"
-#include "fl/fsm/party_loop.hpp"
-#include "fl/fsm/party_loop_ctx.hpp"
+#include "fl/fsm/party_loop_machine.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/widgets/fancy_log.hpp"
-#include "logging.hpp"
-#include "random_hub.hpp"
-#include "sr/wire.hpp"
+#include "party_data.hpp"
+
 namespace fl::primitives {
 
-PartyData::PartyData(entt::entity party_id)
-    : party_id_(party_id), log_(std::make_unique<fl::widgets::FancyLog>()) {
-
-  // auto party_loop_ctx = ctx.party_context().party_loop_context();
+PartyData::PartyData(entt::entity party_id,
+                     fl::context::AccountCtx &account_ctx, std::string name)
+    : party_id_(party_id), name_(std::move(name)),
+      account_id_(account_ctx.account_data().account_id()),
+      log_(std::make_unique<fl::widgets::FancyLog>()),
+      party_ctx_(account_ctx.party_context(*this)),
+      party_loop_machine_(
+          std::make_unique<fl::fsm::PartyLoopMachine>(party_ctx_)) {
+  // Optional: early log breadcrumb
+  log_->append_markup(
+      fmt::format("Party created: id={} name={}", (int)party_id_, name_));
 }
 
-void PartyData::init_party(fl::fsm::PartyLoopCtx &party_loop_ctx,
-                           std::string name) {
-  party_loop_ctx.reg().emplace<fl::ecs::components::IsParty>(
-      party_id_, party_loop_ctx, std::move(name),
-      party_loop_ctx.account_data().id());
-}
-
-void PartyData::hook_to_beat(seerin::BeatBus &bus) {
-  gc_forward_sub_ = bus.on<seerin::Beat>([this](const seerin::Beat &) {
+void PartyData::hook_to_beat(seerin::BeatBus &gc_beat_bus) {
+  gc_forward_sub_ = gc_beat_bus.on<seerin::Beat>([this](const seerin::Beat &) {
     // Beat{} on both sides, as requested:
     // log_->append_markup("PartyData received beat");
-    party_beat_bus_.emit(seerin::BeatEvent{seerin::Beat{}});
+    party_beat_bus_.emit(seerin::Beat{});
+    party_loop_machine_->beat_event();
   });
 }
-
 } // namespace fl::primitives

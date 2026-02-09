@@ -20,8 +20,7 @@ public:
   PartyLoopMachine(const PartyLoopMachine &) = delete;
   PartyLoopMachine &operator=(const PartyLoopMachine &) = delete;
 
-  void start(std::string party_name);
-  void on_beat();
+  void beat_event();
   void dispatch_party_bus();
 
 private:

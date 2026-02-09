@@ -14,11 +14,11 @@ namespace fl::context {
 
 fl::widgets::FancyLog &AccountCtx::log() const {
   // FL_ASSERT(log_);
-  return account_->log();
+  return account_data_->log();
 }
 fl::events::AccountBus &AccountCtx::bus() const {
   // FL_ASSERT(bus_);
-  return account_->bus();
+  return account_data_->bus();
 }
 
 EntityCtx::EntityCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
@@ -69,16 +69,13 @@ BuildCtx PartyCtx::build_context() const {
   return BuildCtx{reg(), rng(), log()};
 }
 
-fl::fsm::PartyLoopCtx PartyCtx::party_loop_context() {
-  return fl::fsm::PartyLoopCtx{*this};
-}
-
 PartyCtx AccountCtx::party_context(std::size_t idx) const {
-  return PartyCtx{reg(), rng(), account(), account().parties().at(idx)};
+  return PartyCtx{reg(), rng(), account_data(),
+                  account_data().parties().at(idx)};
 }
 
 PartyCtx AccountCtx::party_context(fl::primitives::PartyData &data) const {
-  return PartyCtx{reg(), rng(), account(), data};
+  return PartyCtx{reg(), rng(), account_data(), data};
 }
 
 EntityCtx AccountCtx::entity_context(entt::entity ent) const {

@@ -1,3 +1,4 @@
+// party_data.hpp
 #pragma once
 
 #include <deque>
@@ -18,7 +19,8 @@ namespace fl::primitives {
 
 struct PartyData {
 public:
-  explicit PartyData(entt::entity party_id);
+  explicit PartyData(entt::entity party_id,
+                     fl::context::AccountCtx &account_ctx, std::string name);
 
   PartyData(PartyData &&) noexcept = default;
   PartyData &operator=(PartyData &&) noexcept = default;
@@ -29,10 +31,7 @@ public:
   // ---- accessors ----
   entt::entity party_id() const noexcept { return party_id_; }
 
-  fl::widgets::FancyLog &log() const { return *log_; } // assumes initialized
-  void set_log(std::unique_ptr<fl::widgets::FancyLog> log) {
-    log_ = std::move(log);
-  }
+  fl::widgets::FancyLog &log() const { return *log_; }
   bool has_log() const noexcept { return static_cast<bool>(log_); }
 
   std::deque<fl::primitives::MemberData> &members() noexcept {

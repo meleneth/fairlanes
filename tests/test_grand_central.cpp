@@ -57,7 +57,7 @@ TEST_CASE("GrandCentral context helpers work",
   entt::entity ent = acc_ctx.reg().create();
   // REQUIRE(ent != entt::null);
   // Account should own at least one party
-  REQUIRE(acc_ctx.account().parties().size() == 2);
+  REQUIRE(acc_ctx.account_data().parties().size() == 2);
 
   // Party context
   auto party_ctx = acc_ctx.party_context(0);

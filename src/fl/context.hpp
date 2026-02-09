@@ -3,7 +3,6 @@
 #include <concepts>
 #include <entt/entt.hpp>
 
-#include "fl/assert.hpp" // or wherever FL_ASSERT lives
 #include "fl/events/account_bus.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/fwd.hpp" // if this already forward-declares some of these
@@ -130,9 +129,9 @@ public:
     // FL_ASSERT(rng_);
     return *rng_;
   }
-  fl::primitives::AccountData &account() const {
+  fl::primitives::AccountData &account_data() const {
     // FL_ASSERT(account_);
-    return *account_;
+    return *account_data_;
   }
   fl::widgets::FancyLog &log() const;
   fl::events::AccountBus &bus() const;
@@ -142,12 +141,12 @@ public:
   EntityCtx entity_context(entt::entity ent) const;
   AccountCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
              fl::primitives::AccountData &account)
-      : reg_{&reg}, rng_{&rng}, account_{&account} {}
+      : reg_{&reg}, rng_{&rng}, account_data_{&account} {}
 
 private:
   entt::registry *reg_{};
   fl::primitives::RandomHub *rng_{};
-  fl::primitives::AccountData *account_{};
+  fl::primitives::AccountData *account_data_{};
   fl::widgets::FancyLog *log_{};
   fl::events::AccountBus *bus_{};
 };

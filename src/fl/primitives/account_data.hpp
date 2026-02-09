@@ -26,7 +26,7 @@ public:
   AccountData &operator=(const AccountData &) = delete;
 
   // --- capability-style accessors ---
-  entt::entity id() const { return account_id_; }
+  entt::entity account_id() const { return account_id_; }
 
   fl::widgets::FancyLog &log() const {
     // FL_ASSERT(log_);
