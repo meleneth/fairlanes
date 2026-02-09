@@ -48,10 +48,10 @@ struct PartyLoop {
     };
 
     return make_transition_table(
-        *state<Idle> + on_entry<_> / enter_idle,
-        state<Farming> + on_entry<_> / enter_farming,
-        state<Farming> + on_exit<_> / exit_farming,
-        state<Fixing> + on_entry<_> / enter_fixing,
+        *state<Idle> + sml::on_entry<_> / enter_idle,
+        state<Farming> + sml::on_entry<_> / enter_farming,
+        state<Farming> + sml::on_exit<_> / exit_farming,
+        state<Fixing> + sml::on_entry<_> / enter_fixing,
 
         state<Idle> + event<NextEvent> = state<Farming>,
         state<Farming> + event<NextEvent>[needs_town] = state<Fixing>,
