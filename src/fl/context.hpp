@@ -170,14 +170,30 @@ public:
     // FL_ASSERT(reg_);
     return *reg_;
   }
+
   fl::primitives::RandomHub &rng() const {
     // FL_ASSERT(rng_);
     return *rng_;
   }
+
   fl::widgets::FancyLog &log() const {
     // FL_ASSERT(log_);
     return *log_;
   }
+
+  entt::entity attacker() const {
+    // FL_ASSERT(attacker_ != entt::null);
+    return attacker_;
+  }
+
+  entt::entity defender() const {
+    // FL_ASSERT(defender_ != entt::null);
+    return defender_;
+  }
+
+  fl::primitives::Damage &damage() { return damage_; }
+
+  const fl::primitives::Damage &damage() const { return damage_; }
 
   fl::context::EntityCtx entity_context(entt::entity e) const;
   static AttackCtx make_attack(PartyCtx &ctx, entt::entity attacker,

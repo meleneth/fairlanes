@@ -67,7 +67,7 @@ Thump::Thump() : rng_(std::random_device{}()) {
 
 int Thump::thump(fl::context::AttackCtx &&ctx) {
   using fl::ecs::components::Stats;
-  auto &dst = ctx.reg().get<Stats>(ctx.defender_);
+  auto &dst = ctx.reg().get<Stats>(ctx.defender());
 
   // Weapon range (placeholder values; wire to your actual weapon data)
   wd_min_ = 1.0;
@@ -90,9 +90,9 @@ int Thump::thump(fl::context::AttackCtx &&ctx) {
   int hp_now = dst.hp_;
   int dmg = static_cast<int>(std::floor(dealt + 0.5));
   dmg = std::clamp(dmg, 0, hp_now);
-  ctx.damage_.physical = dmg;
-  entt::handle attacker_h{ctx.reg(), ctx.attacker_};
-  entt::handle defender_h{ctx.reg(), ctx.defender_};
+  ctx.damage().physical = dmg;
+  entt::handle attacker_h{ctx.reg(), ctx.attacker()};
+  entt::handle defender_h{ctx.reg(), ctx.defender()};
 
   /* ctx.log_.append_markup(fmt::format("{} thumped {} for [error]({}) damage",
                                        ctx.log_.name_tag_for(attacker_h),
