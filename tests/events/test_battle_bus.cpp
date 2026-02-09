@@ -19,29 +19,30 @@ TEST_CASE("BattleBus dispatches StartCombat, Tick, EndCombat",
   std::chrono::milliseconds seen_dt{0};
   EndCombatReason seen_reason = EndCombatReason::Aborted;
 
-  bus.add_listener(BattleEventId::StartCombat,
-                   [&](const fl::events::BattleEvent &ev) {
-                     saw_start = true;
-                     REQUIRE(ev.id == BattleEventId::StartCombat);
-                     auto payload = std::get<fl::events::StartCombat>(ev.data);
-                     REQUIRE(payload.encounter == expected_encounter);
-                   });
+  (void)bus.add_listener(
+      BattleEventId::StartCombat, [&](const fl::events::BattleEvent &ev) {
+        saw_start = true;
+        REQUIRE(ev.id == BattleEventId::StartCombat);
+        auto payload = std::get<fl::events::StartCombat>(ev.data);
+        REQUIRE(payload.encounter == expected_encounter);
+      });
 
-  bus.add_listener(BattleEventId::Tick, [&](const fl::events::BattleEvent &ev) {
-    saw_tick = true;
-    REQUIRE(ev.id == BattleEventId::Tick);
-    auto payload = std::get<fl::events::Tick>(ev.data);
-    seen_dt = payload.dt;
-  });
+  (void)bus.add_listener(BattleEventId::Tick,
+                         [&](const fl::events::BattleEvent &ev) {
+                           saw_tick = true;
+                           REQUIRE(ev.id == BattleEventId::Tick);
+                           auto payload = std::get<fl::events::Tick>(ev.data);
+                           seen_dt = payload.dt;
+                         });
 
-  bus.add_listener(BattleEventId::EndCombat,
-                   [&](const fl::events::BattleEvent &ev) {
-                     saw_end = true;
-                     REQUIRE(ev.id == BattleEventId::EndCombat);
-                     auto payload = std::get<fl::events::EndCombat>(ev.data);
-                     REQUIRE(payload.encounter == expected_encounter);
-                     seen_reason = payload.reason;
-                   });
+  (void)bus.add_listener(
+      BattleEventId::EndCombat, [&](const fl::events::BattleEvent &ev) {
+        saw_end = true;
+        REQUIRE(ev.id == BattleEventId::EndCombat);
+        auto payload = std::get<fl::events::EndCombat>(ev.data);
+        REQUIRE(payload.encounter == expected_encounter);
+        seen_reason = payload.reason;
+      });
 
   bus.start_combat(expected_encounter);
   bus.tick(std::chrono::milliseconds{16});
