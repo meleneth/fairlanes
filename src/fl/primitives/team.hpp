@@ -67,7 +67,7 @@ struct Team {
   std::optional<entt::entity> random_alive_member(Ctx &ctx) {
     using fl::ecs::components::Stats;
 
-    auto rs = ctx.rng_->stream("encounter/players");
+    auto rs = ctx.rng().stream("encounter/players");
 
     std::optional<entt::entity> selected;
     int seen = 0;

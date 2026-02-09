@@ -26,9 +26,9 @@ void PartyLoop::Ops::enter_farming(fl::fsm::PartyLoopCtx &ctx) {
 };
 
 void PartyLoop::Ops::exit_farming(fl::fsm::PartyLoopCtx &ctx) {
-  ctx.reg().remove<fl::ecs::components::Encounter>(ctx.self_());
+  ctx.reg().remove<fl::ecs::components::Encounter>(ctx.self());
   // ctx.log_.append_plain("Returned to town.");
-  entt::handle h{ctx.reg(), ctx.self_()};
+  entt::handle h{ctx.reg(), ctx.self()};
   // TODO FIXME
   // using fl::systems::ReplenishParty;
   // ReplenishParty::commit(h);
@@ -42,7 +42,7 @@ void PartyLoop::Ops::combat_tick(fl::fsm::PartyLoopCtx &ctx) {
 
   using fl::ecs::components::Encounter;
   using fl::ecs::components::Stats;
-  auto &encounter = ctx.reg().get<Encounter>(ctx.self_());
+  auto &encounter = ctx.reg().get<Encounter>(ctx.self());
   encounter.attackers_->for_each_alive_member(ctx, [&](entt::entity attacker) {
     auto defender = encounter.defenders_->random_alive_member(ctx);
     if (defender) {
@@ -62,12 +62,12 @@ void PartyLoop::Ops::combat_tick(fl::fsm::PartyLoopCtx &ctx) {
   });
 };
 bool PartyLoop::Ops::in_combat(fl::fsm::PartyLoopCtx &ctx) {
-  auto &is_party = ctx.reg().get<fl::ecs::components::IsParty>(ctx.self_());
+  auto &is_party = ctx.reg().get<fl::ecs::components::IsParty>(ctx.self());
   return is_party.in_combat();
 }
 
 bool PartyLoop::Ops::needs_town(fl::fsm::PartyLoopCtx &ctx) {
-  auto &is_party = ctx.reg().get<fl::ecs::components::IsParty>(ctx.self_());
+  auto &is_party = ctx.reg().get<fl::ecs::components::IsParty>(ctx.self());
   return is_party.needs_town();
 }
 } // namespace fl::fsm

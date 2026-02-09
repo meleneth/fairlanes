@@ -1,7 +1,7 @@
 #include "fl/fsm/party_loop_machine.hpp"
 #include "fl/fsm/party_loop.hpp"
 #include "fl/fsm/party_loop_ctx.hpp"
-
+#include "sr/atb_events.hpp"
 // include boost::sml + your event types here
 #include <boost/sml.hpp>
 

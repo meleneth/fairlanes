@@ -10,7 +10,7 @@
 #include "fl/primitives/damage.hpp"
 
 namespace fl::primitives {
-class RandomHub;
+struct RandomHub;
 struct AccountData;
 struct PartyData;
 struct Damage; // only if you KEEP it as value you must include its header
