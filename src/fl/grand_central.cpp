@@ -80,7 +80,7 @@ void GrandCentral::_create_initial_accounts() {
         party_data.log().append_markup(
             "[blue](Player initialized with ID " +
             std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
-                member.member_id_)) +
+                member.member_id())) +
             ") as [player_name](" + hero_names[player_index] + ")");
 
         ++player_index;

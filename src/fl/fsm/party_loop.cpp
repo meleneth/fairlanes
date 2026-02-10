@@ -26,7 +26,8 @@ void PartyLoop::Ops::enter_farming(fl::context::PartyCtx &ctx) {
 };
 
 void PartyLoop::Ops::exit_farming(fl::context::PartyCtx &ctx) {
-  ctx.reg().remove<fl::ecs::components::Encounter>(ctx.self());
+  // TODO is this the crash?
+  //  ctx.reg().remove<fl::ecs::components::Encounter>(ctx.self());
   ctx.log().append_plain("Returned to town.");
   entt::handle h{ctx.reg(), ctx.self()};
   // TODO FIXME
@@ -40,19 +41,21 @@ void PartyLoop::Ops::combat_tick(fl::context::PartyCtx &ctx) {
   using fl::skills::Thump;
   Thump in_the_night;
 
+  ctx.log().append_markup("[red](PartyLoop) Combat tick!");
+
   using fl::ecs::components::Encounter;
   using fl::ecs::components::Stats;
-  auto &encounter = ctx.reg().get<Encounter>(ctx.self());
-  encounter.attackers_->for_each_alive_member(ctx, [&](entt::entity attacker) {
-    auto defender = encounter.defenders_->random_alive_member(ctx);
+  auto &encounter = ctx.party_data().encounter_data();
+  encounter.attackers().for_each_alive_member(ctx, [&](entt::entity attacker) {
+    auto defender = encounter.defenders().random_alive_member(ctx);
     if (defender) {
       in_the_night.thump(
           fl::context::AttackCtx::make_attack(ctx, attacker, *defender));
     }
   });
 
-  encounter.defenders_->for_each_alive_member(ctx, [&](entt::entity attacker) {
-    auto defender = encounter.attackers_->random_alive_member(ctx);
+  encounter.defenders().for_each_alive_member(ctx, [&](entt::entity attacker) {
+    auto defender = encounter.attackers().random_alive_member(ctx);
     if (defender) {
       in_the_night.thump(
           fl::context::AttackCtx::make_attack(ctx, attacker, *defender));

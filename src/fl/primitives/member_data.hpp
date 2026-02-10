@@ -1,32 +1,39 @@
 // grand_central.hpp
 #pragma once
 
+#include <string>
+#include <utility>
+
 #include <entt/entt.hpp>
-#include <vector>
 
 #include "fl/events/party_bus.hpp"
-#include "fl/widgets/fancy_log.hpp"
-#include "logging.hpp"
-#include "random_hub.hpp"
 
 namespace fl::primitives {
 
 struct MemberData {
-  entt::entity member_id_;
-  std::string name_; // TODO WHAT THE FUCK
-  std::shared_ptr<fl::widgets::FancyLog> log_;
-
-  fl::events::PartyBus bus_;
-
-  MemberData(entt::entity member_id, const std::string &name)
-      : member_id_(member_id), name_(name),
-        log_(std::make_shared<fl::widgets::FancyLog>()) {}
+public:
+  explicit MemberData(entt::entity member_id, std::string name)
+      : member_id_{member_id}, name_{std::move(name)} {}
 
   MemberData(MemberData &&) noexcept = default;
   MemberData &operator=(MemberData &&) noexcept = default;
 
   MemberData(const MemberData &) = delete;
   MemberData &operator=(const MemberData &) = delete;
+
+  // ---- accessors ----
+  entt::entity member_id() const noexcept { return member_id_; }
+
+  const std::string &name() const noexcept { return name_; }
+
+  fl::events::PartyBus &bus() noexcept { return bus_; }
+  const fl::events::PartyBus &bus() const noexcept { return bus_; }
+
+private:
+  entt::entity member_id_{entt::null};
+  std::string name_;
+
+  fl::events::PartyBus bus_;
 };
 
 } // namespace fl::primitives

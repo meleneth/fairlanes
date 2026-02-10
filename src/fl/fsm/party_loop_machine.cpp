@@ -1,9 +1,10 @@
 #include "fl/fsm/party_loop_machine.hpp"
 #include "fl/context.hpp"
 #include "fl/fsm/party_loop.hpp"
+#include "fl/widgets/fancy_log.hpp"
 #include "sr/atb_events.hpp"
-
 #include <boost/sml.hpp>
+
 
 namespace fl::fsm {
 
@@ -22,6 +23,8 @@ PartyLoopMachine &
 PartyLoopMachine::operator=(PartyLoopMachine &&) noexcept = default;
 
 void PartyLoopMachine::beat_event() {
+  impl_->ctx->log().append_markup(
+      "[magenta](PartyLoopMachine) Received beat event.");
   impl_->sm_.process_event(fl::fsm::NextEvent{});
 }
 

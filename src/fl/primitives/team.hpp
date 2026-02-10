@@ -1,5 +1,6 @@
 // team.hpp
 #pragma once
+
 #include <optional>
 #include <vector>
 
@@ -13,12 +14,17 @@
 namespace fl::primitives {
 
 struct Team {
-  std::vector<entt::entity> members_;
+public:
+  Team() = default;
+
+  // ---- accessors ----
+  std::vector<entt::entity> &members() noexcept { return members_; }
+  const std::vector<entt::entity> &members() const noexcept { return members_; }
 
   // MA RK_CLASS_MOVEONLY(Team);
 
   template <fl::context::WorldCoreCtx Ctx, typename Fn>
-  void for_each_alive_member(Ctx &ctx, Fn &&fn) {
+  void for_each_alive_member(Ctx &ctx, Fn &&fn) const {
     using fl::ecs::components::Stats;
 
     for (auto e : members_) {
@@ -31,20 +37,21 @@ struct Team {
   }
 
   template <fl::context::WorldCoreCtx Ctx, typename Fn>
-  inline void for_each_member(Ctx &ctx, Fn &&fn) {
-    using fl::ecs::components::Stats;
+  void for_each_member(Ctx &, Fn &&fn) const {
     for (auto e : members_) {
       std::forward<Fn>(fn)(e);
     }
   }
+
   template <fl::context::WorldCoreCtx Ctx>
   bool has_alive_members(Ctx &ctx) const {
     using fl::ecs::components::Stats;
 
     for (auto e : members_) {
-      if (auto stats = ctx->reg_.template try_get<Stats>(e);
-          stats && stats->hp_ > 0) {
-        return true;
+      if (auto *stats = ctx.reg().template try_get<Stats>(e)) {
+        if (stats->hp_ > 0) {
+          return true;
+        }
       }
     }
     return false;
@@ -53,21 +60,23 @@ struct Team {
   template <fl::context::WorldCoreCtx Ctx>
   std::vector<entt::entity> alive_members(Ctx &ctx) const {
     using fl::ecs::components::Stats;
+
     std::vector<entt::entity> out;
     out.reserve(members_.size());
+
     for (auto e : members_) {
-      if (auto stats = ctx.reg().template try_get<Stats>(e);
-          stats && stats->hp_ > 0) {
-        out.push_back(e);
+      if (auto *stats = ctx.reg().template try_get<Stats>(e)) {
+        if (stats->hp_ > 0) {
+          out.push_back(e);
+        }
       }
     }
     return out;
   }
-  template <fl::context::WorldCoreCtx Ctx>
-  std::optional<entt::entity> random_alive_member(Ctx &ctx) {
-    using fl::ecs::components::Stats;
 
-    auto rs = ctx.rng().stream("encounter/players");
+  template <fl::context::WorldCoreCtx Ctx>
+  std::optional<entt::entity> random_alive_member(Ctx &ctx) const {
+    auto rs = ctx.rng().stream("encounter/team");
 
     std::optional<entt::entity> selected;
     int seen = 0;
@@ -78,8 +87,12 @@ struct Team {
         selected = candidate;
       }
     });
+
     return selected;
   }
+
+private:
+  std::vector<entt::entity> members_;
 };
 
 } // namespace fl::primitives

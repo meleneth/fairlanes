@@ -29,4 +29,13 @@ void PartyData::hook_to_beat(seerin::BeatBus &gc_beat_bus) {
     party_loop_machine_->beat_event();
   });
 }
+
+EncounterData &PartyData::create_encounter() {
+  log_->append_markup(fmt::format("Party id={} encounter_data={}",
+                                  (int)party_id_,
+                                  static_cast<void *>(encounter_data_.get())));
+  encounter_data_ = std::make_unique<EncounterData>();
+
+  return *encounter_data_;
+}
 } // namespace fl::primitives

@@ -1,0 +1,82 @@
+#pragma once
+
+#include <entt/entt.hpp>
+#include <memory>
+#include <vector>
+
+#include "fl/events/battle_bus.hpp"
+#include "fl/events/beat_bus.hpp"
+#include "fl/events/ready_queue.hpp"
+#include "fl/events/timed_event_queue.hpp"
+#include "fl/primitives/team.hpp"
+
+namespace fl::primitives {
+
+struct EncounterData {
+public:
+  EncounterData()
+      : attackers_(std::make_unique<fl::primitives::Team>()),
+        defenders_(std::make_unique<fl::primitives::Team>()) {}
+
+  EncounterData(EncounterData &&) noexcept = default;
+  EncounterData &operator=(EncounterData &&) noexcept = default;
+
+  EncounterData(const EncounterData &) = delete;
+  EncounterData &operator=(const EncounterData &) = delete;
+
+  // ---- accessors (refs out, pointers in) ----
+  fl::primitives::Team &attackers() { return *attackers_; }
+  const fl::primitives::Team &attackers() const { return *attackers_; }
+
+  fl::primitives::Team &defenders() { return *defenders_; }
+  const fl::primitives::Team &defenders() const { return *defenders_; }
+
+  std::vector<entt::entity> &entities_to_cleanup() {
+    return entities_to_cleanup_;
+  }
+  const std::vector<entt::entity> &entities_to_cleanup() const {
+    return entities_to_cleanup_;
+  }
+
+  fl::events::BeatBus::Handle &beat_tick_handle() { return beat_tick_handle_; }
+  const fl::events::BeatBus::Handle &beat_tick_handle() const {
+    return beat_tick_handle_;
+  }
+
+  fl::events::BattleBus &battle_bus() { return battle_bus_; }
+  const fl::events::BattleBus &battle_bus() const { return battle_bus_; }
+
+  fl::events::TimedEventQueue &timed_events() { return timed_events_; }
+  const fl::events::TimedEventQueue &timed_events() const {
+    return timed_events_;
+  }
+
+  fl::events::ReadyQueue &ready_queue() { return ready_queue_; }
+  const fl::events::ReadyQueue &ready_queue() const { return ready_queue_; }
+
+  // ---- behavior ----
+  bool has_alive_enemies();
+  bool is_over();
+  void finalize();
+  void innervate_event_system(fl::events::BeatBus &beat_bus);
+
+private:
+  std::unique_ptr<fl::primitives::Team> attackers_;
+  std::unique_ptr<fl::primitives::Team> defenders_;
+  std::vector<entt::entity> entities_to_cleanup_{};
+  fl::events::BeatBus::Handle beat_tick_handle_{};
+
+  fl::events::BattleBus battle_bus_{};
+  fl::events::TimedEventQueue timed_events_{};
+  fl::events::ReadyQueue ready_queue_{};
+};
+
+struct InEncounter {
+  /// @brief Backlink to the encounter entity that owns an Encounter component.
+  entt::entity encounter_{entt::null};
+};
+
+void on_encounter_destroy(entt::registry &reg, entt::entity e);
+void install_encounter_hooks(entt::registry &reg);
+
+} // namespace fl::primitives

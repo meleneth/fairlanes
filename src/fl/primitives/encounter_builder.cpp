@@ -1,29 +1,27 @@
 #include "encounter_builder.hpp"
 #include "fl/context.hpp"
 #include "fl/ecs/components/encounter.hpp"
-#include "fl/ecs/components/is_party.hpp"
-#include "fl/ecs/components/stats.hpp"
-#include "fl/ecs/components/track_xp.hpp"
 #include "fl/monsters/monster_kind.hpp"
-#include "fl/monsters/register_monsters.hpp" // brings all the monsters with it
 #include "fl/primitives/entity_builder.hpp"
+#include "fl/primitives/party_data.hpp"
 #include "fl/primitives/team.hpp"
 
 namespace fl::primitives {
 
 void EncounterBuilder::thump_it_out() {
-  using namespace fl::ecs::components;
+  auto &encounter_data = ctx_.party_data().create_encounter();
 
-  auto &enc = ctx_.reg().emplace<fl::ecs::components::Encounter>(ctx_.self());
-  auto &is_party = ctx_.reg().get<IsParty>(ctx_.self());
+  // auto party = ctx_.party_data().party_id();
 
-  enc.attackers_ = std::make_unique<fl::primitives::Team>();
-  enc.defenders_ = std::make_unique<fl::primitives::Team>();
+  // TODO or is this the crash
+  //  ctx_.reg().emplace<fl::ecs::components::Encounter>(party, party,
+  //                                                   &encounter_data);
 
   add_field_mouse();
 
-  is_party.for_each_member(
-      [&](entt::entity member) { enc.defenders_->members_.push_back(member); });
+  ctx_.party_data().for_each_member([&](entt::entity member) {
+    encounter_data.defenders().members().push_back(member);
+  });
 }
 
 void EncounterBuilder::add_field_mouse() {
@@ -37,11 +35,12 @@ void EncounterBuilder::add_field_mouse() {
 }
 
 void EncounterBuilder::add_to_enemy_team(entt::entity entity) {
-  // First strike wen?
-  auto &enc = ctx_.reg().get<fl::ecs::components::Encounter>(ctx_.self());
 
-  enc.attackers_->members_.push_back(entity);
-  enc.e_to_cleanup_.push_back(entity);
+  auto &encounter_data = ctx_.party_data().encounter_data();
+  // First strike wen?
+
+  encounter_data.attackers().members().push_back(entity);
+  encounter_data.entities_to_cleanup().push_back(entity);
 }
 
 } // namespace fl::primitives
