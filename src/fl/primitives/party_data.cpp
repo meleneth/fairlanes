@@ -34,7 +34,7 @@ EncounterData &PartyData::create_encounter() {
   log_->append_markup(fmt::format("Party id={} encounter_data={}",
                                   (int)party_id_,
                                   static_cast<void *>(encounter_data_.get())));
-  encounter_data_ = std::make_unique<EncounterData>();
+  encounter_data_ = std::make_unique<EncounterData>(&party_ctx_);
 
   return *encounter_data_;
 }

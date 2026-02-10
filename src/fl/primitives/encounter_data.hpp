@@ -14,9 +14,10 @@ namespace fl::primitives {
 
 struct EncounterData {
 public:
-  EncounterData()
+  EncounterData(fl::context::PartyCtx *party_ctx)
       : attackers_(std::make_unique<fl::primitives::Team>()),
-        defenders_(std::make_unique<fl::primitives::Team>()) {}
+        defenders_(std::make_unique<fl::primitives::Team>()),
+        party_ctx_(party_ctx) {}
 
   EncounterData(EncounterData &&) noexcept = default;
   EncounterData &operator=(EncounterData &&) noexcept = default;
@@ -69,6 +70,7 @@ private:
   fl::events::BattleBus battle_bus_{};
   fl::events::TimedEventQueue timed_events_{};
   fl::events::ReadyQueue ready_queue_{};
+  fl::context::PartyCtx *party_ctx_;
 };
 
 struct InEncounter {

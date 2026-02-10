@@ -49,6 +49,9 @@ void PartyLoop::Ops::combat_tick(fl::context::PartyCtx &ctx) {
   encounter.attackers().for_each_alive_member(ctx, [&](entt::entity attacker) {
     auto defender = encounter.defenders().random_alive_member(ctx);
     if (defender) {
+      ctx.log().append_markup(
+          "[red](PartyLoop) " + ctx.reg().get<Stats>(attacker).name_ +
+          " attacks " + ctx.reg().get<Stats>(*defender).name_ + "!");
       in_the_night.thump(
           fl::context::AttackCtx::make_attack(ctx, attacker, *defender));
     }

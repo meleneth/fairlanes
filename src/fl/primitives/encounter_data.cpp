@@ -48,17 +48,17 @@ void EncounterData::finalize() {
 
 bool EncounterData::has_alive_enemies() {
   using fl::ecs::components::Stats;
-  /*  for (auto e : e_to_cleanup_) {
-      if (!ctx_.reg_.valid(e) || !ctx_.reg_.all_of<Stats>(e)) {
-        continue; // stale or already destroyed, ignore
-      }
-
-      auto &enemy = ctx_.reg_.get<Stats>(e);
-      if (enemy.is_alive()) {
-        return true;
-      }
+  for (auto e : entities_to_cleanup_) {
+    if (!party_ctx_->reg().valid(e) || !party_ctx_->reg().all_of<Stats>(e)) {
+      continue; // stale or already destroyed, ignore
     }
-  */
+
+    auto &enemy = party_ctx_->reg().get<Stats>(e);
+    if (enemy.is_alive()) {
+      return true;
+    }
+  }
+
   return false;
 }
 
