@@ -33,6 +33,7 @@ struct AtbMachine {
 
     const auto accrue = [this] {
       ctx.charge = uWu{ctx.charge.v + UWU_PER_BEAT.v};
+      // out.emit(AtbOutEvent{BecameReady{id}});
     };
 
     const auto accrue_and_emit_ready = [this] {

@@ -6,7 +6,6 @@
 #include "fl/ecs/components/stats.hpp"
 #include "fl/events/beat_bus.hpp"
 #include "fl/primitives/encounter_data.hpp"
-#include "fl/primitives/party_data.hpp"
 #include "sr/atb_events.hpp"
 
 namespace fl::primitives {
@@ -24,12 +23,11 @@ void install_encounter_hooks(entt::registry &reg) {
 }
 
 void EncounterData::innervate_event_system(fl::events::BeatBus &beat_bus) {
-  // Upstream: global heartbeat drives battle bus.
-  // Incorrect. PARTY subscribes to heart beat
-    atb_in_.on<seerin::Beat>([&](const seerin::Beat &) {
+
+  atb_in_.on<seerin::Beat>([&](const seerin::Beat &) {
     party_ctx_->log().append_markup("ATB_IN got Beat");
   });
-  
+
   /*
     beat_tick_handle_ = beat_bus.add_listener(
         fl::events::BeatEventId::Beat, [this](const fl::events::BeatEvent &ev) {
@@ -95,6 +93,11 @@ EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
               entt::to_integral(party_ctx_->party_data().party_id())));
         });
   */
+
+  atb_out_.on<seerin::BecameReady>([&](const seerin::BecameReady &) {
+    party_ctx_->log().append_markup("BecameReady observed");
+  });
+
   atb_in_.on<seerin::AddCombatant>([this](const seerin::AddCombatant &e) {
     party_ctx_->log().append_markup(
         fmt::format("[magenta](tap) AddCombatant {}", entt::to_integral(e.id)));

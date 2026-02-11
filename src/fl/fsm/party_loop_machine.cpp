@@ -5,7 +5,6 @@
 #include "sr/atb_events.hpp"
 #include <boost/sml.hpp>
 
-
 namespace fl::fsm {
 
 struct PartyLoopMachine::Impl {
