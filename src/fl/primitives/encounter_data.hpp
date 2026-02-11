@@ -9,15 +9,19 @@
 #include "fl/events/ready_queue.hpp"
 #include "fl/events/timed_event_queue.hpp"
 #include "fl/primitives/team.hpp"
+#include "fl/widgets/fancy_log.hpp"
+
+#include "sr/atb_bus.hpp"
+#include "sr/atb_engine.hpp"
+#include "sr/encounter_bus.hpp"
+#include "sr/encounter_events.hpp"
+#include "sr/timed_scheduler.hpp"
 
 namespace fl::primitives {
 
 struct EncounterData {
 public:
-  EncounterData(fl::context::PartyCtx *party_ctx)
-      : attackers_(std::make_unique<fl::primitives::Team>()),
-        defenders_(std::make_unique<fl::primitives::Team>()),
-        party_ctx_(party_ctx) {}
+  EncounterData(fl::context::PartyCtx *party_ctx);
 
   EncounterData(EncounterData &&) noexcept = default;
   EncounterData &operator=(EncounterData &&) noexcept = default;
@@ -55,6 +59,9 @@ public:
   fl::events::ReadyQueue &ready_queue() { return ready_queue_; }
   const fl::events::ReadyQueue &ready_queue() const { return ready_queue_; }
 
+  seerin::AtbInBus &atb_in() noexcept { return atb_in_; }
+  const seerin::AtbInBus &atb_in() const noexcept { return atb_in_; }
+
   // ---- behavior ----
   bool has_alive_enemies();
   bool is_over();
@@ -71,6 +78,13 @@ private:
   fl::events::TimedEventQueue timed_events_{};
   fl::events::ReadyQueue ready_queue_{};
   fl::context::PartyCtx *party_ctx_;
+
+  seerin::AtbInBus atb_in_;
+  seerin::AtbOutBus atb_out_;
+  seerin::AtbEngine atb_;
+  fl::events::PartyBus::Handle party_beat_handle_;
+
+  fl::events::PartyBus::Handle party_tick_tap_;
 };
 
 struct InEncounter {

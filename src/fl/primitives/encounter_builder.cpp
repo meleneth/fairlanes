@@ -5,7 +5,7 @@
 #include "fl/primitives/entity_builder.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/team.hpp"
-
+#include "sr/encounter_events.hpp"
 namespace fl::primitives {
 
 void EncounterBuilder::thump_it_out() {
@@ -21,6 +21,8 @@ void EncounterBuilder::thump_it_out() {
 
   ctx_.party_data().for_each_member([&](entt::entity member) {
     encounter_data.defenders().members().push_back(member);
+    encounter_data.atb_in().emit(
+        seerin::AtbInEvent{seerin::AddCombatant{member}});
   });
 }
 
@@ -41,6 +43,8 @@ void EncounterBuilder::add_to_enemy_team(entt::entity entity) {
 
   encounter_data.attackers().members().push_back(entity);
   encounter_data.entities_to_cleanup().push_back(entity);
+  encounter_data.atb_in().emit(
+      seerin::AtbInEvent{seerin::AddCombatant{entity}});
 }
 
 } // namespace fl::primitives

@@ -23,8 +23,8 @@ PartyLoopMachine &
 PartyLoopMachine::operator=(PartyLoopMachine &&) noexcept = default;
 
 void PartyLoopMachine::beat_event() {
-  impl_->ctx->log().append_markup(
-      "[magenta](PartyLoopMachine) Received beat event.");
+  //  impl_->ctx->log().append_markup(
+  //    "[magenta](PartyLoopMachine) Received beat event.");
   impl_->sm_.process_event(fl::fsm::NextEvent{});
 }
 
