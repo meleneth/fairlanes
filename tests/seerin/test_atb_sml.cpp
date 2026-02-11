@@ -24,12 +24,12 @@ TEST_CASE("ATB: 60 beats makes a combatant ready (SML, no deltas)") {
   AtbInBus in;
   AtbOutBus out;
   AtbEngine eng(in, out);
-
+  entt::entity e1 = entt::entity{1}; // dummy combatant ID
   std::vector<AtbOutEvent> recorded;
   out.on<BecameReady>(
       [&](const BecameReady &e) { recorded.push_back(AtbOutEvent{e}); });
 
-  in.emit(AtbInEvent{AddCombatant{1}});
+  in.emit(AtbInEvent{AddCombatant{e1}});
 
   for (int i = 0; i < 59; ++i) {
     in.emit(AtbInEvent{Beat{}});

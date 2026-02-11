@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/sml.hpp>
+#include <entt/entt.hpp>
 
 #include "atb_bus.hpp"
 #include "atb_events.hpp"
@@ -21,7 +22,7 @@ struct AtbCtx {
 struct AtbMachine {
   AtbCtx &ctx;
   AtbOutBus &out;
-  int id;
+  entt::entity id;
 
   auto operator()() const {
     using namespace sml;

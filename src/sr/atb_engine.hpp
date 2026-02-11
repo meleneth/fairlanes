@@ -2,6 +2,7 @@
 #include <boost/sml.hpp>
 #include <unordered_map>
 
+#include <entt/entt.hpp>
 
 #include "atb_fsm.hpp"
 
@@ -16,9 +17,8 @@ private:
     AtbCtx ctx;
     boost::sml::sm<AtbMachine> sm;
 
-    Combatant(int id, AtbOutBus &out_bus)
-        : ctx{}, sm{AtbMachine{ctx, out_bus, id}} // <-- construct sm with deps
-    {}
+    Combatant(entt::entity id, AtbOutBus &out_bus)
+        : ctx{}, sm{AtbMachine{ctx, out_bus, id}} {}
   };
 
   void on_beat(const Beat &);
@@ -27,7 +27,7 @@ private:
 private:
   AtbInBus &in_;
   AtbOutBus &out_;
-  std::unordered_map<int, Combatant> combatants_;
+  std::unordered_map<entt::entity, Combatant> combatants_;
 };
 
 } // namespace seerin

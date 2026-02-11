@@ -1,19 +1,21 @@
 #pragma once
 #include <variant>
 
+#include <entt/entt.hpp>
+
 namespace seerin {
 
 // InBus events (external)
 struct Beat {}; // payload-free: one beat happened
 struct AddCombatant {
-  int id;
+  entt::entity id;
 };
 
 using AtbInEvent = std::variant<Beat, AddCombatant>;
 
 // OutBus events (observable)
 struct BecameReady {
-  int id;
+  entt::entity id;
 };
 
 using AtbOutEvent = std::variant<BecameReady>;

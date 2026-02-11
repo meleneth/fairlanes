@@ -65,12 +65,13 @@ TEST_CASE(
   // ---
 
   // Add one combatant. (AddCombatant is now just { int id; })
-  bus.emit(seerin::EncounterEvent{seerin::AddCombatant{1}});
+  auto e1 = entt::entity{1};
+  bus.emit(seerin::EncounterEvent{seerin::AddCombatant{e1}});
 
   // Schedule an effect 2 beats later.
   sched.schedule_in_beats(
-      2, seerin::EncounterEvent{seerin::ApplyEffect{/*src*/ 1,
-                                                    /*dst*/ 1,
+      2, seerin::EncounterEvent{seerin::ApplyEffect{/*src*/ e1,
+                                                    /*dst*/ e1,
                                                     /*skill*/ 42,
                                                     /*magnitude*/ 10}});
 
@@ -97,5 +98,5 @@ TEST_CASE(
 
   // Optional: if you want to assert "which combatant became ready".
   REQUIRE(probe.readies.size() == 1);
-  REQUIRE(probe.readies[0].id == 1);
+  REQUIRE(probe.readies[0].id == e1);
 }
