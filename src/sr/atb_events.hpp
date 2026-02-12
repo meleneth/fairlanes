@@ -1,26 +1,36 @@
+// atb_events.hpp
 #pragma once
-#include <variant>
-
 #include <entt/entt.hpp>
+#include <variant>
 
 namespace seerin {
 
 // InBus events (external)
-struct Beat {}; // payload-free: one beat happened
+struct Beat {};
 struct AddCombatant {
   entt::entity id;
 };
 
-using AtbInEvent = std::variant<Beat, AddCombatant>;
+// “Turn spent; start charging again”
+struct FinishedTurn {
+  entt::entity id;
+};
+
+using AtbInEvent = std::variant<Beat, AddCombatant, FinishedTurn>;
 
 // OutBus events (observable)
 struct BecameReady {
   entt::entity id;
 };
 
-using AtbOutEvent = std::variant<BecameReady>;
+// NEW: ATB chose who is active now
+struct BecameActive {
+  entt::entity id;
+};
 
-// FSM-only event (internal fact)
-struct BeatTick {}; // one ATB tick for a combatant FSM
+using AtbOutEvent = std::variant<BecameReady, BecameActive>;
+
+// FSM-only events (internal)
+struct BeatTick {};
 
 } // namespace seerin

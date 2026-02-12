@@ -44,8 +44,11 @@ struct AtbMachine {
     return make_transition_table(
         *state<Charging> + event<BeatTick>[will_be_full] /
                                accrue_and_emit_ready = state<Ready>,
-        state<Charging> + event<BeatTick> / accrue = state<Charging>);
-  }
-};
+        state<Charging> + event<BeatTick> / accrue = state<Charging>,
 
+        // NEW: consume the turn, reset, start charging again
+        state<Ready> + event<FinishedTurn> / [this] { ctx.charge = uWu{0}; } =
+            state<Charging>);
+  };
+};
 } // namespace seerin
