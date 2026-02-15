@@ -21,6 +21,10 @@ public:
   std::vector<entt::entity> &members() noexcept { return members_; }
   const std::vector<entt::entity> &members() const noexcept { return members_; }
 
+  bool contains(entt::entity e) const {
+    return std::find(members_.begin(), members_.end(), e) != members_.end();
+  }
+
   // MA RK_CLASS_MOVEONLY(Team);
 
   template <fl::context::WorldCoreCtx Ctx, typename Fn>

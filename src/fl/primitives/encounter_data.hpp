@@ -68,6 +68,25 @@ public:
   void finalize();
   void innervate_event_system(fl::events::BeatBus &beat_bus);
 
+  bool owns_entity(entt::entity e) const {
+    return std::find(life_.entities_to_cleanup_.begin(),
+                     life_.entities_to_cleanup_.end(),
+                     e) != life_.entities_to_cleanup_.end();
+  }
+
+  bool is_good_guy(entt::entity e) const { return !owns_entity(e); }
+  bool is_bad_guy(entt::entity e) const { return owns_entity(e); }
+  entt::entity target_random_alive_opposition(entt::entity e) const {
+    if (topo_.attackers_.contains(e)) {
+      return topo_.defenders_.random_alive_member(*party_ctx_)
+          .value_or(entt::null);
+    }
+    if (topo_.defenders_.contains(e)) {
+      return topo_.attackers_.random_alive_member(*party_ctx_)
+          .value_or(entt::null);
+    }
+  }
+
 private:
   struct Topology {
     Team attackers_;
