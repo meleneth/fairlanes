@@ -13,9 +13,6 @@
 
 #include "sr/atb_bus.hpp"
 #include "sr/atb_engine.hpp"
-#include "sr/encounter_bus.hpp"
-#include "sr/encounter_events.hpp"
-#include "sr/timed_scheduler.hpp"
 
 namespace fl::primitives {
 
@@ -59,8 +56,11 @@ public:
   fl::events::ReadyQueue &ready_queue() { return ready_queue_; }
   const fl::events::ReadyQueue &ready_queue() const { return ready_queue_; }
 
-  seerin::AtbInBus &atb_in() noexcept { return atb_in_; }
-  const seerin::AtbInBus &atb_in() const noexcept { return atb_in_; }
+  seerin::AtbInBus &atb_in() noexcept { return atb_.in(); }
+  const seerin::AtbInBus &atb_in() const noexcept { return atb_.in(); }
+
+  seerin::AtbOutBus &atb_out() noexcept { return atb_.out(); }
+  const seerin::AtbOutBus &atb_out() const noexcept { return atb_.out(); }
 
   // ---- behavior ----
   bool has_alive_enemies();
@@ -79,8 +79,6 @@ private:
   fl::events::ReadyQueue ready_queue_{};
   fl::context::PartyCtx *party_ctx_;
 
-  seerin::AtbInBus atb_in_;
-  seerin::AtbOutBus atb_out_;
   seerin::AtbEngine atb_;
   fl::events::PartyBus::Handle party_beat_handle_;
 

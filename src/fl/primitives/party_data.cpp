@@ -5,6 +5,7 @@
 #include "fl/primitives/account_data.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "party_data.hpp"
+#include "sr/beat_bus.hpp"
 
 namespace fl::primitives {
 

@@ -52,11 +52,6 @@ public:
   fl::events::PartyBus &party_bus() noexcept { return party_bus_; }
   const fl::events::PartyBus &party_bus() const noexcept { return party_bus_; }
 
-  seerin::BeatBus &party_beat_bus() noexcept { return party_beat_bus_; }
-  const seerin::BeatBus &party_beat_bus() const noexcept {
-    return party_beat_bus_;
-  }
-
   fl::context::PartyCtx &loop_ctx() noexcept { return party_ctx_; }
   const fl::context::PartyCtx &loop_ctx() const noexcept { return party_ctx_; }
 
@@ -92,6 +87,7 @@ private:
   std::unique_ptr<fl::primitives::EncounterData> encounter_data_{nullptr};
   std::deque<fl::primitives::MemberData> members_;
   fl::events::PartyBus party_bus_;
+  seerin::AtbEngine atb_;
 
   seerin::BeatBus party_beat_bus_{};
   seerin::BeatSub gc_forward_sub_{};

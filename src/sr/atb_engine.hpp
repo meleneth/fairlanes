@@ -21,7 +21,10 @@ public:
 
   // ---- getters returning refs ----
   PairedBus<AtbInBus, AtbOutBus> &buses() { return buses_; }
+  const AtbInBus &in() const noexcept { return buses_.in; }
   AtbInBus &in() { return buses_.in; }
+
+  const AtbOutBus &out() const noexcept { return buses_.out; }
   AtbOutBus &out() { return buses_.out; }
 
   entt::entity &active_combatant() { return active_combatant_; }

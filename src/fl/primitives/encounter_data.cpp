@@ -24,7 +24,7 @@ void install_encounter_hooks(entt::registry &reg) {
 
 void EncounterData::innervate_event_system(fl::events::BeatBus &beat_bus) {
 
-  atb_in_.on<seerin::Beat>([&](const seerin::Beat &) {
+  atb_in().on<seerin::Beat>([&](const seerin::Beat &) {
     party_ctx_->log().append_markup("ATB_IN got Beat");
   });
 
@@ -77,14 +77,14 @@ bool EncounterData::is_over() {
 EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
     : attackers_(std::make_unique<fl::primitives::Team>()),
       defenders_(std::make_unique<fl::primitives::Team>()),
-      party_ctx_(party_ctx), atb_{atb_in_, atb_out_} {
+      party_ctx_(party_ctx) {
   party_beat_handle_ = party_ctx_->bus().appendListener(
       fl::events::PartyEvent::Tick,
-      [this](const std::any &) { atb_in_.emit(seerin::Beat{}); });
+      [this](const std::any &) { atb_in().emit(seerin::Beat{}); });
 
-  atb_in_.on<seerin::Beat>([&](const seerin::Beat &) {
-    party_ctx_->log().append_markup("ATB_IN got Beat");
-  });
+  // atb_in_.on<seerin::Beat>([&](const seerin::Beat &) {
+  //   party_ctx_->log().append_markup("ATB_IN got Beat");
+  // });
 
   /* party_tick_tap_ = party_ctx_->bus().appendListener(
         fl::events::PartyEvent::Tick, [this](const std::any &) {
@@ -94,16 +94,16 @@ EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
         });
   */
 
-  atb_out_.on<seerin::BecameReady>([&](const seerin::BecameReady &) {
-    party_ctx_->log().append_markup("BecameReady observed");
-  });
+  // atb_out_.on<seerin::BecameReady>([&](const seerin::BecameReady &) {
+  //  party_ctx_->log().append_markup("BecameReady observed");
+  //});
 
-  atb_in_.on<seerin::AddCombatant>([this](const seerin::AddCombatant &e) {
+  atb_in().on<seerin::AddCombatant>([this](const seerin::AddCombatant &e) {
     party_ctx_->log().append_markup(
         fmt::format("[magenta](tap) AddCombatant {}", entt::to_integral(e.id)));
   });
 
-  atb_out_.on<seerin::BecameReady>([this](auto const &e) {
+  atb_out().on<seerin::BecameReady>([this](auto const &e) {
     party_ctx_->log().append_markup(
         fmt::format("[green](tap) READY {}", entt::to_integral(e.id)));
   });

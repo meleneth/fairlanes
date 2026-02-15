@@ -25,7 +25,7 @@
 #include "fl/primitives/random_hub.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "fl/widgets/log_wall.hpp"
-
+#include "sr/beat_bus.hpp"
 namespace fl {
 
 void GrandCentral::_create_initial_accounts() {
