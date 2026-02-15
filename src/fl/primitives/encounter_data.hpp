@@ -27,40 +27,40 @@ public:
   EncounterData &operator=(const EncounterData &) = delete;
 
   // ---- accessors (refs out, pointers in) ----
-  fl::primitives::Team &attackers() { return *attackers_; }
-  const fl::primitives::Team &attackers() const { return *attackers_; }
+  fl::primitives::Team &attackers() { return topo_.attackers_; }
+  const fl::primitives::Team &attackers() const { return topo_.attackers_; }
 
-  fl::primitives::Team &defenders() { return *defenders_; }
-  const fl::primitives::Team &defenders() const { return *defenders_; }
+  fl::primitives::Team &defenders() { return topo_.defenders_; }
+  const fl::primitives::Team &defenders() const { return topo_.defenders_; }
 
   std::vector<entt::entity> &entities_to_cleanup() {
-    return entities_to_cleanup_;
+    return life_.entities_to_cleanup_;
   }
   const std::vector<entt::entity> &entities_to_cleanup() const {
-    return entities_to_cleanup_;
+    return life_.entities_to_cleanup_;
   }
 
-  fl::events::BeatBus::Handle &beat_tick_handle() { return beat_tick_handle_; }
+  fl::events::BeatBus::Handle &beat_tick_handle() { return wire_.beat_tick_; }
   const fl::events::BeatBus::Handle &beat_tick_handle() const {
-    return beat_tick_handle_;
+    return wire_.beat_tick_;
   }
 
-  fl::events::BattleBus &battle_bus() { return battle_bus_; }
-  const fl::events::BattleBus &battle_bus() const { return battle_bus_; }
+  fl::events::BattleBus &battle_bus() { return rt_.battle_bus_; }
+  const fl::events::BattleBus &battle_bus() const { return rt_.battle_bus_; }
 
-  fl::events::TimedEventQueue &timed_events() { return timed_events_; }
+  fl::events::TimedEventQueue &timed_events() { return rt_.timed_events_; }
   const fl::events::TimedEventQueue &timed_events() const {
-    return timed_events_;
+    return rt_.timed_events_;
   }
 
-  fl::events::ReadyQueue &ready_queue() { return ready_queue_; }
-  const fl::events::ReadyQueue &ready_queue() const { return ready_queue_; }
+  fl::events::ReadyQueue &ready_queue() { return rt_.ready_queue_; }
+  const fl::events::ReadyQueue &ready_queue() const { return rt_.ready_queue_; }
 
-  seerin::AtbInBus &atb_in() noexcept { return atb_.in(); }
-  const seerin::AtbInBus &atb_in() const noexcept { return atb_.in(); }
+  seerin::AtbInBus &atb_in() noexcept { return rt_.atb_.in(); }
+  const seerin::AtbInBus &atb_in() const noexcept { return rt_.atb_.in(); }
 
-  seerin::AtbOutBus &atb_out() noexcept { return atb_.out(); }
-  const seerin::AtbOutBus &atb_out() const noexcept { return atb_.out(); }
+  seerin::AtbOutBus &atb_out() noexcept { return rt_.atb_.out(); }
+  const seerin::AtbOutBus &atb_out() const noexcept { return rt_.atb_.out(); }
 
   // ---- behavior ----
   bool has_alive_enemies();
@@ -69,20 +69,29 @@ public:
   void innervate_event_system(fl::events::BeatBus &beat_bus);
 
 private:
-  std::unique_ptr<fl::primitives::Team> attackers_;
-  std::unique_ptr<fl::primitives::Team> defenders_;
-  std::vector<entt::entity> entities_to_cleanup_{};
-  fl::events::BeatBus::Handle beat_tick_handle_{};
+  struct Topology {
+    Team attackers_;
+    Team defenders_;
+  } topo_;
 
-  fl::events::BattleBus battle_bus_{};
-  fl::events::TimedEventQueue timed_events_{};
-  fl::events::ReadyQueue ready_queue_{};
+  struct Runtime {
+    seerin::AtbEngine atb_;
+    fl::events::TimedEventQueue timed_events_;
+    fl::events::ReadyQueue ready_queue_;
+    fl::events::BattleBus battle_bus_;
+  } rt_;
+
+  struct Wiring {
+    fl::events::BeatBus::Handle beat_tick_;
+    fl::events::PartyBus::Handle party_beat_;
+    fl::events::PartyBus::Handle party_tick_tap_;
+  } wire_;
+
+  struct Lifecycle {
+    std::vector<entt::entity> entities_to_cleanup_;
+  } life_;
+
   fl::context::PartyCtx *party_ctx_;
-
-  seerin::AtbEngine atb_;
-  fl::events::PartyBus::Handle party_beat_handle_;
-
-  fl::events::PartyBus::Handle party_tick_tap_;
 };
 
 struct InEncounter {

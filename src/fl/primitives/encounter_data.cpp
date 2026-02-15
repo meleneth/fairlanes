@@ -55,7 +55,7 @@ void EncounterData::finalize() {
 
 bool EncounterData::has_alive_enemies() {
   using fl::ecs::components::Stats;
-  for (auto e : entities_to_cleanup_) {
+  for (auto e : life_.entities_to_cleanup_) {
     if (!party_ctx_->reg().valid(e) || !party_ctx_->reg().all_of<Stats>(e)) {
       continue; // stale or already destroyed, ignore
     }
@@ -75,10 +75,8 @@ bool EncounterData::is_over() {
 }
 
 EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
-    : attackers_(std::make_unique<fl::primitives::Team>()),
-      defenders_(std::make_unique<fl::primitives::Team>()),
-      party_ctx_(party_ctx) {
-  party_beat_handle_ = party_ctx_->bus().appendListener(
+    : party_ctx_(party_ctx) {
+  wire_.party_beat_ = party_ctx_->bus().appendListener(
       fl::events::PartyEvent::Tick,
       [this](const std::any &) { atb_in().emit(seerin::Beat{}); });
 
@@ -106,6 +104,10 @@ EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
   atb_out().on<seerin::BecameReady>([this](auto const &e) {
     party_ctx_->log().append_markup(
         fmt::format("[green](tap) READY {}", entt::to_integral(e.id)));
+  });
+  atb_out().on<seerin::BecameActive>([this](auto const &e) {
+    party_ctx_->log().append_markup(
+        fmt::format("[green](tap) ACTIVE {}", entt::to_integral(e.id)));
   });
 }
 } // namespace fl::primitives
