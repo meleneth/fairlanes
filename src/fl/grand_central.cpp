@@ -83,6 +83,9 @@ void GrandCentral::_create_initial_accounts() {
                 member.member_id())) +
             ") as [player_name](" + hero_names[player_index] + ")");
 
+        reg_.emplace<fl::ecs::components::Stats>(member.member_id(),
+                                                 hero_names[player_index]);
+
         ++player_index;
       }
     }

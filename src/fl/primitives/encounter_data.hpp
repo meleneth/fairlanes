@@ -1,8 +1,10 @@
 #pragma once
 
+#include "fmt/format.h"
 #include <entt/entt.hpp>
 #include <memory>
 #include <vector>
+
 
 #include "fl/events/battle_bus.hpp"
 #include "fl/events/beat_bus.hpp"

@@ -29,9 +29,9 @@ void EncounterData::innervate_event_system() {
   // atb_in().on<seerin::Beat>([&](const seerin::Beat &) {
   //   party_ctx_->log().append_markup("ATB_IN got Beat");
   // });
-  atb_in().on<seerin::FinishedTurn>([&](const seerin::FinishedTurn &) {
-    party_ctx_->log().append_markup("ATB_IN got FinishedTurn");
-  });
+  // atb_in().on<seerin::FinishedTurn>([&](const seerin::FinishedTurn &) {
+  //   party_ctx_->log().append_markup("ATB_IN got FinishedTurn");
+  // });
 
   /*
     beat_tick_handle_ = beat_bus.add_listener(
@@ -45,13 +45,16 @@ void EncounterData::innervate_event_system() {
   // --- the important part: wire BecameActive -> schedule thump sequence ---
   atb_out().on<seerin::BecameActive>([this](const seerin::BecameActive &ev) {
     const entt::entity attacker = ev.id;
-    party_ctx_->log().append_markup("winding up  thump sequence ");
+    const entt::entity target = target_random_alive_opposition(attacker);
 
-    const entt::entity target = target_random_alive_opposition(
-        attacker); // you said you have this method
+    if (target == entt::null) {
+      party_ctx_->log().append_markup(fmt::format(
+          "{} did nothing.",
+          party_ctx_->reg().get<fl::ecs::components::Stats>(attacker).name_));
+      atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{attacker}});
 
-    if (target == entt::null)
       return;
+    }
 
     // Pick damage. Hardcode now; later you can route through combat math
     // formulas.
@@ -68,48 +71,46 @@ void EncounterData::schedule_thump_sequence(entt::entity attacker,
   constexpr auto kYellow = ftxui::Color::Yellow;
 
   auto &sched = rt_.atb_.scheduler();
-  party_ctx_->log().append_markup("queuing thump sequence ");
 
   // 1: attacker red ON
-  sched.schedule_smelly_in(
-      seerin::uWu{1}, "thump: attacker red on #1", [this, attacker] {
+  sched.schedule_smelly_in_beats(
+      10, "thump: attacker red on #1", [this, attacker] {
         fl::ecs::components::safe_add_color(party_ctx_->reg(), attacker, kRed);
       });
 
   // 2: attacker red OFF
-  sched.schedule_smelly_in(
-      seerin::uWu{2}, "thump: attacker red off #1", [this, attacker] {
+  sched.schedule_smelly_in_beats(
+      20, "thump: attacker red off #1", [this, attacker] {
         fl::ecs::components::safe_clear_color(party_ctx_->reg(), attacker);
       });
 
   // 3: attacker red ON (flash #2)
-  sched.schedule_smelly_in(
-      seerin::uWu{3}, "thump: attacker red on #2", [this, attacker] {
+  sched.schedule_smelly_in_beats(
+      30, "thump: attacker red on #2", [this, attacker] {
         fl::ecs::components::safe_add_color(party_ctx_->reg(), attacker, kRed);
       });
 
   // 4: attacker red OFF
-  sched.schedule_smelly_in(
-      seerin::uWu{4}, "thump: attacker red off #2", [this, attacker] {
+  sched.schedule_smelly_in_beats(
+      40, "thump: attacker red off #2", [this, attacker] {
         fl::ecs::components::safe_clear_color(party_ctx_->reg(), attacker);
       });
 
   // 5: defender yellow ON (longer flash)
-  sched.schedule_smelly_in(
-      seerin::uWu{5}, "thump: defender yellow on", [this, target] {
+  sched.schedule_smelly_in_beats(
+      50, "thump: defender yellow on", [this, target] {
         fl::ecs::components::safe_add_color(party_ctx_->reg(), target, kYellow);
       });
 
   // 6: APPLY DAMAGE mid-yellow
-  sched.schedule_smelly_in(
-      seerin::uWu{6}, "thump: apply damage", [this, attacker, target] {
+  sched.schedule_smelly_in_beats(
+      60, "thump: apply damage", [this, attacker, target] {
         fl::context::AttackCtx::make_attack(*party_ctx_, attacker, target);
       });
 
   // 7: defender yellow OFF + finish turn
-  sched.schedule_smelly_in(
-      seerin::uWu{7}, "thump: defender yellow off + finish",
-      [this, attacker, target] {
+  sched.schedule_smelly_in_beats(
+      70, "thump: defender yellow off + finish", [this, attacker, target] {
         fl::ecs::components::safe_clear_color(party_ctx_->reg(), target);
 
         atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{attacker}});
@@ -150,6 +151,8 @@ bool EncounterData::is_over() {
   return !has_alive_enemies();
 }
 
+// encounter_data.cpp (or wherever EncounterData methods live)
+
 EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
     : party_ctx_(party_ctx) {
   wire_.party_beat_ = party_ctx_->bus().appendListener(
@@ -176,14 +179,15 @@ EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
     party_ctx_->log().append_markup(
         fmt::format("[magenta](tap) AddCombatant {}", entt::to_integral(e.id)));
   });
-
-  atb_out().on<seerin::BecameReady>([this](auto const &e) {
-    party_ctx_->log().append_markup(
-        fmt::format("[green](tap) READY {}", entt::to_integral(e.id)));
-  });
-  atb_out().on<seerin::BecameActive>([this](auto const &e) {
-    party_ctx_->log().append_markup(
-        fmt::format("[green](tap) ACTIVE {}", entt::to_integral(e.id)));
-  });
+  /*
+    atb_out().on<seerin::BecameReady>([this](auto const &e) {
+      party_ctx_->log().append_markup(
+          fmt::format("[green](tap) READY {}", entt::to_integral(e.id)));
+    });
+    atb_out().on<seerin::BecameActive>([this](auto const &e) {
+      party_ctx_->log().append_markup(
+          fmt::format("[green](tap) ACTIVE {}", entt::to_integral(e.id)));
+    });
+    */
 }
 } // namespace fl::primitives
