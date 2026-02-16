@@ -15,14 +15,13 @@ struct PartyMember {
               entt::entity party);
 };
 
-// Call `fn(entt::handle)` for each member of `party_e`
 template <typename PM = PartyMember, typename Fn>
 inline void for_each_member(entt::registry &reg, entt::entity party_e,
                             Fn &&fn) {
-  auto view = reg.view<PM>();            // entities with PartyMember
-  for (auto e : view) {                  // iterate entities
-    if (view.get(e).party_ == party_e) { // match party
-      fn(entt::handle{reg, e});          // yield handle
+  auto view = reg.view<PM>();
+  for (auto e : view) {
+    if (view.get(e).party_ == party_e) {
+      fn(entt::handle{reg, e});
     }
   }
 }

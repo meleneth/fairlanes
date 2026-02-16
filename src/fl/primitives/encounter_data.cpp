@@ -47,9 +47,9 @@ void EncounterData::innervate_event_system() {
   atb_out().on<seerin::BecameActive>([this](const seerin::BecameActive &ev) {
     const entt::entity attacker = ev.id;
     const entt::entity target = target_random_alive_opposition(attacker);
-    party_ctx_->log().append_markup(fmt::format(
-        "ATB_OUT got BecameActive for {} ",
-        party_ctx_->reg().get<fl::ecs::components::Stats>(attacker).name_));
+    // party_ctx_->log().append_markup(fmt::format(
+    //     "ATB_OUT got BecameActive for {} ",
+    //     party_ctx_->reg().get<fl::ecs::components::Stats>(attacker).name_));
 
     if (target == entt::null) {
       party_ctx_->log().append_markup(fmt::format(

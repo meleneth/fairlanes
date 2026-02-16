@@ -39,32 +39,6 @@ void PartyLoop::Ops::enter_fixing(fl::context::PartyCtx &ctx) { (void)ctx; };
 
 void PartyLoop::Ops::combat_tick(fl::context::PartyCtx &ctx) {
   ctx.bus().dispatch(fl::events::PartyEvent::Tick, std::any{});
-  /*
-    using fl::skills::Thump;
-    Thump in_the_night;
-
-    ctx.log().append_markup("[red](PartyLoop) Combat tick!");
-
-    using fl::ecs::components::Encounter;
-    using fl::ecs::components::Stats;
-    auto &encounter = ctx.party_data().encounter_data();
-    encounter.attackers().for_each_alive_member(ctx, [&](entt::entity attacker)
-    { auto defender = encounter.defenders().random_alive_member(ctx); if
-    (defender) { ctx.log().append_markup(
-            "[red](PartyLoop) " + ctx.reg().get<Stats>(attacker).name_ +
-            " attacks " + ctx.reg().get<Stats>(*defender).name_ + "!");
-        in_the_night.thump(
-            fl::context::AttackCtx::make_attack(ctx, attacker, *defender));
-      }
-    });
-
-    encounter.defenders().for_each_alive_member(ctx, [&](entt::entity attacker)
-    { auto defender = encounter.attackers().random_alive_member(ctx); if
-    (defender) { in_the_night.thump( fl::context::AttackCtx::make_attack(ctx,
-    attacker, *defender));
-      }
-    });
-  */
 };
 bool PartyLoop::Ops::in_combat(fl::context::PartyCtx &ctx) {
   return ctx.party_data().in_combat();

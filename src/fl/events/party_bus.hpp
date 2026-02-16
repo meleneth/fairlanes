@@ -18,17 +18,13 @@ enum class PartyEvent {
   PartyWiped,
   PartyGainedXP,
   PartyHealed,
-  Tick,       // Party loop iteration
-  PreAttack,  // before an entity attacks
-  PostAttack, // after an entity attacks
-              // Add more as necessary
+  Tick,
+  PreAttack,
+  PostAttack,
 };
 
-/// Payloads vary per event; simplest is to use std::any.
-/// You can switch to variant or strongly-typed event structs later.
 using PartyPayload = std::any;
 
-/// The PartyBus: a scoped event dispatcher for a single Party.
 using PartyBus =
     eventpp::EventDispatcher<PartyEvent, void(const PartyPayload &)>;
 
