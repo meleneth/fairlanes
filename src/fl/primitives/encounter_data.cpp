@@ -7,6 +7,7 @@
 #include "fl/ecs/components/stats.hpp"
 #include "fl/events/beat_bus.hpp"
 #include "fl/primitives/encounter_data.hpp"
+#include "fl/skills/thump.hpp"
 #include "sr/atb_events.hpp"
 
 namespace fl::primitives {
@@ -46,6 +47,9 @@ void EncounterData::innervate_event_system() {
   atb_out().on<seerin::BecameActive>([this](const seerin::BecameActive &ev) {
     const entt::entity attacker = ev.id;
     const entt::entity target = target_random_alive_opposition(attacker);
+    party_ctx_->log().append_markup(fmt::format(
+        "ATB_OUT got BecameActive for {} ",
+        party_ctx_->reg().get<fl::ecs::components::Stats>(attacker).name_));
 
     if (target == entt::null) {
       party_ctx_->log().append_markup(fmt::format(
@@ -71,6 +75,9 @@ void EncounterData::schedule_thump_sequence(entt::entity attacker,
   constexpr auto kYellow = ftxui::Color::Yellow;
 
   auto &sched = rt_.atb_.scheduler();
+  party_ctx_->log().append_markup(fmt::format(
+      "thumping  {} ",
+      party_ctx_->reg().get<fl::ecs::components::Stats>(target).name_));
 
   // 1: attacker red ON
   sched.schedule_smelly_in_beats(
@@ -105,7 +112,13 @@ void EncounterData::schedule_thump_sequence(entt::entity attacker,
   // 6: APPLY DAMAGE mid-yellow
   sched.schedule_smelly_in_beats(
       60, "thump: apply damage", [this, attacker, target] {
-        fl::context::AttackCtx::make_attack(*party_ctx_, attacker, target);
+        party_ctx_->log().append_markup(fmt::format(
+            "make_attack {} ",
+            party_ctx_->reg().get<fl::ecs::components::Stats>(target).name_));
+        using fl::skills::Thump;
+        Thump in_the_night;
+        in_the_night.thump(
+            fl::context::AttackCtx::make_attack(*party_ctx_, attacker, target));
       });
 
   // 7: defender yellow OFF + finish turn
@@ -118,16 +131,17 @@ void EncounterData::schedule_thump_sequence(entt::entity attacker,
 }
 
 void EncounterData::finalize() {
-  //  ctx_.log().append_markup(
-  //    fmt::format("Finalizing encounter with {} entities to clean up",
-  //              entities_to_cleanup_.size()));
-  /* for (auto e_cleanup : e_to_cleanup_) {
-      ctx_.reg_.destroy(e_cleanup);
-    }
-  */
-  // ctx_.log_.append_markup(fmt::format("Encounter {} finalized and cleaned
-  // up",
-  //                                     int(entt::to_integral(ctx_.self_))));
+  party_ctx_->log().append_markup(
+      fmt::format("Finalizing encounter with {} entities to clean up",
+                  life_.entities_to_cleanup_.size()));
+
+  for (auto e_cleanup : life_.entities_to_cleanup_) {
+    party_ctx_->reg().destroy(e_cleanup);
+  }
+
+  party_ctx_->log().append_markup(
+      fmt::format("Encounter {} finalized and cleaned up",
+                  int(entt::to_integral(party_ctx_->self()))));
 }
 
 bool EncounterData::has_alive_enemies() {
