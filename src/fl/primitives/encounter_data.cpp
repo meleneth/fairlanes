@@ -2,6 +2,7 @@
 
 #include "encounter_data.hpp"
 #include "fl/context.hpp"
+#include "fl/ecs/components/color_override.hpp"
 #include "fl/ecs/components/encounter.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/events/beat_bus.hpp"
@@ -22,10 +23,14 @@ void install_encounter_hooks(entt::registry &reg) {
       .connect<&on_encounter_destroy>();
 }
 
-void EncounterData::innervate_event_system(fl::events::BeatBus &beat_bus) {
+void EncounterData::innervate_event_system() {
+  party_ctx_->log().append_markup("innervating event system");
 
-  atb_in().on<seerin::Beat>([&](const seerin::Beat &) {
-    party_ctx_->log().append_markup("ATB_IN got Beat");
+  // atb_in().on<seerin::Beat>([&](const seerin::Beat &) {
+  //   party_ctx_->log().append_markup("ATB_IN got Beat");
+  // });
+  atb_in().on<seerin::FinishedTurn>([&](const seerin::FinishedTurn &) {
+    party_ctx_->log().append_markup("ATB_IN got FinishedTurn");
   });
 
   /*
@@ -37,7 +42,78 @@ void EncounterData::innervate_event_system(fl::events::BeatBus &beat_bus) {
           timed_events_.advance(beat.dt);
         });
         */
-  (void)beat_bus;
+  // --- the important part: wire BecameActive -> schedule thump sequence ---
+  atb_out().on<seerin::BecameActive>([this](const seerin::BecameActive &ev) {
+    const entt::entity attacker = ev.id;
+    party_ctx_->log().append_markup("winding up  thump sequence ");
+
+    const entt::entity target = target_random_alive_opposition(
+        attacker); // you said you have this method
+
+    if (target == entt::null)
+      return;
+
+    // Pick damage. Hardcode now; later you can route through combat math
+    // formulas.
+
+    // Schedule 7 beats worth of effects.
+    // Offsets are in beats; tune to taste.
+    schedule_thump_sequence(attacker, target);
+  });
+}
+
+void EncounterData::schedule_thump_sequence(entt::entity attacker,
+                                            entt::entity target) {
+  constexpr auto kRed = ftxui::Color::Red;
+  constexpr auto kYellow = ftxui::Color::Yellow;
+
+  auto &sched = rt_.atb_.scheduler();
+  party_ctx_->log().append_markup("queuing thump sequence ");
+
+  // 1: attacker red ON
+  sched.schedule_smelly_in(
+      seerin::uWu{1}, "thump: attacker red on #1", [this, attacker] {
+        fl::ecs::components::safe_add_color(party_ctx_->reg(), attacker, kRed);
+      });
+
+  // 2: attacker red OFF
+  sched.schedule_smelly_in(
+      seerin::uWu{2}, "thump: attacker red off #1", [this, attacker] {
+        fl::ecs::components::safe_clear_color(party_ctx_->reg(), attacker);
+      });
+
+  // 3: attacker red ON (flash #2)
+  sched.schedule_smelly_in(
+      seerin::uWu{3}, "thump: attacker red on #2", [this, attacker] {
+        fl::ecs::components::safe_add_color(party_ctx_->reg(), attacker, kRed);
+      });
+
+  // 4: attacker red OFF
+  sched.schedule_smelly_in(
+      seerin::uWu{4}, "thump: attacker red off #2", [this, attacker] {
+        fl::ecs::components::safe_clear_color(party_ctx_->reg(), attacker);
+      });
+
+  // 5: defender yellow ON (longer flash)
+  sched.schedule_smelly_in(
+      seerin::uWu{5}, "thump: defender yellow on", [this, target] {
+        fl::ecs::components::safe_add_color(party_ctx_->reg(), target, kYellow);
+      });
+
+  // 6: APPLY DAMAGE mid-yellow
+  sched.schedule_smelly_in(
+      seerin::uWu{6}, "thump: apply damage", [this, attacker, target] {
+        fl::context::AttackCtx::make_attack(*party_ctx_, attacker, target);
+      });
+
+  // 7: defender yellow OFF + finish turn
+  sched.schedule_smelly_in(
+      seerin::uWu{7}, "thump: defender yellow off + finish",
+      [this, attacker, target] {
+        fl::ecs::components::safe_clear_color(party_ctx_->reg(), target);
+
+        atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{attacker}});
+      });
 }
 
 void EncounterData::finalize() {

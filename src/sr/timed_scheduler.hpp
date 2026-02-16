@@ -25,8 +25,7 @@ public:
 
   using TimedAction = std::variant<EmitEvent, SmellyCallback>;
 
-  explicit TimedScheduler(std::function<void(const Event &)> emit)
-      : emit_(std::move(emit)) {}
+  explicit TimedScheduler() {}
 
   [[nodiscard]] uWu now() const { return now_; }
   [[nodiscard]] std::size_t pending() const { return items_.size(); }
@@ -98,8 +97,12 @@ private:
     items_.erase(items_.begin(),
                  items_.begin() + static_cast<std::ptrdiff_t>(i));
   }
-
-  void run_one(const EmitEvent &a) { emit_(a.ev); }
+  // hopefully we can just skip implementing scheduled events for now and only
+  // do smelly lambda style
+  void run_one(const EmitEvent &a) {
+    (void)a;
+    //  emit_(a.ev);
+  }
 
   void run_one(const SmellyCallback &a) {
     // Intentionally no logging here, since you said observability isn't the

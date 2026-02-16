@@ -6,8 +6,7 @@
 
 namespace seerin {
 
-AtbEngine::AtbEngine()
-    : scheduler_([this](const AtbOutEvent &ev) { buses_.out.emit(ev); }) {
+AtbEngine::AtbEngine() {
   // ---- Wire public buses into internal system bus ----
   h_beat_wire_ = wire<Beat>(buses_.in, sys_);
   h_add_wire_ = wire<AddCombatant>(buses_.in, sys_);

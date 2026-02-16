@@ -2,6 +2,8 @@
 #include <cmath>
 #include <random>
 
+#include "fmt/format.h"
+
 #include "fl/context.hpp"
 #include "fl/ecs/components/stats.hpp"
 // #include "fl/ecs/systems/take_damage.hpp"
@@ -94,10 +96,10 @@ int Thump::thump(fl::context::AttackCtx &&ctx) {
   entt::handle attacker_h{ctx.reg(), ctx.attacker()};
   entt::handle defender_h{ctx.reg(), ctx.defender()};
 
-  /* ctx.log_.append_markup(fmt::format("{} thumped {} for [error]({}) damage",
-                                       ctx.log_.name_tag_for(attacker_h),
-                                       ctx.log_.name_tag_for(defender_h), dmg));
-  */
+  ctx.log().append_markup(fmt::format("{} thumped {} for [error]({}) damage",
+                                      ctx.log().name_tag_for(attacker_h),
+                                      ctx.log().name_tag_for(defender_h), dmg));
+
   // fl::systems::TakeDamage::commit(ctx);
 
   return dmg;

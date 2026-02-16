@@ -3,6 +3,9 @@
 #include <utility>
 
 #include "fancy_log.hpp"
+#include "fl/ecs/components/party_member.hpp"
+#include "fl/ecs/components/stats.hpp"
+#include "fmt/format.h"
 
 namespace fl::widgets {
 using namespace ftxui;
@@ -15,7 +18,7 @@ ftxui::Decorator on_not_black(uint8_t r, uint8_t g, uint8_t b) {
   return color(Color(r, g, b)) | color(Color(16, 18, 28));
 }
 
-/*std::string FancyLog::name_tag_for(entt::handle target) {
+std::string FancyLog::name_tag_for(entt::handle target) {
   using fl::ecs::components::PartyMember;
   using fl::ecs::components::Stats;
   auto &target_stats = target.get<Stats>();
@@ -25,7 +28,7 @@ ftxui::Decorator on_not_black(uint8_t r, uint8_t g, uint8_t b) {
     return fmt::format("[enemy_name]({})", target_stats.name_);
   }
 }
-*/
+
 FancyLog::FancyLog(Options opt) : opts(opt) {
   // sane defaults you can override with styles(...)
 

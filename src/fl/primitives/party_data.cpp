@@ -36,6 +36,7 @@ EncounterData &PartyData::create_encounter() {
                                   (int)party_id_,
                                   static_cast<void *>(encounter_data_.get())));
   encounter_data_ = std::make_unique<EncounterData>(&party_ctx_);
+  encounter_data_->innervate_event_system();
 
   return *encounter_data_;
 }

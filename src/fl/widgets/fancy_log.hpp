@@ -66,7 +66,7 @@ public:
   size_t size() const; // current #entries
   bool empty() const;
 
-  // std::string name_tag_for(entt::handle target);
+  std::string name_tag_for(entt::handle target);
 
   // ---- ComponentBase -------------------------------------------------------
   ftxui::Element Render() override;

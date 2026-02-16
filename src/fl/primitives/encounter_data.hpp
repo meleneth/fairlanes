@@ -13,7 +13,7 @@
 
 #include "sr/atb_bus.hpp"
 #include "sr/atb_engine.hpp"
-
+#include "sr/timed_scheduler.hpp"
 namespace fl::primitives {
 
 struct EncounterData {
@@ -48,11 +48,6 @@ public:
   fl::events::BattleBus &battle_bus() { return rt_.battle_bus_; }
   const fl::events::BattleBus &battle_bus() const { return rt_.battle_bus_; }
 
-  fl::events::TimedEventQueue &timed_events() { return rt_.timed_events_; }
-  const fl::events::TimedEventQueue &timed_events() const {
-    return rt_.timed_events_;
-  }
-
   fl::events::ReadyQueue &ready_queue() { return rt_.ready_queue_; }
   const fl::events::ReadyQueue &ready_queue() const { return rt_.ready_queue_; }
 
@@ -66,7 +61,7 @@ public:
   bool has_alive_enemies();
   bool is_over();
   void finalize();
-  void innervate_event_system(fl::events::BeatBus &beat_bus);
+  void innervate_event_system();
 
   bool owns_entity(entt::entity e) const {
     return std::find(life_.entities_to_cleanup_.begin(),
@@ -76,6 +71,7 @@ public:
 
   bool is_good_guy(entt::entity e) const { return !owns_entity(e); }
   bool is_bad_guy(entt::entity e) const { return owns_entity(e); }
+
   entt::entity target_random_alive_opposition(entt::entity e) const {
     if (topo_.attackers_.contains(e)) {
       return topo_.defenders_.random_alive_member(*party_ctx_)
@@ -85,7 +81,9 @@ public:
       return topo_.attackers_.random_alive_member(*party_ctx_)
           .value_or(entt::null);
     }
-  }
+    return entt::null;
+  };
+  void schedule_thump_sequence(entt::entity attacker, entt::entity target);
 
 private:
   struct Topology {
@@ -95,7 +93,6 @@ private:
 
   struct Runtime {
     seerin::AtbEngine atb_;
-    fl::events::TimedEventQueue timed_events_;
     fl::events::ReadyQueue ready_queue_;
     fl::events::BattleBus battle_bus_;
   } rt_;
