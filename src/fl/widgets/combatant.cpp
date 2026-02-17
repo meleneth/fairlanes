@@ -1,7 +1,9 @@
 #include "combatant.hpp"
 
+#include "fl/ecs/components/color_override.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
+
 
 namespace fl::widgets {
 
@@ -10,6 +12,19 @@ Combatant::Combatant(entt::registry &reg_, entt::entity entity_)
 
 ftxui::Element Combatant::Render() {
   using namespace fl::ecs::components;
+  if (!reg.valid(entity)) {
+    return ftxui::window(ftxui::text("[invalid]"),
+                         ftxui::text("entity not valid")) |
+           ftxui::xflex;
+  }
+
+  auto *the_stats = reg.try_get<Stats>(entity);
+  if (!the_stats) {
+    return ftxui::window(ftxui::text("[no Stats]"),
+                         ftxui::text("missing Stats")) |
+           ftxui::xflex;
+  }
+
   auto &stats = reg.get<Stats>(entity);
   auto &level = reg.get<TrackXP>(entity);
 
@@ -59,7 +74,9 @@ ftxui::Element Combatant::Render() {
     hp_line
   );
   // clang-format on
-
+  if (auto *co = reg.try_get<ColorOverride>(entity)) {
+    border = border | ftxui::color(co->color); // <-- border color changes here
+  }
   // <-- key: allow the whole Combatant box to flex horizontally
   return border | ftxui::xflex;
 }

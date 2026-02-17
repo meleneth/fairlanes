@@ -87,6 +87,7 @@ private:
 
   seerin::BeatBus gc_beat_bus_;
   ftxui::Component log_wall_;
+  ftxui::Component account_battle_view_;
 
   // ---- internal helpers ----
   void _create_initial_accounts();

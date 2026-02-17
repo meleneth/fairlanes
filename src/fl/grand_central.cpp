@@ -23,8 +23,10 @@
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/party_names.hpp"
 #include "fl/primitives/random_hub.hpp"
+#include "fl/widgets/account_battle_view.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "fl/widgets/log_wall.hpp"
+
 #include "sr/beat_bus.hpp"
 namespace fl {
 
@@ -85,6 +87,10 @@ void GrandCentral::_create_initial_accounts() {
 
         reg_.emplace<fl::ecs::components::Stats>(member.member_id(),
                                                  hero_names[player_index]);
+        auto ectx = party_data.loop_ctx().entity_context(member.member_id());
+        reg_.emplace<fl::ecs::components::TrackXP>(member.member_id(),
+                                                   std::move(ectx),
+                                                   /*starting_xp=*/0);
 
         ++player_index;
       }
@@ -110,7 +116,10 @@ GrandCentral::GrandCentral(uint8_t num_accounts,
 GrandCentral::~GrandCentral() { fancy_log_sink_.reset(); }
 
 // Convenience accessor if you want the root FTXUI component:
-ftxui::Component GrandCentral::root_component() { return log_wall_; }
+ftxui::Component GrandCentral::root_component() {
+  // return log_wall_;
+  return account_battle_view_;
+}
 
 fl::context::AccountCtx GrandCentral::account_context(std::size_t idx) {
   return fl::context::AccountCtx{reg_, rng_, accounts_.at(idx)};
@@ -231,6 +240,10 @@ void GrandCentral::innervate_event_system() {
 
 void GrandCentral::build_ui() {
   log_wall_ = ftxui::Make<fl::widgets::LogWall>(*fancy_log_, accounts_);
+
+  account_battle_view_ =
+      ftxui::Make<fl::widgets::AccountBattleView>(fl::context::EntityCtx{
+          reg_, rng_, *fancy_log_, accounts_.front().account_id()});
 }
 
 } // namespace fl

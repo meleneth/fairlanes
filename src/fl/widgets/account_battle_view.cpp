@@ -20,53 +20,78 @@ AccountBattleView::AccountBattleView(fl::context::EntityCtx ctx)
 
 ftxui::Element AccountBattleView::Render() {
   std::vector<ftxui::Element> rows;
+  auto *check_is_account =
+      ctx_.reg().try_get<fl::ecs::components::IsAccount>(ctx_.self());
+  if (!check_is_account) {
+    return ftxui::window(
+        ftxui::text("AccountBattleView: ctx_.self() is not an account"),
+        ftxui::text("Missing IsAccount on ctx_.self()"));
+  }
 
   auto &is_account =
       ctx_.reg().get<fl::ecs::components::IsAccount>(ctx_.self());
-  for (auto &party : is_account.account_data().parties()) {
-    auto &is_party =
-        ctx_.reg().get<fl::ecs::components::IsParty>(party.party_id());
-    if (is_party.party_data().party_id() == ctx_.self()) {
-      rows.push_back(ftxui::text("This is your party:"));
+  auto &parties = is_account.account_data().parties();
+
+  auto blank_row_5 = [&] {
+    std::vector<ftxui::Element> row;
+    row.reserve(5);
+    for (int i = 0; i < 5; ++i)
+      row.push_back(ftxui::filler() | ftxui::xflex);
+    return ftxui::hbox(std::move(row));
+  };
+
+  auto render_entity_row_5 = [&](const std::vector<entt::entity> &ents) {
+    std::vector<ftxui::Element> row;
+    row.reserve(5);
+
+    for (std::size_t i = 0; i < ents.size() && row.size() < 5; ++i) {
+      fl::widgets::Combatant combatant{ctx_.reg(), ents[i]};
+      row.push_back(combatant.Render() | ftxui::xflex);
+    }
+    while (row.size() < 5)
+      row.push_back(ftxui::filler() | ftxui::xflex);
+
+    return ftxui::hbox(std::move(row));
+  };
+
+  auto render_memberdata_row_5 =
+      [&](const std::deque<fl::primitives::MemberData> &members) {
+        std::vector<ftxui::Element> row;
+        row.reserve(5);
+
+        std::size_t n = 0;
+        for (const auto &m : members) {
+          if (n++ >= 5)
+            break;
+          fl::widgets::Combatant combatant{ctx_.reg(), m.member_id()};
+          row.push_back(combatant.Render() | ftxui::xflex);
+        }
+        while (row.size() < 5)
+          row.push_back(ftxui::filler() | ftxui::xflex);
+
+        return ftxui::hbox(std::move(row));
+      };
+
+  for (std::size_t i = 0; i < parties.size(); ++i) {
+    auto &party = parties[i];
+
+    if (party.has_encounter()) {
+      auto &enc = party.encounter_data();
+
+      // Render BOTH sides from EncounterData (2 rows).
+      rows.push_back(render_entity_row_5(enc.attackers().members()));
+      rows.push_back(render_entity_row_5(enc.defenders().members()));
     } else {
-      rows.push_back(ftxui::text("This is the opposition:"));
+      // No encounter: placeholder "enemy row" + still render players.
+      rows.push_back(blank_row_5());
+      rows.push_back(render_memberdata_row_5(party.members()));
     }
   }
-  for (auto &party : is_account.account_data().parties()) {
-    using fl::ecs::components::Encounter;
-    using fl::ecs::components::IsParty;
-    auto &is_party = ctx_.reg().get<IsParty>(party.party_id());
-    auto *encounter = ctx_.reg().try_get<Encounter>(party.party_id());
 
-    if (encounter) {
-      std::vector<ftxui::Element> attackers_row;
-      for (auto &member : encounter->encounter_data().attackers()) {
-        fl::widgets::Combatant combatant{ctx_.reg(), member};
-        attackers_row.push_back(combatant.Render() | ftxui::xflex);
-      }
-      while (attackers_row.size() < 5) {
-        attackers_row.push_back(ftxui::filler() | ftxui::xflex);
-      }
-      rows.push_back(ftxui::hbox(std::move(attackers_row)));
-
-    } else {
-      ftxui::Element blank = ftxui::vbox({
-                                 ftxui::filler(), // line 1
-                                 ftxui::filler(), // line 2
-                                 ftxui::filler(), // line 3
-                             }) |
-                             ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 1) |
-                             ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 3);
-      rows.push_back(blank);
-    }
-
-    std::vector<ftxui::Element> party_row;
-    is_party.for_each_member([&](entt::entity member) {
-      fl::widgets::Combatant combatant{ctx_.reg(), member};
-      party_row.push_back(combatant.Render() | ftxui::xflex);
-    });
-    rows.push_back(ftxui::hbox(std::move(party_row)));
+  if (rows.empty()) {
+    rows.push_back(ftxui::text("No parties."));
   }
+
   return ftxui::vbox(std::move(rows));
 }
 
