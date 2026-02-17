@@ -17,6 +17,11 @@ struct Team {
 public:
   Team() = default;
 
+  auto begin() { return members_.begin(); }
+  auto end() { return members_.end(); }
+  auto begin() const { return members_.begin(); }
+  auto end() const { return members_.end(); }
+
   // ---- accessors ----
   std::vector<entt::entity> &members() noexcept { return members_; }
   const std::vector<entt::entity> &members() const noexcept { return members_; }

@@ -50,8 +50,8 @@ void GrandCentral::_create_initial_accounts() {
             account_data.account_id())) +
         ")");
     auto entity = account_data.account_id();
-    reg_.emplace<fl::ecs::components::IsAccount>(entity, entity,
-                                                 &account_data.log());
+    reg_.emplace<fl::ecs::components::IsAccount>(
+        entity, entity, account_data.log(), account_data);
 
     for (std::size_t p = 0; p < num_parties_per_account_; ++p) {
       auto party_name = party_names.at(party_index);
@@ -217,6 +217,7 @@ void GrandCentral::bootstrap_logs() {
   logger_.debug("Debug: registry currently empty.");
   logger_.warn("No encounters loaded yet.");
 }
+
 void GrandCentral::innervate_event_system() {
   // Parties hook to main beat (accounts do not).
   logger_.info("[spell_name](innervate) event system.");
@@ -229,7 +230,6 @@ void GrandCentral::innervate_event_system() {
 }
 
 void GrandCentral::build_ui() {
-
   log_wall_ = ftxui::Make<fl::widgets::LogWall>(*fancy_log_, accounts_);
 }
 
