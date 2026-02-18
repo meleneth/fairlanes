@@ -27,7 +27,7 @@ void PartyLoop::Ops::enter_farming(fl::context::PartyCtx &ctx) {
 
 void PartyLoop::Ops::exit_farming(fl::context::PartyCtx &ctx) {
   // TODO is this the crash?
-  //  ctx.reg().remove<fl::ecs::components::Encounter>(ctx.self());
+  ctx.reg().remove<fl::ecs::components::Encounter>(ctx.self());
   ctx.log().append_plain("Returned to town.");
   entt::handle h{ctx.reg(), ctx.self()};
   // TODO FIXME

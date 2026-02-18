@@ -31,15 +31,15 @@ public:
   }
 
   fl::primitives::EncounterData *encounter_data_ptr() noexcept {
-    return encounter_data_.get();
+    return encounter_data_;
   }
   const fl::primitives::EncounterData *encounter_data_ptr() const noexcept {
-    return encounter_data_.get();
+    return encounter_data_;
   }
 
 private:
   entt::entity encounter_id_{entt::null};
-  std::unique_ptr<fl::primitives::EncounterData> encounter_data_{nullptr};
+  fl::primitives::EncounterData *encounter_data_ = nullptr;
 };
 
 } // namespace fl::ecs::components

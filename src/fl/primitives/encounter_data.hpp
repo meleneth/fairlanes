@@ -1,10 +1,10 @@
 #pragma once
 
+#include "fl/events/party_bus.hpp"
 #include "fmt/format.h"
 #include <entt/entt.hpp>
 #include <memory>
 #include <vector>
-
 
 #include "fl/events/battle_bus.hpp"
 #include "fl/events/beat_bus.hpp"
@@ -101,7 +101,7 @@ private:
 
   struct Wiring {
     fl::events::BeatBus::Handle beat_tick_;
-    fl::events::PartyBus::Handle party_beat_;
+    fl::events::ScopedPartyListener party_beat_;
     fl::events::PartyBus::Handle party_tick_tap_;
   } wire_;
 

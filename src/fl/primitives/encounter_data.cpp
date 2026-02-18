@@ -169,9 +169,10 @@ bool EncounterData::is_over() {
 
 EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
     : party_ctx_(party_ctx) {
-  wire_.party_beat_ = party_ctx_->bus().appendListener(
-      fl::events::PartyEvent::Tick,
-      [this](const std::any &) { atb_in().emit(seerin::Beat{}); });
+
+  wire_.party_beat_ = fl::events::ScopedPartyListener{
+      party_ctx_->bus(), fl::events::PartyEvent::Tick,
+      [this](const std::any &) { atb_in().emit(seerin::Beat{}); }};
 
   // atb_in_.on<seerin::Beat>([&](const seerin::Beat &) {
   //   party_ctx_->log().append_markup("ATB_IN got Beat");

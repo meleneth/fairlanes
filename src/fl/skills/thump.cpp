@@ -6,7 +6,7 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/stats.hpp"
-// #include "fl/ecs/systems/take_damage.hpp"
+#include "fl/ecs/systems/take_damage.hpp"
 #include "fl/primitives/damage.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "thump.hpp"
@@ -100,7 +100,7 @@ int Thump::thump(fl::context::AttackCtx &&ctx) {
                                       ctx.log().name_tag_for(attacker_h),
                                       ctx.log().name_tag_for(defender_h), dmg));
 
-  // fl::systems::TakeDamage::commit(ctx);
+  fl::ecs::systems::TakeDamage::commit(ctx);
 
   return dmg;
 }
