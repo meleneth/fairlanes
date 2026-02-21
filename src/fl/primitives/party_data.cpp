@@ -32,9 +32,10 @@ void PartyData::hook_to_beat(seerin::BeatBus &gc_beat_bus) {
 }
 
 EncounterData &PartyData::create_encounter() {
-  log_->append_markup(fmt::format("Party id={} encounter_data={}",
-                                  (int)party_id_,
-                                  static_cast<void *>(encounter_data_.get())));
+  /*log_->append_markup(fmt::format("Party id={} encounter_data={}",
+                                   (int)party_id_,
+                                   static_cast<void *>(encounter_data_.get())));
+                                   */
   encounter_data_ = std::make_unique<EncounterData>(&party_ctx_);
   encounter_data_->innervate_event_system();
 

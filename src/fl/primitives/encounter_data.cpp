@@ -25,7 +25,7 @@ void install_encounter_hooks(entt::registry &reg) {
 }
 
 void EncounterData::innervate_event_system() {
-  party_ctx_->log().append_markup("innervating event system");
+  // party_ctx_->log().append_markup("innervating event system");
 
   // atb_in().on<seerin::Beat>([&](const seerin::Beat &) {
   //   party_ctx_->log().append_markup("ATB_IN got Beat");
@@ -75,10 +75,6 @@ void EncounterData::schedule_thump_sequence(entt::entity attacker,
   constexpr auto kYellow = ftxui::Color::Yellow;
 
   auto &sched = rt_.atb_.scheduler();
-  party_ctx_->log().append_markup(fmt::format(
-      "thumping  {} ",
-      party_ctx_->reg().get<fl::ecs::components::Stats>(target).name_));
-
   // 1: attacker red ON
   sched.schedule_smelly_in_beats(
       10, "thump: attacker red on #1", [this, attacker] {
@@ -112,9 +108,6 @@ void EncounterData::schedule_thump_sequence(entt::entity attacker,
   // 6: APPLY DAMAGE mid-yellow
   sched.schedule_smelly_in_beats(
       60, "thump: apply damage", [this, attacker, target] {
-        party_ctx_->log().append_markup(fmt::format(
-            "make_attack {} ",
-            party_ctx_->reg().get<fl::ecs::components::Stats>(target).name_));
         using fl::skills::Thump;
         Thump in_the_night;
         in_the_night.thump(
@@ -190,19 +183,21 @@ EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
   //  party_ctx_->log().append_markup("BecameReady observed");
   //});
 
-  atb_in().on<seerin::AddCombatant>([this](const seerin::AddCombatant &e) {
-    party_ctx_->log().append_markup(
-        fmt::format("[magenta](tap) AddCombatant {}", entt::to_integral(e.id)));
-  });
   /*
-    atb_out().on<seerin::BecameReady>([this](auto const &e) {
-      party_ctx_->log().append_markup(
-          fmt::format("[green](tap) READY {}", entt::to_integral(e.id)));
-    });
-    atb_out().on<seerin::BecameActive>([this](auto const &e) {
-      party_ctx_->log().append_markup(
-          fmt::format("[green](tap) ACTIVE {}", entt::to_integral(e.id)));
-    });
-    */
+   atb_in().on<seerin::AddCombatant>([this](const seerin::AddCombatant &e) {
+     party_ctx_->log().append_markup(
+         fmt::format("[magenta](tap) AddCombatant {}",
+   entt::to_integral(e.id)));
+   });
+
+     atb_out().on<seerin::BecameReady>([this](auto const &e) {
+       party_ctx_->log().append_markup(
+           fmt::format("[green](tap) READY {}", entt::to_integral(e.id)));
+     });
+     atb_out().on<seerin::BecameActive>([this](auto const &e) {
+       party_ctx_->log().append_markup(
+           fmt::format("[green](tap) ACTIVE {}", entt::to_integral(e.id)));
+     });
+     */
 }
 } // namespace fl::primitives

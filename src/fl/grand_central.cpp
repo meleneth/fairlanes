@@ -178,8 +178,10 @@ void GrandCentral::main_loop() {
   std::jthread update_ticker([&](std::stop_token st) {
     using clock = std::chrono::steady_clock;
 
+    //  constexpr auto kFrameDt = std::chrono::duration_cast<clock::duration>(
+    //     std::chrono::duration<double>(1.0 / 12.0));
     constexpr auto kFrameDt = std::chrono::duration_cast<clock::duration>(
-        std::chrono::duration<double>(1.0 / 12.0));
+        std::chrono::duration<double>(1.0 / 48.0));
 
     // constexpr auto kOverrunBudget = std::chrono::milliseconds(5);
 
@@ -235,7 +237,7 @@ void GrandCentral::bootstrap_logs() {
 
 void GrandCentral::innervate_event_system() {
   // Parties hook to main beat (accounts do not).
-  logger_.info("[spell_name](innervate) event system.");
+  // logger_.info("[spell_name](innervate) event system.");
 
   for (auto &account : accounts_) {
     for (auto &party : account.parties()) {
