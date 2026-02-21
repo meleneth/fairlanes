@@ -1,0 +1,3 @@
+#!/usr/bin/bash
+
+gdb -batch -ex "run" -ex "bt" $@ >bt.txt 2>&1
