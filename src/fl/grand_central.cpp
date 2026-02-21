@@ -14,6 +14,7 @@
 #include "fl/context.hpp"
 #include "fl/ecs/components/is_account.hpp"
 #include "fl/ecs/components/is_party.hpp"
+#include "fl/ecs/components/party_member.hpp"
 #include "fl/monsters/register_monsters.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/fancy_log_sink.hpp"
@@ -91,6 +92,11 @@ void GrandCentral::_create_initial_accounts() {
         reg_.emplace<fl::ecs::components::TrackXP>(member.member_id(),
                                                    std::move(ectx),
                                                    /*starting_xp=*/0);
+        auto ectx2 = party_data.loop_ctx().entity_context(member.member_id());
+
+        reg_.emplace<fl::ecs::components::PartyMember>(
+            member.member_id(), std::move(ectx2), member.name(),
+            party_data.party_id());
 
         ++player_index;
       }

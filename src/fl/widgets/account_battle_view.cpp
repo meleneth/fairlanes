@@ -92,6 +92,22 @@ ftxui::Element AccountBattleView::Render() {
     rows.push_back(ftxui::text("No parties."));
   }
 
+  // rows.push_back(parties[0].log().Render() | ftxui::frame |
+  //               ftxui::vscroll_indicator | ftxui::flex);
+  std::vector<ftxui::Element> log_panes;
+  log_panes.reserve(parties.size() + 1);
+  log_panes.push_back(is_account.account_data().log().Render() | ftxui::frame |
+                      ftxui::vscroll_indicator | ftxui::flex);
+  for (auto &party : parties) {
+    log_panes.push_back(party.log().Render() | ftxui::frame |
+                        ftxui::vscroll_indicator | ftxui::flex);
+  }
+
+  // Add the logs row at the bottom
+  if (!log_panes.empty()) {
+    rows.push_back(ftxui::hbox(std::move(log_panes)) | ftxui::flex);
+  }
+
   return ftxui::vbox(std::move(rows));
 }
 
