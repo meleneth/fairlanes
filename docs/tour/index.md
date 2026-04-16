@@ -47,8 +47,6 @@ A good guided tour should do three things:
 
 1. [Architecture](./architecture.md)
 2. [Event Flow](./event-flow.md)
-3. [Build and Runtime](./build-and-runtime.md)
-4. [Repository Map](./repository-map.md)
 
 ## What belongs on this page
 
