@@ -1,0 +1,14 @@
+{
+  "name": "fairlanes-tour",
+  "private": true,
+  "scripts": {
+    "dev": "vitepress dev .",
+    "build": "vitepress build .",
+    "preview": "vitepress preview ."
+  },
+  "devDependencies": {
+    "vitepress": "^2.0.0-alpha.12",
+    "markdown-it-mermaid-plugin": "^1.0.0",
+    "mermaid": "^11.0.0"
+  }
+}
