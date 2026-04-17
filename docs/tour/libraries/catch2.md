@@ -1,0 +1,1 @@
+I like [this](https://github.com/meleneth/fairlanes/blob/89571fb5f3e6396d5e191a557602c2b25c79a31c/tests/events/test_battle_bus.cpp#L47) test.  Not fancy, just 'does this thing do at all what I expect'
