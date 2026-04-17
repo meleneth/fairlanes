@@ -1,6 +1,6 @@
-# Systems
+# ECS Systems
 
-Systems are encapsulations of **how things happen**.
+ECS Systems are encapsulations of **how things happen**.
 
 In contrast to ECS entities and components:
 - components hold data
@@ -17,7 +17,7 @@ Two good entry points:
 
 ## What to notice
 
-- Systems operate on **sets of components**, not specific classes
+- ECS Systems operate on **sets of components**, not specific classes
 - They are usually stateless or only depend on the provided context
 - They express gameplay rules explicitly instead of hiding them inside objects
 - They often act as the bridge between:
@@ -48,4 +48,4 @@ If you are adding logic that:
 - modifies components
 - or reacts to gameplay events
 
-> it probably belongs in a system, not in the component itself
+> it probably belongs in a ECS System, not in the component itself
