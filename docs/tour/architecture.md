@@ -1,32 +1,42 @@
 # Architecture
 
-Back to [Tour Home](./index.md)
+ECS-based FSMs and event-driven wiring, forming a highly maintainable skeleton that is still in need of some organs.
 
-## Top-level shape
+## What that means
 
-Replace this with the real story of the repo.
+Fairlanes is built from three primary pieces:
 
-Example structure:
+- **ECS (EnTT)** — defines what exists (entities and their data)
+- **FSMs (SML / Seerin / PartyLoop)** — define how things progress over time
+- **Event buses (eventpp)** — define how systems communicate
 
-- **CLI / entrypoints**: where execution begins
-- **Core domain model**: the concepts that matter
-- **Infrastructure adapters**: file system, network, persistence, external services
-- **Utilities**: lower-level support code that should not become your architecture by accident
+Together, they separate:
+- structure (what things are)
+- flow (what happens next)
+- communication (who reacts)
 
-## Diagram
+## How to read the codebase
 
-```mermaid
-flowchart LR
-  CLI[CLI / Entrypoints] --> CORE[Core Domain]
-  CORE --> ADAPTERS[Infrastructure Adapters]
-  CORE --> UTILS[Utilities]
-```
+If you are trying to understand a behavior:
 
-## What belongs here
+1. Look at the **data** (ECS components)
+2. Look at the **flow** (FSM / Seerin / PartyLoop)
+3. Look at the **signals** (event dispatch + listeners)
 
-This page is where you explain:
+## Current state
 
-- the important nouns
-- the layering rules
-- the abstractions worth preserving
-- the shortcuts that would rot the design if people got lazy
+The skeleton is strong:
+- clear boundaries
+- explicit flow
+- modular data
+
+What’s still evolving:
+- richer gameplay systems
+- more complete interactions between subsystems
+- deeper content layered on top of the structure
+
+## Fairlanes take
+
+We are optimizing for **clarity of structure first**, then layering gameplay complexity on top.
+
+The bones are in place. The muscles come next.

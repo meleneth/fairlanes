@@ -34,7 +34,9 @@ export default withMermaid(
         {
           text: 'Widgets',
           items: [
-            { text: 'Fancy Log', link: '/fairlanes/widgets/fancy_log' }
+            { text: 'Fancy Log', link: '/fairlanes/widgets/fancy_log' },
+            { text: 'Account Battle View', link: '/fairlanes/widgets/account_battle_view' },
+            { text: 'Combatant', link: '/fairlanes/widgets/combatant' }
           ]
         },
         {
