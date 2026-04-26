@@ -28,6 +28,17 @@ target_compile_definitions(fairlanes
 )
 
 
+if(EMSCRIPTEN)
+  target_compile_definitions(fairlanes PRIVATE FMT_HEADER_ONLY)
+  target_link_libraries(fairlanes PRIVATE fmt::fmt-header-only)
+  target_compile_options(fairlanes PRIVATE -sUSE_PTHREADS=1)
+  target_link_options(fairlanes PRIVATE -pthread -sPROXY_TO_PTHREAD -sASYNCIFY)
+else()
+  target_link_libraries(fairlanes PRIVATE fmt::fmt)
+endif()
+
+
+
 target_link_libraries(fairlanes PRIVATE
   pcg-cpp
   ftxui::screen
@@ -39,10 +50,12 @@ target_link_libraries(fairlanes PRIVATE
   eventpp::eventpp
   CLI11
   spdlog::spdlog
-  fmt::fmt
-  PUBLIC
-  TracyClient
 )
+
+if(NOT EMSCRIPTEN)
+  target_link_libraries(fairlanes PRIVATE TracyClient)
+  target_compile_definitions(fairlanes PRIVATE TRACY_ENABLE)
+endif()
 
 fairlanes_set_warnings(fairlanes)
 target_compile_features(fairlanes PRIVATE cxx_std_20)

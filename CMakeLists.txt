@@ -5,6 +5,8 @@ project(fairlanes VERSION 0.1.0 LANGUAGES CXX)
 option(fairlanes_WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
 option(fairlanes_ENABLE_LTO          "Enable link-time optimization" OFF)
 option(BUILD_SHARED_LIBS            "Build shared libs (if any)" OFF)
+option(FL_BUILD_TESTS "Build tests" ON)
+option(FAIRLANES_TRACY_SYSTEM_TRACING "Enable Tracy system tracing" ON)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -16,6 +18,11 @@ if(NOT CPM_SOURCE_CACHE)
   set(CPM_SOURCE_CACHE "${CMAKE_BINARY_DIR}/cpm-cache")
 endif()
 
+if(EMSCRIPTEN)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
+endif()
 
 # Big object flag, only where it makes sense
 set(BIGOBJ_FLAG "")
@@ -43,8 +50,9 @@ endif()
 
 
 include(cmake/CPM.cmake)
-
-CPMAddPackage("gh:catchorg/Catch2@3.5.2")
+if(FL_BUILD_TESTS)
+  CPMAddPackage("gh:catchorg/Catch2@3.5.2")
+endif()
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
@@ -220,7 +228,7 @@ endif()
 CPMAddPackage(
   NAME fmt
   GITHUB_REPOSITORY fmtlib/fmt
-  GIT_TAG 10.2.1
+  GIT_TAG 12.1.0
   OPTIONS
     "FMT_DOC OFF"
     "FMT_TEST OFF"
@@ -232,7 +240,7 @@ set(SPDLOG_FMT_EXTERNAL ON CACHE BOOL "" FORCE)
 CPMAddPackage(
   NAME spdlog
   GITHUB_REPOSITORY gabime/spdlog
-  VERSION 1.14.1
+  VERSION 1.17.0
   OPTIONS
     "SPDLOG_BUILD_SHARED OFF"
     "SPDLOG_BUILD_EXAMPLE OFF"
@@ -248,17 +256,24 @@ set(TRACY_NO_EXIT OFF CACHE BOOL "Tracy persists after disconnect" FORCE)
 FetchContent_Declare(
 tracy
 GIT_REPOSITORY https://github.com/wolfpld/tracy.git
-GIT_REVISION 05cceee
+GIT_TAG v0.13.1
 GIT_SHALLOW true
 GIT_PROGRESS true
 )
 
 FetchContent_MakeAvailable(tracy)
-if (MINGW)
+
+
+# qif (NOT FAIRLANES_TRACY_SYSTEM_TRACING)
   target_compile_definitions(TracyClient PRIVATE TRACY_NO_SYSTEM_TRACING)
-endif()
+# endif()
+
 include(CTest)       # or: enable CTest integration
-enable_testing()     # actually turn on test support
+
+
+if(FL_BUILD_TESTS)
+  enable_testing()
+endif()
 
 # top-level CMakeLists.txt
 
@@ -341,7 +356,11 @@ endif()
 
 # --- Your code ---------------------------------------------------------------
 add_subdirectory(src)
-add_subdirectory(tests)
+
+if(FL_BUILD_TESTS)
+  add_subdirectory(tests)
+endif()
+
 # add_subdirectory(external)  # only if you actually have it
 if (ENABLE_COVERAGE)
 

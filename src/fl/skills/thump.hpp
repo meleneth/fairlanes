@@ -33,7 +33,8 @@ private:
   double wd_min_, wd_max_;
   double hit_rate_, crit_rate_;
   double u_roll_, u_hit_, u_crit_;
-  double skill_mult_, one_handed_mod_;
+  double skill_mult_;
+  // double one_handed_mod_;
   double damage_;
 
   // RNG – swap for PCG if you prefer

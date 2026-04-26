@@ -9,7 +9,7 @@
 #include "fl/primitives/damage.hpp"
 
 namespace fl::primitives {
-struct RandomHub;
+class RandomHub;
 struct AccountData;
 struct PartyData;
 struct Damage; // only if you KEEP it as value you must include its header
@@ -147,8 +147,9 @@ private:
   entt::registry *reg_{};
   fl::primitives::RandomHub *rng_{};
   fl::primitives::AccountData *account_data_{};
-  fl::widgets::FancyLog *log_{};
-  fl::events::AccountBus *bus_{};
+  // TODO this has to be broken
+  // fl::widgets::FancyLog *log_{};
+  // fl::events::AccountBus *bus_{};
 };
 
 struct AttackCtx {
