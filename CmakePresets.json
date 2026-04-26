@@ -2,6 +2,25 @@
   "version": 5,
   "configurePresets": [
     {
+      "name": "linux-debug",
+      "displayName": "Linux + Ninja (Debug)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-linux-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "linux-release",
+      "displayName": "Linux + Ninja (Release)",
+      "inherits": "linux-debug",
+      "binaryDir": "${sourceDir}/build-linux-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
       "name": "ucrt64-debug",
       "displayName": "MSYS2 UCRT64 + Ninja (Debug)",
       "generator": "Ninja",
@@ -27,7 +46,21 @@
     }
   ],
   "buildPresets": [
-    { "name": "build-ucrt64-debug", "configurePreset": "ucrt64-debug" },
-    { "name": "build-ucrt64-release", "configurePreset": "ucrt64-release" }
+    {
+      "name": "build-linux-debug",
+      "configurePreset": "linux-debug"
+    },
+    {
+      "name": "build-linux-release",
+      "configurePreset": "linux-release"
+    },
+    {
+      "name": "build-ucrt64-debug",
+      "configurePreset": "ucrt64-debug"
+    },
+    {
+      "name": "build-ucrt64-release",
+      "configurePreset": "ucrt64-release"
+    }
   ]
 }

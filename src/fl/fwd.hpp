@@ -48,7 +48,7 @@ namespace fl::primitives {
 class EntityBuilder;
 class FancyLogSink;
 class Logger;
-struct RandomHub;
+class RandomHub;
 class RandomStream;
 struct AccountData;
 struct Damage;

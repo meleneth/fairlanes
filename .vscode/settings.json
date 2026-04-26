@@ -1,0 +1,14 @@
+{
+  "cmake.generator": "Ninja",
+  "cmake.preferredGenerators": [
+    "Ninja"
+  ],
+  "cmake.buildDirectory": "${workspaceFolder}/build-linux-debug",
+  "cmake.configureSettings": {
+    "CMAKE_BUILD_TYPE": "Debug",
+    "CMAKE_EXPORT_COMPILE_COMMANDS": true
+  },
+  "coverage-gutters.lcovname": "build-linux-debug/lcov.info",
+  "coverage-gutters.showGutterCoverage": true,
+  "coverage-gutters.showLineCoverage": true
+}

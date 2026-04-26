@@ -1,0 +1,18 @@
+{
+  "name": "fairlanes-linux-trixie",
+  "image": "debian:trixie",
+
+  "postCreateCommand": "apt-get update && apt-get install -y build-essential cmake ninja-build gdb clangd git pkg-config",
+
+  "forwardPorts": [8086],
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools",
+        "llvm-vs-code-extensions.vscode-clangd"
+      ]
+    }
+  }
+}
