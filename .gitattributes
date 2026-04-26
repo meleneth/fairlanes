@@ -1,0 +1,23 @@
+* text=auto
+
+# Source files: normalize to LF in repo
+*.cpp text eol=lf
+*.hpp text eol=lf
+*.h   text eol=lf
+*.c   text eol=lf
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
+
+# Windows scripts
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.wasm binary
+*.zip binary
