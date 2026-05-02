@@ -1,26 +1,23 @@
 #pragma once
 
-#include "fl/events/party_bus.hpp"
-#include "fmt/format.h"
+#include <algorithm>
 #include <entt/entt.hpp>
 #include <memory>
 #include <vector>
 
+#include "fl/context.hpp"
 #include "fl/events/battle_bus.hpp"
-#include "fl/events/beat_bus.hpp"
+#include "fl/events/party_bus.hpp"
 #include "fl/events/ready_queue.hpp"
-#include "fl/events/timed_event_queue.hpp"
 #include "fl/primitives/team.hpp"
-#include "fl/widgets/fancy_log.hpp"
-
 #include "sr/atb_bus.hpp"
 #include "sr/atb_engine.hpp"
-#include "sr/timed_scheduler.hpp"
+
 namespace fl::primitives {
 
 struct EncounterData {
 public:
-  EncounterData(fl::context::PartyCtx *party_ctx);
+  explicit EncounterData(fl::context::PartyCtx *party_ctx);
 
   EncounterData(EncounterData &&) noexcept = default;
   EncounterData &operator=(EncounterData &&) noexcept = default;
@@ -28,7 +25,7 @@ public:
   EncounterData(const EncounterData &) = delete;
   EncounterData &operator=(const EncounterData &) = delete;
 
-  // ---- accessors (refs out, pointers in) ----
+  // ---- accessors ----
   fl::primitives::Team &attackers() { return topo_.attackers_; }
   const fl::primitives::Team &attackers() const { return topo_.attackers_; }
 
@@ -38,13 +35,9 @@ public:
   std::vector<entt::entity> &entities_to_cleanup() {
     return life_.entities_to_cleanup_;
   }
+
   const std::vector<entt::entity> &entities_to_cleanup() const {
     return life_.entities_to_cleanup_;
-  }
-
-  fl::events::BeatBus::Handle &beat_tick_handle() { return wire_.beat_tick_; }
-  const fl::events::BeatBus::Handle &beat_tick_handle() const {
-    return wire_.beat_tick_;
   }
 
   fl::events::BattleBus &battle_bus() { return rt_.battle_bus_; }
@@ -79,12 +72,15 @@ public:
       return topo_.defenders_.random_alive_member(*party_ctx_)
           .value_or(entt::null);
     }
+
     if (topo_.defenders_.contains(e)) {
       return topo_.attackers_.random_alive_member(*party_ctx_)
           .value_or(entt::null);
     }
+
     return entt::null;
-  };
+  }
+
   void schedule_thump_sequence(entt::entity attacker, entt::entity target);
 
 private:
@@ -100,7 +96,6 @@ private:
   } rt_;
 
   struct Wiring {
-    fl::events::BeatBus::Handle beat_tick_;
     fl::events::ScopedPartyListener party_beat_;
     fl::events::PartyBus::Handle party_tick_tap_;
   } wire_;
@@ -111,13 +106,5 @@ private:
 
   fl::context::PartyCtx *party_ctx_;
 };
-
-struct InEncounter {
-  /// @brief Backlink to the encounter entity that owns an Encounter component.
-  entt::entity encounter_{entt::null};
-};
-
-void on_encounter_destroy(entt::registry &reg, entt::entity e);
-void install_encounter_hooks(entt::registry &reg);
 
 } // namespace fl::primitives

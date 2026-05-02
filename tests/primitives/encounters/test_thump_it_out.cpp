@@ -3,73 +3,86 @@
 
 #include <entt/entt.hpp>
 
-#include "fl/context.hpp"
-#include "fl/ecs/components/encounter.hpp"
-#include "fl/ecs/components/is_party.hpp"
 #include "fl/ecs/components/stats.hpp"
-#include "fl/ecs/components/track_xp.hpp"
 #include "fl/grand_central.hpp"
-#include "fl/monsters/register_monsters.hpp"
-#include "fl/primitives/damage.hpp"
 #include "fl/primitives/encounter_builder.hpp"
-#include "fl/primitives/entity_builder.hpp"
-#include "fl/primitives/random_hub.hpp"
 
 namespace {
 
-TEST_CASE("EncounterBuilder::thump_it_out wires Encounter teams and members",
+TEST_CASE("EncounterBuilder::thump_it_out returns the created EncounterData",
           "[encounter_builder][encounter][combat]") {
   fl::GrandCentral gc{1, 1, 3};
 
-  // Ensure monster registry is populated for
-  // EntityBuilder(...).monster(FieldMouse). If register_monsters takes args in
-  // your project, update this call.
-  //  fl::monster::register_monsters();
-
-  fl::primitives::RandomHub rng;
-  // ---- build encounter ----
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  builder.thump_it_out();
+  auto &encounter = builder.thump_it_out();
 
-  // ---- asserts ----
-  REQUIRE(gc.reg().all_of<fl::ecs::components::Encounter>(party_ctx.self()));
-  auto &enc = gc.reg().get<fl::ecs::components::Encounter>(party_ctx.self());
-
-  // REQUIRE(enc.attackers_ != nullptr);
-  // REQUIRE(enc.defenders_ != nullptr);
-
-  // defenders should contain the party members (order matters if IsParty
-  // enumerates in order)
-
-  // REQUIRE(enc.defenders_->members_.size() == 3);
-
-  // attackers should contain exactly one enemy: the field mouse
-  // REQUIRE(enc.attackers_->members_.size() == 1);
-  // const entt::entity enemy = enc.attackers_->members_.front();
-  // CHECK(gc.reg().valid(enemy));
-
-  // cleanup list should include the spawned enemy
-  // REQUIRE(enc.e_to_cleanup_.size() == 1);
-  // CHECK(enc.e_to_cleanup_.front() == enemy);
+  REQUIRE(&encounter == &party_ctx.party_data().encounter_data());
 }
 
-TEST_CASE("thump_it_out attaches Encounter to the party entity",
-          "[encounter][builder]") {
+TEST_CASE("EncounterBuilder::thump_it_out wires encounter teams and members",
+          "[encounter_builder][encounter][combat]") {
   fl::GrandCentral gc{1, 1, 3};
+
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  builder.thump_it_out();
+  auto &encounter = builder.thump_it_out();
 
-  auto &reg = party_ctx.reg(); // adjust accessor
-  entt::entity party_e = party_ctx.self();
+  REQUIRE(encounter.defenders().members().size() == 3);
+  REQUIRE(encounter.attackers().members().size() == 1);
 
-  REQUIRE(reg.valid(party_e));
-  REQUIRE(reg.any_of<fl::ecs::components::Encounter>(party_e));
+  const entt::entity enemy = encounter.attackers().members().front();
+
+  CHECK(party_ctx.reg().valid(enemy));
+  CHECK(party_ctx.reg().all_of<fl::ecs::components::Stats>(enemy));
+
+  REQUIRE(encounter.entities_to_cleanup().size() == 1);
+  CHECK(encounter.entities_to_cleanup().front() == enemy);
+}
+
+TEST_CASE("EncounterBuilder::thump_it_out enrolls party members as defenders",
+          "[encounter_builder][encounter][combat]") {
+  fl::GrandCentral gc{1, 1, 3};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  auto &encounter = builder.thump_it_out();
+
+  REQUIRE(encounter.defenders().members().size() == 3);
+
+  for (const entt::entity member : encounter.defenders().members()) {
+    CHECK(party_ctx.reg().valid(member));
+    CHECK_FALSE(encounter.owns_entity(member));
+    CHECK(encounter.is_good_guy(member));
+  }
+}
+
+TEST_CASE("EncounterBuilder::thump_it_out creates one enemy owned by encounter",
+          "[encounter_builder][encounter][combat]") {
+  fl::GrandCentral gc{1, 1, 3};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  auto &encounter = builder.thump_it_out();
+
+  REQUIRE(encounter.attackers().members().size() == 1);
+
+  const entt::entity enemy = encounter.attackers().members().front();
+
+  CHECK(party_ctx.reg().valid(enemy));
+  CHECK(encounter.owns_entity(enemy));
+  CHECK(encounter.is_bad_guy(enemy));
+
+  REQUIRE(encounter.entities_to_cleanup().size() == 1);
+  CHECK(encounter.entities_to_cleanup().front() == enemy);
 }
 
 } // namespace

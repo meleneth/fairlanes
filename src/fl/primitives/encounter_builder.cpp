@@ -1,21 +1,18 @@
-#include "encounter_builder.hpp"
 #include "fl/context.hpp"
 #include "fl/ecs/components/encounter.hpp"
 #include "fl/monsters/monster_kind.hpp"
 #include "fl/primitives/entity_builder.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/team.hpp"
+#include "fl/primitives/encounter_data.hpp"
 #include "sr/encounter_events.hpp"
+#include "encounter_builder.hpp"
+
+
 namespace fl::primitives {
 
-void EncounterBuilder::thump_it_out() {
+EncounterData &EncounterBuilder::thump_it_out() {
   auto &encounter_data = ctx_.party_data().create_encounter();
-
-  // auto party = ctx_.party_data().party_id();
-
-  // TODO or is this the crash
-  //  ctx_.reg().emplace<fl::ecs::components::Encounter>(party, party,
-  //                                                   &encounter_data);
 
   add_field_mouse();
 
@@ -24,6 +21,7 @@ void EncounterBuilder::thump_it_out() {
     encounter_data.atb_in().emit(
         seerin::AtbInEvent{seerin::AddCombatant{member}});
   });
+  return encounter_data;
 }
 
 void EncounterBuilder::add_field_mouse() {

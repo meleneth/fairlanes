@@ -10,7 +10,7 @@ struct EncounterBuilder {
 
   EncounterBuilder(fl::context::PartyCtx &ctx) : ctx_(ctx) {};
 
-  void thump_it_out();
+  EncounterData &thump_it_out();
 
   void add_field_mouse();
 
