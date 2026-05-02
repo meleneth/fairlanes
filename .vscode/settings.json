@@ -10,5 +10,9 @@
   },
   "coverage-gutters.lcovname": "build-linux-debug/lcov.info",
   "coverage-gutters.showGutterCoverage": true,
-  "coverage-gutters.showLineCoverage": true
+  "coverage-gutters.showLineCoverage": true,
+  "clangd.path": "/usr/bin/clangd",
+  "clangd.arguments": [
+    "--compile-commands-dir=${workspaceFolder}/build-linux-debug"
+  ]
 }
