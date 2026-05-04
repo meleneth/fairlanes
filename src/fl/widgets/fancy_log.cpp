@@ -5,6 +5,7 @@
 #include "fancy_log.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/lospec500.hpp"
 #include "fmt/format.h"
 
 namespace fl::widgets {
@@ -14,45 +15,41 @@ using namespace ftxui;
 
 FancyLog::FancyLog() : FancyLog(Options{}) {}
 
-ftxui::Decorator on_not_black(uint8_t r, uint8_t g, uint8_t b) {
-  return color(Color(r, g, b)) | color(Color(16, 18, 28));
-}
-
 std::string FancyLog::name_tag_for(entt::handle target) {
   using fl::ecs::components::PartyMember;
   using fl::ecs::components::Stats;
+
   auto &target_stats = target.get<Stats>();
+
   if (target.any_of<PartyMember>()) {
     return fmt::format("[player_name]({})", target_stats.name_);
-  } else {
-    return fmt::format("[enemy_name]({})", target_stats.name_);
   }
+
+  return fmt::format("[enemy_name]({})", target_stats.name_);
 }
 
 FancyLog::FancyLog(Options opt) : opts(opt) {
-  // sane defaults you can override with styles(...)
-
-  style_map = {{"player_name", on_not_black(98, 164, 119)},
-               {"enemy_name", on_not_black(154, 77, 118)},
-               {"xp", on_not_black(109, 234, 214)},
-               {"level", on_not_black(247, 243, 183)},
-               {"error", on_not_black(236, 39, 63)},
-               {"warn", on_not_black(222, 93, 58)},
-               {"ability", on_not_black(0, 139, 139)},
-               {"ok", on_not_black(90, 181, 82)},
-               {"orange", on_not_black(243, 168, 51)},
-               {"green", on_not_black(0, 139, 139)},
-               {"blue", on_not_black(109, 234, 214)},
-               {"yellow", on_not_black(247, 243, 183)},
-               {"red", on_not_black(250, 110, 121)},
-               {"bravo", on_not_black(109, 234, 214)},
+  style_map = {{"player_name", fl::lospec500::at(22)},
+               {"enemy_name", fl::lospec500::at(34)},
+               {"xp", fl::lospec500::at(29)},
+               {"level", fl::lospec500::at(15)},
+               {"error", fl::lospec500::at(4)},
+               {"warn", fl::lospec500::at(6)},
+               {"ability", fl::lospec500::at(21)},
+               {"ok", fl::lospec500::at(19)},
+               {"orange", fl::lospec500::at(8)},
+               {"green", fl::lospec500::at(21)},
+               {"blue", fl::lospec500::at(29)},
+               {"yellow", fl::lospec500::at(15)},
+               {"red", fl::lospec500::at(37)},
+               {"bravo", fl::lospec500::at(29)},
                {"hint", dim},
-               {"black", on_not_black(16, 18, 28)}};
+               {"black", fl::lospec500::at(0)}};
 }
+
 // ---- append ---------------------------------------------------------------
 
 void FancyLog::append_markup(std::string_view utf8_line) {
-  // spdlog::info(utf8_line);
   push(parse_markup(utf8_line));
 }
 
@@ -80,7 +77,7 @@ int FancyLog::max_rows() const { return opts.max_rows; }
 
 void FancyLog::set_max_entries(size_t n) {
   opts.max_entries = n == 0 ? 1 : n;
-  // downsize immediately if needed
+
   while (log.size() > opts.max_entries)
     log.pop_front();
 }
@@ -88,36 +85,26 @@ void FancyLog::set_max_entries(size_t n) {
 size_t FancyLog::max_entries() const { return opts.max_entries; }
 
 void FancyLog::set_autoscroll(bool v) { opts.autoscroll = v; }
+
 bool FancyLog::autoscroll() const { return opts.autoscroll; }
 
 size_t FancyLog::size() const { return log.size(); }
+
 bool FancyLog::empty() const { return log.empty(); }
 
 // ---- ComponentBase --------------------------------------------------------
-ftxui::Element FancyLog::Render() {
-  using namespace ftxui;
 
-  // Build full content (or you can still cap entries via max_entries, which you
-  // already do).
+ftxui::Element FancyLog::Render() {
   Element content = vbox(Elements(log.begin(), log.end()));
 
-  // Make it scrollable and pin view to bottom (tail-follow).
-  // focusPositionRelative(1.0f) biases the frame toward the end.
   content =
       content | yframe | focusPositionRelative(0.0f, 1.0f) | vscroll_indicator;
 
-  // Now enforce "max_rows" as a MAX height, not a baked-in height.
-  // if (opts.max_rows > 0) {
-  //  content = content | ftxui::size(HEIGHT, LESS_THAN, opts.max_rows);
-  //}
-
-  // Let parent allocate space.
   return content | flex;
 }
 
 // ---- internals ------------------------------------------------------------
 
-// Parse "[tag](content)" segments; degrade gracefully on malformed input.
 Element FancyLog::parse_markup(std::string_view s) const {
   std::vector<Element> parts;
   std::string plain;
@@ -138,12 +125,10 @@ Element FancyLog::parse_markup(std::string_view s) const {
       break;
     }
 
-    // prefix plain
     plain.append(s.substr(i, lb - i));
 
     size_t rb = s.find(']', lb + 1);
     if (rb == std::string_view::npos) {
-      // treat as literal
       plain.push_back(s[lb]);
       i = lb + 1;
       continue;
@@ -180,18 +165,18 @@ Element FancyLog::parse_markup(std::string_view s) const {
 
   if (parts.empty())
     return text("");
+
   if (parts.size() == 1)
     return std::move(parts.front());
+
   return hbox(std::move(parts));
 }
 
 void FancyLog::push(Element el) {
-  // append, enforce capacity
   log.push_back(std::move(el));
+
   if (log.size() > opts.max_entries)
     log.pop_front();
-
-  // autoscroll is a no-op visually for now because we render only tail.
-  // If you later add manual scrolling state, pin the cursor/index here.
 }
+
 } // namespace fl::widgets

@@ -9,6 +9,7 @@
 #include "fl/ecs/components/is_party.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/selected_account.hpp"
+#include "fl/lospec500.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/team.hpp"
 #include "fl/widgets/combatant.hpp"
@@ -24,8 +25,10 @@ ftxui::Element AccountBattleView::Render() {
       ctx_.reg().try_get<fl::ecs::components::IsAccount>(ctx_.self());
   if (!check_is_account) {
     return ftxui::window(
-        ftxui::text("AccountBattleView: ctx_.self() is not an account"),
-        ftxui::text("Missing IsAccount on ctx_.self()"));
+               ftxui::text("AccountBattleView: ctx_.self() is not an account"),
+               ftxui::text("Missing IsAccount on ctx_.self()")) |
+           ftxui::bgcolor(fl::lospec500::color_at(0)) |
+           ftxui::color(fl::lospec500::color_at(32));
   }
 
   auto &is_account =
@@ -48,6 +51,7 @@ ftxui::Element AccountBattleView::Render() {
       fl::widgets::Combatant combatant{ctx_.reg(), ents[i]};
       row.push_back(combatant.Render() | ftxui::xflex);
     }
+
     while (row.size() < 5)
       row.push_back(ftxui::filler() | ftxui::xflex);
 
@@ -63,9 +67,11 @@ ftxui::Element AccountBattleView::Render() {
         for (const auto &m : members) {
           if (n++ >= 5)
             break;
+
           fl::widgets::Combatant combatant{ctx_.reg(), m.member_id()};
           row.push_back(combatant.Render() | ftxui::xflex);
         }
+
         while (row.size() < 5)
           row.push_back(ftxui::filler() | ftxui::xflex);
 
@@ -92,23 +98,24 @@ ftxui::Element AccountBattleView::Render() {
     rows.push_back(ftxui::text("No parties."));
   }
 
-  // rows.push_back(parties[0].log().Render() | ftxui::frame |
-  //               ftxui::vscroll_indicator | ftxui::flex);
   std::vector<ftxui::Element> log_panes;
   log_panes.reserve(parties.size() + 1);
-  log_panes.push_back(is_account.account_data().log().Render() | ftxui::frame |
-                      ftxui::vscroll_indicator | ftxui::flex);
+
+  log_panes.push_back(is_account.account_data().log().Render() |
+                      ftxui::frame | ftxui::vscroll_indicator | ftxui::flex);
+
   for (auto &party : parties) {
     log_panes.push_back(party.log().Render() | ftxui::frame |
                         ftxui::vscroll_indicator | ftxui::flex);
   }
 
-  // Add the logs row at the bottom
   if (!log_panes.empty()) {
     rows.push_back(ftxui::hbox(std::move(log_panes)) | ftxui::flex);
   }
 
-  return ftxui::vbox(std::move(rows));
+  return ftxui::vbox(std::move(rows)) |
+         ftxui::bgcolor(fl::lospec500::color_at(0)) |
+         ftxui::color(fl::lospec500::color_at(32));
 }
 
 } // namespace fl::widgets

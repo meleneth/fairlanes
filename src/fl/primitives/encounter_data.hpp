@@ -1,5 +1,5 @@
 #pragma once
-
+#include <ftxui/screen/color.hpp>
 #include <algorithm>
 #include <entt/entt.hpp>
 #include <memory>
@@ -82,7 +82,13 @@ public:
   }
 
   void schedule_thump_sequence(entt::entity attacker, entt::entity target);
-
+  void schedule_reek_fade(
+      entt::entity entity,
+      std::string_view label,
+      int start_beat,
+      int end_beat,
+      ftxui::Color from,
+    ftxui::Color to);
 private:
   struct Topology {
     Team attackers_;

@@ -2,6 +2,7 @@
 
 #include <fmt/format.h>
 
+#include "fl/lospec500.hpp"
 #include "fl/context.hpp"
 #include "fl/ecs/components/color_override.hpp"
 #include "fl/ecs/components/stats.hpp"
@@ -31,35 +32,20 @@ void EncounterData::innervate_event_system() {
 
 void EncounterData::schedule_thump_sequence(entt::entity attacker,
                                             entt::entity target) {
-  constexpr auto kRed = ftxui::Color::Red;
-  constexpr auto kYellow = ftxui::Color::Yellow;
+  auto const kBg = fl::lospec500::color_at(0);
+  auto const kRed = fl::lospec500::color_at(4);
+  auto const kYellow = fl::lospec500::color_at(14);
 
-  auto &sched = rt_.atb_.scheduler();
+  auto& sched = rt_.atb_.scheduler();
 
-  sched.schedule_smelly_in_beats(
-      10, "thump: attacker red on #1", [this, attacker] {
-        fl::ecs::components::safe_add_color(party_ctx_->reg(), attacker, kRed);
-      });
+  schedule_reek_fade(attacker, "thump: attacker red pulse #1",
+                     10, 20, kRed, kBg);
 
-  sched.schedule_smelly_in_beats(
-      20, "thump: attacker red off #1", [this, attacker] {
-        fl::ecs::components::safe_clear_color(party_ctx_->reg(), attacker);
-      });
+  schedule_reek_fade(attacker, "thump: attacker red pulse #2",
+                     30, 40, kRed, kBg);
 
-  sched.schedule_smelly_in_beats(
-      30, "thump: attacker red on #2", [this, attacker] {
-        fl::ecs::components::safe_add_color(party_ctx_->reg(), attacker, kRed);
-      });
-
-  sched.schedule_smelly_in_beats(
-      40, "thump: attacker red off #2", [this, attacker] {
-        fl::ecs::components::safe_clear_color(party_ctx_->reg(), attacker);
-      });
-
-  sched.schedule_smelly_in_beats(
-      50, "thump: defender yellow on", [this, target] {
-        fl::ecs::components::safe_add_color(party_ctx_->reg(), target, kYellow);
-      });
+  schedule_reek_fade(target, "thump: defender yellow hit",
+                     50, 70, kYellow, kBg);
 
   sched.schedule_smelly_in_beats(
       60, "thump: apply damage", [this, attacker, target] {
@@ -69,8 +55,7 @@ void EncounterData::schedule_thump_sequence(entt::entity attacker,
       });
 
   sched.schedule_smelly_in_beats(
-      70, "thump: defender yellow off + finish", [this, attacker, target] {
-        fl::ecs::components::safe_clear_color(party_ctx_->reg(), target);
+      71, "thump: finish", [this, attacker] {
         atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{attacker}});
       });
 }
@@ -113,6 +98,43 @@ EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
   wire_.party_beat_ = fl::events::ScopedPartyListener{
       party_ctx_->bus(), fl::events::PartyEvent::Tick,
       [this](const std::any &) { atb_in().emit(seerin::Beat{}); }};
+}
+
+void EncounterData::schedule_reek_fade(
+    entt::entity entity,
+    std::string_view label,
+    int start_beat,
+    int end_beat,
+    ftxui::Color from,
+    ftxui::Color to) {
+  auto& sched = rt_.atb_.scheduler();
+
+  auto const duration = end_beat - start_beat;
+  if (duration <= 0) {
+    return;
+  }
+
+  for (int beat = start_beat; beat <= end_beat; ++beat) {
+    auto const t =
+        static_cast<float>(beat - start_beat) / static_cast<float>(duration);
+
+    auto const color = ftxui::Color::Interpolate(t, from, to);
+
+    sched.schedule_smelly_in_beats(
+        beat,
+        fmt::format("{}: reek fade beat {}", label, beat),
+        [this, entity, color] {
+          fl::ecs::components::safe_add_color(
+              party_ctx_->reg(), entity, color);
+        });
+  }
+
+  sched.schedule_smelly_in_beats(
+      end_beat + 1,
+      fmt::format("{}: reek fade clear", label),
+      [this, entity] {
+        fl::ecs::components::safe_clear_color(party_ctx_->reg(), entity);
+      });
 }
 
 } // namespace fl::primitives

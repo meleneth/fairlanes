@@ -3,7 +3,7 @@
 #include "fl/ecs/components/color_override.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
-
+#include "fl/lospec500.hpp"
 
 namespace fl::widgets {
 
@@ -66,10 +66,13 @@ ftxui::Element Combatant::Render() {
   // Top border labels
   // clang-format off
   ftxui::Element border = ftxui::window(
-    ftxui::hbox({
+    ftxui::hbox(ftxui::Elements {
       ftxui::text(stats.name_) | ftxui::color(ftxui::Color::BlueLight),
       ftxui::filler(),
-      ftxui::text("[" + std::to_string(level.level_) + "]") | ftxui::bold,
+      ftxui::text("[") | ftxui::bgcolor(fl::lospec500::color_at(1)) | ftxui::color(fl::lospec500::color_at(32)),
+     
+      ftxui::text(std::to_string(level.level_)) | ftxui::bgcolor(fl::lospec500::color_at(9)) | ftxui::color(fl::lospec500::color_at(15)),
+      ftxui::text("]") | ftxui::bgcolor(fl::lospec500::color_at(1)) | ftxui::color(fl::lospec500::color_at(32))
     }),
     hp_line
   );
