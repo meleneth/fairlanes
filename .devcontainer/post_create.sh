@@ -9,12 +9,6 @@ run_as_root() {
   fi
 }
 
-
-echo "Installing Fairlanes VS Code extension..."
-
-workspace="${containerWorkspaceFolder:-/workspaces/fairlanes}"
-
-code --install-extension "$workspace/.devcontainer/extensions/ftxui-color-swatch-0.0.1.vsix" --force
 echo "Installing build tools..."
 run_as_root apt-get update
 run_as_root apt-get install -y \
@@ -26,3 +20,13 @@ run_as_root apt-get install -y \
   git \
   pkg-config \
   gcovr
+
+
+workspace="${containerWorkspaceFolder:-/workspaces/fairlanes}"
+
+VSCODE_BIN_DIR="$(ls -d ~/.vscode-server/bin/* | head -n 1)"
+
+echo "Installing VSIX via vscode-server..."
+"$VSCODE_BIN_DIR/bin/code-server" \
+  --install-extension "$workspace/.devcontainer/extensions/ftxui-color-swatch-0.0.1.vsix" \
+  --force

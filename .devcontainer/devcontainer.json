@@ -12,7 +12,7 @@
         "ms-vscode.cpptools",
         "ms-vscode.cmake-tools",
         "llvm-vs-code-extensions.vscode-clangd",
-        ".devcontainer/extensions/ftxui-color-swatch-0.0.1.vsix"
+        "./.devcontainer/extensions/ftxui-color-swatch-0.0.1.vsix"
       ]
     }
   }
