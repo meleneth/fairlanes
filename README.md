@@ -150,6 +150,76 @@ please generate the documentation and refer to fl::ecs::components
 
 ## Cycle IV: Singularity
 
+## Filigree: Experience-Bound Armor Progression
+
+Armor in *Fairlanes* does not gain power solely through upgrades or abstract currencies. It learns—and it has limits.
+
+Each piece of armor accumulates **filigree**—Cycle-specific experience—based on when it is worn and what it endures. Fighting during a given Cycle while wearing a coat will shape that coat’s affinity for that phase of the world. Over time, the armor becomes attuned through lived use.
+
+Only the filigree relevant to the current Cycle is active:
+
+```cpp
+effective_filigree = armor.filigree[current_cycle]
+```
+
+This creates a simple but powerful rule:
+
+> You can only get good at what you actually do.
+
+### Armor Tiers and Filigree Caps
+
+Armor quality defines how much experience it can meaningfully hold.
+
+* **Higher-tier armor**
+
+  * greater filigree caps per Cycle
+  * better base damage absorption
+  * higher cost and investment
+
+* **Lower-tier armor**
+
+  * reaches mastery quickly
+  * but caps out earlier
+
+This creates a natural tension:
+
+> Do you invest in better armor with long-term potential, or master what you have right now?
+
+### Design Implications
+
+* **Experience is temporal**
+  Progress is tied to *when* actions occur, not just where.
+
+* **Gear has memory**
+  A well-worn piece reflects the Cycles it has survived.
+
+* **Upgrades extend potential, not replace experience**
+  New armor does not inherit mastery—it must earn it.
+
+* **No stat stacking or slot puzzles**
+  Filigree is additive in storage, but selectively active in context.
+
+* **Natural progression loop**
+  Enter a Cycle → endure → strengthen that Cycle’s filigree → push further as it returns.
+
+* **Closets become lived loadouts**
+  Players curate sets of gear shaped by different phases of the world.
+
+This system keeps gear relevant indefinitely: rather than being replaced, armor becomes increasingly specialized—while higher-tier equipment expands how far that specialization can go.
+
+# Item Slots
+
+Chest      (core defense + filigree anchor)
+Helm       (perception / status)
+Boots      (movement / positioning)
+Gloves     (execution / precision)
+Belt       (resources / utility)
+
+Cape       (stance / targeting / decision bias)
+
+Necklace   (global modifier)
+Ring x2    (fine-grain modifiers)
+
 # Currencies
 
 ᛞ Darrin-mark
