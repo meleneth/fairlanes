@@ -27,6 +27,7 @@
 #include "fl/widgets/account_battle_view.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "fl/widgets/log_wall.hpp"
+#include "fl/widgets/root_component.hpp"
 
 #include "sr/beat_bus.hpp"
 namespace fl {
@@ -124,7 +125,8 @@ GrandCentral::~GrandCentral() { fancy_log_sink_.reset(); }
 // Convenience accessor if you want the root FTXUI component:
 ftxui::Component GrandCentral::root_component() {
   // return log_wall_;
-  return account_battle_view_;
+  // return account_battle_view_;
+  return root_component_;
 }
 
 fl::context::AccountCtx GrandCentral::account_context(std::size_t idx) {
@@ -249,9 +251,9 @@ void GrandCentral::innervate_event_system() {
 void GrandCentral::build_ui() {
   log_wall_ = ftxui::Make<fl::widgets::LogWall>(*fancy_log_, accounts_);
 
-  account_battle_view_ =
-      ftxui::Make<fl::widgets::AccountBattleView>(fl::context::EntityCtx{
-          reg_, rng_, *fancy_log_, accounts_.front().account_id()});
-}
+  auto &account = accounts_.front();
 
+  root_component_ = ftxui::Make<fl::widgets::RootComponent>(
+      fl::context::AccountCtx{reg_, rng_, account});
+}
 } // namespace fl

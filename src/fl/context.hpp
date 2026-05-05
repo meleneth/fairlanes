@@ -136,6 +136,8 @@ public:
   fl::widgets::FancyLog &log() const;
   fl::events::AccountBus &bus() const;
 
+  entt::entity self() const;
+  
   PartyCtx party_context(std::size_t idx) const;
   PartyCtx party_context(fl::primitives::PartyData &data) const;
   EntityCtx entity_context(entt::entity ent) const;

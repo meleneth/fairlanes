@@ -5,15 +5,6 @@
 #include <stdexcept>
 
 namespace fl::lospec500 {
-namespace {
-
-const ftxui::Color kBackground{16, 18, 28};
-
-ftxui::Decorator on_not_black(ftxui::Color color) {
-  return ftxui::color(color) | ftxui::bgcolor(kBackground);
-}
-
-} // namespace
 
 std::span<const ftxui::Color> raw_colors() {
   static const std::array palette{
@@ -53,13 +44,17 @@ ftxui::Color color_at(std::size_t i) {
   return palette[i];
 }
 
+ftxui::Decorator on_not_black(ftxui::Color color) {
+  return ftxui::color(color) | ftxui::bgcolor(color_at(0));
+}
+
 std::span<const ftxui::Decorator> colors() {
   static const auto palette = [] {
     std::array<ftxui::Decorator, 42> out{};
 
     auto raw = raw_colors();
     for (std::size_t i = 0; i < raw.size(); ++i) {
-      out[i] = on_not_black(raw[i]);
+      out[i] = fl::lospec500::on_not_black(raw[i]);
     }
 
     return out;

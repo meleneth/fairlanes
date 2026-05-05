@@ -16,7 +16,7 @@
 
 namespace fl::widgets {
 
-AccountBattleView::AccountBattleView(fl::context::EntityCtx ctx)
+AccountBattleView::AccountBattleView(fl::context::AccountCtx ctx)
     : ctx_(std::move(ctx)) {}
 
 ftxui::Element AccountBattleView::Render() {

@@ -9,17 +9,17 @@
 #include "fl/context.hpp"
 
 namespace fl::widgets {
-using fl::context::EntityCtx;
+using fl::context::AccountCtx;
 
 class AccountBattleView : public ftxui::ComponentBase {
 public:
-  AccountBattleView(fl::context::EntityCtx context);
+  AccountBattleView(AccountCtx context);
   ftxui::Element Render() override;
   ~AccountBattleView() override = default;
 
 private:
   ftxui::Component body_{nullptr};
-  fl::context::EntityCtx ctx_;
+  AccountCtx ctx_;
 };
 
 } // namespace fl::widgets

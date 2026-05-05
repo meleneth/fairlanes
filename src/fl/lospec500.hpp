@@ -7,6 +7,7 @@
 
 namespace fl::lospec500 {
 
+ftxui::Decorator on_not_black(ftxui::Color color);
 std::span<const ftxui::Color> raw_colors();
 ftxui::Color color_at(std::size_t i);
 

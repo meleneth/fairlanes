@@ -82,6 +82,11 @@ EntityCtx AccountCtx::entity_context(entt::entity ent) const {
   return EntityCtx{reg(), rng(), log(), ent};
 }
 
+entt::entity AccountCtx::self() const {
+  return account_data_->account_id();
+}
+
+
 AttackCtx::AttackCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
                      fl::widgets::FancyLog &log, entt::entity attacker,
                      entt::entity defender)
