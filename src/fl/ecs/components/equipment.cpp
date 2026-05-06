@@ -5,21 +5,25 @@
 
 namespace fl::ecs::components {
 
-Equipment::Equipment(EquipmentSlot slot, std::string name,
-                     ArmorKind armor_kind)
+Equipment::Equipment(fl::loot::EquipmentSlot slot, std::string name,
+                     fl::loot::ArmorKind armor_kind)
     : slot_(slot), armor_kind_(armor_kind), name_(std::move(name)) {}
 
-EquipmentSlot Equipment::slot() const noexcept { return slot_; }
+fl::loot::EquipmentSlot Equipment::slot() const noexcept { return slot_; }
 
-ArmorKind Equipment::armor_kind() const noexcept { return armor_kind_; }
+fl::loot::ArmorKind Equipment::armor_kind() const noexcept {
+  return armor_kind_;
+}
 
 bool Equipment::is_armor() const noexcept {
-  return armor_kind_ != ArmorKind::none;
+  return armor_kind_ != fl::loot::ArmorKind::none;
 }
 
 std::string_view Equipment::name() const noexcept { return name_; }
 
-std::string_view to_string(EquipmentSlot slot) {
+std::string_view to_string(fl::loot::EquipmentSlot slot) {
+  using fl::loot::EquipmentSlot;
+
   switch (slot) {
   case EquipmentSlot::chest:
     return "chest";

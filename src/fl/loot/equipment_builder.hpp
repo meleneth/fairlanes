@@ -7,8 +7,8 @@
 namespace fl::loot {
 
 struct EquipmentBuilder {
-  fl::ecs::components::EquipmentSlot slot;
-  fl::ecs::components::ArmorKind armor_kind{fl::ecs::components::ArmorKind::none};
+  fl::loot::EquipmentSlot slot;
+  fl::loot::ArmorKind armor_kind{fl::loot::ArmorKind::none};
   std::string name;
 
   entt::entity create(entt::registry &reg) const {
