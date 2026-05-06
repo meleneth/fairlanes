@@ -44,6 +44,7 @@ public:
   entt::entity self() const { return self_; }
 
   EntityCtx entity_context(entt::entity ent) const;
+  [[nodiscard]] PartyCtx expect_party_ctx() const;
 
 private:
   entt::registry *reg_{};
@@ -79,7 +80,8 @@ public:
   PartyCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
            fl::primitives::AccountData &acc, fl::primitives::PartyData &party);
 
-  PartyCtx &operator=(const PartyCtx &rhs);
+  PartyCtx(const PartyCtx &) = default;
+  PartyCtx &operator=(const PartyCtx &) = default;
 
   entt::registry &reg() const {
     // FL_ASSERT(reg_);

@@ -41,4 +41,12 @@ EncounterData &PartyData::create_encounter() {
 
   return *encounter_data_;
 }
+
+void PartyData::add_item(entt::entity item) {
+  inventory_.push_back(item);
+}
+
+std::span<const entt::entity> PartyData::items() const noexcept {
+  return inventory_;
+}
 } // namespace fl::primitives

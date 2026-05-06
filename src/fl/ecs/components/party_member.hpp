@@ -14,6 +14,7 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/closet.hpp"
+#include "fl/ecs/components/is_party.hpp"
 #include "fl/ecs/fwd.hpp"
 
 namespace fl::ecs::components {
@@ -34,8 +35,16 @@ struct PartyMember {
     return ctx_.reg().get<Closet>(closet_);
   }
 
-  [[nodiscard]] entt::entity closet_entity() const noexcept {
+  [[nodiscard]] entt::entity closet_entity_id() const noexcept {
     return closet_;
+  }
+
+  [[nodiscard]] IsParty &party() {
+    return ctx_.reg().get<IsParty>(party_);
+  }
+
+  [[nodiscard]] const IsParty &party() const {
+    return ctx_.reg().get<IsParty>(party_);
   }
 };
 

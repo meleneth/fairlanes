@@ -6,6 +6,9 @@
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/primitives/damage.hpp"
 #include "fl/widgets/fancy_log.hpp"
+#include "fl/loot/global_loot_table.hpp"
+#include "fl/ecs/components/is_party.hpp"
+#include "fl/primitives/party_data.hpp"
 #include "grant_xp_to_party.hpp"
 #include "take_damage.hpp"
 
@@ -25,15 +28,27 @@ void TakeDamage::commit(fl::context::AttackCtx &ctx) {
   auto was_alive = defender_stats.is_alive();
   defender_stats.hp_ = std::max(0, defender_stats.hp_ - total);
   if (!defender_stats.is_alive() && was_alive) {
-    auto party =
+    auto party_member =
         ctx.reg().try_get<fl::ecs::components::PartyMember>(ctx.attacker());
 
     ctx.log().append_markup(
         fmt::format("[name]({}) [error](killed) [name]({})!",
                     attacker_stats.name_, defender_stats.name_));
-    if (party) {
-      fl::systems::GrantXPToParty::commit(ctx.entity_context(party->party_),
+    if (party_member) {
+      fl::systems::GrantXPToParty::commit(ctx.entity_context(party_member->party_),
                                           256);
+      auto party_ctx = party_member->party().party_data().party_ctx();
+      if (auto builder =
+          fl::loot::global_loot_table().roll(party_ctx, "loot.global")) {
+        auto item = builder->create(party_ctx.reg());
+      
+        const auto &equipment =
+          party_ctx.reg().get<fl::ecs::components::Equipment>(item);
+
+        ctx.log().append_markup(
+            fmt::format("[ok](Loot found:) [ability]({})", equipment.name()));
+        party_member->party().party_data().add_item(item);
+      }
     }
   }
   // spdlog::info("{} hits {} for {} damage ({} HP left)",

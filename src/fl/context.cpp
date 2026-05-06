@@ -3,6 +3,9 @@
 #include "context.hpp"
 
 #include "fl/context.hpp"
+#include "fl/events/account_bus.hpp"
+#include "fl/events/party_bus.hpp"
+#include "fl/ecs/components/is_party.hpp" 
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/random_hub.hpp"
@@ -51,16 +54,6 @@ PartyCtx::PartyCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
       bus_(&party.party_bus()) {
 } // assumes PartyData stores PartyBus party_bus_
 
-PartyCtx &PartyCtx::operator=(const PartyCtx &rhs) {
-  reg_ = rhs.reg_;
-  rng_ = rhs.rng_;
-  account_data_ = rhs.account_data_;
-  party_data_ = rhs.party_data_;
-  log_ = rhs.log_;
-  bus_ = rhs.bus_;
-  return *this;
-}
-
 EntityCtx PartyCtx::entity_context(entt::entity ent) const {
   return EntityCtx{reg(), rng(), log(), ent};
 }
@@ -100,6 +93,14 @@ EntityCtx AttackCtx::entity_context(entt::entity e) const {
 AttackCtx AttackCtx::make_attack(PartyCtx &ctx, entt::entity attacker,
                                  entt::entity defender) {
   return AttackCtx{ctx.reg(), ctx.rng(), ctx.log(), attacker, defender};
+}
+
+PartyCtx EntityCtx::expect_party_ctx() const {
+  auto *is_party = reg().try_get<fl::ecs::components::IsParty>(self_);
+
+  assert(is_party && "EntityCtx::expect_party_ctx called on non-party entity");
+
+  return is_party->party_data().loop_ctx();
 }
 
 // MARK_CLASS_MOVEONLY(AttackCtx);

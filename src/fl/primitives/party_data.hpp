@@ -5,6 +5,8 @@
 #include <functional> // std::invoke
 #include <memory>
 #include <string>
+#include <vector>
+#include <span>
 #include <utility>
 
 #include <entt/entt.hpp>
@@ -54,6 +56,9 @@ public:
 
   fl::context::PartyCtx &loop_ctx() noexcept { return party_ctx_; }
   const fl::context::PartyCtx &loop_ctx() const noexcept { return party_ctx_; }
+  
+  fl::context::PartyCtx &party_ctx() noexcept { return party_ctx_; }
+  const fl::context::PartyCtx &party_ctx() const noexcept { return party_ctx_; }
 
   fl::fsm::PartyLoopMachine &loop_machine() { return *party_loop_machine_; }
   const fl::fsm::PartyLoopMachine &loop_machine() const {
@@ -77,6 +82,9 @@ public:
     }
   }
 
+  void add_item(entt::entity item);
+  std::span<const entt::entity> items() const noexcept;
+
 private:
   entt::entity party_id_{entt::null};
   std::string name_;
@@ -88,6 +96,7 @@ private:
   std::deque<fl::primitives::MemberData> members_;
   fl::events::PartyBus party_bus_;
   seerin::AtbEngine atb_;
+  std::vector<entt::entity> inventory_;
 
   seerin::BeatBus party_beat_bus_{};
   seerin::BeatSub gc_forward_sub_{};
