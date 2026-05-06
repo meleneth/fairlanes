@@ -5,14 +5,38 @@
 #include "fl/context.hpp"
 #include "fl/ecs/fwd.hpp"
 
+
+#pragma once
+
+#include <entt/entt.hpp>
+#include <string>
+#include <utility>
+
+#include "fl/context.hpp"
+#include "fl/ecs/components/closet.hpp"
+#include "fl/ecs/fwd.hpp"
+
 namespace fl::ecs::components {
 
 struct PartyMember {
   fl::ecs::Entity party_;
   fl::context::EntityCtx ctx_;
+  entt::entity closet_;
 
   PartyMember(fl::context::EntityCtx ctx, std::string /*name*/,
               entt::entity party);
+
+  [[nodiscard]] Closet &closet() {
+    return ctx_.reg().get<Closet>(closet_);
+  }
+
+  [[nodiscard]] const Closet &closet() const {
+    return ctx_.reg().get<Closet>(closet_);
+  }
+
+  [[nodiscard]] entt::entity closet_entity() const noexcept {
+    return closet_;
+  }
 };
 
 template <typename PM = PartyMember, typename Fn>

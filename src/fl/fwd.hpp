@@ -21,6 +21,7 @@ struct PartyMember;
 struct Stats;
 struct Tags;
 struct TrackXP;
+struct Closet;
 } // namespace fl::ecs::components
 
 namespace fl::events {
