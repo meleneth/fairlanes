@@ -4,10 +4,10 @@
 #include <deque>
 #include <functional> // std::invoke
 #include <memory>
-#include <string>
-#include <vector>
 #include <span>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include <entt/entt.hpp>
 
@@ -56,7 +56,7 @@ public:
 
   fl::context::PartyCtx &loop_ctx() noexcept { return party_ctx_; }
   const fl::context::PartyCtx &loop_ctx() const noexcept { return party_ctx_; }
-  
+
   fl::context::PartyCtx &party_ctx() noexcept { return party_ctx_; }
   const fl::context::PartyCtx &party_ctx() const noexcept { return party_ctx_; }
 

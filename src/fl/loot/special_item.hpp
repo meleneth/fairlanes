@@ -10,4 +10,4 @@ struct SpecialItem {
   EquipmentBuilder item;
 };
 
-}
+} // namespace fl::loot

@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "fl/context.hpp"
+#include "encounter_data.hpp"
 
 namespace fl::primitives {
 

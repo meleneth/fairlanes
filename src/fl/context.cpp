@@ -3,9 +3,9 @@
 #include "context.hpp"
 
 #include "fl/context.hpp"
+#include "fl/ecs/components/is_party.hpp"
 #include "fl/events/account_bus.hpp"
 #include "fl/events/party_bus.hpp"
-#include "fl/ecs/components/is_party.hpp" 
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/random_hub.hpp"
@@ -75,10 +75,7 @@ EntityCtx AccountCtx::entity_context(entt::entity ent) const {
   return EntityCtx{reg(), rng(), log(), ent};
 }
 
-entt::entity AccountCtx::self() const {
-  return account_data_->account_id();
-}
-
+entt::entity AccountCtx::self() const { return account_data_->account_id(); }
 
 AttackCtx::AttackCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
                      fl::widgets::FancyLog &log, entt::entity attacker,

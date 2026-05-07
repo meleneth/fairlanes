@@ -14,14 +14,10 @@ struct EquipmentBuilder {
   entt::entity create(entt::registry &reg) const {
     auto item = reg.create();
 
-    reg.emplace<fl::ecs::components::Equipment>(
-        item,
-        slot,
-        name,
-        armor_kind);
+    reg.emplace<fl::ecs::components::Equipment>(item, slot, name, armor_kind);
 
     return item;
   }
 };
 
-};
+}; // namespace fl::loot

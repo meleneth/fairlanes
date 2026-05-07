@@ -8,4 +8,4 @@ struct Weight {
   int value;
 };
 
-};
+}; // namespace fl::loot

@@ -29,4 +29,4 @@ struct Closet {
   bool empty() const;
 };
 
-}  // namespace fl#pragma once
+} // namespace fl::ecs::components

@@ -101,8 +101,8 @@ ftxui::Element AccountBattleView::Render() {
   std::vector<ftxui::Element> log_panes;
   log_panes.reserve(parties.size() + 1);
 
-  log_panes.push_back(is_account.account_data().log().Render() |
-                      ftxui::frame | ftxui::vscroll_indicator | ftxui::flex);
+  log_panes.push_back(is_account.account_data().log().Render() | ftxui::frame |
+                      ftxui::vscroll_indicator | ftxui::flex);
 
   for (auto &party : parties) {
     log_panes.push_back(party.log().Render() | ftxui::frame |

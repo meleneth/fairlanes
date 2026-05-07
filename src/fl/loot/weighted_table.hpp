@@ -4,8 +4,7 @@
 
 namespace fl::loot {
 
-template <typename T>
-class WeightedTable {
+template <typename T> class WeightedTable {
 public:
   explicit WeightedTable(std::vector<WeightedChoice<T>> choices)
       : choices_(std::move(choices)) {
@@ -43,4 +42,4 @@ private:
   std::vector<WeightedChoice<T>> choices_;
 };
 
-};
+}; // namespace fl::loot

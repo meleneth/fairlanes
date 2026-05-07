@@ -89,7 +89,7 @@ private:
   ftxui::Component log_wall_;
   ftxui::Component account_battle_view_;
   ftxui::Component root_component_;
-  
+
   // ---- internal helpers ----
   void _create_initial_accounts();
   void bootstrap_logs();

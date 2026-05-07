@@ -1,13 +1,12 @@
+#include "encounter_builder.hpp"
 #include "fl/context.hpp"
 #include "fl/ecs/components/encounter.hpp"
 #include "fl/monsters/monster_kind.hpp"
+#include "fl/primitives/encounter_data.hpp"
 #include "fl/primitives/entity_builder.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/team.hpp"
-#include "fl/primitives/encounter_data.hpp"
 #include "sr/encounter_events.hpp"
-#include "encounter_builder.hpp"
-
 
 namespace fl::primitives {
 

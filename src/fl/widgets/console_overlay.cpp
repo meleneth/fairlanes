@@ -7,8 +7,8 @@
 #include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
 
-#include "fl/lospec500.hpp"
 #include "fancy_log.hpp"
+#include "fl/lospec500.hpp"
 
 namespace fl::widgets {
 
@@ -47,12 +47,11 @@ void ConsoleOverlay::tick() {
   rows_ += rows_ < target_rows_ ? 1 : -1;
 }
 
-void ConsoleOverlay::change_console(FancyLog *console) {
-  console_ = console;
-}
+void ConsoleOverlay::change_console(FancyLog *console) { console_ = console; }
 
 void ConsoleOverlay::set_on_command(CommandHandler handler) {
-  on_command_ = handler ? std::move(handler) : CommandHandler{[](std::string_view) {}};
+  on_command_ =
+      handler ? std::move(handler) : CommandHandler{[](std::string_view) {}};
 }
 
 void ConsoleOverlay::FocusInput() {
@@ -98,25 +97,23 @@ ftxui::Element ConsoleOverlay::Render() {
   auto bg = bgcolor(fl::lospec500::color_at(0));
 
   auto input_bar = hbox({
-      text("> ") | chrome,
-      input_ ? input_->Render() | chrome : text(""),
-  }) | bg;
+                       text("> ") | chrome,
+                       input_ ? input_->Render() | chrome : text(""),
+                   }) |
+                   bg;
 
   Element log_el = console_ ? console_->Render() : text("");
   log_el = log_el | vscroll_indicator | yframe | yflex_grow | bg;
 
   auto content = vbox({
-      log_el,
-      separator() | chrome,
-      input_bar,
-  }) | bg;
+                     log_el,
+                     separator() | chrome,
+                     input_bar,
+                 }) |
+                 bg;
 
-  return window(text("Console") | chrome, content) |
-         xflex_grow |
-         clear_under |
-         chrome |
-         bg |
-         size(HEIGHT, EQUAL, std::max(0, rows_));
+  return window(text("Console") | chrome, content) | xflex_grow | clear_under |
+         chrome | bg | size(HEIGHT, EQUAL, std::max(0, rows_));
 }
 
 } // namespace fl::widgets

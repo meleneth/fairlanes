@@ -21,7 +21,7 @@ public:
   void set_full_open();
 
   void show_account_battle();
-  //void show_party_battle(std::size_t party_index);
+  // void show_party_battle(std::size_t party_index);
 
 private:
   ConsoleOverlay *console_overlay();

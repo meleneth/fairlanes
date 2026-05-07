@@ -4,10 +4,9 @@
 
 namespace fl::loot {
 
-template <typename T>
-struct WeightedChoice {
+template <typename T> struct WeightedChoice {
   Weight weight;
   T value;
 };
 
-};
+}; // namespace fl::loot

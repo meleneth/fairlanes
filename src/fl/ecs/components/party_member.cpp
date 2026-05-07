@@ -4,8 +4,8 @@
 #include <ranges>
 #include <string>
 
-#include "fl/ecs/fwd.hpp"
 #include "closet.hpp"
+#include "fl/ecs/fwd.hpp"
 
 namespace fl::ecs::components {
 

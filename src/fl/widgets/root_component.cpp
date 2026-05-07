@@ -6,9 +6,9 @@
 
 #include <ftxui/dom/elements.hpp>
 
+#include "account_battle_view.hpp"
 #include "console_overlay.hpp"
 #include "fancy_log.hpp"
-#include "account_battle_view.hpp"
 
 namespace fl::widgets {
 
@@ -68,17 +68,13 @@ void RootComponent::toggle_console() {
   }
 }
 
-void RootComponent::set_full_open() {
-  console_overlay()->set_full_open();
-}
+void RootComponent::set_full_open() { console_overlay()->set_full_open(); }
 
 void RootComponent::show_account_battle() {
   // For now, party 0 is the default battle screen.
   active_screen_ = ftxui::Make<AccountBattleView>(ctx_);
   Add(active_screen_);
-
 }
-
 
 ConsoleOverlay *RootComponent::console_overlay() {
   return dynamic_cast<ConsoleOverlay *>(console_overlay_.get());

@@ -9,15 +9,15 @@
 #include "fl/context.hpp"
 #include "fl/loot/equipment_builder.hpp"
 #include "fl/primitives/random_hub.hpp"
+#include "item_kind.hpp"
+#include "special_item.hpp"
+#include "upgrade_table.hpp"
+#include "tier.hpp"
 #include "weight.hpp"
 #include "weighted_choice.hpp"
 #include "weighted_table.hpp"
-#include "item_kind.hpp"
-#include "tier.hpp"
-#include "special_item.hpp"
 
 namespace fl::loot {
-
 
 using EquipmentFactory = std::function<EquipmentBuilder()>;
 
@@ -28,17 +28,13 @@ struct LootEntry {
 
 class LootTable {
 public:
-  LootTable(Weight drop_chance,
-            WeightedTable<ItemKind> kinds,
+  LootTable(Weight drop_chance, WeightedTable<ItemKind> kinds,
             WeightedTable<fl::loot::EquipmentSlot> armor_slots,
             WeightedTable<fl::loot::ArmorKind> armor_kinds,
-            WeightedTable<Tier> tiers,
-            std::vector<SpecialItem> specials = {})
-      : drop_chance_(drop_chance),
-        kinds_(std::move(kinds)),
+            UpgradeTable<Tier> tiers, std::vector<SpecialItem> specials = {})
+      : drop_chance_(drop_chance), kinds_(std::move(kinds)),
         armor_slots_(std::move(armor_slots)),
-        armor_kinds_(std::move(armor_kinds)),
-        tiers_(std::move(tiers)),
+        armor_kinds_(std::move(armor_kinds)), tiers_(std::move(tiers)),
         specials_(std::move(specials)) {}
 
   template <fl::context::WorldCoreCtx Ctx>
@@ -69,16 +65,18 @@ public:
     auto slot = armor_slots_.roll(ctx, std::string{stream_name} + ".slot");
     auto armor_kind =
         armor_kinds_.roll(ctx, std::string{stream_name} + ".armor_kind");
-    auto tier = tiers_.roll(ctx, std::string{stream_name} + ".tier");
 
-    if (!slot || !armor_kind || !tier) {
+
+    auto tier = tiers_.roll(ctx, std::string{stream_name} + ".tier", Tier::worn);
+
+    if (!slot || !armor_kind) {
       return std::nullopt;
     }
 
     return EquipmentBuilder{
         .slot = *slot,
         .armor_kind = *armor_kind,
-        .name = generated_name(*slot, *armor_kind, *tier),
+        .name = generated_name(*slot, *armor_kind, tier),
     };
   }
 
@@ -93,22 +91,20 @@ private:
       choices.push_back({special.weight, special.item});
     }
 
-    return WeightedTable<EquipmentBuilder>{std::move(choices)}.roll(ctx,
-                                                                    stream_name);
+    return WeightedTable<EquipmentBuilder>{std::move(choices)}.roll(
+        ctx, stream_name);
   }
 
-  [[nodiscard]] static std::string generated_name(
-      fl::loot::EquipmentSlot slot,
-      fl::loot::ArmorKind kind,
-      Tier tier);
+  [[nodiscard]] static std::string generated_name(fl::loot::EquipmentSlot slot,
+                                                  fl::loot::ArmorKind kind,
+                                                  Tier tier);
 
   Weight drop_chance_;
   WeightedTable<ItemKind> kinds_;
   WeightedTable<fl::loot::EquipmentSlot> armor_slots_;
   WeightedTable<fl::loot::ArmorKind> armor_kinds_;
-  WeightedTable<Tier> tiers_;
+  UpgradeTable<Tier> tiers_;
   std::vector<SpecialItem> specials_;
 };
-
 
 } // namespace fl::loot

@@ -1,14 +1,14 @@
 #include "fmt/format.h"
 
 #include "fl/context.hpp"
+#include "fl/ecs/components/is_party.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
-#include "fl/primitives/damage.hpp"
-#include "fl/widgets/fancy_log.hpp"
 #include "fl/loot/global_loot_table.hpp"
-#include "fl/ecs/components/is_party.hpp"
+#include "fl/primitives/damage.hpp"
 #include "fl/primitives/party_data.hpp"
+#include "fl/widgets/fancy_log.hpp"
 #include "grant_xp_to_party.hpp"
 #include "take_damage.hpp"
 
@@ -35,15 +35,15 @@ void TakeDamage::commit(fl::context::AttackCtx &ctx) {
         fmt::format("[name]({}) [error](killed) [name]({})!",
                     attacker_stats.name_, defender_stats.name_));
     if (party_member) {
-      fl::systems::GrantXPToParty::commit(ctx.entity_context(party_member->party_),
-                                          256);
+      fl::systems::GrantXPToParty::commit(
+          ctx.entity_context(party_member->party_), 256);
       auto party_ctx = party_member->party().party_data().party_ctx();
       if (auto builder =
-          fl::loot::global_loot_table().roll(party_ctx, "loot.global")) {
+              fl::loot::global_loot_table().roll(party_ctx, "loot.global")) {
         auto item = builder->create(party_ctx.reg());
-      
+
         const auto &equipment =
-          party_ctx.reg().get<fl::ecs::components::Equipment>(item);
+            party_ctx.reg().get<fl::ecs::components::Equipment>(item);
 
         ctx.log().append_markup(
             fmt::format("[ok](Loot found:) [ability]({})", equipment.name()));
