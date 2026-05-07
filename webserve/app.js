@@ -11,16 +11,15 @@ const term = new Terminal({
   theme: { background: "#111" },
 });
 
-const fitAddon = new FitAddon.FitAddon();
-term.loadAddon(fitAddon);
 term.open(terminalEl);
+term.resize(120, 40);
 term.writeln("[app] terminal ready");
 
 const inputQueue = [];
 const decoder = new TextDecoder("utf-8");
 
-let stdoutBytes = [];
-let stderrBytes = [];
+const stdoutBytes = [];
+const stderrBytes = [];
 
 function flushBytes(byteBuffer, isErr = false) {
   if (byteBuffer.length === 0) return;
@@ -28,11 +27,7 @@ function flushBytes(byteBuffer, isErr = false) {
   const text = decoder.decode(new Uint8Array(byteBuffer));
   byteBuffer.length = 0;
 
-  if (isErr) {
-    term.write("\x1b[31m" + text + "\x1b[0m");
-  } else {
-    term.write(text);
-  }
+  term.write(isErr ? "\x1b[31m" + text + "\x1b[0m" : text);
 }
 
 function updateTtySize() {
@@ -53,25 +48,24 @@ function updateTtySize() {
 }
 
 function fitTerminal() {
-  try {
-    fitAddon.fit();
-    updateTtySize();
-    console.log("[app] fit ok ->", term.cols, "x", term.rows);
-  } catch (err) {
-    console.error("[app] fit failed", err);
-  }
+  term.resize(120, 40);
+  updateTtySize();
+  console.log("[app] fixed size ->", term.cols, "x", term.rows);
 }
 
 window.addEventListener("resize", fitTerminal);
 
 term.onData((data) => {
   term.write(data);
+
   for (let i = 0; i < data.length; i++) {
     inputQueue.push(data.charCodeAt(i));
   }
 });
 
-window.Module = {
+window.Module = window.Module || {};
+
+Object.assign(window.Module, {
   preRun: [
     function () {
       console.log("[app] preRun");
@@ -87,9 +81,7 @@ window.Module = {
           }
 
           stdoutBytes.push(c);
-          if (c === 10) {
-            flushBytes(stdoutBytes, false);
-          }
+          if (c === 10) flushBytes(stdoutBytes, false);
         },
         function stderr(c) {
           if (c === null) {
@@ -98,9 +90,7 @@ window.Module = {
           }
 
           stderrBytes.push(c);
-          if (c === 10) {
-            flushBytes(stderrBytes, true);
-          }
+          if (c === 10) flushBytes(stderrBytes, true);
         }
       );
     },
@@ -118,8 +108,8 @@ window.Module = {
     term.writeln("\r\n[Fairlanes ready]\r\n");
     fitTerminal();
   },
-};
+});
 
 console.log("[app] crossOriginIsolated =", window.crossOriginIsolated);
 
-setTimeout(fitTerminal, 0);
+fitTerminal();
