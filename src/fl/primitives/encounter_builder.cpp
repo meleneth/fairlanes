@@ -13,7 +13,7 @@ namespace fl::primitives {
 EncounterData &EncounterBuilder::thump_it_out() {
   auto &encounter_data = ctx_.party_data().create_encounter();
 
-  add_field_mouse();
+  add_random_enemy();
 
   ctx_.party_data().for_each_member([&](entt::entity member) {
     encounter_data.defenders().members().push_back(member);
@@ -23,13 +23,16 @@ EncounterData &EncounterBuilder::thump_it_out() {
   return encounter_data;
 }
 
-void EncounterBuilder::add_field_mouse() {
+void EncounterBuilder::add_random_enemy() {
   using namespace fl::ecs::components;
 
+  auto rs = ctx_.rng().stream("encounter/spawn.monster");
+  const auto kind = rs.random_index(20) == 0
+                        ? fl::monster::MonsterKind::HoneyBadger
+                        : fl::monster::MonsterKind::FieldMouse;
+
   auto context = ctx_.build_context();
-  entt::entity ent = EntityBuilder(context)
-                         .monster(fl::monster::MonsterKind::FieldMouse)
-                         .build();
+  entt::entity ent = EntityBuilder(context).monster(kind).build();
   add_to_enemy_team(ent);
 }
 

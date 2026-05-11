@@ -13,7 +13,7 @@ struct EncounterBuilder {
 
   EncounterData &thump_it_out();
 
-  void add_field_mouse();
+  void add_random_enemy();
 
   void add_to_enemy_team(entt::entity entity);
 

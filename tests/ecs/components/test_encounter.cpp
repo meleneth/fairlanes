@@ -34,7 +34,7 @@ TEST_CASE("EncounterBuilder::thump_it_out enrolls party members as defenders",
   REQUIRE(encounter.defenders().members().size() == 3);
 }
 
-TEST_CASE("EncounterBuilder::thump_it_out adds one field mouse attacker",
+TEST_CASE("EncounterBuilder::thump_it_out adds one enemy attacker",
           "[encounter][builder]") {
   fl::GrandCentral gc{1, 1, 3};
 
