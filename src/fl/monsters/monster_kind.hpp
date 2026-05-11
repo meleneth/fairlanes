@@ -4,6 +4,7 @@ namespace fl::monster {
 
 enum class MonsterKind {
   FieldMouse,
+  HoneyBadger,
   // Wolf,
   // Slime,
   // Goblin,
