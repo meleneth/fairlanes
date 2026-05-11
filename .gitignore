@@ -1,4 +1,6 @@
 docs/html
+webserve/fairlanes.js
+webserve/fairlanes.wasm
 
 *.html
 

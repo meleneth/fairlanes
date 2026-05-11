@@ -54,8 +54,7 @@ target_link_libraries(fairlanes PRIVATE
 
 if(EMSCRIPTEN)
   target_compile_options(fairlanes PRIVATE -O3 -flto)
-  target_link_options(fairlanes PRIVATE -O3 -flto -sASSERTIONS=0)  target_compile_options(fairlanes PRIVATE -O3 -flto)
-  target_link_options(fairlanes PRIVATE -O3 -flto -sASSERTIONS=0)
+  target_link_options(fairlanes PRIVATE -O3 -flto -sASSERTIONS=0) 
 else()
   target_link_libraries(fairlanes PRIVATE TracyClient)
   target_compile_definitions(fairlanes PRIVATE TRACY_ENABLE)

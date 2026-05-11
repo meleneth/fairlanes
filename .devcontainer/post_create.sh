@@ -15,6 +15,7 @@ run_as_root apt-get install -y \
   build-essential \
   cmake \
   ninja-build \
+  bubblewrap \
   gdb \
   clangd \
   git \

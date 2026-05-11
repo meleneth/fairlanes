@@ -11,8 +11,10 @@ const term = new Terminal({
   theme: { background: "#111" },
 });
 
+const fitAddon = new FitAddon.FitAddon();
+
+term.loadAddon(fitAddon);
 term.open(terminalEl);
-term.resize(120, 40);
 term.writeln("[app] terminal ready");
 
 const inputQueue = [];
@@ -48,12 +50,30 @@ function updateTtySize() {
 }
 
 function fitTerminal() {
-  term.resize(120, 40);
-  updateTtySize();
-  console.log("[app] fixed size ->", term.cols, "x", term.rows);
+  if (!terminalEl.isConnected) return;
+
+  const rect = terminalEl.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) {
+    console.log("[app] terminal has no layout yet; skipping fit");
+    return;
+  }
+
+  try {
+    fitAddon.fit();
+    updateTtySize();
+    console.log("[app] fit ->", term.cols, "x", term.rows);
+  } catch (err) {
+    console.error("[app] fit failed", err);
+  }
 }
 
-window.addEventListener("resize", fitTerminal);
+function scheduleFit() {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(fitTerminal);
+  });
+}
+
+window.addEventListener("resize", scheduleFit);
 
 term.onData((data) => {
   term.write(data);
@@ -65,51 +85,35 @@ term.onData((data) => {
 
 window.Module = window.Module || {};
 
-Object.assign(window.Module, {
-  preRun: [
-    function () {
-      console.log("[app] preRun");
+window.Module.preRun = window.Module.preRun || [];
+window.Module.preRun.push(function () {
+  console.log("[app] preRun");
 
-      FS.init(
-        function stdin() {
-          return inputQueue.length ? inputQueue.shift() : null;
-        },
-        function stdout(c) {
-          if (c === null) {
-            flushBytes(stdoutBytes, false);
-            return;
-          }
-
-          stdoutBytes.push(c);
-          if (c === 10) flushBytes(stdoutBytes, false);
-        },
-        function stderr(c) {
-          if (c === null) {
-            flushBytes(stderrBytes, true);
-            return;
-          }
-
-          stderrBytes.push(c);
-          if (c === 10) flushBytes(stderrBytes, true);
-        }
-      );
+  FS.init(
+    function stdin() {
+      return inputQueue.length ? inputQueue.shift() : null;
     },
-  ],
+    function stdout(c) {
+      if (c === null) return flushBytes(stdoutBytes, false);
 
-  print(text) {
-    term.writeln(text);
-  },
+      stdoutBytes.push(c);
+      if (c === 10) flushBytes(stdoutBytes, false);
+    },
+    function stderr(c) {
+      if (c === null) return flushBytes(stderrBytes, true);
 
-  printErr(text) {
-    term.writeln("\x1b[31m" + text + "\x1b[0m");
-  },
-
-  onRuntimeInitialized() {
-    term.writeln("\r\n[Fairlanes ready]\r\n");
-    fitTerminal();
-  },
+      stderrBytes.push(c);
+      if (c === 10) flushBytes(stderrBytes, true);
+    }
+  );
 });
+
+window.Module.onRuntimeInitialized = function () {
+  term.writeln("\r\n[Fairlanes ready]\r\n");
+  scheduleFit();
+};
+
 
 console.log("[app] crossOriginIsolated =", window.crossOriginIsolated);
 
-fitTerminal();
+scheduleFit();
