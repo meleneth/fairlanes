@@ -3,9 +3,12 @@
 
 #include <entt/entt.hpp>
 
+#include "fl/ecs/components/color_override.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/lospec500.hpp"
 #include "fl/primitives/encounter_builder.hpp"
+#include "sr/atb_events.hpp"
 
 namespace {
 
@@ -83,6 +86,40 @@ TEST_CASE("EncounterBuilder::thump_it_out creates one enemy owned by encounter",
 
   REQUIRE(encounter.entities_to_cleanup().size() == 1);
   CHECK(encounter.entities_to_cleanup().front() == enemy);
+}
+
+TEST_CASE("EncounterData::schedule_reek_fade applies and clears ColorOverride",
+          "[encounter][timing][color]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  auto &encounter = builder.thump_it_out();
+
+  const entt::entity target = encounter.defenders().members().front();
+  auto &reg = party_ctx.reg();
+
+  const auto from = fl::lospec500::color_at(4);
+  const auto to = fl::lospec500::color_at(0);
+
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::ColorOverride>(target));
+
+  encounter.schedule_reek_fade(target, "test: fade", 1, 2, from, to);
+
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::Beat{}});
+  REQUIRE(reg.get<fl::ecs::components::ColorOverride>(target)
+              .color.Print(false) ==
+          ftxui::Color::Interpolate(0.0F, from, to).Print(false));
+
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::Beat{}});
+  REQUIRE(reg.get<fl::ecs::components::ColorOverride>(target)
+              .color.Print(false) ==
+          ftxui::Color::Interpolate(1.0F, from, to).Print(false));
+
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::Beat{}});
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::ColorOverride>(target));
 }
 
 } // namespace

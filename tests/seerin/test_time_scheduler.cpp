@@ -6,7 +6,7 @@
 
 #include "sr/timed_scheduler.hpp" // adjust include path
 #include "sr/uWu.hpp"
-/*
+
 namespace {
 
 // A tiny event variant for tests.
@@ -199,4 +199,3 @@ TEST_CASE("TimedScheduler: can schedule more work from inside a callback") {
   REQUIRE(std::get<EvtA>(out[0]).v == 99);
   REQUIRE(sch.pending() == 0);
 }
-*/
