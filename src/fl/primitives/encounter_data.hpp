@@ -56,7 +56,12 @@ public:
   bool has_alive_enemies();
   bool is_over();
   void finalize();
+  void clear_pending_events();
+  void clear_pending_events_for(entt::entity id);
   void innervate_event_system();
+  std::size_t pending_scheduled_events() const {
+    return rt_.atb_.scheduler().pending();
+  }
 
   bool owns_entity(entt::entity e) const {
     return std::find(life_.entities_to_cleanup_.begin(),

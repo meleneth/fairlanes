@@ -69,6 +69,16 @@ void PartyData::start_town_penalty() {
   town_penalty_beats_remaining_ = kTownPenaltyBeats;
 }
 
+void PartyData::leave_combat() {
+  if (!encounter_data_) {
+    return;
+  }
+
+  encounter_data_->clear_pending_events();
+  encounter_data_->finalize();
+  encounter_data_.reset();
+}
+
 void PartyData::tick_town_penalty() {
   if (town_penalty_beats_remaining_ > 0) {
     --town_penalty_beats_remaining_;

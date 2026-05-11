@@ -13,6 +13,7 @@
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/team.hpp"
 #include "fl/widgets/combatant.hpp"
+#include "fl/widgets/party_status.hpp"
 
 namespace fl::widgets {
 
@@ -34,14 +35,6 @@ ftxui::Element AccountBattleView::Render() {
   auto &is_account =
       ctx_.reg().get<fl::ecs::components::IsAccount>(ctx_.self());
   auto &parties = is_account.account_data().parties();
-
-  auto blank_row_5 = [&] {
-    std::vector<ftxui::Element> row;
-    row.reserve(5);
-    for (int i = 0; i < 5; ++i)
-      row.push_back(ftxui::filler() | ftxui::xflex);
-    return ftxui::hbox(std::move(row));
-  };
 
   auto render_entity_row_5 = [&](const std::vector<entt::entity> &ents) {
     std::vector<ftxui::Element> row;
@@ -88,8 +81,13 @@ ftxui::Element AccountBattleView::Render() {
       rows.push_back(render_entity_row_5(enc.attackers().members()));
       rows.push_back(render_entity_row_5(enc.defenders().members()));
     } else {
-      // No encounter: placeholder "enemy row" + still render players.
-      rows.push_back(blank_row_5());
+      // No encounter: party status row + still render players.
+      fl::widgets::PartyStatus party_status{party};
+      std::vector<ftxui::Element> status_row;
+      status_row.push_back(party_status.Render() | ftxui::xflex);
+      while (status_row.size() < 5)
+        status_row.push_back(ftxui::filler() | ftxui::xflex);
+      rows.push_back(ftxui::hbox(std::move(status_row)));
       rows.push_back(render_memberdata_row_5(party.members()));
     }
   }

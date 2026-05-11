@@ -23,6 +23,8 @@ public:
   AtbEngine();
 
   void set_can_charge_fn(CanChargeFn fn);
+  void clear_pending_events();
+  void clear_pending_events_for(entt::entity id);
 
   // ---- getters returning refs ----
   PairedBus<AtbInBus, AtbOutBus> &buses() { return buses_; }

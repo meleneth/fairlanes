@@ -15,7 +15,9 @@ struct PartyLoop {
     static void enter_idle(fl::context::PartyCtx &ctx);
     static void enter_farming(fl::context::PartyCtx &ctx);
     static void exit_farming(fl::context::PartyCtx &ctx);
+    static void enter_dead(fl::context::PartyCtx &ctx);
     static void enter_fixing(fl::context::PartyCtx &ctx);
+    static void exit_fixing(fl::context::PartyCtx &ctx);
     static void fixing_tick(fl::context::PartyCtx &ctx);
 
     static void combat_tick(fl::context::PartyCtx &ctx);
@@ -29,6 +31,7 @@ struct PartyLoop {
 
     struct Idle {};
     struct Farming {};
+    struct Dead {};
     struct Fixing {};
     struct CombatIdle {};
 
@@ -42,8 +45,14 @@ struct PartyLoop {
     const auto exit_farming = [](fl::context::PartyCtx &ctx) {
       Ops::exit_farming(ctx);
     };
+    const auto enter_dead = [](fl::context::PartyCtx &ctx) {
+      Ops::enter_dead(ctx);
+    };
     const auto enter_fixing = [](fl::context::PartyCtx &ctx) {
       Ops::enter_fixing(ctx);
+    };
+    const auto exit_fixing = [](fl::context::PartyCtx &ctx) {
+      Ops::exit_fixing(ctx);
     };
     const auto combat_tick = [](fl::context::PartyCtx &ctx) {
       Ops::combat_tick(ctx);
@@ -63,17 +72,20 @@ struct PartyLoop {
     return make_transition_table(
         *state<Idle> + sml::on_entry<_> / enter_idle,
         state<Farming> + sml::on_entry<_> / enter_farming,
-        state<Farming> + sml::on_exit<_> / exit_farming,
+          state<Dead> + sml::on_entry<_> / enter_dead,
         state<Fixing> + sml::on_entry<_> / enter_fixing,
 
         state<Idle> + event<NextEvent> = state<Farming>,
-        state<Idle> + event<PartyWipedEvent> = state<Fixing>,
-        state<Farming> + event<PartyWipedEvent> = state<Fixing>,
-        state<CombatIdle> + event<PartyWipedEvent> = state<Fixing>,
+          state<Idle> + event<PartyWipedEvent> = state<Dead>,
+          state<Farming> + event<PartyWipedEvent> = state<Dead>,
+          state<CombatIdle> + event<PartyWipedEvent> = state<Dead>,
+          state<Fixing> + event<PartyWipedEvent> = state<Dead>,
+          state<Dead> + event<PartyWipedEvent> = state<Dead>,
         state<Farming> + event<NextEvent>[in_combat] / combat_tick,
-        state<Farming> + event<NextEvent> = state<CombatIdle>,
+          state<Farming> + event<NextEvent> / exit_farming = state<CombatIdle>,
         state<CombatIdle> + event<NextEvent> = state<Farming>,
-        state<Fixing> + event<NextEvent>[fixing_done] = state<Idle>,
+          state<Dead> + event<NextEvent> = state<Fixing>,
+        state<Fixing> + event<NextEvent>[fixing_done] / exit_fixing = state<Idle>,
         state<Fixing> + event<NextEvent> / fixing_tick = state<Fixing>);
   }
 };

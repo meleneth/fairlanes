@@ -7,6 +7,7 @@
 #include "fl/fsm/party_loop.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/primitives/account_data.hpp"
+#include "fl/primitives/encounter_builder.hpp"
 #include "fl/primitives/member_data.hpp"
 #include "fl/primitives/party_data.hpp"
 
@@ -45,6 +46,10 @@ TEST_CASE("PartyData starts a one minute town penalty when all members are dead"
   auto party_ctx = account_ctx.party_context(0);
   auto &party = party_ctx.party_data();
 
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  (void)builder.thump_it_out();
+  REQUIRE(party.in_combat());
+
   bool saw_party_wiped = false;
   (void)party.party_bus().on<fl::events::PartyWiped>(
       [&](const fl::events::PartyWiped &) { saw_party_wiped = true; });
@@ -57,6 +62,7 @@ TEST_CASE("PartyData starts a one minute town penalty when all members are dead"
   party.party_bus().emit(fl::events::PartyEvent{fl::events::PartyWiped{}});
 
   REQUIRE(saw_party_wiped);
+  REQUIRE_FALSE(party.in_combat());
   REQUIRE(party.town_penalty_beats_remaining() ==
           fl::primitives::PartyData::kTownPenaltyBeats);
   REQUIRE(party.town_penalty_active());
@@ -82,7 +88,16 @@ TEST_CASE("Returning to town revitalizes party members",
     stats.mp_ = 0;
   }
 
-  fl::fsm::PartyLoop::Ops::exit_farming(party_ctx);
+  fl::fsm::PartyLoop::Ops::enter_dead(party_ctx);
+
+  for (const auto &member : party.members()) {
+    const auto &stats =
+        party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
+    REQUIRE(stats.hp_ == 0);
+    REQUIRE(stats.mp_ == 0);
+  }
+
+  fl::fsm::PartyLoop::Ops::exit_fixing(party_ctx);
 
   for (const auto &member : party.members()) {
     const auto &stats =

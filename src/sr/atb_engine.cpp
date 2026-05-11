@@ -38,6 +38,46 @@ void AtbEngine::set_can_charge_fn(CanChargeFn fn) {
   can_charge_fn_ = [](entt::entity) { return true; };
 }
 
+void AtbEngine::clear_pending_events() {
+  scheduler_.clear();
+  ready_queue_.clear();
+  active_combatant_ = entt::entity{};
+}
+
+void AtbEngine::clear_pending_events_for(entt::entity id) {
+  // Remove from ready queue
+  ready_queue_.erase(std::remove(ready_queue_.begin(), ready_queue_.end(), id),
+                     ready_queue_.end());
+
+  // Reset active combatant if it's this entity
+  if (active_combatant_ == id) {
+    active_combatant_ = entt::entity{};
+  }
+
+  // Remove scheduled events for this entity
+  scheduler_.remove_if([id](const TimedScheduler<AtbOutEvent>::TimedAction &action) {
+    return std::visit(
+        [id](auto &&ev) -> bool {
+          using T = std::decay_t<decltype(ev)>;
+          if constexpr (std::is_same_v<T, TimedScheduler<AtbOutEvent>::EmitEvent>) {
+            return std::visit(
+                [id](auto &&out_ev) -> bool {
+                  using OutT = std::decay_t<decltype(out_ev)>;
+                  if constexpr (std::is_same_v<OutT, BecameReady>) {
+                    return out_ev.id == id;
+                  } else if constexpr (std::is_same_v<OutT, BecameActive>) {
+                    return out_ev.id == id;
+                  }
+                  return false;
+                },
+                ev.ev);
+          }
+          return false;
+        },
+        action);
+  });
+}
+
 void AtbEngine::on_add(const AddCombatant &e) {
   combatants_.try_emplace(e.id, e.id, buses_.out);
 }

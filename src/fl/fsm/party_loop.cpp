@@ -28,9 +28,9 @@ void PartyLoop::Ops::enter_farming(fl::context::PartyCtx &ctx) {
 };
 
 void PartyLoop::Ops::exit_farming(fl::context::PartyCtx &ctx) {
-  // TODO is this the crash?
-  ctx.reg().remove<fl::ecs::components::Encounter>(ctx.self());
-  ctx.party_data().revitalize_members();
+  if (ctx.reg().all_of<fl::ecs::components::Encounter>(ctx.self())) {
+    ctx.reg().remove<fl::ecs::components::Encounter>(ctx.self());
+  }
   ctx.log().append_plain("Returned to town.");
   entt::handle h{ctx.reg(), ctx.self()};
   // TODO FIXME
@@ -38,8 +38,19 @@ void PartyLoop::Ops::exit_farming(fl::context::PartyCtx &ctx) {
   // ReplenishParty::commit(h);
 };
 
-void PartyLoop::Ops::enter_fixing(fl::context::PartyCtx &ctx) {
+void PartyLoop::Ops::enter_dead(fl::context::PartyCtx &ctx) {
+  ctx.log().append_plain(
+      "A passing caravan drags the fallen party back to town.");
+  ctx.party_data().leave_combat();
   ctx.party_data().start_town_penalty();
+}
+
+void PartyLoop::Ops::enter_fixing(fl::context::PartyCtx &ctx) {
+  (void)ctx;
+}
+
+void PartyLoop::Ops::exit_fixing(fl::context::PartyCtx &ctx) {
+  ctx.party_data().revitalize_members();
 }
 
 void PartyLoop::Ops::fixing_tick(fl::context::PartyCtx &ctx) {

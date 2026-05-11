@@ -5,7 +5,9 @@
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
+#include "fl/ecs/components/color_override.hpp"
 #include "fl/events/party_bus.hpp"
+#include "fl/lospec500.hpp"
 #include "fl/loot/global_loot_table.hpp"
 #include "fl/primitives/damage.hpp"
 #include "fl/primitives/party_data.hpp"
@@ -40,6 +42,10 @@ void TakeDamage::commit(fl::context::AttackCtx &ctx) {
 
     if (dead_party_member) {
       auto &dead_party_data = dead_party_member->party().party_data();
+      if (dead_party_data.has_encounter()) {
+        dead_party_data.encounter_data().clear_pending_events_for(ctx.defender());
+      }
+
       dead_party_data.party_bus().emit(fl::events::PartyEvent{
           fl::events::PlayerDied{ctx.defender(), ctx.attacker()}});
       if (dead_party_data.all_members_dead()) {

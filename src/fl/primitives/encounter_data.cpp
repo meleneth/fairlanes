@@ -73,6 +73,12 @@ void EncounterData::finalize() {
                   int(entt::to_integral(party_ctx_->self()))));
 }
 
+void EncounterData::clear_pending_events() { rt_.atb_.clear_pending_events(); }
+
+void EncounterData::clear_pending_events_for(entt::entity id) {
+  rt_.atb_.clear_pending_events_for(id);
+}
+
 bool EncounterData::has_alive_enemies() {
   using fl::ecs::components::Stats;
 

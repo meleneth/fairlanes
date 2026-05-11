@@ -32,6 +32,16 @@ public:
 
   [[nodiscard]] uWu now() const { return now_; }
   [[nodiscard]] std::size_t pending() const { return items_.size(); }
+  void clear() { items_.clear(); }
+
+  // Remove items matching predicate
+  template <typename Predicate>
+  void remove_if(Predicate pred) {
+    items_.erase(
+        std::remove_if(items_.begin(), items_.end(),
+                       [&pred](const Item &item) { return pred(item.action); }),
+        items_.end());
+  }
 
   // ---- Preferred: schedule an event ----
   void schedule_at(uWu when, Event ev) {
@@ -90,15 +100,11 @@ private:
   }
 
   void run_due() {
-    std::size_t i = 0;
-    while (i < items_.size() && items_[i].when.v <= now_.v) {
-      auto action = std::move(items_[i].action);
-      ++i;
-
+    while (!items_.empty() && items_.front().when.v <= now_.v) {
+      auto action = std::move(items_.front().action);
+      items_.erase(items_.begin());
       std::visit([this](auto &&a) { this->run_one(a); }, action);
     }
-    items_.erase(items_.begin(),
-                 items_.begin() + static_cast<std::ptrdiff_t>(i));
   }
   void run_one(const EmitEvent &a) {
     if (emit_)

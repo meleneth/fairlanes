@@ -199,3 +199,18 @@ TEST_CASE("TimedScheduler: can schedule more work from inside a callback") {
   REQUIRE(std::get<EvtA>(out[0]).v == 99);
   REQUIRE(sch.pending() == 0);
 }
+
+TEST_CASE("TimedScheduler: clear inside callback is safe") {
+  std::vector<Ev> out;
+  seerin::TimedScheduler<Ev> sch([&](const Ev &e) { out.push_back(e); });
+
+  sch.schedule_smelly_at(seerin::uWu{10}, "test:clear-inside",
+                         [&] { sch.clear(); });
+  sch.schedule_at(seerin::uWu{10}, Ev{EvtA{1}});
+  sch.schedule_at(seerin::uWu{11}, Ev{EvtA{2}});
+
+  sch.advance(seerin::uWu{10});
+
+  REQUIRE(out.empty());
+  REQUIRE(sch.pending() == 0);
+}

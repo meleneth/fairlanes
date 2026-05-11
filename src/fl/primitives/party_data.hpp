@@ -78,6 +78,7 @@ public:
   bool all_members_dead() const;
   void revitalize_members();
   void start_town_penalty();
+  void leave_combat();
 
   bool town_penalty_active() const noexcept {
     return town_penalty_beats_remaining_ > 0;

@@ -77,8 +77,12 @@ ftxui::Element Combatant::Render() {
     hp_line
   );
   // clang-format on
-  if (auto *co = reg.try_get<ColorOverride>(entity)) {
-    border = border | ftxui::color(co->color); // <-- border color changes here
+  
+  // Apply dead color if HP <= 0
+  if (!stats.is_alive()) {
+    border = border | ftxui::color(fl::lospec500::color_at(6));
+  } else if (auto *co = reg.try_get<ColorOverride>(entity)) {
+    border = border | ftxui::color(co->color);
   }
   // <-- key: allow the whole Combatant box to flex horizontally
   return border | ftxui::xflex;
