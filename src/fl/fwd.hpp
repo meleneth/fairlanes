@@ -26,7 +26,6 @@ struct Closet;
 
 namespace fl::events {
 class TimedEventQueue;
-struct AccountEvent;
 struct AnimationFinished;
 struct AttackResolved;
 struct LogEvent;

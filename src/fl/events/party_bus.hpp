@@ -1,52 +1,65 @@
 #pragma once
 
-#include <any>
+#include <entt/entt.hpp>
 
-#include <eventpp/eventdispatcher.h>
+#include <functional>
+#include <utility>
+#include <variant>
+
+#include "sr/variant_bus.hpp"
 
 namespace fl::events {
 
-/// Events that occur within a specific Party.
-///
-/// These are intentionally high-level and gameplay-relevant.
-/// Combat animations, skill triggers, damage application,
-/// party-wide XP grants, etc.
-enum class PartyEvent {
-  PartyCreated,
-  MemberJoined,
-  MemberLeft,
-  PartyWiped,
-  PartyGainedXP,
-  PartyHealed,
-  Tick,
-  PreAttack,
-  PostAttack,
+struct PartyCreated {};
+struct MemberJoined {
+  entt::entity member{entt::null};
+};
+struct MemberLeft {
+  entt::entity member{entt::null};
+};
+struct PartyWiped {};
+struct PartyGainedXP {
+  int amount{0};
+};
+struct PartyHealed {
+  entt::entity member{entt::null};
+  int amount{0};
+};
+struct PartyTick {};
+struct PreAttack {
+  entt::entity attacker{entt::null};
+  entt::entity target{entt::null};
+};
+struct PostAttack {
+  entt::entity attacker{entt::null};
+  entt::entity target{entt::null};
+  int damage{0};
+};
+struct PlayerDied {
+  entt::entity player{entt::null};
+  entt::entity killer{entt::null};
 };
 
-using PartyPayload = std::any;
+using PartyEvent =
+    std::variant<PartyCreated, MemberJoined, MemberLeft, PartyWiped,
+         PartyGainedXP, PartyHealed, PartyTick, PreAttack, PostAttack,
+                 PlayerDied>;
 
-using PartyBus =
-    eventpp::EventDispatcher<PartyEvent, void(const PartyPayload &)>;
-using PartyListenerHandle =
-    decltype(std::declval<fl::events::PartyBus &>().appendListener(
-        fl::events::PartyEvent::Tick,
-        std::function<void(fl::events::PartyPayload const &)>{}));
+using PartyBus = seerin::VariantBus<PartyEvent>;
 
 struct ScopedPartyListener {
-  fl::events::PartyBus *bus_{nullptr};
-  fl::events::PartyEvent event_{};
-  decltype(std::declval<fl::events::PartyBus &>().appendListener(
-      fl::events::PartyEvent::Tick,
-      std::function<void(fl::events::PartyPayload const &)>{})) handle_{};
+  std::function<void()> disconnect_;
   bool connected_{false};
 
   ScopedPartyListener() = default;
 
-  template <class Fn>
-  ScopedPartyListener(fl::events::PartyBus &bus, fl::events::PartyEvent event,
-                      Fn &&fn)
-      : bus_(&bus), event_(event) {
-    handle_ = bus_->appendListener(event_, std::forward<Fn>(fn));
+  template <class T, class Fn>
+  ScopedPartyListener(fl::events::PartyBus &bus, std::in_place_type_t<T>,
+                      Fn &&fn) {
+    auto handle = bus.template on<T>(std::forward<Fn>(fn));
+    disconnect_ = [&bus, handle]() mutable {
+      bus.template callbacks<T>().remove(handle);
+    };
     connected_ = true;
   }
 
@@ -57,11 +70,8 @@ struct ScopedPartyListener {
     if (this == &rhs)
       return *this;
     reset();
-    bus_ = rhs.bus_;
-    event_ = rhs.event_;
-    handle_ = rhs.handle_;
+    disconnect_ = std::move(rhs.disconnect_);
     connected_ = rhs.connected_;
-    rhs.bus_ = nullptr;
     rhs.connected_ = false;
     return *this;
   }
@@ -69,11 +79,11 @@ struct ScopedPartyListener {
   ~ScopedPartyListener() { reset(); }
 
   void reset() {
-    if (connected_ && bus_) {
-      bus_->removeListener(event_, handle_);
+    if (connected_ && disconnect_) {
+      disconnect_();
     }
     connected_ = false;
-    bus_ = nullptr;
+    disconnect_ = nullptr;
   }
 
   ScopedPartyListener(const ScopedPartyListener &) = delete;

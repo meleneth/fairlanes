@@ -3,19 +3,14 @@
 #include <chrono>
 #include <cstdint>
 #include <functional>
+#include <utility>
 #include <variant>
 
 #include <entt/entt.hpp>
-#include <eventpp/eventdispatcher.h>
+
+#include "sr/variant_bus.hpp"
 
 namespace fl::events {
-
-// What kind of thing happened?
-enum class BattleEventId : std::uint8_t {
-  StartCombat = 0,
-  Tick = 1,
-  EndCombat = 2,
-};
 
 // --- Event payloads (data-only) ---
 
@@ -23,7 +18,7 @@ struct StartCombat {
   entt::entity encounter{entt::null}; // or whatever "battle root" entity is
 };
 
-struct Tick {
+struct BattleTick {
   std::chrono::milliseconds dt{0};
 };
 
@@ -39,36 +34,21 @@ struct EndCombat {
   EndCombatReason reason{EndCombatReason::Aborted};
 };
 
-// One envelope type so EventPP listeners always receive a single type.
-// This keeps the dispatcher signature stable as the event set grows.
-struct BattleEvent {
-  BattleEventId id{BattleEventId::Tick};
-  std::variant<StartCombat, Tick, EndCombat> data;
-
-  static BattleEvent make_start(entt::entity encounter);
-  static BattleEvent make_tick(std::chrono::milliseconds dt);
-  static BattleEvent make_end(entt::entity encounter, EndCombatReason reason);
-};
-
-// EventPP dispatcher type
-using BattleDispatcher =
-    eventpp::EventDispatcher<BattleEventId, void(const BattleEvent &)>;
+using BattleEvent = std::variant<StartCombat, BattleTick, EndCombat>;
 
 class BattleBus {
 public:
-  using Listener = std::function<void(const BattleEvent &)>;
-  using Handle = BattleDispatcher::Handle;
-  // Listener mgmt
-  [[nodiscard]] Handle add_listener(BattleEventId id, Listener listener);
+  template <class T, class Fn> auto on(Fn &&listener) {
+    return bus_.template on<T>(std::forward<Fn>(listener));
+  }
 
-  // Emit
-  void emit(const BattleEvent &ev);
+  void emit(const BattleEvent &ev) { bus_.emit(ev); }
   void start_combat(entt::entity encounter);
   void tick(std::chrono::milliseconds dt);
   void end_combat(entt::entity encounter, EndCombatReason reason);
 
 private:
-  BattleDispatcher dispatcher_{};
+  seerin::VariantBus<BattleEvent> bus_{};
 };
 
 } // namespace fl::events

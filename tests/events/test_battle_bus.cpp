@@ -3,7 +3,6 @@
 #include "fl/events/battle_bus.hpp"
 
 using fl::events::BattleBus;
-using fl::events::BattleEventId;
 using fl::events::EndCombatReason;
 
 TEST_CASE("BattleBus dispatches StartCombat, Tick, EndCombat",
@@ -19,30 +18,22 @@ TEST_CASE("BattleBus dispatches StartCombat, Tick, EndCombat",
   std::chrono::milliseconds seen_dt{0};
   EndCombatReason seen_reason = EndCombatReason::Aborted;
 
-  (void)bus.add_listener(
-      BattleEventId::StartCombat, [&](const fl::events::BattleEvent &ev) {
-        saw_start = true;
-        REQUIRE(ev.id == BattleEventId::StartCombat);
-        auto payload = std::get<fl::events::StartCombat>(ev.data);
-        REQUIRE(payload.encounter == expected_encounter);
-      });
+  (void)bus.on<fl::events::StartCombat>([&](const fl::events::StartCombat &ev) {
+    saw_start = true;
+    REQUIRE(ev.encounter == expected_encounter);
+  });
 
-  (void)bus.add_listener(BattleEventId::Tick,
-                         [&](const fl::events::BattleEvent &ev) {
-                           saw_tick = true;
-                           REQUIRE(ev.id == BattleEventId::Tick);
-                           auto payload = std::get<fl::events::Tick>(ev.data);
-                           seen_dt = payload.dt;
-                         });
+  (void)bus.on<fl::events::BattleTick>(
+      [&](const fl::events::BattleTick &ev) {
+    saw_tick = true;
+    seen_dt = ev.dt;
+  });
 
-  (void)bus.add_listener(
-      BattleEventId::EndCombat, [&](const fl::events::BattleEvent &ev) {
-        saw_end = true;
-        REQUIRE(ev.id == BattleEventId::EndCombat);
-        auto payload = std::get<fl::events::EndCombat>(ev.data);
-        REQUIRE(payload.encounter == expected_encounter);
-        seen_reason = payload.reason;
-      });
+  (void)bus.on<fl::events::EndCombat>([&](const fl::events::EndCombat &ev) {
+    saw_end = true;
+    REQUIRE(ev.encounter == expected_encounter);
+    seen_reason = ev.reason;
+  });
 
   bus.start_combat(expected_encounter);
   bus.tick(std::chrono::milliseconds{16});

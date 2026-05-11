@@ -1,33 +1,35 @@
 #pragma once
 
 #include <entt/entt.hpp>
-#include <eventpp/eventdispatcher.h>
+
+#include <variant>
+
+#include "sr/variant_bus.hpp"
 
 namespace fl::events {
 
-/// High-level account lifecycle / meta events.
-enum class AccountEventId {
-  Created,
-  Deleted,
-  Renamed,
-  Tick, // per-account update tick, if you want it
-  // Add more as needed
+struct AccountCreated {
+  entt::entity account{entt::null};
+  entt::entity related{entt::null};
 };
 
-struct AccountEvent {
-  AccountEventId type;
-  entt::entity account;              // the account entity in the registry
-  entt::entity related = entt::null; // optional: party, encounter, etc
+struct AccountDeleted {
+  entt::entity account{entt::null};
+  entt::entity related{entt::null};
 };
 
-/// AccountBus: immediate-dispatch event bus for account-level events.
-///
-/// Usage:
-///   fl::events::AccountBus bus;
-///   bus.appendListener(fl::events::AccountEventId::Created,
-///     [](const fl::events::AccountEvent & ev) { ... });
-///
-using AccountBus =
-    eventpp::EventDispatcher<AccountEventId, void(const AccountEvent &)>;
+struct AccountRenamed {
+  entt::entity account{entt::null};
+  entt::entity related{entt::null};
+};
+
+struct AccountTick {
+  entt::entity account{entt::null};
+};
+
+using AccountEvent =
+    std::variant<AccountCreated, AccountDeleted, AccountRenamed, AccountTick>;
+
+using AccountBus = seerin::VariantBus<AccountEvent>;
 
 } // namespace fl::events
