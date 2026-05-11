@@ -7,6 +7,7 @@ namespace fl::fsm {
 namespace sml = boost::sml;
 
 struct NextEvent {};
+struct PartyWipedEvent {};
 
 struct PartyLoop {
   // Put all behavior in a ctx-only “ops” namespace/struct.
@@ -15,12 +16,13 @@ struct PartyLoop {
     static void enter_farming(fl::context::PartyCtx &ctx);
     static void exit_farming(fl::context::PartyCtx &ctx);
     static void enter_fixing(fl::context::PartyCtx &ctx);
+    static void fixing_tick(fl::context::PartyCtx &ctx);
 
     static void combat_tick(fl::context::PartyCtx &ctx);
     static void next_event(fl::context::PartyCtx &ctx);
 
-    static bool needs_town(fl::context::PartyCtx &ctx);
     static bool in_combat(fl::context::PartyCtx &ctx);
+    static bool fixing_done(fl::context::PartyCtx &ctx);
   };
   auto operator()() const {
     using namespace sml;
@@ -46,13 +48,16 @@ struct PartyLoop {
     const auto combat_tick = [](fl::context::PartyCtx &ctx) {
       Ops::combat_tick(ctx);
     };
+    const auto fixing_tick = [](fl::context::PartyCtx &ctx) {
+      Ops::fixing_tick(ctx);
+    };
 
     // Guards
-    const auto needs_town = [](fl::context::PartyCtx &ctx) {
-      return Ops::needs_town(ctx);
-    };
     const auto in_combat = [](fl::context::PartyCtx &ctx) {
       return Ops::in_combat(ctx);
+    };
+    const auto fixing_done = [](fl::context::PartyCtx &ctx) {
+      return Ops::fixing_done(ctx);
     };
 
     return make_transition_table(
@@ -62,11 +67,14 @@ struct PartyLoop {
         state<Fixing> + sml::on_entry<_> / enter_fixing,
 
         state<Idle> + event<NextEvent> = state<Farming>,
-        state<Farming> + event<NextEvent>[needs_town] = state<Fixing>,
+        state<Idle> + event<PartyWipedEvent> = state<Fixing>,
+        state<Farming> + event<PartyWipedEvent> = state<Fixing>,
+        state<CombatIdle> + event<PartyWipedEvent> = state<Fixing>,
         state<Farming> + event<NextEvent>[in_combat] / combat_tick,
         state<Farming> + event<NextEvent> = state<CombatIdle>,
         state<CombatIdle> + event<NextEvent> = state<Farming>,
-        state<Fixing> + event<NextEvent> = state<Idle>);
+        state<Fixing> + event<NextEvent>[fixing_done] = state<Idle>,
+        state<Fixing> + event<NextEvent> / fixing_tick = state<Fixing>);
   }
 };
 

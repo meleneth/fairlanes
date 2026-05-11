@@ -1,5 +1,6 @@
 // atb_engine.hpp
 #pragma once
+#include <functional>
 #include <unordered_map>
 #include <vector>
 
@@ -17,7 +18,11 @@ namespace seerin {
 
 class AtbEngine {
 public:
+  using CanChargeFn = std::function<bool(entt::entity)>;
+
   AtbEngine();
+
+  void set_can_charge_fn(CanChargeFn fn);
 
   // ---- getters returning refs ----
   PairedBus<AtbInBus, AtbOutBus> &buses() { return buses_; }
@@ -59,6 +64,8 @@ private:
 
   void enqueue_ready(entt::entity id);
   void pump_ready_queue(); // if no active and someone ready -> BecameActive
+  bool can_charge(entt::entity id) const;
+  void force_out_of_turn(entt::entity id);
 
 private:
   PairedBus<AtbInBus, AtbOutBus> buses_;
@@ -84,6 +91,7 @@ private:
 
   std::unordered_map<entt::entity, Combatant> combatants_;
   TimedScheduler<AtbOutEvent> scheduler_;
+  CanChargeFn can_charge_fn_ = [](entt::entity) { return true; };
 };
 
 } // namespace seerin

@@ -94,9 +94,14 @@ bool EncounterData::is_over() { return !has_alive_enemies(); }
 
 EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
     : party_ctx_(party_ctx) {
+  rt_.atb_.set_can_charge_fn([this](entt::entity entity) {
+    auto *stats = party_ctx_->reg().try_get<fl::ecs::components::Stats>(entity);
+    return stats && stats->is_alive();
+  });
+
   wire_.party_beat_ = fl::events::ScopedPartyListener{
-      party_ctx_->bus(), fl::events::PartyEvent::Tick,
-      [this](const std::any &) { atb_in().emit(seerin::Beat{}); }};
+      party_ctx_->bus(), std::in_place_type<fl::events::PartyTick>,
+      [this](const fl::events::PartyTick &) { atb_in().emit(seerin::Beat{}); }};
 }
 
 void EncounterData::schedule_reek_fade(entt::entity entity,

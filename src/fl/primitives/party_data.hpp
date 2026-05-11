@@ -24,6 +24,8 @@ namespace fl::primitives {
 
 struct PartyData {
 public:
+  static constexpr int kTownPenaltyBeats = 12 * 60;
+
   explicit PartyData(entt::entity party_id,
                      fl::context::AccountCtx &account_ctx, std::string name);
 
@@ -72,7 +74,20 @@ public:
   // ---- behavior ----
   void hook_to_beat(seerin::BeatBus &gc_beat_bus);
 
-  bool needs_town() { return false; }
+  bool needs_town();
+  bool all_members_dead() const;
+  void revitalize_members();
+  void start_town_penalty();
+
+  bool town_penalty_active() const noexcept {
+    return town_penalty_beats_remaining_ > 0;
+  }
+
+  int town_penalty_beats_remaining() const noexcept {
+    return town_penalty_beats_remaining_;
+  }
+
+  void tick_town_penalty();
 
   void add_party_member(entt::entity member) { (void)member; }
 
@@ -90,16 +105,17 @@ private:
   std::string name_;
   entt::entity account_id_{entt::null};
   std::unique_ptr<fl::widgets::FancyLog> log_;
+  fl::events::PartyBus party_bus_;
   fl::context::PartyCtx party_ctx_;
   std::unique_ptr<fl::fsm::PartyLoopMachine> party_loop_machine_;
   std::unique_ptr<fl::primitives::EncounterData> encounter_data_{nullptr};
   std::deque<fl::primitives::MemberData> members_;
-  fl::events::PartyBus party_bus_;
   seerin::AtbEngine atb_;
   std::vector<entt::entity> inventory_;
 
   seerin::BeatBus party_beat_bus_{};
   seerin::BeatSub gc_forward_sub_{};
+  int town_penalty_beats_remaining_{0};
 };
 
 } // namespace fl::primitives

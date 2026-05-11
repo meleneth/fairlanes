@@ -1,6 +1,9 @@
 #include <fmt/core.h>
 
+#include <algorithm>
+
 #include "fl/context.hpp"
+#include "fl/ecs/components/stats.hpp"
 #include "fl/fsm/party_loop_machine.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/widgets/fancy_log.hpp"
@@ -29,6 +32,47 @@ void PartyData::hook_to_beat(seerin::BeatBus &gc_beat_bus) {
     party_beat_bus_.emit(seerin::Beat{});
     party_loop_machine_->beat_event();
   });
+}
+
+bool PartyData::needs_town() {
+  return all_members_dead() || town_penalty_beats_remaining_ > 0;
+}
+
+bool PartyData::all_members_dead() const {
+  using fl::ecs::components::Stats;
+
+  bool has_members = false;
+  for (const auto &member : members_) {
+    has_members = true;
+    if (const auto *stats = party_ctx_.reg().try_get<Stats>(member.member_id())) {
+      if (stats->hp_ > 0) {
+        return false;
+      }
+    }
+  }
+
+  return has_members;
+}
+
+void PartyData::revitalize_members() {
+  using fl::ecs::components::Stats;
+
+  for (const auto &member : members_) {
+    if (auto *stats = party_ctx_.reg().try_get<Stats>(member.member_id())) {
+      stats->hp_ = std::max(1, stats->max_hp_);
+      stats->mp_ = std::max(0, stats->max_mp_);
+    }
+  }
+}
+
+void PartyData::start_town_penalty() {
+  town_penalty_beats_remaining_ = kTownPenaltyBeats;
+}
+
+void PartyData::tick_town_penalty() {
+  if (town_penalty_beats_remaining_ > 0) {
+    --town_penalty_beats_remaining_;
+  }
 }
 
 EncounterData &PartyData::create_encounter() {

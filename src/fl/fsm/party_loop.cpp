@@ -30,6 +30,7 @@ void PartyLoop::Ops::enter_farming(fl::context::PartyCtx &ctx) {
 void PartyLoop::Ops::exit_farming(fl::context::PartyCtx &ctx) {
   // TODO is this the crash?
   ctx.reg().remove<fl::ecs::components::Encounter>(ctx.self());
+  ctx.party_data().revitalize_members();
   ctx.log().append_plain("Returned to town.");
   entt::handle h{ctx.reg(), ctx.self()};
   // TODO FIXME
@@ -37,16 +38,22 @@ void PartyLoop::Ops::exit_farming(fl::context::PartyCtx &ctx) {
   // ReplenishParty::commit(h);
 };
 
-void PartyLoop::Ops::enter_fixing(fl::context::PartyCtx &ctx) { (void)ctx; };
+void PartyLoop::Ops::enter_fixing(fl::context::PartyCtx &ctx) {
+  ctx.party_data().start_town_penalty();
+}
+
+void PartyLoop::Ops::fixing_tick(fl::context::PartyCtx &ctx) {
+  ctx.party_data().tick_town_penalty();
+}
 
 void PartyLoop::Ops::combat_tick(fl::context::PartyCtx &ctx) {
-  ctx.bus().dispatch(fl::events::PartyEvent::Tick, std::any{});
+  ctx.bus().emit(fl::events::PartyEvent{fl::events::PartyTick{}});
 };
 bool PartyLoop::Ops::in_combat(fl::context::PartyCtx &ctx) {
   return ctx.party_data().in_combat();
 }
 
-bool PartyLoop::Ops::needs_town(fl::context::PartyCtx &ctx) {
-  return ctx.party_data().needs_town();
+bool PartyLoop::Ops::fixing_done(fl::context::PartyCtx &ctx) {
+  return !ctx.party_data().town_penalty_active();
 }
 } // namespace fl::fsm

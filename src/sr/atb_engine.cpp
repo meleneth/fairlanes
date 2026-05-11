@@ -3,6 +3,7 @@
 #include "atb_engine.hpp"
 
 #include <algorithm>
+#include <utility>
 
 namespace seerin {
 
@@ -28,6 +29,15 @@ AtbEngine::AtbEngine() {
       [this](const BecameReady &e) { on_became_ready(e); });
 }
 
+void AtbEngine::set_can_charge_fn(CanChargeFn fn) {
+  if (fn) {
+    can_charge_fn_ = std::move(fn);
+    return;
+  }
+
+  can_charge_fn_ = [](entt::entity) { return true; };
+}
+
 void AtbEngine::on_add(const AddCombatant &e) {
   combatants_.try_emplace(e.id, e.id, buses_.out);
 }
@@ -35,8 +45,15 @@ void AtbEngine::on_add(const AddCombatant &e) {
 void AtbEngine::on_beat(const Beat &) {
   scheduler_.on_beat();
 
-  // Tick all combatants
+  // Tick all combatants that are allowed to charge.
   for (auto &[id, c] : combatants_) {
+    if (!can_charge(id)) {
+      c.ctx.charge = uWu{0};
+      c.sm.process_event(FinishedTurn{});
+      force_out_of_turn(id);
+      continue;
+    }
+
     c.sm.process_event(BeatTick{});
   }
 
@@ -57,18 +74,33 @@ void AtbEngine::on_became_ready(const BecameReady &e) { enqueue_ready(e.id); }
 void AtbEngine::enqueue_ready(entt::entity id) { ready_queue_.push_back(id); }
 
 void AtbEngine::pump_ready_queue() {
-  if (ready_queue_.empty()) {
-    return;
-  }
   if (active_combatant_ != entt::entity{}) {
     return;
   }
 
-  auto id = ready_queue_.front();
-  ready_queue_.erase(ready_queue_.begin());
-  active_combatant_ = id;
+  while (!ready_queue_.empty()) {
+    auto id = ready_queue_.front();
+    ready_queue_.erase(ready_queue_.begin());
 
-  buses_.out.emit(seerin::AtbOutEvent{BecameActive{id}});
+    if (!can_charge(id)) {
+      continue;
+    }
+
+    active_combatant_ = id;
+    buses_.out.emit(seerin::AtbOutEvent{BecameActive{id}});
+    return;
+  }
+}
+
+bool AtbEngine::can_charge(entt::entity id) const { return can_charge_fn_(id); }
+
+void AtbEngine::force_out_of_turn(entt::entity id) {
+  ready_queue_.erase(std::remove(ready_queue_.begin(), ready_queue_.end(), id),
+                     ready_queue_.end());
+
+  if (active_combatant_ == id) {
+    active_combatant_ = entt::entity{};
+  }
 }
 
 } // namespace seerin

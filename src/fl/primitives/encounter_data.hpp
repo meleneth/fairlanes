@@ -100,7 +100,6 @@ private:
 
   struct Wiring {
     fl::events::ScopedPartyListener party_beat_;
-    fl::events::PartyBus::Handle party_tick_tap_;
   } wire_;
 
   struct Lifecycle {
