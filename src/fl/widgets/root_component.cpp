@@ -88,6 +88,10 @@ ftxui::Element RootComponent::Render() {
       render_moon_calendar(*world_clock_),
       separator() | fl::lospec500::on_not_black(fl::lospec500::color_at(32)),
       content | flex,
+  });
+
+  content = dbox({
+      content,
       render_help_hint(),
   });
 
@@ -154,11 +158,13 @@ ftxui::Element RootComponent::render_help_hint() const {
   using namespace ftxui;
 
   const auto chrome = fl::lospec500::on_not_black(fl::lospec500::color_at(32));
-  return hbox({
-             filler(),
-             text("h for help") | chrome,
-         }) |
-         bgcolor(fl::lospec500::color_at(0));
+  return vbox({
+      filler(),
+      hbox({
+          filler(),
+          text("h for help") | chrome | bgcolor(fl::lospec500::color_at(0)),
+      }),
+  });
 }
 
 ftxui::Element RootComponent::render_keybind_help() const {
