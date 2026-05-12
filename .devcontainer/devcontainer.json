@@ -5,6 +5,10 @@
     "context": ".."
   },
 
+  "remoteUser": "vscode",
+  "containerUser": "vscode",
+  "updateRemoteUserUID": true,
+
   "postCreateCommand": ".devcontainer/post_create.sh",
 
   "forwardPorts": [8086],

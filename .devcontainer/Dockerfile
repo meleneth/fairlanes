@@ -1,5 +1,9 @@
 FROM debian:trixie
 
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=${USER_UID}
+
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
@@ -15,6 +19,7 @@ RUN apt-get update \
     bash \
     build-essential \
     cmake \
+    clang-format \]
     ninja-build \
     bubblewrap \
     gdb \
@@ -22,8 +27,15 @@ RUN apt-get update \
     clangd \
     lldb \
     git \
+    git-delta \
     pkg-config \
     gcovr \
+    sudo \
  && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd --gid "${USER_GID}" "${USERNAME}" \
+ && useradd --uid "${USER_UID}" --gid "${USER_GID}" -m "${USERNAME}" --shell /bin/bash \
+ && echo "${USERNAME} ALL=(root) NOPASSWD:ALL" > "/etc/sudoers.d/${USERNAME}" \
+ && chmod 0440 "/etc/sudoers.d/${USERNAME}"
 
 WORKDIR /workspaces/fairlanes
