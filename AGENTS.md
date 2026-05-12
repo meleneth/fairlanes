@@ -10,6 +10,11 @@
 
 - Use the existing `build-linux-debug` tree for normal compile and test checks: `cmake --build build-linux-debug` and `ctest --test-dir build-linux-debug --output-on-failure`.
 
+# Local Debugging
+
+- In this dev-container + FTXUI setup, GDB output is usually swallowed by the alternate screen buffer and is not a reliable workflow. Do not spend time on GDB-first debugging here.
+- Prefer reproducible checks instead: targeted test runs, temporary log breadcrumbs, assertions, and sanitizer builds.
+
 # Fairlanes Agent Notes
 
 These notes summarize the repo Markdown as of 2026-05-11. Keep them current when

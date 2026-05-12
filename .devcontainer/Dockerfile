@@ -19,7 +19,7 @@ RUN apt-get update \
     bash \
     build-essential \
     cmake \
-    clang-format \]
+    clang-format \
     ninja-build \
     bubblewrap \
     gdb \
