@@ -101,4 +101,8 @@ void PartyData::add_item(entt::entity item) { inventory_.push_back(item); }
 std::span<const entt::entity> PartyData::items() const noexcept {
   return inventory_;
 }
+
+void PartyData::replace_items(std::vector<entt::entity> items) {
+  inventory_ = std::move(items);
+}
 } // namespace fl::primitives

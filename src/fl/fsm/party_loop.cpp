@@ -4,6 +4,7 @@
 #include "fl/ecs/components/is_party.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/systems/grant_xp_to_party.hpp"
+#include "fl/ecs/systems/party_gearing.hpp"
 // #include "fl/ecs/systems/replenish_party.hpp"
 #include "fl/context.hpp"
 #include "fl/primitives/encounter_builder.hpp"
@@ -51,6 +52,10 @@ void PartyLoop::Ops::enter_fixing(fl::context::PartyCtx &ctx) {
 
 void PartyLoop::Ops::exit_fixing(fl::context::PartyCtx &ctx) {
   ctx.party_data().revitalize_members();
+}
+
+void PartyLoop::Ops::enter_gearing(fl::context::PartyCtx &ctx) {
+  fl::ecs::systems::PartyGearing::commit(ctx);
 }
 
 void PartyLoop::Ops::fixing_tick(fl::context::PartyCtx &ctx) {

@@ -5,6 +5,7 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/closet.hpp"
+#include "fl/ecs/systems/special_festival_event.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/primitives/party_data.hpp"
@@ -97,5 +98,16 @@ TEST_CASE("GrandCentral creates each player with a gear closet",
         REQUIRE(reg.all_of<fl::ecs::components::Closet>(closet));
       }
     }
+  }
+}
+
+TEST_CASE("GrandCentral starts each party with festival drops",
+          "[grand_central][festival][loot]") {
+  fl::GrandCentral gc{1, 2, 0};
+
+  for (auto &party : gc.accounts().front().parties()) {
+    REQUIRE(party.items().size() ==
+            fl::ecs::systems::SpecialFestivalEvent::kDropsPerParty);
+    REQUIRE(party.log().size() == 2);
   }
 }

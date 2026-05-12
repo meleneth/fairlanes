@@ -18,6 +18,7 @@ struct PartyLoop {
     static void enter_dead(fl::context::PartyCtx &ctx);
     static void enter_fixing(fl::context::PartyCtx &ctx);
     static void exit_fixing(fl::context::PartyCtx &ctx);
+    static void enter_gearing(fl::context::PartyCtx &ctx);
     static void fixing_tick(fl::context::PartyCtx &ctx);
 
     static void combat_tick(fl::context::PartyCtx &ctx);
@@ -33,6 +34,7 @@ struct PartyLoop {
     struct Farming {};
     struct Dead {};
     struct Fixing {};
+    struct Gearing {};
     struct CombatIdle {};
 
     // Actions
@@ -54,6 +56,9 @@ struct PartyLoop {
     const auto exit_fixing = [](fl::context::PartyCtx &ctx) {
       Ops::exit_fixing(ctx);
     };
+    const auto enter_gearing = [](fl::context::PartyCtx &ctx) {
+      Ops::enter_gearing(ctx);
+    };
     const auto combat_tick = [](fl::context::PartyCtx &ctx) {
       Ops::combat_tick(ctx);
     };
@@ -74,19 +79,22 @@ struct PartyLoop {
         state<Farming> + sml::on_entry<_> / enter_farming,
           state<Dead> + sml::on_entry<_> / enter_dead,
         state<Fixing> + sml::on_entry<_> / enter_fixing,
+        state<Gearing> + sml::on_entry<_> / enter_gearing,
 
         state<Idle> + event<NextEvent> = state<Farming>,
           state<Idle> + event<PartyWipedEvent> = state<Dead>,
           state<Farming> + event<PartyWipedEvent> = state<Dead>,
           state<CombatIdle> + event<PartyWipedEvent> = state<Dead>,
           state<Fixing> + event<PartyWipedEvent> = state<Dead>,
+          state<Gearing> + event<PartyWipedEvent> = state<Dead>,
           state<Dead> + event<PartyWipedEvent> = state<Dead>,
         state<Farming> + event<NextEvent>[in_combat] / combat_tick,
           state<Farming> + event<NextEvent> / exit_farming = state<CombatIdle>,
-        state<CombatIdle> + event<NextEvent> = state<Farming>,
+        state<CombatIdle> + event<NextEvent> = state<Gearing>,
           state<Dead> + event<NextEvent> = state<Fixing>,
-        state<Fixing> + event<NextEvent>[fixing_done] / exit_fixing = state<Idle>,
-        state<Fixing> + event<NextEvent> / fixing_tick = state<Fixing>);
+        state<Fixing> + event<NextEvent>[fixing_done] / exit_fixing = state<Gearing>,
+        state<Fixing> + event<NextEvent> / fixing_tick = state<Fixing>,
+        state<Gearing> + event<NextEvent> = state<Idle>);
   }
 };
 

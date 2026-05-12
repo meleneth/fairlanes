@@ -102,6 +102,7 @@ public:
 
   void add_item(entt::entity item);
   std::span<const entt::entity> items() const noexcept;
+  void replace_items(std::vector<entt::entity> items);
 
 private:
   entt::entity party_id_{entt::null};

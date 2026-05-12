@@ -15,6 +15,7 @@
 #include "fl/ecs/components/is_account.hpp"
 #include "fl/ecs/components/is_party.hpp"
 #include "fl/ecs/components/party_member.hpp"
+#include "fl/ecs/systems/special_festival_event.hpp"
 #include "fl/monsters/register_monsters.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/fancy_log_sink.hpp"
@@ -101,6 +102,9 @@ void GrandCentral::_create_initial_accounts() {
 
         ++player_index;
       }
+
+      fl::ecs::systems::SpecialFestivalEvent::grant_starting_drops(
+          party_data.party_ctx());
     }
   }
 }
