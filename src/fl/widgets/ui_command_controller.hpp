@@ -6,6 +6,7 @@
 #include <string_view>
 
 #include "fl/primitives/account_data.hpp"
+#include "fl/primitives/world_clock.hpp"
 
 namespace fl::widgets {
 
@@ -18,7 +19,8 @@ public:
       std::function<void(std::size_t account_index, std::size_t party_index)>;
 
   explicit UiCommandController(
-      std::deque<fl::primitives::AccountData> &accounts, FancyLog &output_log);
+      std::deque<fl::primitives::AccountData> &accounts, FancyLog &output_log,
+      fl::primitives::WorldClock &world_clock);
 
   void set_show_account_view(ShowAccountView callback);
   void set_show_party_view(ShowPartyView callback);
@@ -34,12 +36,14 @@ private:
   void show_party_view();
   void list_accounts();
   void list_parties();
+  void set_overdrive(std::string_view multiplier);
   void select_account(std::size_t account_index);
   void select_party(std::size_t party_index);
   void write(std::string_view line);
 
   std::deque<fl::primitives::AccountData> *accounts_{nullptr};
   FancyLog *output_log_{nullptr};
+  fl::primitives::WorldClock *world_clock_{nullptr};
   std::size_t account_index_{0};
   std::size_t party_index_{0};
 

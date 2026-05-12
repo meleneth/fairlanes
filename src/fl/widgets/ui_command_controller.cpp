@@ -69,8 +69,10 @@ std::string entity_label(entt::entity entity) {
 } // namespace
 
 UiCommandController::UiCommandController(
-    std::deque<fl::primitives::AccountData> &accounts, FancyLog &output_log)
-    : accounts_(&accounts), output_log_(&output_log) {}
+    std::deque<fl::primitives::AccountData> &accounts, FancyLog &output_log,
+    fl::primitives::WorldClock &world_clock)
+    : accounts_(&accounts), output_log_(&output_log),
+      world_clock_(&world_clock) {}
 
 void UiCommandController::set_show_account_view(ShowAccountView callback) {
   show_account_view_ = std::move(callback);
@@ -136,6 +138,21 @@ void UiCommandController::handle(std::string_view command) {
     return;
   }
 
+  if (verb == "overdrive" || verb == "speed") {
+    if (words.size() < 2) {
+      write("overdrive is x" +
+            std::to_string(world_clock_->beat_rate_multiplier()));
+      write("usage: overdrive <1-" +
+            std::to_string(
+                fl::primitives::WorldClock::kMaxBeatRateMultiplier) +
+            ">");
+      return;
+    }
+
+    set_overdrive(words[1]);
+    return;
+  }
+
   if (verb == "account" || verb == "acct") {
     if (words.size() < 2) {
       write("usage: account <index>");
@@ -186,7 +203,7 @@ void UiCommandController::show_help(std::string_view topic) {
   if (topic.empty()) {
     write("current account: " + std::to_string(account_index_));
     write("current party: " + std::to_string(party_index_));
-    write("commands: screen, list, account, party, help");
+    write("commands: screen, list, account, party, overdrive, help");
     write("try: help <command>");
     return;
   }
@@ -212,6 +229,12 @@ void UiCommandController::show_help(std::string_view topic) {
   if (topic == "party") {
     write("party <index>: select a party in the current account");
     write("use list parties to see valid party indices");
+    return;
+  }
+
+  if (topic == "overdrive" || topic == "speed") {
+    write("overdrive <multiplier>: run world beats faster in wall time");
+    write("overdrive 1: return to normal time");
     return;
   }
 
@@ -272,6 +295,20 @@ void UiCommandController::list_parties() {
           " members=" + std::to_string(party.members().size()) + " items=" +
           std::to_string(party.items().size()));
   }
+}
+
+void UiCommandController::set_overdrive(std::string_view multiplier) {
+  std::size_t value = 0;
+  if (!parse_index(multiplier, value) || value == 0) {
+    write("overdrive multiplier must be a positive whole number");
+    return;
+  }
+
+  world_clock_->set_beat_rate_multiplier(static_cast<int>(value));
+  const auto actual = world_clock_->beat_rate_multiplier();
+  write("overdrive set to x" + std::to_string(actual) + " (" +
+        std::to_string(world_clock_->effective_beats_per_wall_second()) +
+        " beats/sec)");
 }
 
 void UiCommandController::select_account(std::size_t account_index) {

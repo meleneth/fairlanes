@@ -184,11 +184,6 @@ void GrandCentral::main_loop() {
   std::jthread update_ticker([&](std::stop_token st) {
     using clock = std::chrono::steady_clock;
 
-    //  constexpr auto kFrameDt = std::chrono::duration_cast<clock::duration>(
-    //     std::chrono::duration<double>(1.0 / 12.0));
-    constexpr auto kFrameDt = std::chrono::duration_cast<clock::duration>(
-        std::chrono::duration<double>(1.0 / 48.0));
-
     // constexpr auto kOverrunBudget = std::chrono::milliseconds(5);
 
     auto next_tick = clock::now();
@@ -197,6 +192,9 @@ void GrandCentral::main_loop() {
     while (!st.stop_requested() && running.load(std::memory_order_relaxed)) {
 
       ZoneScopedN("FrameTick");
+      const auto frame_dt = std::chrono::duration_cast<clock::duration>(
+          std::chrono::duration<double>(
+              1.0 / world_clock_.effective_beats_per_wall_second()));
 
       //      const auto now = clock::now();
 
@@ -213,15 +211,16 @@ void GrandCentral::main_loop() {
                        */
 
       // ---- Advance authoritative sim time ----
-      sim_time += kFrameDt;
+      sim_time += frame_dt;
 
       {
         std::scoped_lock lock(frame_mutex_);
+        world_clock_.advance_beat();
         gc_beat_bus_.emit(seerin::Beat{});
       }
 
       // ---- Schedule next tick ----
-      next_tick += kFrameDt;
+      next_tick += frame_dt;
 
       // ---- Pace ----
       std::this_thread::sleep_until(next_tick);
@@ -256,6 +255,7 @@ void GrandCentral::build_ui() {
   auto &account = accounts_.front();
 
   root_component_ = ftxui::Make<fl::widgets::RootComponent>(
-      fl::context::AccountCtx{reg_, rng_, account}, accounts_, *game_log_);
+      fl::context::AccountCtx{reg_, rng_, account}, accounts_, *game_log_,
+      world_clock_);
 }
 } // namespace fl

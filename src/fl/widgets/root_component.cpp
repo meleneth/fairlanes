@@ -11,15 +11,18 @@
 #include "account_battle_view.hpp"
 #include "console_overlay.hpp"
 #include "fancy_log.hpp"
+#include "moon_calendar_view.hpp"
 #include "party_view.hpp"
 
 namespace fl::widgets {
 
 RootComponent::RootComponent(fl::context::AccountCtx ctx,
                              std::deque<fl::primitives::AccountData> &accounts,
-                             FancyLog &console_log)
+                             FancyLog &console_log,
+                             fl::primitives::WorldClock &world_clock)
     : ctx_(std::move(ctx)), accounts_(&accounts), console_log_(&console_log),
-      commands_(accounts, console_log) {
+      world_clock_(&world_clock),
+      commands_(accounts, console_log, world_clock) {
   console_overlay_ = ftxui::Make<ConsoleOverlay>(console_log_);
   commands_.set_show_account_view([this](std::size_t account_index) {
     show_account_battle(account_index);
@@ -63,6 +66,11 @@ ftxui::Element RootComponent::Render() {
   overlay->tick();
 
   Element content = active_screen_ ? active_screen_->Render() : text("");
+  content = vbox({
+      render_moon_calendar(*world_clock_),
+      separator(),
+      content | flex,
+  });
 
   if (overlay->should_show()) {
     return dbox({

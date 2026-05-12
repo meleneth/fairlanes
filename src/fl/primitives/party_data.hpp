@@ -17,6 +17,7 @@
 #include "fl/fsm/party_loop_machine.hpp"
 #include "fl/fwd.hpp"
 #include "fl/primitives/encounter_data.hpp"
+#include "fl/primitives/world_clock.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "member_data.hpp"
 #include "sr/beat_bus.hpp"
@@ -25,7 +26,9 @@ namespace fl::primitives {
 
 struct PartyData {
 public:
-  static constexpr int kTownPenaltyBeats = 12 * 60;
+  static constexpr int kTownPenaltySeconds = 60;
+  static constexpr int kTownPenaltyBeats =
+      fl::primitives::WorldClock::beats_from_seconds(kTownPenaltySeconds);
 
   explicit PartyData(entt::entity party_id,
                      fl::context::AccountCtx &account_ctx, std::string name);

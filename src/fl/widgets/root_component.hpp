@@ -8,6 +8,7 @@
 #include "fl/context.hpp"
 #include "fl/fwd.hpp"
 #include "fl/primitives/account_data.hpp"
+#include "fl/primitives/world_clock.hpp"
 #include "fl/widgets/ui_command_controller.hpp"
 
 namespace fl::widgets {
@@ -19,7 +20,8 @@ class RootComponent : public ftxui::ComponentBase {
 public:
   RootComponent(fl::context::AccountCtx ctx,
                 std::deque<fl::primitives::AccountData> &accounts,
-                FancyLog &console_log);
+                FancyLog &console_log,
+                fl::primitives::WorldClock &world_clock);
 
   bool OnEvent(ftxui::Event event) override;
   ftxui::Element Render() override;
@@ -37,6 +39,7 @@ private:
   fl::context::AccountCtx ctx_;
   std::deque<fl::primitives::AccountData> *accounts_{nullptr};
   FancyLog *console_log_{nullptr};
+  fl::primitives::WorldClock *world_clock_{nullptr};
   UiCommandController commands_;
 
   ftxui::Component active_screen_;

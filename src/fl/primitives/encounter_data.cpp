@@ -10,6 +10,7 @@
 #include "fl/ecs/components/stats.hpp"
 #include "fl/lospec500.hpp"
 #include "fl/monsters/monster_kind.hpp"
+#include "fl/primitives/world_clock.hpp"
 #include "fl/skills/eviscerate.hpp"
 #include "fl/skills/thump.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
@@ -18,7 +19,9 @@
 
 namespace fl::primitives {
 namespace {
-constexpr int kDireBleedTickBeats = 36;
+constexpr int kDireBleedTickSeconds = 3;
+constexpr int kDireBleedTickBeats =
+    WorldClock::beats_from_seconds(kDireBleedTickSeconds);
 }
 
 void EncounterData::innervate_event_system() {

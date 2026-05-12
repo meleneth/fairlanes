@@ -14,6 +14,7 @@
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/logging.hpp"
 #include "fl/primitives/random_hub.hpp"
+#include "fl/primitives/world_clock.hpp"
 #include "sr/beat_bus.hpp"
 
 namespace fl {
@@ -41,6 +42,10 @@ public:
 
   fl::primitives::LogBus &log_bus() noexcept { return log_bus_; }
   fl::primitives::Logger &logger() noexcept { return logger_; }
+  fl::primitives::WorldClock &world_clock() noexcept { return world_clock_; }
+  const fl::primitives::WorldClock &world_clock() const noexcept {
+    return world_clock_;
+  }
 
   std::mutex &frame_mutex() noexcept { return frame_mutex_; }
 
@@ -78,6 +83,7 @@ private:
   fl::primitives::RandomHub rng_;
   fl::primitives::LogBus log_bus_;
   fl::primitives::Logger logger_;
+  fl::primitives::WorldClock world_clock_;
   std::mutex frame_mutex_;
 
   std::deque<fl::primitives::AccountData> accounts_;
