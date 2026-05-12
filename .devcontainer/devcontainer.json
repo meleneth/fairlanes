@@ -1,17 +1,24 @@
 {
   "name": "fairlanes-linux-trixie",
-  "image": "debian:trixie",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
 
   "postCreateCommand": ".devcontainer/post_create.sh",
 
   "forwardPorts": [8086],
-
+  "runArgs": [
+    "--cap-add=SYS_ADMIN",
+    "--security-opt=apparmor=unconfined"
+  ],
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-vscode.cpptools",
         "ms-vscode.cmake-tools",
         "llvm-vs-code-extensions.vscode-clangd",
+        "openai.chatgpt",
         "./.devcontainer/extensions/ftxui-color-swatch-0.0.1.vsix"
       ]
     }
