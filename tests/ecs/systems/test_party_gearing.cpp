@@ -32,6 +32,11 @@ bool inventory_contains(const fl::primitives::PartyData &party,
   return std::find(items.begin(), items.end(), item) != items.end();
 }
 
+int inventory_count(const fl::primitives::PartyData &party, entt::entity item) {
+  auto items = party.items();
+  return static_cast<int>(std::count(items.begin(), items.end(), item));
+}
+
 } // namespace
 
 TEST_CASE("PartyGearing equips the same armor kind already being worn",
@@ -85,6 +90,34 @@ TEST_CASE("PartyGearing equips the same armor kind already being worn",
   REQUIRE_FALSE(inventory_contains(party, cloth_mainhand));
   REQUIRE_FALSE(inventory_contains(party, necklace));
   REQUIRE(party.log().size() == previous_log_size + 3);
+}
+
+TEST_CASE("PartyGearing removes equipped items from loose inventory",
+          "[party][gearing][equipment][inventory]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &reg = party_ctx.reg();
+  party.replace_items({});
+  const auto member_id = party.members().front().member_id();
+  auto &party_member = reg.get<fl::ecs::components::PartyMember>(member_id);
+  auto &closet = party_member.closet();
+
+  closet.chest =
+      make_item(reg, fl::loot::EquipmentSlot::chest, fl::loot::ArmorKind::cloth,
+                fl::loot::Tier::plain, "Plain Cloth Chestpiece");
+  auto cloth_helm =
+      make_item(reg, fl::loot::EquipmentSlot::helm, fl::loot::ArmorKind::cloth,
+                fl::loot::Tier::plain, "Plain Cloth Helm");
+
+  party.add_item(cloth_helm);
+  party.add_item(cloth_helm);
+
+  fl::ecs::systems::PartyGearing::commit(party_ctx);
+
+  REQUIRE(closet.helm == cloth_helm);
+  REQUIRE(inventory_count(party, cloth_helm) == 0);
 }
 
 TEST_CASE("PartyGearing upgrades only loose normal gear",

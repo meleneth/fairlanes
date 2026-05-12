@@ -1,6 +1,7 @@
 #include "combatant.hpp"
 
 #include "fl/ecs/components/color_override.hpp"
+#include "fl/ecs/components/hp_bar_color_override.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/lospec500.hpp"
@@ -62,6 +63,10 @@ ftxui::Element Combatant::Render() {
       ftxui::text(hp_text),
       ftxui::filler(),
   });
+  if (auto *hp_color = reg.try_get<HPBarColorOverride>(entity);
+      hp_color != nullptr && stats.is_alive()) {
+    hp_line = hp_line | ftxui::color(hp_color->color);
+  }
 
   // Top border labels
   // clang-format off

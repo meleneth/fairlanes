@@ -18,6 +18,7 @@ struct MemberLeft {
   entt::entity member{entt::null};
 };
 struct PartyWiped {};
+struct PartyLeftCombat {};
 struct PartyGainedXP {
   int amount{0};
 };
@@ -42,8 +43,8 @@ struct PlayerDied {
 
 using PartyEvent =
     std::variant<PartyCreated, MemberJoined, MemberLeft, PartyWiped,
-         PartyGainedXP, PartyHealed, PartyTick, PreAttack, PostAttack,
-                 PlayerDied>;
+                 PartyLeftCombat, PartyGainedXP, PartyHealed, PartyTick,
+                 PreAttack, PostAttack, PlayerDied>;
 
 using PartyBus = seerin::VariantBus<PartyEvent>;
 

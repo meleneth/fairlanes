@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "fl/context.hpp"
+#include "fl/ecs/components/monster_identity.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/monsters/monster_kind.hpp"
@@ -56,6 +57,7 @@ public:
   EntityBuilder &monster(fl::monster::MonsterKind kind) {
     using fl::monster::monster_registry;
     with_monster_defaults();
+    with(fl::ecs::components::MonsterIdentity{kind});
     auto &reg = monster_registry();
     auto it = reg.find(kind);
     if (it == reg.end()) {

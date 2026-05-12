@@ -4,6 +4,7 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/events/party_bus.hpp"
 #include "fl/fsm/party_loop_machine.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/widgets/fancy_log.hpp"
@@ -74,6 +75,7 @@ void PartyData::leave_combat() {
     return;
   }
 
+  party_bus_.emit(fl::events::PartyEvent{fl::events::PartyLeftCombat{}});
   encounter_data_->clear_pending_events();
   encounter_data_->finalize();
   encounter_data_.reset();

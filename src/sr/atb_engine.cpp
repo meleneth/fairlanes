@@ -55,27 +55,34 @@ void AtbEngine::clear_pending_events_for(entt::entity id) {
   }
 
   // Remove scheduled events for this entity
-  scheduler_.remove_if([id](const TimedScheduler<AtbOutEvent>::TimedAction &action) {
-    return std::visit(
-        [id](auto &&ev) -> bool {
-          using T = std::decay_t<decltype(ev)>;
-          if constexpr (std::is_same_v<T, TimedScheduler<AtbOutEvent>::EmitEvent>) {
-            return std::visit(
-                [id](auto &&out_ev) -> bool {
-                  using OutT = std::decay_t<decltype(out_ev)>;
-                  if constexpr (std::is_same_v<OutT, BecameReady>) {
-                    return out_ev.id == id;
-                  } else if constexpr (std::is_same_v<OutT, BecameActive>) {
-                    return out_ev.id == id;
-                  }
-                  return false;
-                },
-                ev.ev);
-          }
-          return false;
-        },
-        action);
-  });
+  scheduler_.remove_if(
+      [id](const TimedScheduler<AtbOutEvent>::TimedAction &action) {
+        return std::visit(
+            [id](auto &&ev) -> bool {
+              using T = std::decay_t<decltype(ev)>;
+              if constexpr (std::is_same_v<
+                                T, TimedScheduler<AtbOutEvent>::EmitEvent>) {
+                return std::visit(
+                    [id](auto &&out_ev) -> bool {
+                      using OutT = std::decay_t<decltype(out_ev)>;
+                      if constexpr (std::is_same_v<OutT, BecameReady>) {
+                        return out_ev.id == id;
+                      } else if constexpr (std::is_same_v<OutT,
+                                                          BecameActive>) {
+                        return out_ev.id == id;
+                      }
+                      return false;
+                    },
+                    ev.ev);
+              } else if constexpr (std::is_same_v<
+                                       T, TimedScheduler<
+                                              AtbOutEvent>::SmellyCallback>) {
+                return ev.owner == id;
+              }
+              return false;
+            },
+            action);
+      });
 }
 
 void AtbEngine::on_add(const AddCombatant &e) {

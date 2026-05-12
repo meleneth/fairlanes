@@ -13,8 +13,10 @@
 #include "fl/ecs/components/closet.hpp"
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
+#include "fl/lospec500.hpp"
 #include "fl/loot/equipment_builder.hpp"
 #include "fl/primitives/party_data.hpp"
+#include "fl/widgets/equipment_label.hpp"
 #include "fl/widgets/fancy_log.hpp"
 
 namespace fl::ecs::systems {
@@ -242,6 +244,10 @@ std::string_view slot_name(EquipmentSlot slot) {
 }
 
 std::string generated_name(EquipmentSlot slot, ArmorKind kind, Tier tier) {
+  if (kind == ArmorKind::none) {
+    return fmt::format("{} {}", tier_name(tier), slot_name(slot));
+  }
+
   return fmt::format("{} {} {}", tier_name(tier), armor_kind_name(kind),
                      slot_name(slot));
 }
@@ -259,6 +265,31 @@ bool is_better(const Equipment *candidate, const Equipment *current) {
     return true;
   }
   return tier_rank(candidate->tier()) > tier_rank(current->tier());
+}
+
+void append_equipped_log(fl::context::PartyCtx &ctx, std::string_view member,
+                         const Equipment &equipment, EquipmentSlot slot) {
+  ctx.log().append(ftxui::hbox({
+      ftxui::text(std::string{member}) | fl::lospec500::at(22),
+      ftxui::text(" equipped ") | fl::lospec500::at(19),
+      fl::widgets::equipment_name_label(equipment),
+      ftxui::text(" in ") | fl::lospec500::at(19),
+      ftxui::text(std::string{fl::ecs::components::to_string(slot)}) |
+          ftxui::dim,
+      ftxui::text(".") | fl::lospec500::at(19),
+  }));
+}
+
+void append_upgraded_log(fl::context::PartyCtx &ctx, Tier tier, ArmorKind kind,
+                         EquipmentSlot slot, const Equipment &equipment) {
+  auto source_name = generated_name(slot, kind, tier);
+  ctx.log().append(ftxui::hbox({
+      ftxui::text("Upgraded 3 loose ") | fl::lospec500::at(19),
+      ftxui::text(source_name) | ftxui::dim,
+      ftxui::text(" into ") | fl::lospec500::at(19),
+      fl::widgets::equipment_name_label(equipment),
+      ftxui::text(".") | fl::lospec500::at(19),
+  }));
 }
 
 std::optional<ArmorKind>
@@ -390,9 +421,7 @@ void equip_party(fl::context::PartyCtx &ctx,
         }
         worn = next_item;
 
-        ctx.log().append_markup(fmt::format(
-            "[player_name]({}) equipped [item]({}) in {}.", member.name(),
-            next_equipment.name(), fl::ecs::components::to_string(slot)));
+        append_equipped_log(ctx, member.name(), next_equipment, slot);
       }
 
       for (auto slot : kWeaponSlots) {
@@ -415,9 +444,7 @@ void equip_party(fl::context::PartyCtx &ctx,
         }
         worn = next_item;
 
-        ctx.log().append_markup(fmt::format(
-            "[player_name]({}) equipped [item]({}) in {}.", member.name(),
-            next_equipment.name(), fl::ecs::components::to_string(slot)));
+        append_equipped_log(ctx, member.name(), next_equipment, slot);
       }
     }
 
@@ -440,11 +467,38 @@ void equip_party(fl::context::PartyCtx &ctx,
       }
       worn = next_item;
 
-      ctx.log().append_markup(fmt::format(
-          "[player_name]({}) equipped [item]({}) in {}.", member.name(),
-          next_equipment.name(), fl::ecs::components::to_string(slot)));
+      append_equipped_log(ctx, member.name(), next_equipment, slot);
     }
   }
+}
+
+void remove_equipped_items_from_inventory(
+    fl::context::PartyCtx &ctx, std::vector<entt::entity> &inventory) {
+  auto &reg = ctx.reg();
+  std::vector<entt::entity> equipped;
+
+  for (const auto &member : ctx.party_data().members()) {
+    auto *party_member =
+        reg.try_get<fl::ecs::components::PartyMember>(member.member_id());
+    if (party_member == nullptr) {
+      continue;
+    }
+
+    const auto &closet = party_member->closet();
+    for (auto slot : kUpgradableSlots) {
+      const auto item = slot_value(closet, slot);
+      if (item != entt::null) {
+        equipped.push_back(item);
+      }
+    }
+  }
+
+  inventory.erase(
+      std::remove_if(inventory.begin(), inventory.end(), [&](entt::entity item) {
+        return std::find(equipped.begin(), equipped.end(), item) !=
+               equipped.end();
+      }),
+      inventory.end());
 }
 
 void upgrade_inventory(fl::context::PartyCtx &ctx,
@@ -501,9 +555,7 @@ void upgrade_inventory(fl::context::PartyCtx &ctx,
             upgraded = true;
 
             const auto &equipment = reg.get<Equipment>(upgraded_item);
-            ctx.log().append_markup(fmt::format(
-                "Upgraded 3 loose {} {} {} into [item]({}).", tier_name(tier),
-                armor_kind_name(kind), slot_name(slot), equipment.name()));
+            append_upgraded_log(ctx, tier, kind, slot, equipment);
           }
         }
       }
@@ -518,6 +570,7 @@ void PartyGearing::commit(fl::context::PartyCtx &ctx) {
                                              ctx.party_data().items().end()};
 
   equip_party(ctx, inventory);
+  remove_equipped_items_from_inventory(ctx, inventory);
   upgrade_inventory(ctx, inventory);
 
   ctx.party_data().replace_items(std::move(inventory));

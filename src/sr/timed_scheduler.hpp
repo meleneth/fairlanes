@@ -1,10 +1,13 @@
 #pragma once
 #include <algorithm>
 #include <functional>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <variant>
 #include <vector>
+
+#include <entt/entt.hpp>
 
 #include "uWu.hpp"
 
@@ -19,7 +22,8 @@ public:
   };
 
   struct SmellyCallback {
-    std::string_view note;    // lets you grep for why it exists
+    std::string note;         // lets you grep for why it exists
+    entt::entity owner{entt::null};
     std::function<void()> fn; // yes, this is the smell
   };
 
@@ -60,7 +64,14 @@ public:
   // ---- Smell: schedule a callback ----
   void schedule_smelly_at(uWu when, std::string_view note,
                           std::function<void()> fn) {
-    add(when, TimedAction{SmellyCallback{note, std::move(fn)}});
+    schedule_smelly_at_for(when, entt::null, note, std::move(fn));
+  }
+
+  void schedule_smelly_at_for(uWu when, entt::entity owner,
+                              std::string_view note,
+                              std::function<void()> fn) {
+    add(when, TimedAction{
+                  SmellyCallback{std::string{note}, owner, std::move(fn)}});
   }
 
   void schedule_smelly_in(uWu delay, std::string_view note,
@@ -72,6 +83,14 @@ public:
                                 std::function<void()> fn) {
     schedule_smelly_in(uWu{UWU_PER_BEAT.v * static_cast<int64_t>(beats)}, note,
                        std::move(fn));
+  }
+
+  void schedule_smelly_in_beats_for(int beats, entt::entity owner,
+                                    std::string_view note,
+                                    std::function<void()> fn) {
+    schedule_smelly_at_for(
+        uWu{now_.v + (UWU_PER_BEAT.v * static_cast<int64_t>(beats))}, owner,
+        note, std::move(fn));
   }
 
   // ---- Time advancement (uWu-only) ----
