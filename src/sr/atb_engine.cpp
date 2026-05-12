@@ -1,6 +1,7 @@
 #include "atb_engine.hpp"
 
 #include <algorithm>
+#include <tracy/Tracy.hpp>
 #include <utility>
 
 namespace seerin {
@@ -37,12 +38,14 @@ void AtbEngine::set_can_charge_fn(CanChargeFn fn) {
 }
 
 void AtbEngine::clear_pending_events() {
+  ZoneScopedN("AtbEngine::clear_pending_events");
   scheduler_.clear();
   ready_queue_.clear();
   active_combatant_ = entt::entity{};
 }
 
 void AtbEngine::clear_pending_events_for(entt::entity id) {
+  ZoneScopedN("AtbEngine::clear_pending_events_for");
   // Remove from ready queue
   ready_queue_.erase(std::remove(ready_queue_.begin(), ready_queue_.end(), id),
                      ready_queue_.end());
@@ -92,10 +95,16 @@ void AtbEngine::clear_pending_events_for(entt::entity id) {
 }
 
 void AtbEngine::on_add(const AddCombatant &e) {
+  ZoneScopedN("AtbEngine::on_add");
   combatants_.try_emplace(e.id, e.id, buses_.out);
+  TracyPlot("ATB.Combatants", static_cast<double>(combatants_.size()));
 }
 
 void AtbEngine::on_beat(const Beat &) {
+  ZoneScopedN("AtbEngine::on_beat");
+  TracyPlot("ATB.ReadyQueue", static_cast<double>(ready_queue_.size()));
+  TracyPlot("ATB.Combatants", static_cast<double>(combatants_.size()));
+
   scheduler_.on_beat();
 
   // Tick all combatants that are allowed to charge.
@@ -116,6 +125,7 @@ void AtbEngine::on_beat(const Beat &) {
 }
 
 void AtbEngine::on_finished_turn(const FinishedTurn &e) {
+  ZoneScopedN("AtbEngine::on_finished_turn");
   if (active_combatant_ == e.id) {
     active_combatant_ = entt::entity{};
     combatants_.at(e.id).sm.process_event(FinishedTurn{});
@@ -127,6 +137,7 @@ void AtbEngine::on_became_ready(const BecameReady &e) { enqueue_ready(e.id); }
 void AtbEngine::enqueue_ready(entt::entity id) { ready_queue_.push_back(id); }
 
 void AtbEngine::pump_ready_queue() {
+  ZoneScopedN("AtbEngine::pump_ready_queue");
   if (active_combatant_ != entt::entity{}) {
     return;
   }
@@ -141,6 +152,7 @@ void AtbEngine::pump_ready_queue() {
 
     active_combatant_ = id;
     buses_.out.emit(seerin::AtbOutEvent{BecameActive{id}});
+    TracyPlot("ATB.ReadyQueue", static_cast<double>(ready_queue_.size()));
     return;
   }
 }

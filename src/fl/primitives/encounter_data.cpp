@@ -8,11 +8,14 @@
 #include "fl/skills/skill_sequence.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "sr/atb_events.hpp"
+#include <tracy/Tracy.hpp>
 
 namespace fl::primitives {
 
 void EncounterData::innervate_event_system() {
+  ZoneScopedN("EncounterData::innervate_event_system");
   atb_out().on<seerin::BecameActive>([this](const seerin::BecameActive &ev) {
+    ZoneScopedN("EncounterData::BecameActive");
     const entt::entity attacker = ev.id;
     const entt::entity target = target_random_alive_opposition(attacker);
 
@@ -32,10 +35,13 @@ void EncounterData::innervate_event_system() {
         },
         [this](entt::entity entity) { clear_pending_events_for(entity); }};
     sequencer.schedule(attacker, target, choose_skill(attacker));
+    TracyPlot("Encounter.PendingEvents",
+              static_cast<double>(rt_.atb_.scheduler().pending()));
   });
 }
 
 fl::skills::SkillId EncounterData::choose_skill(entt::entity attacker) {
+  ZoneScopedN("EncounterData::choose_skill");
   return fl::skills::choose_skill(party_ctx_->reg(), party_ctx_->rng(),
                                   attacker);
 }
@@ -57,6 +63,7 @@ void EncounterData::finalize() {
 void EncounterData::clear_pending_events() { rt_.atb_.clear_pending_events(); }
 
 void EncounterData::clear_pending_events_for(entt::entity id) {
+  ZoneScopedN("EncounterData::clear_pending_events_for");
   rt_.atb_.clear_pending_events_for(id);
 }
 

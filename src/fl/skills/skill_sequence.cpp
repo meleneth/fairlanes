@@ -13,6 +13,7 @@
 #include "fl/skills/skill_learning.hpp"
 #include "fl/skills/thump.hpp"
 #include "fl/widgets/fancy_log.hpp"
+#include <tracy/Tracy.hpp>
 
 namespace fl::skills {
 
@@ -25,6 +26,7 @@ SkillSequencer::SkillSequencer(fl::context::PartyCtx &party_ctx,
 
 void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
                               SkillId skill) {
+  ZoneScopedN("SkillSequencer::schedule");
   switch (skill) {
   case SkillId::Eviscerate:
     schedule_eviscerate(attacker, target);
@@ -43,6 +45,7 @@ void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
 
 void SkillSequencer::schedule_thump_like(entt::entity attacker,
                                          entt::entity target, SkillId skill) {
+  ZoneScopedN("SkillSequencer::schedule_thump_like");
   auto const kBg = fl::lospec500::color_at(0);
   auto const kRed = fl::lospec500::color_at(4);
   auto const kYellow = fl::lospec500::color_at(14);
@@ -75,10 +78,14 @@ void SkillSequencer::schedule_thump_like(entt::entity attacker,
   scheduler_.schedule_smelly_in_beats(
       71, fmt::format("{}: finish", skill_name),
       [finish_turn, attacker] { finish_turn(attacker); });
+
+  TracyPlot("SkillSequencer.PendingEvents",
+            static_cast<double>(scheduler_.pending()));
 }
 
 void SkillSequencer::schedule_eviscerate(entt::entity attacker,
                                          entt::entity target) {
+  ZoneScopedN("SkillSequencer::schedule_eviscerate");
   auto const kBg = fl::lospec500::color_at(0);
   auto const kRed = fl::lospec500::color_at(4);
   auto const kYellow = fl::lospec500::color_at(14);
@@ -107,9 +114,13 @@ void SkillSequencer::schedule_eviscerate(entt::entity attacker,
   scheduler_.schedule_smelly_in_beats_for(
       34, attacker, "eviscerate: finish",
       [finish_turn, attacker] { finish_turn(attacker); });
+
+  TracyPlot("SkillSequencer.PendingEvents",
+            static_cast<double>(scheduler_.pending()));
 }
 
 void SkillSequencer::schedule_observe(entt::entity attacker) {
+  ZoneScopedN("SkillSequencer::schedule_observe");
   scheduler_.schedule_smelly_in_beats(
       1, "observe: log", [&party_ctx = party_ctx_, attacker] {
         auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(attacker);
@@ -121,12 +132,16 @@ void SkillSequencer::schedule_observe(entt::entity attacker) {
   scheduler_.schedule_smelly_in_beats(
       12, "observe: finish",
       [finish_turn, attacker] { finish_turn(attacker); });
+
+  TracyPlot("SkillSequencer.PendingEvents",
+            static_cast<double>(scheduler_.pending()));
 }
 
 void SkillSequencer::schedule_reek_fade(entt::entity entity,
                                         std::string_view label, int start_beat,
                                         int end_beat, ftxui::Color from,
                                         ftxui::Color to) {
+  ZoneScopedN("SkillSequencer::schedule_reek_fade");
   auto const duration = end_beat - start_beat;
   if (duration <= 0) {
     return;

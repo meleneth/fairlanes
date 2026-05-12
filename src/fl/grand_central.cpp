@@ -35,6 +35,8 @@
 namespace fl {
 
 void GrandCentral::_create_initial_accounts() {
+  ZoneScopedN("GrandCentral::create_initial_accounts");
+
   int party_index = 0;
   int player_index = 0;
 
@@ -109,6 +111,9 @@ void GrandCentral::_create_initial_accounts() {
           party_data.party_ctx());
     }
   }
+
+  TracyPlot("GC.AccountCount", static_cast<double>(accounts_.size()));
+  TracyPlot("GC.PlayerCount", static_cast<double>(player_index));
 }
 
 GrandCentral::GrandCentral(uint8_t num_accounts,
@@ -144,6 +149,7 @@ GrandCentral::account_context(fl::primitives::AccountData &account) {
 }
 
 void GrandCentral::main_loop(GrandCentralRunOptions opts) {
+  ZoneScopedN("GrandCentral::main_loop");
   world_clock_.set_beat_rate_multiplier(opts.overdrive);
 
   if (opts.no_ui) {
@@ -154,14 +160,19 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
       auto next_tick = clock::now();
 
       while (!st.stop_requested() && running.load(std::memory_order_relaxed)) {
+        ZoneScopedN("HeadlessFrameTick");
         const auto frame_dt = std::chrono::duration_cast<clock::duration>(
             std::chrono::duration<double>(
                 1.0 / world_clock_.effective_beats_per_wall_second()));
+        TracyPlot("GC.EffectiveBeatRate",
+                  world_clock_.effective_beats_per_wall_second());
         {
+          ZoneScopedN("HeadlessBeatDispatch");
           std::scoped_lock lock(frame_mutex_);
           world_clock_.advance_beat();
           gc_beat_bus_.emit(seerin::Beat{});
         }
+        FrameMark;
         next_tick += frame_dt;
         std::this_thread::sleep_until(next_tick);
       }
@@ -206,7 +217,9 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
   std::jthread render_ticker([&](std::stop_token st) {
     using namespace std::chrono_literals;
     while (!st.stop_requested() && running.load(std::memory_order_relaxed)) {
+      ZoneScopedN("RenderTickerPost");
       screen.PostEvent(ftxui::Event::Custom);
+      FrameMark;
       std::this_thread::sleep_for(16ms);
     }
   });
@@ -225,6 +238,8 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
       const auto frame_dt = std::chrono::duration_cast<clock::duration>(
           std::chrono::duration<double>(
               1.0 / world_clock_.effective_beats_per_wall_second()));
+      TracyPlot("GC.EffectiveBeatRate",
+                world_clock_.effective_beats_per_wall_second());
 
       //      const auto now = clock::now();
 
@@ -244,6 +259,7 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
       sim_time += frame_dt;
 
       {
+        ZoneScopedN("BeatDispatch");
         std::scoped_lock lock(frame_mutex_);
         world_clock_.advance_beat();
         gc_beat_bus_.emit(seerin::Beat{});
@@ -254,6 +270,7 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
 
       // ---- Pace ----
       std::this_thread::sleep_until(next_tick);
+      FrameMark;
     }
   });
   screen.Loop(ui);
