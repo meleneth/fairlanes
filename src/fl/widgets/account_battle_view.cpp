@@ -2,6 +2,8 @@
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>
 
+#include <algorithm>
+
 #include "account_battle_view.hpp"
 #include "fl/context.hpp"
 #include "fl/ecs/components/encounter.hpp"
@@ -20,6 +22,36 @@ namespace fl::widgets {
 AccountBattleView::AccountBattleView(fl::context::AccountCtx ctx)
     : ctx_(std::move(ctx)) {}
 
+bool AccountBattleView::OnEvent(ftxui::Event event) {
+  auto *check_is_account =
+      ctx_.reg().try_get<fl::ecs::components::IsAccount>(ctx_.self());
+  if (!check_is_account) {
+    return false;
+  }
+
+  auto &account = check_is_account->account_data();
+  const int log_count = static_cast<int>(account.parties().size()) + 1;
+  focused_log_ = std::clamp(focused_log_, 0, std::max(0, log_count - 1));
+
+  if (event == ftxui::Event::Tab) {
+    focused_log_ = (focused_log_ + 1) % log_count;
+    return true;
+  }
+
+  if (event == ftxui::Event::TabReverse) {
+    focused_log_ = (focused_log_ + log_count - 1) % log_count;
+    return true;
+  }
+
+  if (focused_log_ == 0) {
+    return account.log().OnEvent(event);
+  }
+
+  return account.parties()[static_cast<std::size_t>(focused_log_ - 1)]
+      .log()
+      .OnEvent(event);
+}
+
 ftxui::Element AccountBattleView::Render() {
   std::vector<ftxui::Element> rows;
   auto *check_is_account =
@@ -35,6 +67,8 @@ ftxui::Element AccountBattleView::Render() {
   auto &is_account =
       ctx_.reg().get<fl::ecs::components::IsAccount>(ctx_.self());
   auto &parties = is_account.account_data().parties();
+  focused_log_ = std::clamp(focused_log_, 0,
+                            std::max(0, static_cast<int>(parties.size())));
 
   auto render_entity_row_5 = [&](const std::vector<entt::entity> &ents) {
     std::vector<ftxui::Element> row;
@@ -99,10 +133,13 @@ ftxui::Element AccountBattleView::Render() {
   std::vector<ftxui::Element> log_panes;
   log_panes.reserve(parties.size() + 1);
 
+  is_account.account_data().log().set_focused(focused_log_ == 0);
   log_panes.push_back(is_account.account_data().log().Render() | ftxui::frame |
                       ftxui::vscroll_indicator | ftxui::flex);
 
-  for (auto &party : parties) {
+  for (std::size_t i = 0; i < parties.size(); ++i) {
+    auto &party = parties[i];
+    party.log().set_focused(focused_log_ == static_cast<int>(i + 1));
     log_panes.push_back(party.log().Render() | ftxui::frame |
                         ftxui::vscroll_indicator | ftxui::flex);
   }

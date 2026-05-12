@@ -122,10 +122,19 @@ private:
     while (!items_.empty() && items_.front().when.v <= now_.v) {
       auto action = std::move(items_.front().action);
       items_.erase(items_.begin());
+
+      if (action.valueless_by_exception()) {
+        continue;
+      }
+
       std::visit([this](auto &&a) { this->run_one(a); }, action);
     }
   }
   void run_one(const EmitEvent &a) {
+    if (a.ev.valueless_by_exception()) {
+      return;
+    }
+
     if (emit_)
       emit_(a.ev);
   }

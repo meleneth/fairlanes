@@ -1,4 +1,7 @@
 #include "encounter_builder.hpp"
+
+#include <array>
+
 #include "fl/context.hpp"
 #include "fl/ecs/components/encounter.hpp"
 #include "fl/monsters/monster_kind.hpp"
@@ -27,9 +30,17 @@ void EncounterBuilder::add_random_enemy() {
   using namespace fl::ecs::components;
 
   auto rs = ctx_.rng().stream("encounter/spawn.monster");
-  const auto kind = rs.random_index(20) == 0
-                        ? fl::monster::MonsterKind::HoneyBadger
-                        : fl::monster::MonsterKind::FieldMouse;
+  constexpr std::array common_woodland{
+      fl::monster::MonsterKind::FieldMouse,
+      fl::monster::MonsterKind::BumpkinHare,
+      fl::monster::MonsterKind::MireSquish,
+      fl::monster::MonsterKind::BarkSmack,
+  };
+  const auto kind =
+      rs.random_index(20) == 0
+          ? fl::monster::MonsterKind::HoneyBadger
+          : common_woodland[static_cast<std::size_t>(
+                rs.random_index(static_cast<int>(common_woodland.size())))];
 
   auto context = ctx_.build_context();
   entt::entity ent = EntityBuilder(context).monster(kind).build();

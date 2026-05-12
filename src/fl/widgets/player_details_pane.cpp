@@ -8,7 +8,9 @@
 
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
+#include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/skills/skill.hpp"
 #include "fl/widgets/equipment_label.hpp"
 
 namespace fl::widgets {
@@ -16,8 +18,8 @@ namespace fl::widgets {
 namespace {
 
 std::string entity_label(entt::entity entity) {
-  return "#" + std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
-                   entity));
+  return "#" + std::to_string(
+                   static_cast<std::underlying_type_t<entt::entity>>(entity));
 }
 
 ftxui::Element equipment_label(entt::registry &reg, entt::entity equipment_id) {
@@ -50,11 +52,34 @@ bool PlayerDetailsPane::OnEvent(ftxui::Event event) {
 
   if (event == ftxui::Event::Character("]")) {
     cursor_ = (cursor_ + 1) % member_count;
+    scroll_cursor_ = 0;
     return true;
   }
 
   if (event == ftxui::Event::Character("[")) {
     cursor_ = (cursor_ + member_count - 1) % member_count;
+    scroll_cursor_ = 0;
+    return true;
+  }
+
+  if (event == ftxui::Event::ArrowDown ||
+      event == ftxui::Event::Character("j")) {
+    ++scroll_cursor_;
+    return true;
+  }
+
+  if (event == ftxui::Event::ArrowUp || event == ftxui::Event::Character("k")) {
+    scroll_cursor_ = std::max(scroll_cursor_ - 1, 0);
+    return true;
+  }
+
+  if (event == ftxui::Event::PageDown) {
+    scroll_cursor_ += 8;
+    return true;
+  }
+
+  if (event == ftxui::Event::PageUp) {
+    scroll_cursor_ = std::max(scroll_cursor_ - 8, 0);
     return true;
   }
 
@@ -96,15 +121,40 @@ ftxui::Element PlayerDetailsPane::Render() {
   }
 
   lines.push_back(separator());
+  lines.push_back(text("Skills") | bold);
+
+  if (auto *skills = reg_.try_get<fl::ecs::components::SkillSlots>(member_id)) {
+    for (int i = 0; i < fl::ecs::components::SkillSlots::kSlotCount; ++i) {
+      const auto &slot = skills->slots[static_cast<std::size_t>(i)];
+      lines.push_back(hbox({
+          text(std::to_string(i + 1) + ": ") | dim,
+          text(slot.has_value() ? std::string{fl::skills::name(*slot)}
+                                : std::string{"-"}) |
+              flex,
+      }));
+    }
+  } else {
+    lines.push_back(text("No skill data."));
+  }
+
+  lines.push_back(separator());
   lines.push_back(text("Gear") | bold);
 
-  auto *party_member = reg_.try_get<fl::ecs::components::PartyMember>(member_id);
+  auto *party_member =
+      reg_.try_get<fl::ecs::components::PartyMember>(member_id);
   if (!party_member || party_member->closet_entity_id() == entt::null ||
       !reg_.all_of<fl::ecs::components::Closet>(
           party_member->closet_entity_id())) {
     lines.push_back(text("No gear data."));
-    return window(title, vbox(std::move(lines)) | yframe | vscroll_indicator |
-                             flex);
+    scroll_cursor_ = std::clamp(
+        scroll_cursor_, 0, std::max(0, static_cast<int>(lines.size()) - 1));
+    if (!lines.empty()) {
+      lines[static_cast<std::size_t>(scroll_cursor_)] =
+          lines[static_cast<std::size_t>(scroll_cursor_)] |
+          focusPosition(0, scroll_cursor_);
+    }
+    return window(title,
+                  vbox(std::move(lines)) | yframe | vscroll_indicator | flex);
   }
 
   const auto &closet = party_member->closet();
@@ -132,8 +182,16 @@ ftxui::Element PlayerDetailsPane::Render() {
     }));
   }
 
-  return window(title, vbox(std::move(lines)) | yframe | vscroll_indicator |
-                           flex);
+  scroll_cursor_ = std::clamp(scroll_cursor_, 0,
+                              std::max(0, static_cast<int>(lines.size()) - 1));
+  if (!lines.empty()) {
+    lines[static_cast<std::size_t>(scroll_cursor_)] =
+        lines[static_cast<std::size_t>(scroll_cursor_)] |
+        focusPosition(0, scroll_cursor_);
+  }
+
+  return window(title,
+                vbox(std::move(lines)) | yframe | vscroll_indicator | flex);
 }
 
 void PlayerDetailsPane::set_focused(bool focused) noexcept {

@@ -5,6 +5,8 @@
 #include <entt/entt.hpp>
 #include <exprtk.hpp>
 
+#include "fl/skills/skill.hpp"
+
 namespace fl::context {
 struct AttackCtx;
 };
@@ -16,7 +18,7 @@ public:
   Thump();
 
   // Apply one Thump from attacker->defender, returns damage dealt (int).
-  int thump(fl::context::AttackCtx &&ctx);
+  int thump(fl::context::AttackCtx &&ctx, SkillId skill = SkillId::Thump);
 
   // Tunables
   double hit_rate = 0.90;

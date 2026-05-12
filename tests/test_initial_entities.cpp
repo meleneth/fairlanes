@@ -4,6 +4,7 @@
 #include <nlohmann/json.hpp>
 
 #include "fl/context.hpp"
+#include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/tags.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/primitives/component_builder.hpp"
@@ -91,5 +92,13 @@ TEST_CASE("EntityBuilder + ComponentBuilder basics", "[entity][builder]") {
     const auto &stats = reg.get<Stats>(e);
     REQUIRE(stats.hp_ == 5);
     REQUIRE(stats.name_ == "Field Mouse");
+  }
+
+  SECTION("Initial players know Observe and have open skill slots") {
+    const auto member = party_ctx.party_data().members().front().member_id();
+    const auto &skills = reg.get<fl::ecs::components::SkillSlots>(member);
+
+    REQUIRE(skills.knows(fl::skills::SkillId::Observe));
+    REQUIRE(skills.has_open_slot());
   }
 }

@@ -29,6 +29,12 @@ void PartyLoop::Ops::enter_farming(fl::context::PartyCtx &ctx) {
 };
 
 void PartyLoop::Ops::exit_farming(fl::context::PartyCtx &ctx) {
+  // Always leave combat when exiting Farming, even when enemies died (not a
+  // party wipe). This emits PartyLeftCombat so that subscriptions like
+  // DireBleed's left_combat_sub are cleaned up before EncounterData is
+  // destroyed by the next create_encounter() call.
+  ctx.party_data().leave_combat();
+
   if (ctx.reg().all_of<fl::ecs::components::Encounter>(ctx.self())) {
     ctx.reg().remove<fl::ecs::components::Encounter>(ctx.self());
   }

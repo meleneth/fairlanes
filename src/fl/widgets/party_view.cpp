@@ -25,8 +25,8 @@ namespace fl::widgets {
 namespace {
 
 std::string entity_label(entt::entity entity) {
-  return "#" + std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
-                   entity));
+  return "#" + std::to_string(
+                   static_cast<std::underlying_type_t<entt::entity>>(entity));
 }
 
 } // namespace
@@ -52,14 +52,32 @@ bool PartyView::OnEvent(ftxui::Event event) {
   }
 
   if (event == ftxui::Event::Tab) {
-    set_focus(focus_ == FocusPane::inventory ? FocusPane::player_details
-                                             : FocusPane::inventory);
+    switch (focus_) {
+    case FocusPane::inventory:
+      set_focus(FocusPane::player_details);
+      break;
+    case FocusPane::player_details:
+      set_focus(FocusPane::party_log);
+      break;
+    case FocusPane::party_log:
+      set_focus(FocusPane::inventory);
+      break;
+    }
     return true;
   }
 
   if (event == ftxui::Event::TabReverse) {
-    set_focus(focus_ == FocusPane::inventory ? FocusPane::player_details
-                                             : FocusPane::inventory);
+    switch (focus_) {
+    case FocusPane::inventory:
+      set_focus(FocusPane::party_log);
+      break;
+    case FocusPane::player_details:
+      set_focus(FocusPane::inventory);
+      break;
+    case FocusPane::party_log:
+      set_focus(FocusPane::player_details);
+      break;
+    }
     return true;
   }
 
@@ -69,6 +87,10 @@ bool PartyView::OnEvent(ftxui::Event event) {
 
   if (focus_ == FocusPane::player_details && player_details_) {
     return player_details_->OnEvent(event);
+  }
+
+  if (focus_ == FocusPane::party_log) {
+    return parties[party_index_].log().OnEvent(event);
   }
 
   return false;
@@ -147,9 +169,9 @@ ftxui::Element PartyView::render_party() {
     return hbox(std::move(cells));
   };
 
-  rows.push_back(text(std::string(party.name()) + " " +
-                      entity_label(party.party_id())) |
-                 bold);
+  rows.push_back(
+      text(std::string(party.name()) + " " + entity_label(party.party_id())) |
+      bold);
 
   if (party.has_encounter()) {
     auto &encounter = party.encounter_data();
@@ -176,6 +198,12 @@ ftxui::Element PartyView::render_party() {
 
 void PartyView::set_focus(FocusPane focus) {
   focus_ = focus;
+  if (party_index_ < ctx_.account_data().parties().size()) {
+    ctx_.account_data()
+        .party(party_index_)
+        .log()
+        .set_focused(focus_ == FocusPane::party_log);
+  }
   if (inventory_list_) {
     inventory_list_->set_focused(focus_ == FocusPane::inventory);
   }

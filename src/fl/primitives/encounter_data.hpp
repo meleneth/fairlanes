@@ -1,7 +1,6 @@
 #pragma once
 #include <algorithm>
 #include <entt/entt.hpp>
-#include <ftxui/screen/color.hpp>
 #include <memory>
 #include <vector>
 
@@ -10,6 +9,7 @@
 #include "fl/events/party_bus.hpp"
 #include "fl/events/ready_queue.hpp"
 #include "fl/primitives/team.hpp"
+#include "fl/skills/skill.hpp"
 #include "sr/atb_bus.hpp"
 #include "sr/atb_engine.hpp"
 
@@ -86,14 +86,7 @@ public:
     return entt::null;
   }
 
-  void schedule_thump_sequence(entt::entity attacker, entt::entity target);
-  void schedule_eviscerate_sequence(entt::entity attacker, entt::entity target);
-  void schedule_dire_bleed_tick(entt::entity target);
-  void bind_dire_bleed_cleanup(entt::entity target);
-  void clear_dire_bleed(entt::entity target);
-  void schedule_reek_fade(entt::entity entity, std::string_view label,
-                          int start_beat, int end_beat, ftxui::Color from,
-                          ftxui::Color to);
+  fl::skills::SkillId choose_skill(entt::entity attacker);
 
 private:
   struct Topology {

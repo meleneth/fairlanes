@@ -67,7 +67,7 @@ Thump::Thump() : rng_(std::random_device{}()) {
   }
 }
 
-int Thump::thump(fl::context::AttackCtx &&ctx) {
+int Thump::thump(fl::context::AttackCtx &&ctx, SkillId skill) {
   using fl::ecs::components::Stats;
   auto &dst = ctx.reg().get<Stats>(ctx.defender());
 
@@ -96,8 +96,10 @@ int Thump::thump(fl::context::AttackCtx &&ctx) {
   entt::handle attacker_h{ctx.reg(), ctx.attacker()};
   entt::handle defender_h{ctx.reg(), ctx.defender()};
 
-  ctx.log().append_markup(fmt::format("{} thumped {} for [error]({}) damage",
+  ctx.log().append_markup(fmt::format("{} used [ability]({}) on {} for "
+                                      "[error]({}) damage",
                                       ctx.log().name_tag_for(attacker_h),
+                                      fl::skills::name(skill),
                                       ctx.log().name_tag_for(defender_h), dmg));
 
   fl::ecs::systems::TakeDamage::commit(ctx);

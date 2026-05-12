@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "atb_engine.hpp"
 
 #include <algorithm>
@@ -57,11 +55,19 @@ void AtbEngine::clear_pending_events_for(entt::entity id) {
   // Remove scheduled events for this entity
   scheduler_.remove_if(
       [id](const TimedScheduler<AtbOutEvent>::TimedAction &action) {
+        if (action.valueless_by_exception()) {
+          return false;
+        }
+
         return std::visit(
             [id](auto &&ev) -> bool {
               using T = std::decay_t<decltype(ev)>;
               if constexpr (std::is_same_v<
                                 T, TimedScheduler<AtbOutEvent>::EmitEvent>) {
+                if (ev.ev.valueless_by_exception()) {
+                  return false;
+                }
+
                 return std::visit(
                     [id](auto &&out_ev) -> bool {
                       using OutT = std::decay_t<decltype(out_ev)>;

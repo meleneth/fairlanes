@@ -4,6 +4,7 @@ namespace fl::monster {
 
 void register_all_monsters() {
   register_field_mouse();
+  register_woodland_critters();
   register_honey_badger();
   // register_wolf();
   // register_slime();

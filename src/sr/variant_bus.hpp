@@ -40,6 +40,10 @@ public:
   }
 
   void emit(const Variant &v) {
+    if (v.valueless_by_exception()) {
+      return;
+    }
+
     std::visit(
         [&](const auto &e) {
           using T = std::decay_t<decltype(e)>;

@@ -69,7 +69,9 @@ public:
   std::string name_tag_for(entt::handle target);
 
   // ---- ComponentBase -------------------------------------------------------
+  bool OnEvent(ftxui::Event event) override;
   ftxui::Element Render() override;
+  void set_focused(bool focused) noexcept;
 
 private:
   // parsing
@@ -82,5 +84,7 @@ private:
   std::deque<Element> log;
   Options opts;
   StyleMap style_map;
+  int cursor_{0};
+  bool focused_{false};
 };
 } // namespace fl::widgets

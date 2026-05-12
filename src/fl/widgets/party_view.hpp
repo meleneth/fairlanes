@@ -22,7 +22,7 @@ public:
   ftxui::Element Render() override;
 
 private:
-  enum class FocusPane { inventory, player_details };
+  enum class FocusPane { inventory, player_details, party_log };
 
   ftxui::Element render_party();
   void set_focus(FocusPane focus);

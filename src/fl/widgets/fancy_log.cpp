@@ -95,13 +95,79 @@ bool FancyLog::empty() const { return log.empty(); }
 // ---- ComponentBase --------------------------------------------------------
 
 ftxui::Element FancyLog::Render() {
-  Element content = vbox(Elements(log.begin(), log.end()));
+  cursor_ =
+      std::clamp(cursor_, 0, std::max(0, static_cast<int>(log.size()) - 1));
 
-  content =
-      content | yframe | focusPositionRelative(0.0f, 1.0f) | vscroll_indicator;
+  Elements lines(log.begin(), log.end());
+  if (!lines.empty()) {
+    lines[static_cast<std::size_t>(cursor_)] =
+        lines[static_cast<std::size_t>(cursor_)] | focusPosition(0, cursor_);
+    if (focused_) {
+      lines[static_cast<std::size_t>(cursor_)] =
+          lines[static_cast<std::size_t>(cursor_)] | inverted;
+    }
+  }
+
+  Element content = vbox(std::move(lines));
+
+  if (opts.autoscroll) {
+    content = content | focusPositionRelative(0.0f, 1.0f);
+  }
+
+  content = content | yframe | vscroll_indicator;
 
   return content | flex;
 }
+
+bool FancyLog::OnEvent(ftxui::Event event) {
+  if (log.empty()) {
+    cursor_ = 0;
+    return false;
+  }
+
+  const int max_cursor = static_cast<int>(log.size()) - 1;
+
+  if (event == ftxui::Event::ArrowDown ||
+      event == ftxui::Event::Character("j")) {
+    opts.autoscroll = false;
+    cursor_ = std::min(cursor_ + 1, max_cursor);
+    return true;
+  }
+
+  if (event == ftxui::Event::ArrowUp || event == ftxui::Event::Character("k")) {
+    opts.autoscroll = false;
+    cursor_ = std::max(cursor_ - 1, 0);
+    return true;
+  }
+
+  if (event == ftxui::Event::PageDown) {
+    opts.autoscroll = false;
+    cursor_ = std::min(cursor_ + 8, max_cursor);
+    return true;
+  }
+
+  if (event == ftxui::Event::PageUp) {
+    opts.autoscroll = false;
+    cursor_ = std::max(cursor_ - 8, 0);
+    return true;
+  }
+
+  if (event == ftxui::Event::End) {
+    opts.autoscroll = true;
+    cursor_ = max_cursor;
+    return true;
+  }
+
+  if (event == ftxui::Event::Home) {
+    opts.autoscroll = false;
+    cursor_ = 0;
+    return true;
+  }
+
+  return false;
+}
+
+void FancyLog::set_focused(bool focused) noexcept { focused_ = focused; }
 
 // ---- internals ------------------------------------------------------------
 
@@ -177,6 +243,10 @@ void FancyLog::push(Element el) {
 
   if (log.size() > opts.max_entries)
     log.pop_front();
+
+  if (opts.autoscroll) {
+    cursor_ = static_cast<int>(log.size()) - 1;
+  }
 }
 
 } // namespace fl::widgets

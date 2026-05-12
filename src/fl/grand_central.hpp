@@ -19,6 +19,11 @@
 
 namespace fl {
 
+struct GrandCentralRunOptions {
+  bool no_ui{false};
+  int overdrive{1};
+};
+
 class GrandCentral {
 public:
   GrandCentral(uint8_t num_accounts, uint8_t num_parties_per_account,
@@ -71,7 +76,7 @@ public:
 
   ftxui::Component root_component();
   void innervate_event_system();
-  void main_loop();
+  void main_loop(GrandCentralRunOptions opts = {});
 
 private:
   // ---- owned state ----

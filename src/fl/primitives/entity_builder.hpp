@@ -5,10 +5,12 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/monster_identity.hpp"
+#include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/monsters/monster_kind.hpp"
 #include "fl/monsters/monster_registry.hpp"
+#include "fl/monsters/monster_skills.hpp"
 #include "fl/primitives/component_builder.hpp"
 
 namespace fl::primitives {
@@ -66,6 +68,8 @@ public:
     }
 
     it->second(*this);
+    with(fl::ecs::components::SkillSlots::with_known(
+        fl::monster::known_skill_for(kind)));
     return *this;
   }
 };

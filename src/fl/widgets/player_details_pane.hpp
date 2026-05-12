@@ -22,6 +22,7 @@ private:
   entt::registry &reg_;
   fl::primitives::PartyData &party_;
   int cursor_{0};
+  int scroll_cursor_{0};
   bool focused_{false};
 };
 

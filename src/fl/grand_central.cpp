@@ -15,6 +15,7 @@
 #include "fl/ecs/components/is_account.hpp"
 #include "fl/ecs/components/is_party.hpp"
 #include "fl/ecs/components/party_member.hpp"
+#include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/systems/special_festival_event.hpp"
 #include "fl/monsters/register_monsters.hpp"
 #include "fl/primitives/account_data.hpp"
@@ -99,6 +100,7 @@ void GrandCentral::_create_initial_accounts() {
         reg_.emplace<fl::ecs::components::PartyMember>(
             member.member_id(), std::move(ectx2), member.name(),
             party_data.party_id());
+        reg_.emplace<fl::ecs::components::SkillSlots>(member.member_id());
 
         ++player_index;
       }
@@ -121,7 +123,6 @@ GrandCentral::GrandCentral(uint8_t num_accounts,
   fl::monster::register_all_monsters();
   _create_initial_accounts();
   bootstrap_logs();
-  build_ui();
 }
 
 GrandCentral::~GrandCentral() { fancy_log_sink_.reset(); }
@@ -142,7 +143,36 @@ GrandCentral::account_context(fl::primitives::AccountData &account) {
   return fl::context::AccountCtx{reg_, rng_, account};
 }
 
-void GrandCentral::main_loop() {
+void GrandCentral::main_loop(GrandCentralRunOptions opts) {
+  world_clock_.set_beat_rate_multiplier(opts.overdrive);
+
+  if (opts.no_ui) {
+    std::atomic<bool> running{true};
+
+    std::jthread update_ticker([&](std::stop_token st) {
+      using clock = std::chrono::steady_clock;
+      auto next_tick = clock::now();
+
+      while (!st.stop_requested() && running.load(std::memory_order_relaxed)) {
+        const auto frame_dt = std::chrono::duration_cast<clock::duration>(
+            std::chrono::duration<double>(
+                1.0 / world_clock_.effective_beats_per_wall_second()));
+        {
+          std::scoped_lock lock(frame_mutex_);
+          world_clock_.advance_beat();
+          gc_beat_bus_.emit(seerin::Beat{});
+        }
+        next_tick += frame_dt;
+        std::this_thread::sleep_until(next_tick);
+      }
+    });
+
+    update_ticker.join();
+    return;
+  }
+
+  build_ui();
+
   using namespace ftxui;
 
   ScreenInteractive screen = ScreenInteractive::Fullscreen();
