@@ -256,6 +256,16 @@ Best current example: `EncounterData::schedule_thump_sequence(...)`.
 - damage applies at beat 60
 - the turn finishes at beat 71
 
+Dire Bleed is the current best bespoke example for eventful status effects and
+self-cleaning subscriptions. Study `EncounterData::schedule_eviscerate_sequence`,
+`EncounterData::schedule_dire_bleed_tick`, `EncounterData::bind_dire_bleed_cleanup`,
+and `EncounterData::clear_dire_bleed` in `src/fl/primitives/encounter_data.cpp`,
+plus `src/fl/ecs/components/dire_bleed.hpp`, before adding another lingering
+combat status. It shows the pattern of scheduling repeated beat work, applying
+an ECS status and HP-bar visual override, listening for both player death and
+left-combat events, and letting either event remove both subscriptions and
+clear the status/visual marker.
+
 The fade helper, `schedule_reek_fade(...)`, schedules a sequence of
 `ColorOverride` updates using `ftxui::Color::Interpolate(...)`, then schedules a
 clear on `end_beat + 1`. This is the best current pattern for "show the intent
