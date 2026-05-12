@@ -11,6 +11,7 @@
 #include "fl/loot/global_loot_table.hpp"
 #include "fl/primitives/damage.hpp"
 #include "fl/primitives/party_data.hpp"
+#include "fl/widgets/equipment_label.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "grant_xp_to_party.hpp"
 #include "take_damage.hpp"
@@ -65,8 +66,10 @@ void TakeDamage::commit(fl::context::AttackCtx &ctx) {
         const auto &equipment =
             party_ctx.reg().get<fl::ecs::components::Equipment>(item);
 
-        ctx.log().append_markup(
-            fmt::format("[ok](Loot found:) [ability]({})", equipment.name()));
+        ctx.log().append(ftxui::hbox({
+            ftxui::text("Loot found: ") | fl::lospec500::at(19),
+            fl::widgets::equipment_name_label(equipment),
+        }));
         party_member->party().party_data().add_item(item);
       }
     }
