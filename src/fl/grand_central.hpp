@@ -51,7 +51,7 @@ public:
     return accounts_;
   }
 
-  fl::widgets::FancyLog &fancy_log() noexcept { return *fancy_log_; }
+  fl::widgets::FancyLog &game_log() noexcept { return *game_log_; }
   fl::primitives::FancyLogSink &fancy_log_sink() noexcept {
     return *fancy_log_sink_;
   }
@@ -82,7 +82,7 @@ private:
 
   std::deque<fl::primitives::AccountData> accounts_;
 
-  std::unique_ptr<fl::widgets::FancyLog> fancy_log_;
+  std::unique_ptr<fl::widgets::FancyLog> game_log_;
   std::unique_ptr<fl::primitives::FancyLogSink> fancy_log_sink_;
 
   seerin::BeatBus gc_beat_bus_;

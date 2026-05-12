@@ -111,9 +111,9 @@ GrandCentral::GrandCentral(uint8_t num_accounts,
     : num_accounts_(num_accounts),
       num_parties_per_account_(num_parties_per_account),
       num_members_per_party_(num_members_per_party), reg_(), rng_(), log_bus_(),
-      logger_{log_bus_}, fancy_log_(std::make_unique<fl::widgets::FancyLog>()),
+      logger_{log_bus_}, game_log_(std::make_unique<fl::widgets::FancyLog>()),
       fancy_log_sink_(std::make_unique<fl::primitives::FancyLogSink>(
-          log_bus_, *fancy_log_, fl::primitives::LogLevel::trace)) {
+          log_bus_, *game_log_, fl::primitives::LogLevel::trace)) {
   fl::monster::register_all_monsters();
   _create_initial_accounts();
   bootstrap_logs();
@@ -230,7 +230,7 @@ void GrandCentral::main_loop() {
 
 void GrandCentral::bootstrap_logs() {
 
-  log_wall_ = ftxui::Make<fl::widgets::LogWall>(*fancy_log_, accounts_);
+  log_wall_ = ftxui::Make<fl::widgets::LogWall>(*game_log_, accounts_);
 
   logger_.info("[player_name](GrandCentral) online.");
   logger_.debug("Debug: registry currently empty.");
@@ -249,11 +249,11 @@ void GrandCentral::innervate_event_system() {
 }
 
 void GrandCentral::build_ui() {
-  log_wall_ = ftxui::Make<fl::widgets::LogWall>(*fancy_log_, accounts_);
+  log_wall_ = ftxui::Make<fl::widgets::LogWall>(*game_log_, accounts_);
 
   auto &account = accounts_.front();
 
   root_component_ = ftxui::Make<fl::widgets::RootComponent>(
-      fl::context::AccountCtx{reg_, rng_, account});
+      fl::context::AccountCtx{reg_, rng_, account}, accounts_, *game_log_);
 }
 } // namespace fl

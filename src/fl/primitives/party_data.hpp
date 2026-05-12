@@ -6,6 +6,7 @@
 #include <memory>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -37,6 +38,7 @@ public:
 
   // ---- accessors ----
   entt::entity party_id() const noexcept { return party_id_; }
+  std::string_view name() const noexcept { return name_; }
 
   fl::widgets::FancyLog &log() const { return *log_; }
   bool has_log() const noexcept { return static_cast<bool>(log_); }
