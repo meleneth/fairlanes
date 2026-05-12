@@ -1,24 +1,24 @@
 #include "party_view.hpp"
 
-#include <algorithm>
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
 #include <entt/entt.hpp>
+#include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
 
-#include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/is_account.hpp"
-#include "fl/ecs/components/stats.hpp"
 #include "fl/lospec500.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/encounter_data.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/widgets/combatant.hpp"
+#include "fl/widgets/inventory_list.hpp"
 #include "fl/widgets/party_status.hpp"
+#include "fl/widgets/player_details_pane.hpp"
 
 namespace fl::widgets {
 
@@ -32,7 +32,18 @@ std::string entity_label(entt::entity entity) {
 } // namespace
 
 PartyView::PartyView(fl::context::AccountCtx context, std::size_t party_index)
-    : ctx_(std::move(context)), party_index_(party_index) {}
+    : ctx_(std::move(context)), party_index_(party_index) {
+  if (party_index_ >= ctx_.account_data().parties().size()) {
+    return;
+  }
+
+  auto &party = ctx_.account_data().party(party_index_);
+  inventory_list_ = ftxui::Make<InventoryList>(ctx_.reg(), party);
+  player_details_ = ftxui::Make<PlayerDetailsPane>(ctx_.reg(), party);
+  Add(inventory_list_);
+  Add(player_details_);
+  set_focus(FocusPane::inventory);
+}
 
 bool PartyView::OnEvent(ftxui::Event event) {
   auto &parties = ctx_.account_data().parties();
@@ -40,31 +51,24 @@ bool PartyView::OnEvent(ftxui::Event event) {
     return false;
   }
 
-  const int item_count = static_cast<int>(parties[party_index_].items().size());
-  if (item_count <= 0) {
-    inventory_cursor_ = 0;
-    return false;
-  }
-
-  if (event == ftxui::Event::ArrowDown ||
-      event == ftxui::Event::Character("j")) {
-    inventory_cursor_ = std::min(inventory_cursor_ + 1, item_count - 1);
+  if (event == ftxui::Event::Tab) {
+    set_focus(focus_ == FocusPane::inventory ? FocusPane::player_details
+                                             : FocusPane::inventory);
     return true;
   }
 
-  if (event == ftxui::Event::ArrowUp || event == ftxui::Event::Character("k")) {
-    inventory_cursor_ = std::max(inventory_cursor_ - 1, 0);
+  if (event == ftxui::Event::TabReverse) {
+    set_focus(focus_ == FocusPane::inventory ? FocusPane::player_details
+                                             : FocusPane::inventory);
     return true;
   }
 
-  if (event == ftxui::Event::PageDown) {
-    inventory_cursor_ = std::min(inventory_cursor_ + 8, item_count - 1);
-    return true;
+  if (focus_ == FocusPane::inventory && inventory_list_) {
+    return inventory_list_->OnEvent(event);
   }
 
-  if (event == ftxui::Event::PageUp) {
-    inventory_cursor_ = std::max(inventory_cursor_ - 8, 0);
-    return true;
+  if (focus_ == FocusPane::player_details && player_details_) {
+    return player_details_->OnEvent(event);
   }
 
   return false;
@@ -92,7 +96,9 @@ ftxui::Element PartyView::Render() {
   return hbox({
              render_party() | flex,
              separator(),
-             render_inventory() | size(WIDTH, GREATER_THAN, 30) | flex,
+             inventory_list_ ? inventory_list_->Render() |
+                                   size(WIDTH, GREATER_THAN, 30) | flex
+                             : text("No inventory.") | flex,
          }) |
          bgcolor(fl::lospec500::color_at(0)) |
          color(fl::lospec500::color_at(32));
@@ -155,50 +161,27 @@ ftxui::Element PartyView::render_party() {
   }
 
   rows.push_back(separator());
-  rows.push_back(party.log().Render() | yframe | vscroll_indicator | flex);
+  rows.push_back(hbox({
+                     party.log().Render() | yframe | vscroll_indicator | flex,
+                     separator(),
+                     player_details_ ? player_details_->Render() |
+                                           size(WIDTH, GREATER_THAN, 28) |
+                                           size(WIDTH, LESS_THAN, 44)
+                                     : text("No player details."),
+                 }) |
+                 flex);
 
   return vbox(std::move(rows)) | flex;
 }
 
-ftxui::Element PartyView::render_inventory() {
-  using namespace ftxui;
-
-  auto &party = ctx_.account_data().party(party_index_);
-  auto items = party.items();
-  const int item_count = static_cast<int>(items.size());
-  if (item_count <= 0) {
-    inventory_cursor_ = 0;
-    return window(text("Inventory"), text("No items."));
+void PartyView::set_focus(FocusPane focus) {
+  focus_ = focus;
+  if (inventory_list_) {
+    inventory_list_->set_focused(focus_ == FocusPane::inventory);
   }
-
-  inventory_cursor_ = std::clamp(inventory_cursor_, 0, item_count - 1);
-
-  Elements lines;
-  lines.reserve(items.size());
-
-  for (int i = 0; i < item_count; ++i) {
-    const auto item = items[static_cast<std::size_t>(i)];
-    std::string label = entity_label(item);
-
-    if (auto *equipment =
-            ctx_.reg().try_get<fl::ecs::components::Equipment>(item)) {
-      label = std::string(equipment->name()) + " [" +
-              std::string(fl::ecs::components::to_string(equipment->slot())) +
-              "]";
-    } else if (auto *stats =
-                   ctx_.reg().try_get<fl::ecs::components::Stats>(item)) {
-      label = stats->name_;
-    }
-
-    auto line = text(label);
-    if (i == inventory_cursor_) {
-      line = line | inverted | focusPosition(0, i);
-    }
-    lines.push_back(line);
+  if (player_details_) {
+    player_details_->set_focused(focus_ == FocusPane::player_details);
   }
-
-  return window(text("Inventory"), vbox(std::move(lines)) | yframe |
-                                       vscroll_indicator | flex);
 }
 
 } // namespace fl::widgets

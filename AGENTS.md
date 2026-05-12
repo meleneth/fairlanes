@@ -1,3 +1,15 @@
+# Local Clean Code Conventions
+
+- Keep UI components focused on rendering, event routing, and view state. Command parsing and command behavior should live in a dedicated class, with widgets wiring UI effects through small callbacks.
+- Prefer data-oriented model classes for account, party, inventory, and encounter state. Views should read from those models rather than duplicating state.
+- When adding a new screen, keep navigation decisions at the root/shell layer and keep each screen responsible for one presentation concern.
+- Reuse existing widgets for repeated presentation, especially combatants, party status, logs, and inventory-style rows.
+- Add narrow seams only where they remove real coupling. Avoid burying application behavior inside FTXUI render methods.
+
+# Local Build
+
+- Use the existing `build-linux-debug` tree for normal compile and test checks: `cmake --build build-linux-debug` and `ctest --test-dir build-linux-debug --output-on-failure`.
+
 # Fairlanes Agent Notes
 
 These notes summarize the repo Markdown as of 2026-05-11. Keep them current when
@@ -26,30 +38,13 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-README also documents:
 
-```sh
-mkdir build
-cd build
-cmake ..
-cmake --build .
-```
-
-On Linux, parallel build is commonly:
-
-```sh
-cmake --build . -- -j16
-```
 
 Formatting target mentioned by README:
 
 ```sh
 cmake --build . --target clang-format
 ```
-
-Development docs currently target Windows with MSYS2 UCRT64 and VS Code. Third
-party libraries are fetched by CMake/CPM/FetchContent; do not ask contributors to
-install project libraries manually unless the build files say otherwise.
 
 Tracy profiling is integrated. Windows may show a network access warning when the
 game runs because Tracy opens a connection for live profiling.

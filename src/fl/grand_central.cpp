@@ -213,8 +213,6 @@ void GrandCentral::main_loop() {
 
       {
         std::scoped_lock lock(frame_mutex_);
-        logger_.info("[player_name](Beat) event.");
-
         gc_beat_bus_.emit(seerin::Beat{});
       }
 

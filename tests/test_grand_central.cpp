@@ -4,6 +4,8 @@
 #include <entt/entt.hpp>
 
 #include "fl/context.hpp"
+#include "fl/ecs/components/closet.hpp"
+#include "fl/ecs/components/party_member.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/primitives/party_data.hpp"
 
@@ -71,4 +73,29 @@ TEST_CASE("GrandCentral context helpers work",
   // compiles and runs Log: append something trivial (assuming FancyLog has an
   // Append-like API or operator()) If your API is different, adjust this block
   // accordingly. For now we just ensure the log reference is obtainable.
+}
+
+TEST_CASE("GrandCentral creates each player with a gear closet",
+          "[grand_central][closet]") {
+  fl::GrandCentral gc{2, 3, 5};
+  auto &reg = gc.reg();
+
+  for (auto &account : gc.accounts()) {
+    for (auto &party : account.parties()) {
+      for (auto &member_data : party.members()) {
+        auto member = member_data.member_id();
+        REQUIRE(reg.valid(member));
+
+        auto *party_member =
+            reg.try_get<fl::ecs::components::PartyMember>(member);
+        REQUIRE(party_member != nullptr);
+
+        auto closet = party_member->closet_entity_id();
+        const bool has_closet = closet != entt::null;
+        REQUIRE(has_closet);
+        REQUIRE(reg.valid(closet));
+        REQUIRE(reg.all_of<fl::ecs::components::Closet>(closet));
+      }
+    }
+  }
 }

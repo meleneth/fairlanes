@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <functional>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -76,6 +77,7 @@ public:
     return EquipmentBuilder{
         .slot = *slot,
         .armor_kind = *armor_kind,
+        .tier = tier,
         .name = generated_name(*slot, *armor_kind, tier),
     };
   }

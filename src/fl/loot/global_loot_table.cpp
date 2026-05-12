@@ -114,6 +114,7 @@ LootTable global_loot_table() {
                   EquipmentBuilder{
                       .slot = EquipmentSlot::boots,
                       .armor_kind = ArmorKind::leather,
+                      .tier = Tier::excellent,
                       .name = "Boots of Damp Authority",
                   },
           },
@@ -123,6 +124,7 @@ LootTable global_loot_table() {
                   EquipmentBuilder{
                       .slot = EquipmentSlot::cape,
                       .armor_kind = ArmorKind::cloth,
+                      .tier = Tier::fine,
                       .name = "Mouse-Nibbled Cape",
                   },
           },
