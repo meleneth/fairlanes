@@ -5,8 +5,9 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/closet.hpp"
-#include "fl/ecs/systems/special_festival_event.hpp"
+#include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
+#include "fl/ecs/systems/special_festival_event.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/primitives/party_data.hpp"
 
@@ -109,5 +110,23 @@ TEST_CASE("GrandCentral starts each party with festival drops",
     REQUIRE(party.items().size() ==
             fl::ecs::systems::SpecialFestivalEvent::kDropsPerParty);
     REQUIRE(party.log().size() == 2);
+
+    bool has_weapon = false;
+    bool has_jewelry = false;
+    for (auto item : party.items()) {
+      const auto &equipment =
+          gc.reg().get<fl::ecs::components::Equipment>(item);
+      has_weapon = has_weapon ||
+                   equipment.slot() == fl::loot::EquipmentSlot::mainhand ||
+                   equipment.slot() == fl::loot::EquipmentSlot::offhand ||
+                   equipment.slot() == fl::loot::EquipmentSlot::knife;
+      has_jewelry = has_jewelry ||
+                    equipment.slot() == fl::loot::EquipmentSlot::necklace ||
+                    equipment.slot() == fl::loot::EquipmentSlot::ring_1 ||
+                    equipment.slot() == fl::loot::EquipmentSlot::ring_2;
+    }
+
+    REQUIRE(has_weapon);
+    REQUIRE(has_jewelry);
   }
 }

@@ -56,16 +56,35 @@ TEST_CASE("PartyGearing equips the same armor kind already being worn",
   auto cloth_helm =
       make_item(reg, fl::loot::EquipmentSlot::helm, fl::loot::ArmorKind::cloth,
                 fl::loot::Tier::plain, "Plain Cloth Helm");
+  auto leather_mainhand = make_item(
+      reg, fl::loot::EquipmentSlot::mainhand, fl::loot::ArmorKind::leather,
+      fl::loot::Tier::mythic, "Mythic Leather Mainhand");
+  auto cloth_mainhand =
+      make_item(reg, fl::loot::EquipmentSlot::mainhand,
+                fl::loot::ArmorKind::cloth, fl::loot::Tier::fine,
+                "Fine Cloth Mainhand");
+  auto necklace =
+      make_item(reg, fl::loot::EquipmentSlot::necklace,
+                fl::loot::ArmorKind::none, fl::loot::Tier::excellent,
+                "Excellent Necklace");
   party.add_item(leather_helm);
   party.add_item(cloth_helm);
+  party.add_item(leather_mainhand);
+  party.add_item(cloth_mainhand);
+  party.add_item(necklace);
 
   const auto previous_log_size = party.log().size();
   fl::ecs::systems::PartyGearing::commit(party_ctx);
 
   REQUIRE(closet.helm == cloth_helm);
+  REQUIRE(closet.mainhand == cloth_mainhand);
+  REQUIRE(closet.necklace == necklace);
   REQUIRE(inventory_contains(party, leather_helm));
+  REQUIRE(inventory_contains(party, leather_mainhand));
   REQUIRE_FALSE(inventory_contains(party, cloth_helm));
-  REQUIRE(party.log().size() == previous_log_size + 1);
+  REQUIRE_FALSE(inventory_contains(party, cloth_mainhand));
+  REQUIRE_FALSE(inventory_contains(party, necklace));
+  REQUIRE(party.log().size() == previous_log_size + 3);
 }
 
 TEST_CASE("PartyGearing upgrades only loose normal gear",
@@ -87,6 +106,12 @@ TEST_CASE("PartyGearing upgrades only loose normal gear",
     party.add_item(make_item(reg, fl::loot::EquipmentSlot::belt,
                              fl::loot::ArmorKind::plate,
                              fl::loot::Tier::mythic, "Mythic Plate Belt"));
+    party.add_item(make_item(reg, fl::loot::EquipmentSlot::mainhand,
+                             fl::loot::ArmorKind::cloth,
+                             fl::loot::Tier::plain, "Plain Cloth Mainhand"));
+    party.add_item(make_item(reg, fl::loot::EquipmentSlot::ring_1,
+                             fl::loot::ArmorKind::none,
+                             fl::loot::Tier::plain, "Plain Ring"));
   }
 
   const auto previous_log_size = party.log().size();
@@ -95,6 +120,8 @@ TEST_CASE("PartyGearing upgrades only loose normal gear",
   int sturdy_gloves = 0;
   int special_capes = 0;
   int mythic_belts = 0;
+  int sturdy_mainhands = 0;
+  int sturdy_rings = 0;
   for (auto item : party.items()) {
     const auto &equipment = reg.get<fl::ecs::components::Equipment>(item);
     if (equipment.slot() == fl::loot::EquipmentSlot::gloves &&
@@ -109,11 +136,23 @@ TEST_CASE("PartyGearing upgrades only loose normal gear",
         equipment.tier() == fl::loot::Tier::mythic) {
       ++mythic_belts;
     }
+    if (equipment.slot() == fl::loot::EquipmentSlot::mainhand &&
+        equipment.armor_kind() == fl::loot::ArmorKind::cloth &&
+        equipment.tier() == fl::loot::Tier::sturdy) {
+      ++sturdy_mainhands;
+    }
+    if (equipment.slot() == fl::loot::EquipmentSlot::ring_1 &&
+        equipment.armor_kind() == fl::loot::ArmorKind::none &&
+        equipment.tier() == fl::loot::Tier::sturdy) {
+      ++sturdy_rings;
+    }
   }
 
   REQUIRE(sturdy_gloves == 1);
   REQUIRE(special_capes == 3);
   REQUIRE(mythic_belts == 3);
-  REQUIRE(party.items().size() == 7);
-  REQUIRE(party.log().size() == previous_log_size + 1);
+  REQUIRE(sturdy_mainhands == 1);
+  REQUIRE(sturdy_rings == 1);
+  REQUIRE(party.items().size() == 9);
+  REQUIRE(party.log().size() == previous_log_size + 3);
 }

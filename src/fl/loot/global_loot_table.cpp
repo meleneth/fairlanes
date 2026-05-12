@@ -30,9 +30,20 @@ static std::string slot_name(EquipmentSlot slot) {
     return "Sleeves";
   case EquipmentSlot::cape:
     return "Cape";
-  default:
-    return "Equipment";
+  case EquipmentSlot::necklace:
+    return "Necklace";
+  case EquipmentSlot::ring_1:
+  case EquipmentSlot::ring_2:
+    return "Ring";
+  case EquipmentSlot::mainhand:
+    return "Mainhand";
+  case EquipmentSlot::offhand:
+    return "Offhand";
+  case EquipmentSlot::knife:
+    return "Knife";
   }
+
+  return "Equipment";
 }
 
 static std::string kind_name(ArmorKind kind) {
@@ -71,6 +82,10 @@ static std::string tier_prefix(Tier tier) {
 
 std::string LootTable::generated_name(EquipmentSlot slot, ArmorKind kind,
                                       Tier tier) {
+  if (kind == ArmorKind::none) {
+    return tier_prefix(tier) + " " + slot_name(slot);
+  }
+
   return tier_prefix(tier) + " " + kind_name(kind) + " " + slot_name(slot);
 }
 
@@ -79,8 +94,10 @@ LootTable global_loot_table() {
       Weight{25}, // 25% chance anything drops
 
       WeightedTable<ItemKind>{{
-          {Weight{80}, ItemKind::armor}, {Weight{15}, ItemKind::special},
-          // weapon/jewelry can come later
+          {Weight{60}, ItemKind::armor},
+          {Weight{20}, ItemKind::weapon},
+          {Weight{15}, ItemKind::jewelry},
+          {Weight{5}, ItemKind::special},
       }},
 
       WeightedTable<EquipmentSlot>{{
@@ -99,6 +116,18 @@ LootTable global_loot_table() {
           {Weight{35}, ArmorKind::leather},
           {Weight{25}, ArmorKind::plate},
       }},
+      WeightedTable<EquipmentSlot>{{
+          {Weight{45}, EquipmentSlot::mainhand},
+          {Weight{35}, EquipmentSlot::offhand},
+          {Weight{20}, EquipmentSlot::knife},
+      }},
+
+      WeightedTable<EquipmentSlot>{{
+          {Weight{34}, EquipmentSlot::necklace},
+          {Weight{33}, EquipmentSlot::ring_1},
+          {Weight{33}, EquipmentSlot::ring_2},
+      }},
+
       UpgradeTable<Tier>{{
           {Weight{35}, Tier::plain},
           {Weight{25}, Tier::sturdy},

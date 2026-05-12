@@ -32,6 +32,33 @@ constexpr std::array<EquipmentSlot, 8> kArmorSlots{
     EquipmentSlot::sleeves, EquipmentSlot::cape,
 };
 
+constexpr std::array<EquipmentSlot, 3> kWeaponSlots{
+    EquipmentSlot::mainhand,
+    EquipmentSlot::offhand,
+    EquipmentSlot::knife,
+};
+
+constexpr std::array<EquipmentSlot, 3> kJewelrySlots{
+    EquipmentSlot::necklace,
+    EquipmentSlot::ring_1,
+    EquipmentSlot::ring_2,
+};
+
+constexpr std::array<EquipmentSlot, 14> kUpgradableSlots{
+    EquipmentSlot::chest,    EquipmentSlot::helm,     EquipmentSlot::pants,
+    EquipmentSlot::belt,     EquipmentSlot::boots,    EquipmentSlot::gloves,
+    EquipmentSlot::sleeves,  EquipmentSlot::cape,     EquipmentSlot::mainhand,
+    EquipmentSlot::offhand,  EquipmentSlot::knife,    EquipmentSlot::necklace,
+    EquipmentSlot::ring_1,   EquipmentSlot::ring_2,
+};
+
+constexpr std::array<ArmorKind, 4> kUpgradableKinds{
+    ArmorKind::none,
+    ArmorKind::cloth,
+    ArmorKind::leather,
+    ArmorKind::plate,
+};
+
 entt::entity &slot_ref(Closet &closet, EquipmentSlot slot) {
   switch (slot) {
   case EquipmentSlot::chest:
@@ -341,17 +368,65 @@ void equip_party(fl::context::PartyCtx &ctx,
     if (!preferred_kind) {
       preferred_kind = best_available_armor_kind(reg, inventory);
     }
-    if (!preferred_kind) {
-      continue;
+
+    if (preferred_kind) {
+      for (auto slot : kArmorSlots) {
+        auto &worn = slot_ref(closet, slot);
+        const auto *current =
+            worn == entt::null ? nullptr : reg.try_get<Equipment>(worn);
+        auto best_index =
+            find_best_inventory_item(reg, inventory, slot, *preferred_kind,
+                                     current);
+        if (!best_index) {
+          continue;
+        }
+
+        const auto next_item = inventory[*best_index];
+        const auto &next_equipment = reg.get<Equipment>(next_item);
+        inventory.erase(inventory.begin() +
+                        static_cast<std::ptrdiff_t>(*best_index));
+        if (worn != entt::null) {
+          inventory.push_back(worn);
+        }
+        worn = next_item;
+
+        ctx.log().append_markup(fmt::format(
+            "[player_name]({}) equipped [item]({}) in {}.", member.name(),
+            next_equipment.name(), fl::ecs::components::to_string(slot)));
+      }
+
+      for (auto slot : kWeaponSlots) {
+        auto &worn = slot_ref(closet, slot);
+        const auto *current =
+            worn == entt::null ? nullptr : reg.try_get<Equipment>(worn);
+        auto best_index =
+            find_best_inventory_item(reg, inventory, slot, *preferred_kind,
+                                     current);
+        if (!best_index) {
+          continue;
+        }
+
+        const auto next_item = inventory[*best_index];
+        const auto &next_equipment = reg.get<Equipment>(next_item);
+        inventory.erase(inventory.begin() +
+                        static_cast<std::ptrdiff_t>(*best_index));
+        if (worn != entt::null) {
+          inventory.push_back(worn);
+        }
+        worn = next_item;
+
+        ctx.log().append_markup(fmt::format(
+            "[player_name]({}) equipped [item]({}) in {}.", member.name(),
+            next_equipment.name(), fl::ecs::components::to_string(slot)));
+      }
     }
 
-    for (auto slot : kArmorSlots) {
+    for (auto slot : kJewelrySlots) {
       auto &worn = slot_ref(closet, slot);
       const auto *current =
           worn == entt::null ? nullptr : reg.try_get<Equipment>(worn);
-      auto best_index =
-          find_best_inventory_item(reg, inventory, slot, *preferred_kind,
-                                   current);
+      auto best_index = find_best_inventory_item(
+          reg, inventory, slot, ArmorKind::none, current);
       if (!best_index) {
         continue;
       }
@@ -380,8 +455,8 @@ void upgrade_inventory(fl::context::PartyCtx &ctx,
   while (upgraded) {
     upgraded = false;
 
-    for (auto slot : kArmorSlots) {
-      for (auto kind : {ArmorKind::cloth, ArmorKind::leather, ArmorKind::plate}) {
+    for (auto slot : kUpgradableSlots) {
+      for (auto kind : kUpgradableKinds) {
         for (auto tier : {Tier::worn, Tier::plain, Tier::sturdy, Tier::fine,
                           Tier::excellent, Tier::masterwork}) {
           auto next = next_tier(tier);
