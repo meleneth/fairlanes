@@ -167,6 +167,11 @@ void EncounterData::clear_dire_bleed(entt::entity target) {
   fl::ecs::components::safe_clear_color(reg, target);
   fl::ecs::components::safe_clear_hp_bar_color(reg, target);
   if (reg.valid(target) && reg.any_of<fl::ecs::components::DireBleed>(target)) {
+    // Dire warning: this may run from one of DireBleed's own party-bus
+    // callbacks. Removing the component destroys both ScopedPartyListeners.
+    // eventpp CallbackList supports removal while dispatching by keeping the
+    // current node alive and linked for iteration. Re-check that guarantee if
+    // the bus implementation changes.
     reg.remove<fl::ecs::components::DireBleed>(target);
   }
 }
