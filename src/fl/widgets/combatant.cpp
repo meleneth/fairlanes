@@ -1,5 +1,6 @@
 #include "combatant.hpp"
 
+#include "fl/ecs/components/atb_charge.hpp"
 #include "fl/ecs/components/color_override.hpp"
 #include "fl/ecs/components/hp_bar_color_override.hpp"
 #include "fl/ecs/components/stats.hpp"
@@ -8,8 +9,9 @@
 
 namespace fl::widgets {
 
-Combatant::Combatant(entt::registry &reg_, entt::entity entity_)
-    : reg(reg_), entity(entity_) {}
+Combatant::Combatant(entt::registry &reg_, entt::entity entity_,
+                     bool render_uwu)
+    : reg(reg_), entity(entity_), render_uwu_(render_uwu) {}
 
 ftxui::Element Combatant::Render() {
   using namespace fl::ecs::components;
@@ -68,6 +70,44 @@ ftxui::Element Combatant::Render() {
     hp_line = hp_line | ftxui::color(hp_color->color);
   }
 
+  // Build the uWu (ATB charge) bar if requested
+  std::vector<ftxui::Element> content_lines;
+  content_lines.push_back(std::move(hp_line));
+
+  if (render_uwu_) {
+    auto *atb = reg.try_get<fl::ecs::components::AtbCharge>(entity);
+    if (atb != nullptr) {
+      float uwu_pct = 0.0f;
+      if (atb->max_charge > 0) {
+        uwu_pct = static_cast<float>(atb->charge) /
+                  static_cast<float>(atb->max_charge);
+        if (uwu_pct < 0.0f)
+          uwu_pct = 0.0f;
+        if (uwu_pct > 1.0f)
+          uwu_pct = 1.0f;
+      }
+      int uwu_filled = static_cast<int>(bar_width * uwu_pct);
+      if (uwu_filled < 0)
+        uwu_filled = 0;
+      if (uwu_filled > bar_width)
+        uwu_filled = bar_width;
+      int uwu_empty = bar_width - uwu_filled;
+
+      std::string uwu_bar;
+      uwu_bar.reserve(bar_width);
+      uwu_bar.append(static_cast<std::size_t>(uwu_filled), '#');
+      uwu_bar.append(static_cast<std::size_t>(uwu_empty), '-');
+
+      auto uwu_text = "ATB: [" + uwu_bar + "] " +
+                      std::to_string(atb->charge) + "/" +
+                      std::to_string(atb->max_charge);
+      content_lines.push_back(ftxui::hbox({
+          ftxui::text(uwu_text),
+          ftxui::filler(),
+      }));
+    }
+  }
+
   // Top border labels
   // clang-format off
   ftxui::Element border = ftxui::window(
@@ -79,7 +119,7 @@ ftxui::Element Combatant::Render() {
       ftxui::text(std::to_string(level.level_)) | ftxui::bgcolor(fl::lospec500::color_at(9)) | ftxui::color(fl::lospec500::color_at(15)),
       ftxui::text("]") | ftxui::bgcolor(fl::lospec500::color_at(1)) | ftxui::color(fl::lospec500::color_at(32))
     }),
-    hp_line
+    ftxui::vbox(std::move(content_lines))
   );
   // clang-format on
   

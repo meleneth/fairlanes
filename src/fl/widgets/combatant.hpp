@@ -8,12 +8,14 @@ namespace fl::widgets {
 
 class Combatant : public ftxui::ComponentBase {
 public:
-  Combatant(entt::registry &reg_, entt::entity entity_);
+  Combatant(entt::registry &reg_, entt::entity entity_,
+            bool render_uwu = false);
   ftxui::Element Render() override;
 
 private:
   entt::registry &reg;
   entt::entity entity;
+  bool render_uwu_;
 };
 
 } // namespace fl::widgets

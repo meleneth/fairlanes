@@ -140,7 +140,8 @@ ftxui::Element PartyView::render_party() {
       if (cells.size() >= 5) {
         break;
       }
-      cells.push_back(Combatant{ctx_.reg(), entity}.Render() | xflex);
+      cells.push_back(
+          Combatant{ctx_.reg(), entity, true}.Render() | xflex);
     }
 
     while (cells.size() < 5) {
@@ -154,12 +155,14 @@ ftxui::Element PartyView::render_party() {
     std::vector<Element> cells;
     cells.reserve(5);
 
+    const bool in_combat = party.has_encounter();
     for (const auto &member : party.members()) {
       if (cells.size() >= 5) {
         break;
       }
-      cells.push_back(Combatant{ctx_.reg(), member.member_id()}.Render() |
-                      xflex);
+      cells.push_back(
+          Combatant{ctx_.reg(), member.member_id(), in_combat}.Render() |
+          xflex);
     }
 
     while (cells.size() < 5) {
