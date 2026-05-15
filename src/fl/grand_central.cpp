@@ -165,7 +165,8 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
             std::chrono::duration<double>(
                 1.0 / world_clock_.effective_beats_per_wall_second()));
         TracyPlot("GC.EffectiveBeatRate",
-                  world_clock_.effective_beats_per_wall_second());
+              static_cast<int64_t>(
+                world_clock_.effective_beats_per_wall_second()));
         {
           ZoneScopedN("HeadlessBeatDispatch");
           std::scoped_lock lock(frame_mutex_);
@@ -239,7 +240,8 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
           std::chrono::duration<double>(
               1.0 / world_clock_.effective_beats_per_wall_second()));
       TracyPlot("GC.EffectiveBeatRate",
-                world_clock_.effective_beats_per_wall_second());
+            static_cast<int64_t>(
+              world_clock_.effective_beats_per_wall_second()));
 
       //      const auto now = clock::now();
 
