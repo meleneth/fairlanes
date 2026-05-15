@@ -5,7 +5,7 @@
 
 #include "atb_bus.hpp"
 #include "atb_events.hpp"
-#include "uWu.hpp"
+#include "fl/ecs/components/atb_charge.hpp"
 
 namespace seerin {
 
@@ -14,13 +14,8 @@ namespace sml = boost::sml;
 struct Charging {};
 struct Ready {};
 
-struct AtbCtx {
-  uWu charge{0};
-  uWu max_charge{4800};
-};
-
 struct AtbMachine {
-  AtbCtx &ctx;
+  entt::registry &reg;
   AtbOutBus &out;
   entt::entity id;
 
@@ -28,16 +23,19 @@ struct AtbMachine {
     using namespace sml;
 
     const auto will_be_full = [this] {
-      return (ctx.charge.v + UWU_PER_BEAT.v) >= ctx.max_charge.v;
+      auto &ctx = reg.get<fl::ecs::components::AtbCharge>(id);
+      return (ctx.charge + 80) >= ctx.max_charge;
     };
 
     const auto accrue = [this] {
-      ctx.charge = uWu{ctx.charge.v + UWU_PER_BEAT.v};
+      auto &ctx = reg.get<fl::ecs::components::AtbCharge>(id);
+      ctx.charge += 80;
       // out.emit(AtbOutEvent{BecameReady{id}});
     };
 
     const auto accrue_and_emit_ready = [this] {
-      ctx.charge = uWu{ctx.charge.v + UWU_PER_BEAT.v};
+      auto &ctx = reg.get<fl::ecs::components::AtbCharge>(id);
+      ctx.charge += 80;
       out.emit(AtbOutEvent{BecameReady{id}});
     };
 
@@ -47,7 +45,11 @@ struct AtbMachine {
         state<Charging> + event<BeatTick> / accrue = state<Charging>,
 
         // NEW: consume the turn, reset, start charging again
-        state<Ready> + event<FinishedTurn> / [this] { ctx.charge = uWu{0}; } =
+        state<Ready> + event<FinishedTurn> /
+                [this] {
+                  auto &ctx = reg.get<fl::ecs::components::AtbCharge>(id);
+                  ctx.charge = 0;
+                } =
             state<Charging>);
   };
 };

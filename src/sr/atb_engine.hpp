@@ -21,6 +21,9 @@ public:
   using CanChargeFn = std::function<bool(entt::entity)>;
 
   AtbEngine();
+  explicit AtbEngine(entt::registry &reg);
+
+  void bind_registry(entt::registry &reg) noexcept { reg_ = &reg; }
 
   void set_can_charge_fn(CanChargeFn fn);
   void clear_pending_events();
@@ -49,11 +52,10 @@ private:
   using SysBus = VariantBus<SysEvent>;
 
   struct Combatant {
-    AtbCtx ctx;
     boost::sml::sm<AtbMachine> sm;
 
-    Combatant(entt::entity id, AtbOutBus &out_bus)
-        : ctx{}, sm{AtbMachine{ctx, out_bus, id}} {}
+    Combatant(entt::registry &reg, entt::entity id, AtbOutBus &out_bus)
+      : sm{AtbMachine{reg, out_bus, id}} {}
   };
 
 private:
@@ -91,6 +93,7 @@ private:
   entt::entity active_combatant_{};
   std::vector<entt::entity> ready_queue_;
 
+  entt::registry *reg_{nullptr};
   std::unordered_map<entt::entity, Combatant> combatants_;
   TimedScheduler<AtbOutEvent> scheduler_;
   CanChargeFn can_charge_fn_ = [](entt::entity) { return true; };

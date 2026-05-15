@@ -4,6 +4,8 @@
 #include <tracy/Tracy.hpp>
 #include <utility>
 
+#include "fl/ecs/components/atb_charge.hpp"
+
 namespace seerin {
 
 AtbEngine::AtbEngine() {
@@ -27,6 +29,8 @@ AtbEngine::AtbEngine() {
   h_ready_sub_ = sys_.on<BecameReady>(
       [this](const BecameReady &e) { on_became_ready(e); });
 }
+
+AtbEngine::AtbEngine(entt::registry &reg) : AtbEngine() { bind_registry(reg); }
 
 void AtbEngine::set_can_charge_fn(CanChargeFn fn) {
   if (fn) {
@@ -96,7 +100,12 @@ void AtbEngine::clear_pending_events_for(entt::entity id) {
 
 void AtbEngine::on_add(const AddCombatant &e) {
   ZoneScopedN("AtbEngine::on_add");
-  combatants_.try_emplace(e.id, e.id, buses_.out);
+  if (reg_ == nullptr || !reg_->valid(e.id)) {
+    return;
+  }
+
+  reg_->emplace_or_replace<fl::ecs::components::AtbCharge>(e.id);
+  combatants_.try_emplace(e.id, *reg_, e.id, buses_.out);
   TracyPlot("ATB.Combatants", static_cast<double>(combatants_.size()));
 }
 
@@ -107,16 +116,32 @@ void AtbEngine::on_beat(const Beat &) {
 
   scheduler_.on_beat();
 
+  if (reg_ == nullptr) {
+    return;
+  }
+
   // Tick all combatants that are allowed to charge.
+  std::vector<entt::entity> remove_ids;
   for (auto &[id, c] : combatants_) {
+    if (!reg_->valid(id) ||
+        !reg_->all_of<fl::ecs::components::AtbCharge>(id)) {
+      force_out_of_turn(id);
+      remove_ids.push_back(id);
+      continue;
+    }
+
     if (!can_charge(id)) {
-      c.ctx.charge = uWu{0};
+      reg_->get<fl::ecs::components::AtbCharge>(id).charge = 0;
       c.sm.process_event(FinishedTurn{});
       force_out_of_turn(id);
       continue;
     }
 
     c.sm.process_event(BeatTick{});
+  }
+
+  for (auto id : remove_ids) {
+    combatants_.erase(id);
   }
 
   // After ticking (which may enqueue via BecameReady),
@@ -128,7 +153,10 @@ void AtbEngine::on_finished_turn(const FinishedTurn &e) {
   ZoneScopedN("AtbEngine::on_finished_turn");
   if (active_combatant_ == e.id) {
     active_combatant_ = entt::entity{};
-    combatants_.at(e.id).sm.process_event(FinishedTurn{});
+    auto it = combatants_.find(e.id);
+    if (it != combatants_.end()) {
+      it->second.sm.process_event(FinishedTurn{});
+    }
   }
 }
 

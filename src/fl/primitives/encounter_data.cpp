@@ -88,6 +88,8 @@ bool EncounterData::is_over() { return !has_alive_enemies(); }
 
 EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
     : party_ctx_(party_ctx) {
+  rt_.atb_.bind_registry(party_ctx_->reg());
+
   rt_.atb_.set_can_charge_fn([this](entt::entity entity) {
     auto *stats = party_ctx_->reg().try_get<fl::ecs::components::Stats>(entity);
     return stats && stats->is_alive();

@@ -1,8 +1,7 @@
-#include <iostream>
-
 #include <catch2/catch_test_macros.hpp>
 #include <entt/entt.hpp>
 
+#include "fl/ecs/components/atb_charge.hpp"
 #include "sr/atb_engine.hpp"
 #include "sr/atb_events.hpp"
 
@@ -17,7 +16,8 @@ static void emit_beats(seerin::AtbInBus &in, int n) {
 
 TEST_CASE("ATB: BecameReady enqueues; Beat pumps to BecameActive; FinishedTurn "
           "resets") {
-  seerin::AtbEngine atb;
+  entt::registry reg;
+  seerin::AtbEngine atb{reg};
 
   int became_ready = 0;
   int became_active = 0;
@@ -33,8 +33,10 @@ TEST_CASE("ATB: BecameReady enqueues; Beat pumps to BecameActive; FinishedTurn "
     trace.push_back("active:" + std::to_string((int)e.id));
   });
 
-  auto id = entt::entity{1};
+  auto id = reg.create();
   atb.in().emit(seerin::AtbInEvent{seerin::AddCombatant{id}});
+
+  REQUIRE(reg.all_of<fl::ecs::components::AtbCharge>(id));
 
   emit_beats(atb.in(), 60);
 
@@ -42,11 +44,13 @@ TEST_CASE("ATB: BecameReady enqueues; Beat pumps to BecameActive; FinishedTurn "
   REQUIRE(became_active == 1);
   REQUIRE(atb.active_combatant() == id);
   REQUIRE(atb.ready_queue().empty());
+  REQUIRE(reg.get<fl::ecs::components::AtbCharge>(id).charge == 4800);
 
   // Spend the turn
   atb.in().emit(seerin::AtbInEvent{seerin::FinishedTurn{id}});
 
   REQUIRE(atb.active_combatant() == entt::entity{});
+  REQUIRE(reg.get<fl::ecs::components::AtbCharge>(id).charge == 0);
 
   emit_beats(atb.in(), 60);
 
@@ -64,9 +68,10 @@ TEST_CASE("ATB: BecameReady enqueues; Beat pumps to BecameActive; FinishedTurn "
 }
 
 TEST_CASE("ATB: dead combatants reset charge and do not accumulate until alive") {
-  seerin::AtbEngine atb;
+  entt::registry reg;
+  seerin::AtbEngine atb{reg};
 
-  auto id = entt::entity{7};
+  auto id = reg.create();
   bool alive = true;
   int became_ready = 0;
 
@@ -78,8 +83,11 @@ TEST_CASE("ATB: dead combatants reset charge and do not accumulate until alive")
   atb.in().emit(seerin::AtbInEvent{seerin::AddCombatant{id}});
 
   emit_beats(atb.in(), 30);
+  REQUIRE(reg.get<fl::ecs::components::AtbCharge>(id).charge == 2400);
+
   alive = false;
   emit_beats(atb.in(), 1);
+  REQUIRE(reg.get<fl::ecs::components::AtbCharge>(id).charge == 0);
 
   alive = true;
   emit_beats(atb.in(), 30);
