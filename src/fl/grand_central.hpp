@@ -90,13 +90,12 @@ private:
   fl::primitives::Logger logger_;
   fl::primitives::WorldClock world_clock_;
   std::mutex frame_mutex_;
+  seerin::BeatBus gc_beat_bus_;
 
   std::deque<fl::primitives::AccountData> accounts_;
 
   std::unique_ptr<fl::widgets::FancyLog> game_log_;
   std::unique_ptr<fl::primitives::FancyLogSink> fancy_log_sink_;
-
-  seerin::BeatBus gc_beat_bus_;
   ftxui::Component log_wall_;
   ftxui::Component account_battle_view_;
   ftxui::Component root_component_;

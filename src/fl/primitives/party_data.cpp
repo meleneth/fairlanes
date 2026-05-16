@@ -27,12 +27,13 @@ PartyData::PartyData(entt::entity party_id,
 }
 
 void PartyData::hook_to_beat(seerin::BeatBus &gc_beat_bus) {
-  gc_forward_sub_ = gc_beat_bus.on<seerin::Beat>([this](const seerin::Beat &) {
-    // Beat{} on both sides, as requested:
-    // log_->append_markup("PartyData received beat");
-    party_beat_bus_.emit(seerin::Beat{});
-    party_loop_machine_->beat_event();
-  });
+  gc_forward_sub_ =
+      gc_beat_bus.subscribe<seerin::Beat>([this](const seerin::Beat &) {
+        // Beat{} on both sides, as requested:
+        // log_->append_markup("PartyData received beat");
+        party_beat_bus_.emit(seerin::Beat{});
+        party_loop_machine_->beat_event();
+      });
 }
 
 bool PartyData::needs_town() {
@@ -45,7 +46,8 @@ bool PartyData::all_members_dead() const {
   bool has_members = false;
   for (const auto &member : members_) {
     has_members = true;
-    if (const auto *stats = party_ctx_.reg().try_get<Stats>(member.member_id())) {
+    if (const auto *stats =
+            party_ctx_.reg().try_get<Stats>(member.member_id())) {
       if (stats->hp_ > 0) {
         return false;
       }

@@ -33,8 +33,8 @@ public:
   explicit PartyData(entt::entity party_id,
                      fl::context::AccountCtx &account_ctx, std::string name);
 
-  PartyData(PartyData &&) noexcept = default;
-  PartyData &operator=(PartyData &&) noexcept = default;
+  PartyData(PartyData &&) = delete;
+  PartyData &operator=(PartyData &&) = delete;
 
   PartyData(const PartyData &) = delete;
   PartyData &operator=(const PartyData &) = delete;

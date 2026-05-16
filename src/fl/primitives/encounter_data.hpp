@@ -19,8 +19,8 @@ struct EncounterData {
 public:
   explicit EncounterData(fl::context::PartyCtx *party_ctx);
 
-  EncounterData(EncounterData &&) noexcept = default;
-  EncounterData &operator=(EncounterData &&) noexcept = default;
+  EncounterData(EncounterData &&) = delete;
+  EncounterData &operator=(EncounterData &&) = delete;
 
   EncounterData(const EncounterData &) = delete;
   EncounterData &operator=(const EncounterData &) = delete;
@@ -102,6 +102,7 @@ private:
 
   struct Wiring {
     fl::events::ScopedPartyListener party_beat_;
+    seerin::BecameActiveSub atb_active_;
   } wire_;
 
   struct Lifecycle {

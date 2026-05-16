@@ -5,4 +5,5 @@
 namespace seerin {
 using AtbInBus = VariantBus<AtbInEvent>;
 using AtbOutBus = VariantBus<AtbOutEvent>;
+using BecameActiveSub = AtbOutBus::Subscription<BecameActive>;
 } // namespace seerin

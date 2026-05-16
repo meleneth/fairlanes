@@ -14,30 +14,32 @@ namespace fl::primitives {
 
 void EncounterData::innervate_event_system() {
   ZoneScopedN("EncounterData::innervate_event_system");
-  atb_out().on<seerin::BecameActive>([this](const seerin::BecameActive &ev) {
-    ZoneScopedN("EncounterData::BecameActive");
-    const entt::entity attacker = ev.id;
-    const entt::entity target = target_random_alive_opposition(attacker);
+  wire_.atb_active_ = atb_out().subscribe<seerin::BecameActive>(
+      [this](const seerin::BecameActive &ev) {
+        ZoneScopedN("EncounterData::BecameActive");
+        const entt::entity attacker = ev.id;
+        const entt::entity target = target_random_alive_opposition(attacker);
 
-    if (target == entt::null) {
-      party_ctx_->log().append_markup(fmt::format(
-          "{} did nothing.",
-          party_ctx_->reg().get<fl::ecs::components::Stats>(attacker).name_));
+        if (target == entt::null) {
+          party_ctx_->log().append_markup(fmt::format(
+              "{} did nothing.", party_ctx_->reg()
+                                     .get<fl::ecs::components::Stats>(attacker)
+                                     .name_));
 
-      atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{attacker}});
-      return;
-    }
+          atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{attacker}});
+          return;
+        }
 
-    fl::skills::SkillSequencer sequencer{
-        *party_ctx_, rt_.atb_.scheduler(),
-        [this](entt::entity entity) {
-          atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{entity}});
-        },
-        [this](entt::entity entity) { clear_pending_events_for(entity); }};
-    sequencer.schedule(attacker, target, choose_skill(attacker));
-    TracyPlot("Encounter.PendingEvents",
-              static_cast<double>(rt_.atb_.scheduler().pending()));
-  });
+        fl::skills::SkillSequencer sequencer{
+            *party_ctx_, rt_.atb_.scheduler(),
+            [this](entt::entity entity) {
+              atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{entity}});
+            },
+            [this](entt::entity entity) { clear_pending_events_for(entity); }};
+        sequencer.schedule(attacker, target, choose_skill(attacker));
+        TracyPlot("Encounter.PendingEvents",
+                  static_cast<double>(rt_.atb_.scheduler().pending()));
+      });
 }
 
 fl::skills::SkillId EncounterData::choose_skill(entt::entity attacker) {

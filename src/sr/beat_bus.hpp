@@ -11,6 +11,6 @@ namespace seerin {
 // Restricted, global fanout bus: only Beat ticks.
 using BeatEvent = std::variant<Beat>;
 using BeatBus = VariantBus<BeatEvent>;
-using BeatSub = eventpp::CallbackList<void(const Beat &)>::Handle;
+using BeatSub = BeatBus::Subscription<Beat>;
 
 } // namespace seerin

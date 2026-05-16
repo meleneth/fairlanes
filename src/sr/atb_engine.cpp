@@ -18,15 +18,15 @@ AtbEngine::AtbEngine() {
   h_ready_wire_ = wire<BecameReady>(buses_.out, sys_);
 
   // ---- Internal subscriptions ----
-  h_add_sub_ =
-      sys_.on<AddCombatant>([this](const AddCombatant &e) { on_add(e); });
+  h_add_sub_ = sys_.subscribe<AddCombatant>(
+      [this](const AddCombatant &e) { on_add(e); });
 
-  h_beat_sub_ = sys_.on<Beat>([this](const Beat &e) { on_beat(e); });
+  h_beat_sub_ = sys_.subscribe<Beat>([this](const Beat &e) { on_beat(e); });
 
-  h_fin_sub_ = sys_.on<FinishedTurn>(
+  h_fin_sub_ = sys_.subscribe<FinishedTurn>(
       [this](const FinishedTurn &e) { on_finished_turn(e); });
 
-  h_ready_sub_ = sys_.on<BecameReady>(
+  h_ready_sub_ = sys_.subscribe<BecameReady>(
       [this](const BecameReady &e) { on_became_ready(e); });
 }
 
@@ -60,42 +60,40 @@ void AtbEngine::clear_pending_events_for(entt::entity id) {
   }
 
   // Remove scheduled events for this entity
-  scheduler_.remove_if(
-      [id](const TimedScheduler<AtbOutEvent>::TimedAction &action) {
-        if (action.valueless_by_exception()) {
-          return false;
-        }
+  scheduler_.remove_if([id](const TimedScheduler<AtbOutEvent>::TimedAction
+                                &action) {
+    if (action.valueless_by_exception()) {
+      return false;
+    }
 
-        return std::visit(
-            [id](auto &&ev) -> bool {
-              using T = std::decay_t<decltype(ev)>;
-              if constexpr (std::is_same_v<
-                                T, TimedScheduler<AtbOutEvent>::EmitEvent>) {
-                if (ev.ev.valueless_by_exception()) {
-                  return false;
-                }
-
-                return std::visit(
-                    [id](auto &&out_ev) -> bool {
-                      using OutT = std::decay_t<decltype(out_ev)>;
-                      if constexpr (std::is_same_v<OutT, BecameReady>) {
-                        return out_ev.id == id;
-                      } else if constexpr (std::is_same_v<OutT,
-                                                          BecameActive>) {
-                        return out_ev.id == id;
-                      }
-                      return false;
-                    },
-                    ev.ev);
-              } else if constexpr (std::is_same_v<
-                                       T, TimedScheduler<
-                                              AtbOutEvent>::SmellyCallback>) {
-                return ev.owner == id;
-              }
+    return std::visit(
+        [id](auto &&ev) -> bool {
+          using T = std::decay_t<decltype(ev)>;
+          if constexpr (std::is_same_v<
+                            T, TimedScheduler<AtbOutEvent>::EmitEvent>) {
+            if (ev.ev.valueless_by_exception()) {
               return false;
-            },
-            action);
-      });
+            }
+
+            return std::visit(
+                [id](auto &&out_ev) -> bool {
+                  using OutT = std::decay_t<decltype(out_ev)>;
+                  if constexpr (std::is_same_v<OutT, BecameReady>) {
+                    return out_ev.id == id;
+                  } else if constexpr (std::is_same_v<OutT, BecameActive>) {
+                    return out_ev.id == id;
+                  }
+                  return false;
+                },
+                ev.ev);
+          } else if constexpr (std::is_same_v<T, TimedScheduler<AtbOutEvent>::
+                                                     SmellyCallback>) {
+            return ev.owner == id;
+          }
+          return false;
+        },
+        action);
+  });
 }
 
 void AtbEngine::on_add(const AddCombatant &e) {
@@ -123,8 +121,7 @@ void AtbEngine::on_beat(const Beat &) {
   // Tick all combatants that are allowed to charge.
   std::vector<entt::entity> remove_ids;
   for (auto &[id, c] : combatants_) {
-    if (!reg_->valid(id) ||
-        !reg_->all_of<fl::ecs::components::AtbCharge>(id)) {
+    if (!reg_->valid(id) || !reg_->all_of<fl::ecs::components::AtbCharge>(id)) {
       force_out_of_turn(id);
       remove_ids.push_back(id);
       continue;

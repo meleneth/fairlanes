@@ -2,6 +2,7 @@
 
 #pragma once
 #include <eventpp/callbacklist.h>
+#include <functional>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -29,6 +30,50 @@ public:
 
   template <class T> using List = eventpp::CallbackList<void(const T &)>;
 
+  template <class T> class Subscription {
+  public:
+    using Handle = typename List<T>::Handle;
+
+    Subscription() = default;
+    Subscription(VariantBus &bus, Handle handle)
+        : bus_(&bus), handle_(handle), connected_(true) {}
+
+    Subscription(Subscription &&rhs) noexcept { *this = std::move(rhs); }
+
+    Subscription &operator=(Subscription &&rhs) noexcept {
+      if (this == &rhs) {
+        return *this;
+      }
+
+      reset();
+      bus_ = rhs.bus_;
+      handle_ = rhs.handle_;
+      connected_ = rhs.connected_;
+      rhs.bus_ = nullptr;
+      rhs.connected_ = false;
+      return *this;
+    }
+
+    ~Subscription() { reset(); }
+
+    void reset() {
+      if (connected_ && bus_ != nullptr) {
+        bus_->template callbacks<T>().remove(handle_);
+      }
+
+      bus_ = nullptr;
+      connected_ = false;
+    }
+
+    Subscription(const Subscription &) = delete;
+    Subscription &operator=(const Subscription &) = delete;
+
+  private:
+    VariantBus *bus_{nullptr};
+    Handle handle_{};
+    bool connected_{false};
+  };
+
   template <class T> List<T> &callbacks() {
     static_assert((std::is_same_v<T, Ts> || ...),
                   "T is not in this VariantBus' variant");
@@ -37,6 +82,10 @@ public:
 
   template <class T, class F> auto on(F &&f) {
     return callbacks<T>().append(std::forward<F>(f));
+  }
+
+  template <class T, class F> Subscription<T> subscribe(F &&f) {
+    return Subscription<T>{*this, on<T>(std::forward<F>(f))};
   }
 
   void emit(const Variant &v) {

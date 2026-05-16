@@ -16,7 +16,8 @@ auto wire(VariantBus<SrcVariant> &src, VariantBus<DstVariant> &dst) {
                 "wire<T>: destination variant cannot be constructed from T");
 
   // Return value is whatever Subscription/token VariantBus::on<T>() returns.
-  return src.template on<T>([&dst](const T &t) { dst.emit(DstVariant{t}); });
+  return src.template subscribe<T>(
+      [&dst](const T &t) { dst.emit(DstVariant{t}); });
 }
 
 // Mapping wire: listen for T on src, map to optional<U>, emit U into dst.
@@ -24,7 +25,7 @@ template <class T, class SrcVariant, class DstVariant, class MapFn>
 auto wire_map(VariantBus<SrcVariant> &src, VariantBus<DstVariant> &dst,
               MapFn &&map) {
   // map(t) -> std::optional<U> (or something optional-like)
-  return src.template on<T>(
+  return src.template subscribe<T>(
       [&dst, map = std::forward<MapFn>(map)](const T &t) mutable {
         auto out = map(t);
         if (!out) {
@@ -38,7 +39,7 @@ auto wire_map(VariantBus<SrcVariant> &src, VariantBus<DstVariant> &dst,
 template <class SrcVariant, class DstVariant, class MapFn>
 auto wire_variant(VariantBus<SrcVariant> &src, VariantBus<DstVariant> &dst,
                   MapFn &&map) {
-  return src.template on<SrcVariant>(
+  return src.template subscribe<SrcVariant>(
       [&dst, map = std::forward<MapFn>(map)](const SrcVariant &v) mutable {
         auto out = map(v); // optional<DstVariant>
         if (!out) {

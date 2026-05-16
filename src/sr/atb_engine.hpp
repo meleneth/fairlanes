@@ -23,6 +23,12 @@ public:
   AtbEngine();
   explicit AtbEngine(entt::registry &reg);
 
+  AtbEngine(AtbEngine &&) = delete;
+  AtbEngine &operator=(AtbEngine &&) = delete;
+
+  AtbEngine(const AtbEngine &) = delete;
+  AtbEngine &operator=(const AtbEngine &) = delete;
+
   void bind_registry(entt::registry &reg) noexcept { reg_ = &reg; }
 
   void set_can_charge_fn(CanChargeFn fn);
@@ -55,7 +61,7 @@ private:
     boost::sml::sm<AtbMachine> sm;
 
     Combatant(entt::registry &reg, entt::entity id, AtbOutBus &out_bus)
-      : sm{AtbMachine{reg, out_bus, id}} {}
+        : sm{AtbMachine{reg, out_bus, id}} {}
   };
 
 private:
@@ -75,21 +81,6 @@ private:
   PairedBus<AtbInBus, AtbOutBus> buses_;
   SysBus sys_;
 
-  // Wiring handles (keep alive)
-  decltype(wire<Beat>(buses_.in, sys_)) h_beat_wire_;
-  decltype(wire<AddCombatant>(buses_.in, sys_)) h_add_wire_;
-  decltype(wire<FinishedTurn>(buses_.in, sys_)) h_fin_wire_;
-  decltype(wire<BecameReady>(buses_.out, sys_)) h_ready_wire_;
-
-  // Subscriptions (keep alive)
-  decltype(sys_.template on<Beat>([](const Beat &) {})) h_beat_sub_;
-  decltype(sys_.template on<AddCombatant>(
-      [](const AddCombatant &) {})) h_add_sub_;
-  decltype(sys_.template on<FinishedTurn>(
-      [](const FinishedTurn &) {})) h_fin_sub_;
-  decltype(sys_.template on<BecameReady>(
-      [](const BecameReady &) {})) h_ready_sub_;
-
   entt::entity active_combatant_{};
   std::vector<entt::entity> ready_queue_;
 
@@ -97,6 +88,21 @@ private:
   std::unordered_map<entt::entity, Combatant> combatants_;
   TimedScheduler<AtbOutEvent> scheduler_;
   CanChargeFn can_charge_fn_ = [](entt::entity) { return true; };
+
+  // Wiring and subscription handles must be destroyed before scheduler_ and
+  // other state touched by callbacks that capture this.
+  decltype(wire<Beat>(buses_.in, sys_)) h_beat_wire_;
+  decltype(wire<AddCombatant>(buses_.in, sys_)) h_add_wire_;
+  decltype(wire<FinishedTurn>(buses_.in, sys_)) h_fin_wire_;
+  decltype(wire<BecameReady>(buses_.out, sys_)) h_ready_wire_;
+
+  decltype(sys_.template subscribe<Beat>([](const Beat &) {})) h_beat_sub_;
+  decltype(sys_.template subscribe<AddCombatant>(
+      [](const AddCombatant &) {})) h_add_sub_;
+  decltype(sys_.template subscribe<FinishedTurn>(
+      [](const FinishedTurn &) {})) h_fin_sub_;
+  decltype(sys_.template subscribe<BecameReady>(
+      [](const BecameReady &) {})) h_ready_sub_;
 };
 
 } // namespace seerin
