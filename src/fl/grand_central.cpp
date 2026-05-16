@@ -251,9 +251,33 @@ GrandCentral::account_context(fl::primitives::AccountData &account) {
   return fl::context::AccountCtx{reg_, rng_, account};
 }
 
+
 void GrandCentral::main_loop(GrandCentralRunOptions opts) {
   ZoneScopedN("GrandCentral::main_loop");
   world_clock_.set_beat_rate_multiplier(opts.overdrive);
+
+  std::uint64_t elapsed_beats = 0;
+
+  auto cutoff_reached = [&] {
+    if (!opts.cutoff_seconds) {
+      return false;
+    }
+
+    const double elapsed_seconds =
+        static_cast<double>(elapsed_beats) /
+        world_clock_.effective_beats_per_wall_second();
+
+    return elapsed_seconds >= *opts.cutoff_seconds;
+  };
+
+  /*  auto advance_one_beat = [&](const char *zone_name) {
+    ZoneScopedN("BeatDispatch");
+    std::scoped_lock lock(frame_mutex_);
+    world_clock_.advance_beat();
+    ++elapsed_beats;
+    gc_beat_bus_.emit(seerin::Beat{});
+  };
+  */
 
   if (opts.no_ui) {
     std::atomic<bool> running{true};
@@ -264,18 +288,29 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
 
       while (!st.stop_requested() && running.load(std::memory_order_relaxed)) {
         ZoneScopedN("HeadlessFrameTick");
+
+        if (cutoff_reached()) {
+          running.store(false, std::memory_order_relaxed);
+          break;
+        }
+
         const auto frame_dt = std::chrono::duration_cast<clock::duration>(
             std::chrono::duration<double>(
                 1.0 / world_clock_.effective_beats_per_wall_second()));
-        TracyPlot("GC.EffectiveBeatRate",
-              static_cast<int64_t>(
+
+        TracyPlot(
+            "GC.EffectiveBeatRate",
+            static_cast<int64_t>(
                 world_clock_.effective_beats_per_wall_second()));
+
         {
           ZoneScopedN("HeadlessBeatDispatch");
           std::scoped_lock lock(frame_mutex_);
           world_clock_.advance_beat();
+          ++elapsed_beats;
           gc_beat_bus_.emit(seerin::Beat{});
         }
+
         FrameMark;
         next_tick += frame_dt;
         std::this_thread::sleep_until(next_tick);
@@ -300,11 +335,9 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
     using clock = std::chrono::steady_clock;
     static auto last = clock::now();
     const auto now = clock::now();
-    // float dt = std::chrono::duration<float>(now - last).count();
     last = now;
 
     ZoneScopedN("Render");
-    // tick_party_fsms(dt);
     std::scoped_lock lock(frame_mutex_);
 
     return root_component()->Render();
@@ -318,7 +351,6 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
     return false;
   });
 
-  // wake UI at ~60Hz
   std::atomic<bool> running = true;
 
   std::jthread render_ticker([&](std::stop_token st) {
@@ -334,54 +366,42 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
   std::jthread update_ticker([&](std::stop_token st) {
     using clock = std::chrono::steady_clock;
 
-    // constexpr auto kOverrunBudget = std::chrono::milliseconds(5);
-
     auto next_tick = clock::now();
-    auto sim_time = next_tick;
 
     while (!st.stop_requested() && running.load(std::memory_order_relaxed)) {
-
       ZoneScopedN("FrameTick");
+
+      if (cutoff_reached()) {
+        running.store(false, std::memory_order_relaxed);
+        screen.Exit();
+        break;
+      }
+
       const auto frame_dt = std::chrono::duration_cast<clock::duration>(
           std::chrono::duration<double>(
               1.0 / world_clock_.effective_beats_per_wall_second()));
-      TracyPlot("GC.EffectiveBeatRate",
-            static_cast<int64_t>(
+
+      TracyPlot(
+          "GC.EffectiveBeatRate",
+          static_cast<int64_t>(
               world_clock_.effective_beats_per_wall_second()));
-
-      //      const auto now = clock::now();
-
-      // ---- Budget enforcement ----
-      // FIXME seems bad to not have it
-      /*if (now > next_tick + kOverrunBudget) {
-        const auto over = now - next_tick;
-        const auto over_us =
-            std::chrono::duration_cast<std::chrono::microseconds>(over).count();
-
-        fl::assert_fmt(false, std::source_location::current(),
-                       FMT_STRING("Frame tick over bdget by {} us"), over_us);
-      }
-                       */
-
-      // ---- Advance authoritative sim time ----
-      sim_time += frame_dt;
 
       {
         ZoneScopedN("BeatDispatch");
         std::scoped_lock lock(frame_mutex_);
         world_clock_.advance_beat();
+        ++elapsed_beats;
         gc_beat_bus_.emit(seerin::Beat{});
       }
 
-      // ---- Schedule next tick ----
       next_tick += frame_dt;
-
-      // ---- Pace ----
       std::this_thread::sleep_until(next_tick);
       FrameMark;
     }
   });
+
   screen.Loop(ui);
+  running.store(false, std::memory_order_relaxed);
 }
 
 void GrandCentral::bootstrap_logs() {
