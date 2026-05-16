@@ -14,6 +14,7 @@ This is not meant to be full reference documentation. It is a map for answering 
 
 - [Architecture](./architecture.md)
 - [Event Flow](./event-flow.md)
+- [Event Reference](./event-reference.md)
 
 ## Tour map
 
@@ -47,6 +48,7 @@ A good guided tour should do three things:
 
 1. [Architecture](./architecture.md)
 2. [Event Flow](./event-flow.md)
+3. [Event Reference](./event-reference.md)
 
 ## What belongs on this page
 

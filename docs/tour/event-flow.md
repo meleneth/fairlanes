@@ -2,6 +2,8 @@
 
 Back to [Tour Home](./index.md)
 
+For the complete current event inventory, see [Event Reference](./event-reference.md).
+
 ## Request / operation flow
 
 Use this page to explain one representative path through the system.
