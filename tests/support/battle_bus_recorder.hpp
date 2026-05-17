@@ -20,8 +20,8 @@ public:
         });
     (void)bus.on<fl::events::BattleTick>(
         [this](const fl::events::BattleTick &ev) {
-      record(fl::events::BattleEvent{ev});
-    });
+          record(fl::events::BattleEvent{ev});
+        });
     (void)bus.on<fl::events::EndCombat>(
         [this](const fl::events::EndCombat &ev) {
           record(fl::events::BattleEvent{ev});

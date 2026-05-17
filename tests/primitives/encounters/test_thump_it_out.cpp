@@ -1,10 +1,13 @@
 // tests/encounter_builder_tests.cpp
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
+
 #include <entt/entt.hpp>
 
-#include "fl/ecs/components/color_override.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/visual_effects.hpp"
+#include "fl/ecs/systems/visual_resolver.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/lospec500.hpp"
 #include "fl/primitives/encounter_builder.hpp"
@@ -38,15 +41,16 @@ TEST_CASE("EncounterBuilder::thump_it_out wires encounter teams and members",
   auto &encounter = builder.thump_it_out();
 
   REQUIRE(encounter.defenders().members().size() == 3);
-  REQUIRE(encounter.attackers().members().size() == 1);
+  REQUIRE(encounter.attackers().members().size() ==
+          fl::primitives::EncounterBuilder::kEnemyPartySize);
 
-  const entt::entity enemy = encounter.attackers().members().front();
-
-  CHECK(party_ctx.reg().valid(enemy));
-  CHECK(party_ctx.reg().all_of<fl::ecs::components::Stats>(enemy));
-
-  REQUIRE(encounter.entities_to_cleanup().size() == 1);
-  CHECK(encounter.entities_to_cleanup().front() == enemy);
+  REQUIRE(encounter.entities_to_cleanup().size() ==
+          fl::primitives::EncounterBuilder::kEnemyPartySize);
+  for (const entt::entity enemy : encounter.attackers().members()) {
+    CHECK(party_ctx.reg().valid(enemy));
+    CHECK(party_ctx.reg().all_of<fl::ecs::components::Stats>(enemy));
+    CHECK(encounter.owns_entity(enemy));
+  }
 }
 
 TEST_CASE("EncounterBuilder::thump_it_out enrolls party members as defenders",
@@ -68,8 +72,9 @@ TEST_CASE("EncounterBuilder::thump_it_out enrolls party members as defenders",
   }
 }
 
-TEST_CASE("EncounterBuilder::thump_it_out creates one enemy owned by encounter",
-          "[encounter_builder][encounter][combat]") {
+TEST_CASE(
+    "EncounterBuilder::thump_it_out creates an enemy party owned by encounter",
+    "[encounter_builder][encounter][combat]") {
   fl::GrandCentral gc{1, 1, 3};
 
   auto account_ctx = gc.account_context(0);
@@ -78,19 +83,28 @@ TEST_CASE("EncounterBuilder::thump_it_out creates one enemy owned by encounter",
   fl::primitives::EncounterBuilder builder(party_ctx);
   auto &encounter = builder.thump_it_out();
 
-  REQUIRE(encounter.attackers().members().size() == 1);
+  REQUIRE(encounter.attackers().members().size() ==
+          fl::primitives::EncounterBuilder::kEnemyPartySize);
 
-  const entt::entity enemy = encounter.attackers().members().front();
+  REQUIRE(encounter.entities_to_cleanup().size() ==
+          fl::primitives::EncounterBuilder::kEnemyPartySize);
 
-  CHECK(party_ctx.reg().valid(enemy));
-  CHECK(encounter.owns_entity(enemy));
-  CHECK(encounter.is_bad_guy(enemy));
-
-  REQUIRE(encounter.entities_to_cleanup().size() == 1);
-  CHECK(encounter.entities_to_cleanup().front() == enemy);
+  for (const entt::entity enemy : encounter.attackers().members()) {
+    CHECK(party_ctx.reg().valid(enemy));
+    CHECK(encounter.owns_entity(enemy));
+    CHECK(encounter.is_bad_guy(enemy));
+  }
 }
 
-TEST_CASE("SkillSequencer reek fade applies and clears ColorOverride",
+TEST_CASE("EncounterBuilder common woodland pool includes Poison Toad",
+          "[encounter_builder][encounter][combat][poison]") {
+  const auto &pool = fl::primitives::EncounterBuilder::kCommonWoodland;
+
+  REQUIRE(std::find(pool.begin(), pool.end(),
+                    fl::monster::MonsterKind::PoisonToad) != pool.end());
+}
+
+TEST_CASE("SkillSequencer reek fade resolves DamageFlash and lets it expire",
           "[encounter][timing][color]") {
   fl::GrandCentral gc{1, 1, 1};
 
@@ -105,9 +119,10 @@ TEST_CASE("SkillSequencer reek fade applies and clears ColorOverride",
   auto &reg = party_ctx.reg();
 
   const auto from = fl::lospec500::color_at(4);
-  const auto to = fl::lospec500::color_at(0);
+  const auto to = fl::lospec500::color_at(32);
 
-  REQUIRE_FALSE(reg.any_of<fl::ecs::components::ColorOverride>(attacker));
+  REQUIRE_FALSE(
+      reg.any_of<fl::ecs::components::ResolvedColorOverride>(attacker));
 
   seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
   fl::skills::SkillSequencer sequencer{
@@ -116,18 +131,25 @@ TEST_CASE("SkillSequencer reek fade applies and clears ColorOverride",
 
   for (int i = 0; i < 10; ++i) {
     scheduler.on_beat();
+    fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
   }
-  REQUIRE(reg.get<fl::ecs::components::ColorOverride>(attacker).color.Print(
-              false) == ftxui::Color::Interpolate(0.0F, from, to).Print(false));
+  REQUIRE(
+      reg.get<fl::ecs::components::ResolvedColorOverride>(attacker).color.Print(
+          false) == ftxui::Color::Interpolate(0.0F, from, to).Print(false));
 
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < 9; ++i) {
     scheduler.on_beat();
+    fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
   }
-  REQUIRE(reg.get<fl::ecs::components::ColorOverride>(attacker).color.Print(
-              false) == ftxui::Color::Interpolate(1.0F, from, to).Print(false));
+  REQUIRE(
+      reg.get<fl::ecs::components::ResolvedColorOverride>(attacker).color.Print(
+          false) == ftxui::Color::Interpolate(0.9F, from, to).Print(false));
 
   scheduler.on_beat();
-  REQUIRE_FALSE(reg.any_of<fl::ecs::components::ColorOverride>(attacker));
+  fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::DamageFlash>(attacker));
+  REQUIRE_FALSE(
+      reg.any_of<fl::ecs::components::ResolvedColorOverride>(attacker));
 }
 
 } // namespace

@@ -22,7 +22,7 @@ public:
   };
 
   struct SmellyCallback {
-    std::string note;         // lets you grep for why it exists
+    std::string note; // lets you grep for why it exists
     entt::entity owner{entt::null};
     std::function<void()> fn; // yes, this is the smell
   };
@@ -39,8 +39,7 @@ public:
   void clear() { items_.clear(); }
 
   // Remove items matching predicate
-  template <typename Predicate>
-  void remove_if(Predicate pred) {
+  template <typename Predicate> void remove_if(Predicate pred) {
     items_.erase(
         std::remove_if(items_.begin(), items_.end(),
                        [&pred](const Item &item) { return pred(item.action); }),
@@ -68,10 +67,9 @@ public:
   }
 
   void schedule_smelly_at_for(uWu when, entt::entity owner,
-                              std::string_view note,
-                              std::function<void()> fn) {
-    add(when, TimedAction{
-                  SmellyCallback{std::string{note}, owner, std::move(fn)}});
+                              std::string_view note, std::function<void()> fn) {
+    add(when,
+        TimedAction{SmellyCallback{std::string{note}, owner, std::move(fn)}});
   }
 
   void schedule_smelly_in(uWu delay, std::string_view note,

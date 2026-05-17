@@ -7,72 +7,75 @@
 #include "fl/ecs/components/color_override.hpp"
 
 namespace fl::ecs::components {
-entt::registry reg;
 
-TEST_CASE("ColorOverride: safe_add_color does nothing for invalid entity",
+TEST_CASE("ColorOverride shim: safe_add_color ignores invalid entity",
           "[ecs][components][color_override]") {
-  // entt::null is always invalid
+  entt::registry reg;
+
   safe_add_color(reg, entt::null, ftxui::Color::Red);
 
-  REQUIRE_FALSE(reg.any_of<ColorOverride>(entt::null));
+  REQUIRE_FALSE(reg.any_of<DamageFlash>(entt::null));
 }
 
-TEST_CASE("ColorOverride: safe_clear_color does nothing for invalid entity",
+TEST_CASE("ColorOverride shim: safe_clear_color ignores invalid entity",
           "[ecs][components][color_override]") {
-  // Should not throw / crash
+  entt::registry reg;
+
   safe_clear_color(reg, entt::null);
 
-  REQUIRE_FALSE(reg.any_of<ColorOverride>(entt::null));
+  REQUIRE_FALSE(reg.any_of<DamageFlash>(entt::null));
 }
 
-TEST_CASE(
-    "ColorOverride: safe_add_color adds the component with the given color",
-    "[ecs][components][color_override]") {
+TEST_CASE("ColorOverride shim: safe_add_color records DamageFlash",
+          "[ecs][components][color_override]") {
+  entt::registry reg;
   const entt::entity e = reg.create();
 
   safe_add_color(reg, e, ftxui::Color::Red);
 
-  REQUIRE(reg.any_of<ColorOverride>(e));
-  REQUIRE(reg.get<ColorOverride>(e).color == ftxui::Color::Red);
+  REQUIRE(reg.any_of<DamageFlash>(e));
+  REQUIRE(reg.get<DamageFlash>(e).color == ftxui::Color::Red);
+  REQUIRE_FALSE(reg.any_of<ColorOverride>(e));
 }
 
-TEST_CASE("ColorOverride: safe_add_color replaces existing ColorOverride",
+TEST_CASE("ColorOverride shim: safe_add_color replaces DamageFlash",
           "[ecs][components][color_override]") {
+  entt::registry reg;
   const entt::entity e = reg.create();
 
   safe_add_color(reg, e, ftxui::Color::Red);
   safe_add_color(reg, e, ftxui::Color::Yellow);
 
-  REQUIRE(reg.any_of<ColorOverride>(e));
-  REQUIRE(reg.get<ColorOverride>(e).color == ftxui::Color::Yellow);
+  REQUIRE(reg.any_of<DamageFlash>(e));
+  REQUIRE(reg.get<DamageFlash>(e).color == ftxui::Color::Yellow);
 }
 
-TEST_CASE("ColorOverride: safe_clear_color removes the component if present",
+TEST_CASE("ColorOverride shim: safe_clear_color removes DamageFlash",
           "[ecs][components][color_override]") {
+  entt::registry reg;
   const entt::entity e = reg.create();
 
   safe_add_color(reg, e, ftxui::Color::Red);
-  REQUIRE(reg.any_of<ColorOverride>(e));
+  REQUIRE(reg.any_of<DamageFlash>(e));
 
   safe_clear_color(reg, e);
 
-  REQUIRE_FALSE(reg.any_of<ColorOverride>(e));
+  REQUIRE_FALSE(reg.any_of<DamageFlash>(e));
 }
 
-TEST_CASE("ColorOverride: safe_clear_color is idempotent",
+TEST_CASE("ColorOverride shim: safe_clear_color is idempotent",
           "[ecs][components][color_override]") {
+  entt::registry reg;
   const entt::entity e = reg.create();
 
-  // No component yet; should be fine.
   safe_clear_color(reg, e);
-  REQUIRE_FALSE(reg.any_of<ColorOverride>(e));
+  REQUIRE_FALSE(reg.any_of<DamageFlash>(e));
 
-  // Add then clear twice; still fine.
   safe_add_color(reg, e, ftxui::Color::Red);
   safe_clear_color(reg, e);
   safe_clear_color(reg, e);
 
-  REQUIRE_FALSE(reg.any_of<ColorOverride>(e));
+  REQUIRE_FALSE(reg.any_of<DamageFlash>(e));
 }
 
 } // namespace fl::ecs::components

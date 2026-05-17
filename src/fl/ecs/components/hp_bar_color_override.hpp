@@ -3,25 +3,31 @@
 #include <entt/entt.hpp>
 #include <ftxui/component/component.hpp>
 
+#include "fl/ecs/components/visual_effects.hpp"
+
 namespace fl::ecs::components {
 
-struct HPBarColorOverride {
-  ftxui::Color color;
-};
+using HPBarColorOverride = ResolvedHPBarColorOverride;
 
 inline void safe_add_hp_bar_color(entt::registry &reg, entt::entity e,
                                   ftxui::Color c) {
   if (!reg.valid(e)) {
     return;
   }
-  reg.emplace_or_replace<HPBarColorOverride>(e, HPBarColorOverride{c});
+  auto &status = reg.get_or_emplace<StatusTint>(e);
+  status.hp_bar_color = c;
 }
 
 inline void safe_clear_hp_bar_color(entt::registry &reg, entt::entity e) {
   if (!reg.valid(e)) {
     return;
   }
-  reg.remove<HPBarColorOverride>(e);
+  if (auto *status = reg.try_get<StatusTint>(e)) {
+    status->hp_bar_color.reset();
+    if (!status->body_color && !status->hp_bar_color) {
+      reg.remove<StatusTint>(e);
+    }
+  }
 }
 
 } // namespace fl::ecs::components

@@ -16,14 +16,13 @@ TEST_CASE("Combatant renders ATB from ECS AtbCharge", "[widgets][combatant]") {
   auto entity = party_ctx.party_data().members().front().member_id();
 
   party_ctx.reg().emplace_or_replace<fl::ecs::components::AtbCharge>(entity,
-                                                                      160,
-                                                                      4800);
+                                                                     160, 4800);
 
   fl::widgets::Combatant combatant{party_ctx.reg(), entity, true};
   auto element = combatant.Render();
 
-  auto screen =
-      ftxui::Screen::Create(ftxui::Dimension::Fit(element), ftxui::Dimension::Fit(element));
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fit(element),
+                                      ftxui::Dimension::Fit(element));
   ftxui::Render(screen, element);
 
   const std::string rendered = screen.ToString();

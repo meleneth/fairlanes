@@ -56,6 +56,9 @@ TEST_CASE("Woodland skill monsters have their own names and levels",
   const auto smack = fl::primitives::EntityBuilder(context)
                          .monster(fl::monster::MonsterKind::BarkSmack)
                          .build();
+  const auto poison = fl::primitives::EntityBuilder(context)
+                          .monster(fl::monster::MonsterKind::PoisonToad)
+                          .build();
 
   REQUIRE(party_ctx.reg().get<fl::ecs::components::Stats>(bump).name_ ==
           "Bumpkin Hare");
@@ -67,6 +70,10 @@ TEST_CASE("Woodland skill monsters have their own names and levels",
   REQUIRE(party_ctx.reg().get<fl::ecs::components::Stats>(smack).name_ ==
           "Bark Smack");
   REQUIRE(party_ctx.reg().get<fl::ecs::components::TrackXP>(smack).level_ == 4);
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::Stats>(poison).name_ ==
+          "Poison Toad");
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::TrackXP>(poison).level_ ==
+          5);
 }
 
 TEST_CASE("Monster builder assigns each monster its known skill",
@@ -95,4 +102,6 @@ TEST_CASE("Monster builder assigns each monster its known skill",
                      fl::skills::SkillId::Squish);
   expect_known_skill(fl::monster::MonsterKind::BarkSmack,
                      fl::skills::SkillId::Smack);
+  expect_known_skill(fl::monster::MonsterKind::PoisonToad,
+                     fl::skills::SkillId::Poison);
 }

@@ -45,12 +45,10 @@ struct AtbMachine {
         state<Charging> + event<BeatTick> / accrue = state<Charging>,
 
         // NEW: consume the turn, reset, start charging again
-        state<Ready> + event<FinishedTurn> /
-                [this] {
-                  auto &ctx = reg.get<fl::ecs::components::AtbCharge>(id);
-                  ctx.charge = 0;
-                } =
-            state<Charging>);
+        state<Ready> + event<FinishedTurn> / [this] {
+          auto &ctx = reg.get<fl::ecs::components::AtbCharge>(id);
+          ctx.charge = 0;
+        } = state<Charging>);
   };
 };
 } // namespace seerin

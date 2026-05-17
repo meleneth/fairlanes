@@ -20,8 +20,7 @@ class RootComponent : public ftxui::ComponentBase {
 public:
   RootComponent(fl::context::AccountCtx ctx,
                 std::deque<fl::primitives::AccountData> &accounts,
-                FancyLog &console_log,
-                fl::primitives::WorldClock &world_clock);
+                FancyLog &console_log, fl::primitives::WorldClock &world_clock);
 
   bool OnEvent(ftxui::Event event) override;
   ftxui::Element Render() override;

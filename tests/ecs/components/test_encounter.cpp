@@ -6,11 +6,14 @@
 #include "fl/ecs/components/dire_bleed.hpp"
 #include "fl/ecs/components/hp_bar_color_override.hpp"
 #include "fl/ecs/components/monster_identity.hpp"
+#include "fl/ecs/components/poison.hpp"
 #include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/visual_effects.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/lospec500.hpp"
 #include "fl/monsters/monster_kind.hpp"
 #include "fl/primitives/encounter_builder.hpp"
 #include "fl/primitives/entity_builder.hpp"
@@ -50,6 +53,17 @@ entt::entity find_dire_bleed_target(fl::context::PartyCtx &party_ctx) {
   return entt::null;
 }
 
+entt::entity find_poison_target(fl::context::PartyCtx &party_ctx) {
+  for (const auto &member : party_ctx.party_data().members()) {
+    if (party_ctx.reg().all_of<fl::ecs::components::Poison>(
+            member.member_id())) {
+      return member.member_id();
+    }
+  }
+
+  return entt::null;
+}
+
 } // namespace
 
 TEST_CASE("EncounterBuilder::thump_it_out returns the created EncounterData",
@@ -80,7 +94,7 @@ TEST_CASE("EncounterBuilder::thump_it_out enrolls party members as defenders",
   REQUIRE(encounter.defenders().members().size() == 3);
 }
 
-TEST_CASE("EncounterBuilder::thump_it_out adds one enemy attacker",
+TEST_CASE("EncounterBuilder::thump_it_out adds a full enemy party",
           "[encounter][builder]") {
   fl::GrandCentral gc{1, 1, 3};
 
@@ -91,11 +105,14 @@ TEST_CASE("EncounterBuilder::thump_it_out adds one enemy attacker",
 
   auto &encounter = builder.thump_it_out();
 
-  REQUIRE(encounter.attackers().members().size() == 1);
-  REQUIRE(encounter.entities_to_cleanup().size() == 1);
+  REQUIRE(encounter.attackers().members().size() ==
+          fl::primitives::EncounterBuilder::kEnemyPartySize);
+  REQUIRE(encounter.entities_to_cleanup().size() ==
+          fl::primitives::EncounterBuilder::kEnemyPartySize);
 
-  auto attacker = encounter.attackers().members().front();
-  REQUIRE(encounter.entities_to_cleanup().front() == attacker);
+  for (auto attacker : encounter.attackers().members()) {
+    REQUIRE(encounter.owns_entity(attacker));
+  }
 }
 
 TEST_CASE("TakeDamage emits PlayerDied when a party member dies",
@@ -266,8 +283,7 @@ TEST_CASE(
   tick_party(party_ctx, 24);
 
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::DireBleed>(defender));
-  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::HPBarColorOverride>(
-      defender));
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::StatusTint>(defender));
   REQUIRE(party_ctx.reg()
               .get<fl::ecs::components::DireBleed>(defender)
               .damage_per_tick == 10);
@@ -310,15 +326,15 @@ TEST_CASE("Dire Bleed is removed and pending target work is cleared on death",
 
   REQUIRE_FALSE(
       party_ctx.reg().any_of<fl::ecs::components::DireBleed>(defender));
-  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::HPBarColorOverride>(
-      defender));
+  REQUIRE_FALSE(
+      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
   REQUIRE(party_ctx.reg().get<fl::ecs::components::Stats>(defender).hp_ == 0);
 
   tick_party(party_ctx, 36);
   REQUIRE_FALSE(
       party_ctx.reg().any_of<fl::ecs::components::DireBleed>(defender));
-  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::HPBarColorOverride>(
-      defender));
+  REQUIRE_FALSE(
+      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
   REQUIRE(party_ctx.reg().get<fl::ecs::components::Stats>(defender).hp_ == 0);
 }
 
@@ -341,15 +357,14 @@ TEST_CASE("Dire Bleed is removed when the party leaves combat",
   }});
   tick_party(party_ctx, 24);
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::DireBleed>(defender));
-  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::HPBarColorOverride>(
-      defender));
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::StatusTint>(defender));
 
   party.leave_combat();
 
   REQUIRE_FALSE(
       party_ctx.reg().any_of<fl::ecs::components::DireBleed>(defender));
-  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::HPBarColorOverride>(
-      defender));
+  REQUIRE_FALSE(
+      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
   REQUIRE_FALSE(party.in_combat());
 }
 
@@ -378,8 +393,96 @@ TEST_CASE("Dire Bleed clears safely if the source is gone before a tick",
 
   REQUIRE_FALSE(
       party_ctx.reg().any_of<fl::ecs::components::DireBleed>(defender));
-  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::HPBarColorOverride>(
-      defender));
+  REQUIRE_FALSE(
+      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
+}
+
+TEST_CASE("Poison applies flat damage every three seconds for its duration",
+          "[encounter][skills][poison]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &encounter = party.create_encounter();
+
+  const auto defender = party.members().front().member_id();
+  encounter.defenders().members().push_back(defender);
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
+
+  auto source = add_honey_badger(party_ctx, encounter);
+  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+  stats.max_hp_ = 100;
+  stats.hp_ = 100;
+
+  party_ctx.bus().emit(fl::events::PartyEvent{
+      fl::events::PoisonApplied{source, defender, 1, 9}});
+
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Poison>(defender));
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::StatusTint>(defender));
+  REQUIRE(party_ctx.reg()
+              .get<fl::ecs::components::StatusTint>(defender)
+              .hp_bar_color == fl::lospec500::color_at(22));
+  REQUIRE(party_ctx.reg()
+              .get<fl::ecs::components::Poison>(defender)
+              .damage_per_tick == 1);
+  REQUIRE(party_ctx.reg()
+              .get<fl::ecs::components::Poison>(defender)
+              .ticks_remaining == 3);
+
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
+  REQUIRE(party_ctx.reg()
+              .get<fl::ecs::components::StatusTint>(defender)
+              .hp_bar_color == fl::lospec500::color_at(20));
+
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
+  REQUIRE(party_ctx.reg()
+              .get<fl::ecs::components::StatusTint>(defender)
+              .hp_bar_color == fl::lospec500::color_at(22));
+
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
+  REQUIRE(stats.hp_ == 99);
+  REQUIRE(party_ctx.reg()
+              .get<fl::ecs::components::Poison>(defender)
+              .ticks_remaining == 2);
+
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(3));
+  REQUIRE(stats.hp_ == 98);
+  REQUIRE(party_ctx.reg()
+              .get<fl::ecs::components::Poison>(defender)
+              .ticks_remaining == 1);
+
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(3));
+  REQUIRE(stats.hp_ == 97);
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Poison>(defender));
+  REQUIRE_FALSE(
+      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
+}
+
+TEST_CASE("Poison is applied by event and clears when combat ends",
+          "[encounter][skills][poison][cleanup]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &encounter = party.create_encounter();
+
+  const auto defender = party.members().front().member_id();
+  encounter.defenders().members().push_back(defender);
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
+
+  auto source = add_honey_badger(party_ctx, encounter);
+  party_ctx.bus().emit(fl::events::PartyEvent{
+      fl::events::PoisonApplied{source, defender, 1, 9}});
+
+  REQUIRE(find_poison_target(party_ctx) == defender);
+
+  party.leave_combat();
+
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Poison>(defender));
+  REQUIRE_FALSE(
+      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
 }
 
 TEST_CASE("Observe can teach an eligible party member",

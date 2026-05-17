@@ -51,8 +51,8 @@ MoonPhase MoonCalendar::phase_for_day(std::uint64_t day, int cycle_days,
 
 std::string_view MoonCalendar::phase_name(MoonPhase phase) noexcept {
   constexpr std::array<std::string_view, 8> kNames{
-      "New",       "Waxing Crescent", "First Quarter", "Waxing Gibbous",
-      "Full",      "Waning Gibbous",  "Last Quarter",  "Waning Crescent",
+      "New",  "Waxing Crescent", "First Quarter", "Waxing Gibbous",
+      "Full", "Waning Gibbous",  "Last Quarter",  "Waning Crescent",
   };
 
   return kNames[static_cast<std::size_t>(phase)];

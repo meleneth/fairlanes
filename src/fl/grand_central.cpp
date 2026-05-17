@@ -23,6 +23,7 @@
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/systems/special_festival_event.hpp"
+#include "fl/ecs/systems/visual_resolver.hpp"
 #include "fl/monsters/register_monsters.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/fancy_log_sink.hpp"
@@ -251,7 +252,6 @@ GrandCentral::account_context(fl::primitives::AccountData &account) {
   return fl::context::AccountCtx{reg_, rng_, account};
 }
 
-
 void GrandCentral::main_loop(GrandCentralRunOptions opts) {
   ZoneScopedN("GrandCentral::main_loop");
   world_clock_.set_beat_rate_multiplier(opts.overdrive);
@@ -298,10 +298,9 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
             std::chrono::duration<double>(
                 1.0 / world_clock_.effective_beats_per_wall_second()));
 
-        TracyPlot(
-            "GC.EffectiveBeatRate",
-            static_cast<int64_t>(
-                world_clock_.effective_beats_per_wall_second()));
+        TracyPlot("GC.EffectiveBeatRate",
+                  static_cast<int64_t>(
+                      world_clock_.effective_beats_per_wall_second()));
 
         {
           ZoneScopedN("HeadlessBeatDispatch");
@@ -339,6 +338,7 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
 
     ZoneScopedN("Render");
     std::scoped_lock lock(frame_mutex_);
+    resolve_visuals_for_render();
 
     return root_component()->Render();
   });
@@ -383,8 +383,7 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
 
       TracyPlot(
           "GC.EffectiveBeatRate",
-          static_cast<int64_t>(
-              world_clock_.effective_beats_per_wall_second()));
+          static_cast<int64_t>(world_clock_.effective_beats_per_wall_second()));
 
       {
         ZoneScopedN("BeatDispatch");
@@ -433,4 +432,24 @@ void GrandCentral::build_ui() {
       fl::context::AccountCtx{reg_, rng_, account}, accounts_, *game_log_,
       world_clock_);
 }
+void GrandCentral::resolve_visuals_for_render() {
+  ZoneScopedN("ResolveVisualsForRender");
+  for (auto &account : accounts_) {
+    for (auto &party : account.parties()) {
+      if (!party.has_encounter()) {
+        continue;
+      }
+      auto &encounter = party.encounter_data();
+      for (auto entity : encounter.attackers().members()) {
+        fl::ecs::systems::VisualResolver::resolve_entity(
+            reg_, entity, encounter.visual_time());
+      }
+      for (auto entity : encounter.defenders().members()) {
+        fl::ecs::systems::VisualResolver::resolve_entity(
+            reg_, entity, encounter.visual_time());
+      }
+    }
+  }
+}
+
 } // namespace fl

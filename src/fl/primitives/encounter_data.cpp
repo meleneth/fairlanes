@@ -4,6 +4,7 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/systems/poison_system.hpp"
 #include "fl/skills/skill_selection.hpp"
 #include "fl/skills/skill_sequence.hpp"
 #include "fl/widgets/fancy_log.hpp"
@@ -100,6 +101,10 @@ EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
   wire_.party_beat_ = fl::events::ScopedPartyListener{
       party_ctx_->bus(), std::in_place_type<fl::events::PartyTick>,
       [this](const fl::events::PartyTick &) { atb_in().emit(seerin::Beat{}); }};
+
+  wire_.poison_apply_ = fl::ecs::systems::PoisonSystem::bind_apply_listener(
+      *party_ctx_, rt_.atb_.scheduler(),
+      [this](entt::entity entity) { clear_pending_events_for(entity); });
 }
 
 } // namespace fl::primitives

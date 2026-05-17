@@ -77,22 +77,23 @@ struct PartyLoop {
     return make_transition_table(
         *state<Idle> + sml::on_entry<_> / enter_idle,
         state<Farming> + sml::on_entry<_> / enter_farming,
-          state<Dead> + sml::on_entry<_> / enter_dead,
+        state<Dead> + sml::on_entry<_> / enter_dead,
         state<Fixing> + sml::on_entry<_> / enter_fixing,
         state<Gearing> + sml::on_entry<_> / enter_gearing,
 
         state<Idle> + event<NextEvent> = state<Farming>,
-          state<Idle> + event<PartyWipedEvent> = state<Dead>,
-          state<Farming> + event<PartyWipedEvent> = state<Dead>,
-          state<CombatIdle> + event<PartyWipedEvent> = state<Dead>,
-          state<Fixing> + event<PartyWipedEvent> = state<Dead>,
-          state<Gearing> + event<PartyWipedEvent> = state<Dead>,
-          state<Dead> + event<PartyWipedEvent> = state<Dead>,
+        state<Idle> + event<PartyWipedEvent> = state<Dead>,
+        state<Farming> + event<PartyWipedEvent> = state<Dead>,
+        state<CombatIdle> + event<PartyWipedEvent> = state<Dead>,
+        state<Fixing> + event<PartyWipedEvent> = state<Dead>,
+        state<Gearing> + event<PartyWipedEvent> = state<Dead>,
+        state<Dead> + event<PartyWipedEvent> = state<Dead>,
         state<Farming> + event<NextEvent>[in_combat] / combat_tick,
-          state<Farming> + event<NextEvent> / exit_farming = state<CombatIdle>,
+        state<Farming> + event<NextEvent> / exit_farming = state<CombatIdle>,
         state<CombatIdle> + event<NextEvent> = state<Gearing>,
-          state<Dead> + event<NextEvent> = state<Fixing>,
-        state<Fixing> + event<NextEvent>[fixing_done] / exit_fixing = state<Gearing>,
+        state<Dead> + event<NextEvent> = state<Fixing>,
+        state<Fixing> + event<NextEvent>[fixing_done] / exit_fixing =
+            state<Gearing>,
         state<Fixing> + event<NextEvent> / fixing_tick = state<Fixing>,
         state<Gearing> + event<NextEvent> = state<Idle>);
   }

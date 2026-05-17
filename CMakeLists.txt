@@ -296,6 +296,27 @@ if (ENABLE_COVERAGE)
 endif()
 
 
+find_program(CLANG_FORMAT_EXECUTABLE clang-format)
+file(GLOB_RECURSE FAIRLANES_FORMAT_SOURCES CONFIGURE_DEPENDS
+  ${CMAKE_SOURCE_DIR}/src/*.cpp
+  ${CMAKE_SOURCE_DIR}/src/*.hpp
+  ${CMAKE_SOURCE_DIR}/tests/*.cpp
+  ${CMAKE_SOURCE_DIR}/tests/*.hpp
+)
+
+if(CLANG_FORMAT_EXECUTABLE)
+  add_custom_target(clang-format
+    COMMAND ${CLANG_FORMAT_EXECUTABLE} -i ${FAIRLANES_FORMAT_SOURCES}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Formatting Fairlanes C++ sources"
+  )
+else()
+  add_custom_target(clang-format
+    COMMAND ${CMAKE_COMMAND} -E echo "clang-format not found"
+    COMMAND ${CMAKE_COMMAND} -E false
+  )
+endif()
+
 find_program(GCOVR_EXECUTABLE gcovr)
 
 if(GCOVR_EXECUTABLE)

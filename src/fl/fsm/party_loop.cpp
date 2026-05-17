@@ -64,7 +64,8 @@ void PartyLoop::Ops::enter_fixing(fl::context::PartyCtx &ctx) {
 
 void PartyLoop::Ops::exit_fixing(fl::context::PartyCtx &ctx) {
   ZoneScopedN("PartyLoop::exit_fixing");
-  ctx.party_data().revitalize_members();
+  ctx.bus().emit(
+      fl::events::PartyEvent{fl::events::PartyRevitalizeRequested{}});
 }
 
 void PartyLoop::Ops::enter_gearing(fl::context::PartyCtx &ctx) {

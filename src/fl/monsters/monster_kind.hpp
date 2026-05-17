@@ -8,6 +8,7 @@ enum class MonsterKind {
   BumpkinHare,
   MireSquish,
   BarkSmack,
+  PoisonToad,
   // Wolf,
   // Slime,
   // Goblin,

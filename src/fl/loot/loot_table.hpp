@@ -12,8 +12,8 @@
 #include "fl/primitives/random_hub.hpp"
 #include "item_kind.hpp"
 #include "special_item.hpp"
-#include "upgrade_table.hpp"
 #include "tier.hpp"
+#include "upgrade_table.hpp"
 #include "weight.hpp"
 #include "weighted_choice.hpp"
 #include "weighted_table.hpp"
@@ -62,7 +62,8 @@ public:
       return roll_special(ctx, std::string{stream_name} + ".special");
     }
 
-    auto tier = tiers_.roll(ctx, std::string{stream_name} + ".tier", Tier::worn);
+    auto tier =
+        tiers_.roll(ctx, std::string{stream_name} + ".tier", Tier::worn);
 
     if (*kind == ItemKind::armor) {
       auto slot = armor_slots_.roll(ctx, std::string{stream_name} + ".slot");

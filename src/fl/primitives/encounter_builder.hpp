@@ -1,13 +1,23 @@
 #pragma once
+#include <array>
 #include <entt/entt.hpp>
 #include <vector>
 
-#include "fl/context.hpp"
 #include "encounter_data.hpp"
+#include "fl/context.hpp"
+#include "fl/monsters/monster_kind.hpp"
 
 namespace fl::primitives {
 
 struct EncounterBuilder {
+  static constexpr int kEnemyPartySize = 5;
+  static constexpr std::array<fl::monster::MonsterKind, 5> kCommonWoodland{
+      fl::monster::MonsterKind::FieldMouse,
+      fl::monster::MonsterKind::BumpkinHare,
+      fl::monster::MonsterKind::MireSquish,
+      fl::monster::MonsterKind::BarkSmack,
+      fl::monster::MonsterKind::PoisonToad,
+  };
 
   EncounterBuilder(fl::context::PartyCtx &ctx) : ctx_(ctx) {};
 

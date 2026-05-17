@@ -67,7 +67,8 @@ TEST_CASE("ATB: BecameReady enqueues; Beat pumps to BecameActive; FinishedTurn "
   REQUIRE(trace[3].rfind("active:", 0) == 0);
 }
 
-TEST_CASE("ATB: dead combatants reset charge and do not accumulate until alive") {
+TEST_CASE(
+    "ATB: dead combatants reset charge and do not accumulate until alive") {
   entt::registry reg;
   seerin::AtbEngine atb{reg};
 
@@ -76,9 +77,8 @@ TEST_CASE("ATB: dead combatants reset charge and do not accumulate until alive")
   int became_ready = 0;
 
   atb.set_can_charge_fn([&](entt::entity e) { return e == id && alive; });
-  atb.out().on<seerin::BecameReady>([&](const seerin::BecameReady &) {
-    ++became_ready;
-  });
+  atb.out().on<seerin::BecameReady>(
+      [&](const seerin::BecameReady &) { ++became_ready; });
 
   atb.in().emit(seerin::AtbInEvent{seerin::AddCombatant{id}});
 

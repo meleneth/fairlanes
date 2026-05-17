@@ -2,7 +2,6 @@
 
 #include <fmt/format.h>
 
-#include "fl/ecs/components/color_override.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"
 #include "fl/ecs/components/hp_bar_color_override.hpp"
 #include "fl/ecs/components/stats.hpp"
@@ -93,9 +92,6 @@ void DireBleedSystem::clear(fl::context::PartyCtx &party_ctx,
   auto &reg = party_ctx.reg();
   clear_pending(target);
 
-  // TODO: replace broad color clears with scoped visual ownership once color
-  // overrides can be attributed to the effect that created them.
-  fl::ecs::components::safe_clear_color(reg, target);
   fl::ecs::components::safe_clear_hp_bar_color(reg, target);
   if (reg.valid(target) && reg.any_of<fl::ecs::components::DireBleed>(target)) {
     // This may run from one of DireBleed's own party-bus callbacks. eventpp

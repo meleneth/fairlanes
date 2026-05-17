@@ -24,6 +24,11 @@ PartyData::PartyData(entt::entity party_id,
   // Optional: early log breadcrumb
   log_->append_markup(
       fmt::format("Party created: id={} name={}", (int)party_id_, name_));
+  town_revitalize_sub_ = fl::events::ScopedPartyListener{
+      party_bus_, std::in_place_type<fl::events::PartyRevitalizeRequested>,
+      [this](const fl::events::PartyRevitalizeRequested &) {
+        revitalize_members();
+      }};
 }
 
 void PartyData::hook_to_beat(seerin::BeatBus &gc_beat_bus) {
@@ -62,8 +67,11 @@ void PartyData::revitalize_members() {
 
   for (const auto &member : members_) {
     if (auto *stats = party_ctx_.reg().try_get<Stats>(member.member_id())) {
+      const auto old_hp = stats->hp_;
       stats->hp_ = std::max(1, stats->max_hp_);
       stats->mp_ = std::max(0, stats->max_mp_);
+      party_bus_.emit(fl::events::PartyEvent{
+          fl::events::PartyHealed{member.member_id(), stats->hp_ - old_hp}});
     }
   }
 }

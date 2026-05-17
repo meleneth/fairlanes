@@ -38,8 +38,9 @@ TEST_CASE("AccountData creates unique entity ids per instance",
   REQUIRE(reg.valid(b.account_id()));
 }
 
-TEST_CASE("PartyData starts a one minute town penalty when all members are dead",
-          "[party][town][penalty]") {
+TEST_CASE(
+    "PartyData starts a one minute town penalty when all members are dead",
+    "[party][town][penalty]") {
   fl::GrandCentral gc{1, 1, 2};
 
   auto account_ctx = gc.account_context(0);
@@ -55,7 +56,8 @@ TEST_CASE("PartyData starts a one minute town penalty when all members are dead"
       [&](const fl::events::PartyWiped &) { saw_party_wiped = true; });
 
   for (const auto &member : party.members()) {
-    auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
+    auto &stats =
+        party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
     stats.hp_ = 0;
   }
 
@@ -83,12 +85,26 @@ TEST_CASE("Returning to town revitalizes party members",
   auto &party = party_ctx.party_data();
 
   for (const auto &member : party.members()) {
-    auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
+    auto &stats =
+        party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
     stats.hp_ = 0;
     stats.mp_ = 0;
   }
 
   fl::fsm::PartyLoop::Ops::enter_dead(party_ctx);
+
+  bool saw_revitalize_request = false;
+  int healed_members = 0;
+  (void)party.party_bus().on<fl::events::PartyRevitalizeRequested>(
+      [&](const fl::events::PartyRevitalizeRequested &) {
+        saw_revitalize_request = true;
+      });
+  (void)party.party_bus().on<fl::events::PartyHealed>(
+      [&](const fl::events::PartyHealed &ev) {
+        if (ev.amount > 0) {
+          ++healed_members;
+        }
+      });
 
   for (const auto &member : party.members()) {
     const auto &stats =
@@ -98,6 +114,9 @@ TEST_CASE("Returning to town revitalizes party members",
   }
 
   fl::fsm::PartyLoop::Ops::exit_fixing(party_ctx);
+
+  REQUIRE(saw_revitalize_request);
+  REQUIRE(healed_members == static_cast<int>(party.members().size()));
 
   for (const auto &member : party.members()) {
     const auto &stats =

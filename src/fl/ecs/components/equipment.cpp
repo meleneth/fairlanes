@@ -6,8 +6,7 @@
 namespace fl::ecs::components {
 
 Equipment::Equipment(fl::loot::EquipmentSlot slot, std::string name,
-                     fl::loot::ArmorKind armor_kind,
-                     fl::loot::Tier tier)
+                     fl::loot::ArmorKind armor_kind, fl::loot::Tier tier)
     : slot_(slot), armor_kind_(armor_kind), tier_(tier),
       name_(std::move(name)) {}
 

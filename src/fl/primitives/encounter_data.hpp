@@ -63,6 +63,8 @@ public:
     return rt_.atb_.scheduler().pending();
   }
 
+  seerin::uWu visual_time() const { return rt_.atb_.scheduler().now(); }
+
   bool owns_entity(entt::entity e) const {
     return std::find(life_.entities_to_cleanup_.begin(),
                      life_.entities_to_cleanup_.end(),
@@ -102,6 +104,7 @@ private:
 
   struct Wiring {
     fl::events::ScopedPartyListener party_beat_;
+    fl::events::ScopedPartyListener poison_apply_;
     seerin::BecameActiveSub atb_active_;
   } wire_;
 

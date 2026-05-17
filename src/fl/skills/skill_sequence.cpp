@@ -4,10 +4,11 @@
 
 #include <string>
 
-#include "fl/ecs/components/color_override.hpp"
 #include "fl/ecs/components/hp_bar_color_override.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/visual_effects.hpp"
 #include "fl/ecs/systems/dire_bleed_system.hpp"
+#include "fl/events/party_bus.hpp"
 #include "fl/lospec500.hpp"
 #include "fl/skills/eviscerate.hpp"
 #include "fl/skills/skill_learning.hpp"
@@ -31,6 +32,9 @@ void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
   case SkillId::Eviscerate:
     schedule_eviscerate(attacker, target);
     return;
+  case SkillId::Poison:
+    schedule_poison(attacker, target);
+    return;
   case SkillId::Bump:
   case SkillId::Squish:
   case SkillId::Smack:
@@ -46,7 +50,7 @@ void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
 void SkillSequencer::schedule_thump_like(entt::entity attacker,
                                          entt::entity target, SkillId skill) {
   ZoneScopedN("SkillSequencer::schedule_thump_like");
-  auto const kBg = fl::lospec500::color_at(0);
+  auto const kNormalText = fl::lospec500::color_at(32);
   auto const kRed = fl::lospec500::color_at(4);
   auto const kYellow = fl::lospec500::color_at(14);
 
@@ -56,14 +60,14 @@ void SkillSequencer::schedule_thump_like(entt::entity attacker,
 
   schedule_reek_fade(attacker,
                      fmt::format("{}: attacker red pulse #1", skill_name), 10,
-                     20, kRed, kBg);
+                     20, kRed, kNormalText);
 
   schedule_reek_fade(attacker,
                      fmt::format("{}: attacker red pulse #2", skill_name), 30,
-                     40, kRed, kBg);
+                     40, kRed, kNormalText);
 
   schedule_reek_fade(target, fmt::format("{}: defender yellow hit", skill_name),
-                     50, 70, kYellow, kBg);
+                     50, 70, kYellow, kNormalText);
 
   scheduler_.schedule_smelly_in_beats(
       60, fmt::format("{}: apply damage", skill_name),
@@ -86,14 +90,14 @@ void SkillSequencer::schedule_thump_like(entt::entity attacker,
 void SkillSequencer::schedule_eviscerate(entt::entity attacker,
                                          entt::entity target) {
   ZoneScopedN("SkillSequencer::schedule_eviscerate");
-  auto const kBg = fl::lospec500::color_at(0);
+  auto const kNormalText = fl::lospec500::color_at(32);
   auto const kRed = fl::lospec500::color_at(4);
   auto const kYellow = fl::lospec500::color_at(14);
 
   teach_party_from_observed_skill(party_ctx_, attacker, SkillId::Eviscerate);
 
   schedule_reek_fade(attacker, "eviscerate: attacker red slash", 8, 18, kRed,
-                     kBg);
+                     kNormalText);
   schedule_reek_fade(target, "eviscerate: defender wound", 20, 32, kYellow,
                      kRed);
 
@@ -113,6 +117,34 @@ void SkillSequencer::schedule_eviscerate(entt::entity attacker,
   auto finish_turn = finish_turn_;
   scheduler_.schedule_smelly_in_beats_for(
       34, attacker, "eviscerate: finish",
+      [finish_turn, attacker] { finish_turn(attacker); });
+
+  TracyPlot("SkillSequencer.PendingEvents",
+            static_cast<double>(scheduler_.pending()));
+}
+
+void SkillSequencer::schedule_poison(entt::entity attacker,
+                                     entt::entity target) {
+  ZoneScopedN("SkillSequencer::schedule_poison");
+  auto const kNormalText = fl::lospec500::color_at(32);
+  auto const kGreen = fl::lospec500::color_at(22);
+
+  teach_party_from_observed_skill(party_ctx_, attacker, SkillId::Poison);
+
+  schedule_reek_fade(attacker, "poison: attacker green pulse", 8, 18, kGreen,
+                     kNormalText);
+  schedule_reek_fade(target, "poison: defender sickly tint", 20, 32, kGreen,
+                     kNormalText);
+
+  scheduler_.schedule_smelly_in_beats_for(
+      24, target, "poison: apply", [&party_ctx = party_ctx_, attacker, target] {
+        party_ctx.bus().emit(fl::events::PartyEvent{
+            fl::events::PoisonApplied{attacker, target, 1, 9}});
+      });
+
+  auto finish_turn = finish_turn_;
+  scheduler_.schedule_smelly_in_beats_for(
+      34, attacker, "poison: finish",
       [finish_turn, attacker] { finish_turn(attacker); });
 
   TracyPlot("SkillSequencer.PendingEvents",
@@ -147,23 +179,34 @@ void SkillSequencer::schedule_reek_fade(entt::entity entity,
     return;
   }
 
-  for (int beat = start_beat; beat <= end_beat; ++beat) {
+  const auto expires_at =
+      seerin::uWu{scheduler_.now().v +
+                  seerin::UWU_PER_BEAT.v * static_cast<int64_t>(end_beat + 1)};
+
+  for (int beat = start_beat; beat < end_beat; ++beat) {
     auto const t =
         static_cast<float>(beat - start_beat) / static_cast<float>(duration);
 
     auto const color = ftxui::Color::Interpolate(t, from, to);
 
     scheduler_.schedule_smelly_in_beats_for(
-        beat, entity, fmt::format("{}: reek fade beat {}", label, beat),
-        [&party_ctx = party_ctx_, entity, color] {
-          fl::ecs::components::safe_add_color(party_ctx.reg(), entity, color);
+        beat, entity, fmt::format("{}: damage flash beat {}", label, beat),
+        [&party_ctx = party_ctx_, entity, color, expires_at] {
+          if (!party_ctx.reg().valid(entity)) {
+            return;
+          }
+          party_ctx.reg().emplace_or_replace<fl::ecs::components::DamageFlash>(
+              entity, fl::ecs::components::DamageFlash{color, expires_at});
         });
   }
 
   scheduler_.schedule_smelly_in_beats_for(
-      end_beat + 1, entity, fmt::format("{}: reek fade clear", label),
+      end_beat, entity, fmt::format("{}: damage flash release", label),
       [&party_ctx = party_ctx_, entity] {
-        fl::ecs::components::safe_clear_color(party_ctx.reg(), entity);
+        if (!party_ctx.reg().valid(entity)) {
+          return;
+        }
+        party_ctx.reg().remove<fl::ecs::components::DamageFlash>(entity);
       });
 }
 

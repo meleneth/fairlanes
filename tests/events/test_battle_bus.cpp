@@ -23,8 +23,7 @@ TEST_CASE("BattleBus dispatches StartCombat, Tick, EndCombat",
     REQUIRE(ev.encounter == expected_encounter);
   });
 
-  (void)bus.on<fl::events::BattleTick>(
-      [&](const fl::events::BattleTick &ev) {
+  (void)bus.on<fl::events::BattleTick>([&](const fl::events::BattleTick &ev) {
     saw_tick = true;
     seen_dt = ev.dt;
   });

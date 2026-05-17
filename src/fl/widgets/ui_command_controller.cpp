@@ -1,7 +1,7 @@
 #include "ui_command_controller.hpp"
 
-#include <charconv>
 #include <cctype>
+#include <charconv>
 #include <string>
 #include <system_error>
 #include <type_traits>
@@ -62,8 +62,8 @@ bool parse_index(std::string_view value, std::size_t &out) {
 }
 
 std::string entity_label(entt::entity entity) {
-  return std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
-      entity));
+  return std::to_string(
+      static_cast<std::underlying_type_t<entt::entity>>(entity));
 }
 
 } // namespace
@@ -143,8 +143,7 @@ void UiCommandController::handle(std::string_view command) {
       write("overdrive is x" +
             std::to_string(world_clock_->beat_rate_multiplier()));
       write("usage: overdrive <1-" +
-            std::to_string(
-                fl::primitives::WorldClock::kMaxBeatRateMultiplier) +
+            std::to_string(fl::primitives::WorldClock::kMaxBeatRateMultiplier) +
             ">");
       return;
     }
@@ -271,8 +270,8 @@ void UiCommandController::list_accounts() {
   for (std::size_t i = 0; i < accounts_->size(); ++i) {
     auto &account = accounts_->at(i);
     write((i == account_index_ ? "* " : "  ") + std::to_string(i) +
-          ": account #" + entity_label(account.account_id()) + " parties=" +
-          std::to_string(account.parties().size()));
+          ": account #" + entity_label(account.account_id()) +
+          " parties=" + std::to_string(account.parties().size()));
   }
 }
 
@@ -292,8 +291,8 @@ void UiCommandController::list_parties() {
     auto &party = parties[i];
     write((i == party_index_ ? "* " : "  ") + std::to_string(i) + ": " +
           std::string(party.name()) + " #" + entity_label(party.party_id()) +
-          " members=" + std::to_string(party.members().size()) + " items=" +
-          std::to_string(party.items().size()));
+          " members=" + std::to_string(party.members().size()) +
+          " items=" + std::to_string(party.items().size()));
   }
 }
 

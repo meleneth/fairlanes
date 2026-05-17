@@ -122,6 +122,7 @@ private:
 
   seerin::BeatBus party_beat_bus_{};
   seerin::BeatSub gc_forward_sub_{};
+  fl::events::ScopedPartyListener town_revitalize_sub_{};
   int town_penalty_beats_remaining_{0};
 };
 

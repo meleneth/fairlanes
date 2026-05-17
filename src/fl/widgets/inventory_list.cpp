@@ -13,8 +13,8 @@ namespace fl::widgets {
 namespace {
 
 std::string entity_label(entt::entity entity) {
-  return "#" + std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
-                   entity));
+  return "#" + std::to_string(
+                   static_cast<std::underlying_type_t<entt::entity>>(entity));
 }
 
 } // namespace
@@ -74,11 +74,9 @@ ftxui::Element InventoryList::Render() {
     const auto item = items[static_cast<std::size_t>(i)];
     Element line = text(entity_label(item));
 
-    if (auto *equipment =
-            reg_.try_get<fl::ecs::components::Equipment>(item)) {
+    if (auto *equipment = reg_.try_get<fl::ecs::components::Equipment>(item)) {
       line = equipment_inventory_label(*equipment);
-    } else if (auto *stats =
-                   reg_.try_get<fl::ecs::components::Stats>(item)) {
+    } else if (auto *stats = reg_.try_get<fl::ecs::components::Stats>(item)) {
       line = text(stats->name_);
     }
 
@@ -89,8 +87,8 @@ ftxui::Element InventoryList::Render() {
   }
 
   auto title = focused_ ? text("Inventory") | inverted : text("Inventory");
-  return window(title, vbox(std::move(lines)) | yframe | vscroll_indicator |
-                           flex);
+  return window(title,
+                vbox(std::move(lines)) | yframe | vscroll_indicator | flex);
 }
 
 void InventoryList::set_focused(bool focused) noexcept { focused_ = focused; }

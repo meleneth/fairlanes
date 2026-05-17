@@ -140,8 +140,7 @@ ftxui::Element PartyView::render_party() {
       if (cells.size() >= 5) {
         break;
       }
-      cells.push_back(
-          Combatant{ctx_.reg(), entity, true}.Render() | xflex);
+      cells.push_back(Combatant{ctx_.reg(), entity, true}.Render() | xflex);
     }
 
     while (cells.size() < 5) {

@@ -13,9 +13,7 @@ namespace fl::loot {
 template <typename T> class UpgradeTable {
 public:
   explicit UpgradeTable(std::vector<WeightedChoice<T>> choices)
-      : choices_(std::move(choices)) {
-  
-  }
+      : choices_(std::move(choices)) {}
 
   template <fl::context::WorldCoreCtx Ctx>
   [[nodiscard]] T roll(Ctx &ctx, std::string_view stream_name,

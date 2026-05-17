@@ -13,8 +13,8 @@
 #include "fl/ecs/components/closet.hpp"
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
-#include "fl/lospec500.hpp"
 #include "fl/loot/equipment_builder.hpp"
+#include "fl/lospec500.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/widgets/equipment_label.hpp"
 #include "fl/widgets/fancy_log.hpp"
@@ -29,8 +29,8 @@ using fl::loot::EquipmentSlot;
 using fl::loot::Tier;
 
 constexpr std::array<EquipmentSlot, 8> kArmorSlots{
-    EquipmentSlot::chest,  EquipmentSlot::helm,    EquipmentSlot::pants,
-    EquipmentSlot::belt,   EquipmentSlot::boots,   EquipmentSlot::gloves,
+    EquipmentSlot::chest,   EquipmentSlot::helm,  EquipmentSlot::pants,
+    EquipmentSlot::belt,    EquipmentSlot::boots, EquipmentSlot::gloves,
     EquipmentSlot::sleeves, EquipmentSlot::cape,
 };
 
@@ -47,11 +47,11 @@ constexpr std::array<EquipmentSlot, 3> kJewelrySlots{
 };
 
 constexpr std::array<EquipmentSlot, 14> kUpgradableSlots{
-    EquipmentSlot::chest,    EquipmentSlot::helm,     EquipmentSlot::pants,
-    EquipmentSlot::belt,     EquipmentSlot::boots,    EquipmentSlot::gloves,
-    EquipmentSlot::sleeves,  EquipmentSlot::cape,     EquipmentSlot::mainhand,
-    EquipmentSlot::offhand,  EquipmentSlot::knife,    EquipmentSlot::necklace,
-    EquipmentSlot::ring_1,   EquipmentSlot::ring_2,
+    EquipmentSlot::chest,   EquipmentSlot::helm,   EquipmentSlot::pants,
+    EquipmentSlot::belt,    EquipmentSlot::boots,  EquipmentSlot::gloves,
+    EquipmentSlot::sleeves, EquipmentSlot::cape,   EquipmentSlot::mainhand,
+    EquipmentSlot::offhand, EquipmentSlot::knife,  EquipmentSlot::necklace,
+    EquipmentSlot::ring_1,  EquipmentSlot::ring_2,
 };
 
 constexpr std::array<ArmorKind, 4> kUpgradableKinds{
@@ -292,8 +292,8 @@ void append_upgraded_log(fl::context::PartyCtx &ctx, Tier tier, ArmorKind kind,
   }));
 }
 
-std::optional<ArmorKind>
-existing_armor_kind(entt::registry &reg, const Closet &closet) {
+std::optional<ArmorKind> existing_armor_kind(entt::registry &reg,
+                                             const Closet &closet) {
   for (auto slot : kArmorSlots) {
     const auto worn = slot_value(closet, slot);
     if (worn == entt::null || !reg.valid(worn)) {
@@ -339,13 +339,13 @@ best_available_armor_kind(entt::registry &reg,
     }
   }
 
-  const auto best = std::max_element(scores.begin(), scores.end(),
-                                     [](Score lhs, Score rhs) {
-                                       if (lhs.pieces != rhs.pieces) {
-                                         return lhs.pieces < rhs.pieces;
-                                       }
-                                       return lhs.tiers < rhs.tiers;
-                                     });
+  const auto best =
+      std::max_element(scores.begin(), scores.end(), [](Score lhs, Score rhs) {
+        if (lhs.pieces != rhs.pieces) {
+          return lhs.pieces < rhs.pieces;
+        }
+        return lhs.tiers < rhs.tiers;
+      });
 
   if (best == scores.end() || best->pieces == 0) {
     return std::nullopt;
@@ -354,11 +354,9 @@ best_available_armor_kind(entt::registry &reg,
   return best->kind;
 }
 
-std::optional<std::size_t>
-find_best_inventory_item(entt::registry &reg,
-                         const std::vector<entt::entity> &inventory,
-                         EquipmentSlot slot, ArmorKind kind,
-                         const Equipment *current) {
+std::optional<std::size_t> find_best_inventory_item(
+    entt::registry &reg, const std::vector<entt::entity> &inventory,
+    EquipmentSlot slot, ArmorKind kind, const Equipment *current) {
   std::optional<std::size_t> best_index;
   const Equipment *best_equipment = nullptr;
 
@@ -405,9 +403,8 @@ void equip_party(fl::context::PartyCtx &ctx,
         auto &worn = slot_ref(closet, slot);
         const auto *current =
             worn == entt::null ? nullptr : reg.try_get<Equipment>(worn);
-        auto best_index =
-            find_best_inventory_item(reg, inventory, slot, *preferred_kind,
-                                     current);
+        auto best_index = find_best_inventory_item(reg, inventory, slot,
+                                                   *preferred_kind, current);
         if (!best_index) {
           continue;
         }
@@ -428,9 +425,8 @@ void equip_party(fl::context::PartyCtx &ctx,
         auto &worn = slot_ref(closet, slot);
         const auto *current =
             worn == entt::null ? nullptr : reg.try_get<Equipment>(worn);
-        auto best_index =
-            find_best_inventory_item(reg, inventory, slot, *preferred_kind,
-                                     current);
+        auto best_index = find_best_inventory_item(reg, inventory, slot,
+                                                   *preferred_kind, current);
         if (!best_index) {
           continue;
         }
@@ -452,8 +448,8 @@ void equip_party(fl::context::PartyCtx &ctx,
       auto &worn = slot_ref(closet, slot);
       const auto *current =
           worn == entt::null ? nullptr : reg.try_get<Equipment>(worn);
-      auto best_index = find_best_inventory_item(
-          reg, inventory, slot, ArmorKind::none, current);
+      auto best_index = find_best_inventory_item(reg, inventory, slot,
+                                                 ArmorKind::none, current);
       if (!best_index) {
         continue;
       }
@@ -493,12 +489,13 @@ void remove_equipped_items_from_inventory(
     }
   }
 
-  inventory.erase(
-      std::remove_if(inventory.begin(), inventory.end(), [&](entt::entity item) {
-        return std::find(equipped.begin(), equipped.end(), item) !=
-               equipped.end();
-      }),
-      inventory.end());
+  inventory.erase(std::remove_if(inventory.begin(), inventory.end(),
+                                 [&](entt::entity item) {
+                                   return std::find(equipped.begin(),
+                                                    equipped.end(),
+                                                    item) != equipped.end();
+                                 }),
+                  inventory.end());
 }
 
 void upgrade_inventory(fl::context::PartyCtx &ctx,

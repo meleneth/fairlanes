@@ -105,6 +105,7 @@ private:
   void _create_initial_accounts();
   void bootstrap_logs();
   void build_ui();
+  void resolve_visuals_for_render();
 };
 
 } // namespace fl

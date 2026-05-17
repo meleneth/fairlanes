@@ -43,6 +43,10 @@ void WoodlandCritter::apply_bark_smack(EntityBuilder &b) {
   set_stats(b, "Bark Smack", 12, 4);
 }
 
+void WoodlandCritter::apply_poison_toad(EntityBuilder &b) {
+  set_stats(b, "Poison Toad", 16, 5);
+}
+
 void register_woodland_critters() {
   register_monster(fl::monster::MonsterKind::BumpkinHare,
                    [](EntityBuilder &b) { WoodlandCritter::apply_bumpkin(b); });
@@ -51,6 +55,9 @@ void register_woodland_critters() {
   });
   register_monster(fl::monster::MonsterKind::BarkSmack, [](EntityBuilder &b) {
     WoodlandCritter::apply_bark_smack(b);
+  });
+  register_monster(fl::monster::MonsterKind::PoisonToad, [](EntityBuilder &b) {
+    WoodlandCritter::apply_poison_toad(b);
   });
 }
 

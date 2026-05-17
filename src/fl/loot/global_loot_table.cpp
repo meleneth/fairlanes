@@ -90,74 +90,73 @@ std::string LootTable::generated_name(EquipmentSlot slot, ArmorKind kind,
 }
 
 LootTable global_loot_table() {
-  return LootTable{
-      Weight{25}, // 25% chance anything drops
+  return LootTable{Weight{25}, // 25% chance anything drops
 
-      WeightedTable<ItemKind>{{
-          {Weight{60}, ItemKind::armor},
-          {Weight{20}, ItemKind::weapon},
-          {Weight{15}, ItemKind::jewelry},
-          {Weight{5}, ItemKind::special},
-      }},
+                   WeightedTable<ItemKind>{{
+                       {Weight{60}, ItemKind::armor},
+                       {Weight{20}, ItemKind::weapon},
+                       {Weight{15}, ItemKind::jewelry},
+                       {Weight{5}, ItemKind::special},
+                   }},
 
-      WeightedTable<EquipmentSlot>{{
-          {Weight{15}, EquipmentSlot::chest},
-          {Weight{10}, EquipmentSlot::helm},
-          {Weight{10}, EquipmentSlot::pants},
-          {Weight{10}, EquipmentSlot::belt},
-          {Weight{15}, EquipmentSlot::boots},
-          {Weight{10}, EquipmentSlot::gloves},
-          {Weight{10}, EquipmentSlot::sleeves},
-          {Weight{10}, EquipmentSlot::cape},
-      }},
+                   WeightedTable<EquipmentSlot>{{
+                       {Weight{15}, EquipmentSlot::chest},
+                       {Weight{10}, EquipmentSlot::helm},
+                       {Weight{10}, EquipmentSlot::pants},
+                       {Weight{10}, EquipmentSlot::belt},
+                       {Weight{15}, EquipmentSlot::boots},
+                       {Weight{10}, EquipmentSlot::gloves},
+                       {Weight{10}, EquipmentSlot::sleeves},
+                       {Weight{10}, EquipmentSlot::cape},
+                   }},
 
-      WeightedTable<ArmorKind>{{
-          {Weight{40}, ArmorKind::cloth},
-          {Weight{35}, ArmorKind::leather},
-          {Weight{25}, ArmorKind::plate},
-      }},
-      WeightedTable<EquipmentSlot>{{
-          {Weight{45}, EquipmentSlot::mainhand},
-          {Weight{35}, EquipmentSlot::offhand},
-          {Weight{20}, EquipmentSlot::knife},
-      }},
+                   WeightedTable<ArmorKind>{{
+                       {Weight{40}, ArmorKind::cloth},
+                       {Weight{35}, ArmorKind::leather},
+                       {Weight{25}, ArmorKind::plate},
+                   }},
+                   WeightedTable<EquipmentSlot>{{
+                       {Weight{45}, EquipmentSlot::mainhand},
+                       {Weight{35}, EquipmentSlot::offhand},
+                       {Weight{20}, EquipmentSlot::knife},
+                   }},
 
-      WeightedTable<EquipmentSlot>{{
-          {Weight{34}, EquipmentSlot::necklace},
-          {Weight{33}, EquipmentSlot::ring_1},
-          {Weight{33}, EquipmentSlot::ring_2},
-      }},
+                   WeightedTable<EquipmentSlot>{{
+                       {Weight{34}, EquipmentSlot::necklace},
+                       {Weight{33}, EquipmentSlot::ring_1},
+                       {Weight{33}, EquipmentSlot::ring_2},
+                   }},
 
-      UpgradeTable<Tier>{{
-          {Weight{35}, Tier::plain},
-          {Weight{25}, Tier::sturdy},
-          {Weight{18}, Tier::fine},
-          {Weight{12}, Tier::excellent},
-          {Weight{7}, Tier::masterwork},
-          {Weight{2}, Tier::mythic},
-      }},
-      {
-          SpecialItem{
-              .weight = Weight{20},
-              .item =
-                  EquipmentBuilder{
-                      .slot = EquipmentSlot::boots,
-                      .armor_kind = ArmorKind::leather,
-                      .tier = Tier::excellent,
-                      .name = "Boots of Damp Authority",
-                  },
-          },
-          SpecialItem{
-              .weight = Weight{10},
-              .item =
-                  EquipmentBuilder{
-                      .slot = EquipmentSlot::cape,
-                      .armor_kind = ArmorKind::cloth,
-                      .tier = Tier::fine,
-                      .name = "Mouse-Nibbled Cape",
-                  },
-          },
-      }};
+                   UpgradeTable<Tier>{{
+                       {Weight{35}, Tier::plain},
+                       {Weight{25}, Tier::sturdy},
+                       {Weight{18}, Tier::fine},
+                       {Weight{12}, Tier::excellent},
+                       {Weight{7}, Tier::masterwork},
+                       {Weight{2}, Tier::mythic},
+                   }},
+                   {
+                       SpecialItem{
+                           .weight = Weight{20},
+                           .item =
+                               EquipmentBuilder{
+                                   .slot = EquipmentSlot::boots,
+                                   .armor_kind = ArmorKind::leather,
+                                   .tier = Tier::excellent,
+                                   .name = "Boots of Damp Authority",
+                               },
+                       },
+                       SpecialItem{
+                           .weight = Weight{10},
+                           .item =
+                               EquipmentBuilder{
+                                   .slot = EquipmentSlot::cape,
+                                   .armor_kind = ArmorKind::cloth,
+                                   .tier = Tier::fine,
+                                   .name = "Mouse-Nibbled Cape",
+                               },
+                       },
+                   }};
 }
 
 } // namespace fl::loot

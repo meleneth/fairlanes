@@ -18,8 +18,7 @@ void SpecialFestivalEvent::grant_starting_drops(fl::context::PartyCtx &ctx) {
       ctx.party_data().party_id());
 
   while (granted < kDropsPerParty) {
-    const auto stream_name =
-        fmt::format("festival.{}.{}", party_id, rolls++);
+    const auto stream_name = fmt::format("festival.{}.{}", party_id, rolls++);
     if (auto builder = loot.roll(ctx, stream_name)) {
       ctx.party_data().add_item(builder->create(ctx.reg()));
       ++granted;

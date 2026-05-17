@@ -1,10 +1,10 @@
 #include "combatant.hpp"
 
 #include "fl/ecs/components/atb_charge.hpp"
-#include "fl/ecs/components/color_override.hpp"
 #include "fl/ecs/components/hp_bar_color_override.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
+#include "fl/ecs/components/visual_effects.hpp"
 #include "fl/lospec500.hpp"
 
 namespace fl::widgets {
@@ -98,9 +98,8 @@ ftxui::Element Combatant::Render() {
       uwu_bar.append(static_cast<std::size_t>(uwu_filled), '#');
       uwu_bar.append(static_cast<std::size_t>(uwu_empty), '-');
 
-      auto uwu_text = "ATB: [" + uwu_bar + "] " +
-                      std::to_string(atb->charge) + "/" +
-                      std::to_string(atb->max_charge);
+      auto uwu_text = "ATB: [" + uwu_bar + "] " + std::to_string(atb->charge) +
+                      "/" + std::to_string(atb->max_charge);
       content_lines.push_back(ftxui::hbox({
           ftxui::text(uwu_text),
           ftxui::filler(),
@@ -122,11 +121,8 @@ ftxui::Element Combatant::Render() {
     ftxui::vbox(std::move(content_lines))
   );
   // clang-format on
-  
-  // Apply dead color if HP <= 0
-  if (!stats.is_alive()) {
-    border = border | ftxui::color(fl::lospec500::color_at(6));
-  } else if (auto *co = reg.try_get<ColorOverride>(entity)) {
+
+  if (auto *co = reg.try_get<ResolvedColorOverride>(entity)) {
     border = border | ftxui::color(co->color);
   }
   // <-- key: allow the whole Combatant box to flex horizontally

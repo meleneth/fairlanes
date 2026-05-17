@@ -14,16 +14,14 @@ int main(int argc, char **argv) {
   app.add_flag("--no-ui", opts.no_ui, "Run headless (no FTXUI screen)");
 
   app.add_option(
-         "--overdrive",
-         opts.overdrive,
+         "--overdrive", opts.overdrive,
          "Beat-rate multiplier 1-" +
              std::to_string(fl::primitives::WorldClock::kMaxBeatRateMultiplier))
-      ->check(CLI::Range(1, fl::primitives::WorldClock::kMaxBeatRateMultiplier));
+      ->check(
+          CLI::Range(1, fl::primitives::WorldClock::kMaxBeatRateMultiplier));
 
-  app.add_option(
-         "--cutoff-seconds",
-         opts.cutoff_seconds,
-         "Stop after this many simulated seconds")
+  app.add_option("--cutoff-seconds", opts.cutoff_seconds,
+                 "Stop after this many simulated seconds")
       ->check(CLI::PositiveNumber);
 
   CLI11_PARSE(app, argc, argv);
