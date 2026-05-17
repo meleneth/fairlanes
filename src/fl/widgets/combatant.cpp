@@ -125,6 +125,11 @@ ftxui::Element Combatant::Render() {
   if (auto *co = reg.try_get<ResolvedColorOverride>(entity)) {
     border = border | ftxui::color(co->color);
   }
+
+  if (auto *bg = reg.try_get<ResolvedBackgroundColorOverride>(entity)) {
+    border = border | ftxui::bgcolor(bg->color);
+  }
+
   // <-- key: allow the whole Combatant box to flex horizontally
   return border | ftxui::xflex;
 }

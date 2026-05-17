@@ -13,6 +13,7 @@ namespace sml = boost::sml;
 
 struct Charging {};
 struct Ready {};
+struct FrozenState {};
 
 struct AtbMachine {
   entt::registry &reg;
@@ -39,16 +40,37 @@ struct AtbMachine {
       out.emit(AtbOutEvent{BecameReady{id}});
     };
 
+    const auto is_full = [this] {
+      auto &ctx = reg.get<fl::ecs::components::AtbCharge>(id);
+      return ctx.charge >= ctx.max_charge;
+    };
+
+    const auto emit_ready = [this] { out.emit(AtbOutEvent{BecameReady{id}}); };
+
     return make_transition_table(
         *state<Charging> + event<BeatTick>[will_be_full] /
                                accrue_and_emit_ready = state<Ready>,
         state<Charging> + event<BeatTick> / accrue = state<Charging>,
 
+        state<Charging> + event<Frozen> = state<FrozenState>,
+        state<Ready> + event<Frozen> = state<FrozenState>,
+        state<FrozenState> + event<BeatTick> = state<FrozenState>,
+        state<FrozenState> + event<Thawed>[is_full] / emit_ready = state<Ready>,
+        state<FrozenState> + event<Thawed> = state<Charging>,
+
         // NEW: consume the turn, reset, start charging again
-        state<Ready> + event<FinishedTurn> / [this] {
-          auto &ctx = reg.get<fl::ecs::components::AtbCharge>(id);
-          ctx.charge = 0;
-        } = state<Charging>);
+        state<Ready> + event<FinishedTurn> /
+                           [this] {
+                             auto &ctx =
+                                 reg.get<fl::ecs::components::AtbCharge>(id);
+                             ctx.charge = 0;
+                           } = state<Charging>,
+        state<FrozenState> +
+            event<FinishedTurn> /
+                [this] {
+                  auto &ctx = reg.get<fl::ecs::components::AtbCharge>(id);
+                  ctx.charge = 0;
+                } = state<Charging>);
   };
 };
 } // namespace seerin

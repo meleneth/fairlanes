@@ -96,12 +96,14 @@ TEST_CASE(
   }
 }
 
-TEST_CASE("EncounterBuilder common woodland pool includes Poison Toad",
-          "[encounter_builder][encounter][combat][poison]") {
+TEST_CASE("EncounterBuilder common woodland pool includes new status monsters",
+          "[encounter_builder][encounter][combat][status]") {
   const auto &pool = fl::primitives::EncounterBuilder::kCommonWoodland;
 
   REQUIRE(std::find(pool.begin(), pool.end(),
                     fl::monster::MonsterKind::PoisonToad) != pool.end());
+  REQUIRE(std::find(pool.begin(), pool.end(), fl::monster::MonsterKind::Yeti) !=
+          pool.end());
 }
 
 TEST_CASE("SkillSequencer reek fade resolves DamageFlash and lets it expire",

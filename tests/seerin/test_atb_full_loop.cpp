@@ -1,4 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
+
+#include <algorithm>
+
 #include <entt/entt.hpp>
 
 #include "fl/ecs/components/atb_charge.hpp"
@@ -96,4 +99,52 @@ TEST_CASE(
 
   emit_beats(atb.in(), 30);
   REQUIRE(became_ready == 1);
+}
+
+TEST_CASE("ATB: frozen combatants do not accrue charge", "[atb][freeze]") {
+  entt::registry reg;
+  seerin::AtbEngine atb{reg};
+
+  auto id = reg.create();
+  atb.in().emit(seerin::AtbInEvent{seerin::AddCombatant{id}});
+
+  emit_beats(atb.in(), 30);
+  REQUIRE(reg.get<fl::ecs::components::AtbCharge>(id).charge == 2400);
+
+  atb.in().emit(seerin::AtbInEvent{seerin::Frozen{id}});
+  emit_beats(atb.in(), 10);
+  REQUIRE(reg.get<fl::ecs::components::AtbCharge>(id).charge == 2400);
+
+  atb.in().emit(seerin::AtbInEvent{seerin::Thawed{id}});
+  emit_beats(atb.in(), 30);
+
+  REQUIRE(reg.get<fl::ecs::components::AtbCharge>(id).charge == 4800);
+  REQUIRE(atb.active_combatant() == id);
+}
+
+TEST_CASE("ATB: frozen ready combatants leave and re-enter the ready queue",
+          "[atb][freeze][ready_queue]") {
+  entt::registry reg;
+  seerin::AtbEngine atb{reg};
+
+  auto id = reg.create();
+  auto sentinel = reg.create();
+  atb.active_combatant() = sentinel;
+  atb.in().emit(seerin::AtbInEvent{seerin::AddCombatant{id}});
+
+  emit_beats(atb.in(), 60);
+  REQUIRE(reg.get<fl::ecs::components::AtbCharge>(id).charge == 4800);
+  REQUIRE(std::find(atb.ready_queue().begin(), atb.ready_queue().end(), id) !=
+          atb.ready_queue().end());
+
+  atb.in().emit(seerin::AtbInEvent{seerin::Frozen{id}});
+  REQUIRE(std::find(atb.ready_queue().begin(), atb.ready_queue().end(), id) ==
+          atb.ready_queue().end());
+  REQUIRE(reg.get<fl::ecs::components::AtbCharge>(id).charge == 4800);
+
+  atb.ready_queue().push_back(sentinel);
+  atb.in().emit(seerin::AtbInEvent{seerin::Thawed{id}});
+
+  REQUIRE(atb.ready_queue().size() == 2);
+  REQUIRE(atb.ready_queue().back() == id);
 }

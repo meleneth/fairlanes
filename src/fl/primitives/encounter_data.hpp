@@ -105,6 +105,9 @@ private:
   struct Wiring {
     fl::events::ScopedPartyListener party_beat_;
     fl::events::ScopedPartyListener poison_apply_;
+    fl::events::ScopedPartyListener freeze_apply_;
+    fl::events::ScopedPartyListener freeze_started_;
+    fl::events::ScopedPartyListener freeze_ended_;
     seerin::BecameActiveSub atb_active_;
   } wire_;
 

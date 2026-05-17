@@ -3,7 +3,9 @@
 #include <optional>
 
 #include "fl/context.hpp"
+#include "fl/ecs/components/atb_charge.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"
+#include "fl/ecs/components/freeze.hpp"
 #include "fl/ecs/components/hp_bar_color_override.hpp"
 #include "fl/ecs/components/monster_identity.hpp"
 #include "fl/ecs/components/poison.hpp"
@@ -389,7 +391,7 @@ TEST_CASE("Dire Bleed clears safely if the source is gone before a tick",
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::DireBleed>(defender));
 
   party_ctx.reg().destroy(honey_badger);
-  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(3));
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(5));
 
   REQUIRE_FALSE(
       party_ctx.reg().any_of<fl::ecs::components::DireBleed>(defender));
@@ -446,13 +448,13 @@ TEST_CASE("Poison applies flat damage every three seconds for its duration",
               .get<fl::ecs::components::Poison>(defender)
               .ticks_remaining == 2);
 
-  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(3));
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(5));
   REQUIRE(stats.hp_ == 98);
   REQUIRE(party_ctx.reg()
               .get<fl::ecs::components::Poison>(defender)
               .ticks_remaining == 1);
 
-  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(3));
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(5));
   REQUIRE(stats.hp_ == 97);
   REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Poison>(defender));
   REQUIRE_FALSE(
@@ -481,6 +483,103 @@ TEST_CASE("Poison is applied by event and clears when combat ends",
   party.leave_combat();
 
   REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Poison>(defender));
+  REQUIRE_FALSE(
+      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
+}
+
+TEST_CASE("Freeze applies a frozen background and expires after five seconds",
+          "[encounter][skills][freeze]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &encounter = party.create_encounter();
+
+  const auto defender = party.members().front().member_id();
+  encounter.defenders().members().push_back(defender);
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
+
+  auto source = add_honey_badger(party_ctx, encounter);
+  party_ctx.bus().emit(
+      fl::events::PartyEvent{fl::events::FreezeApplied{source, defender, 9}});
+
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::StatusTint>(defender));
+  REQUIRE(party_ctx.reg()
+              .get<fl::ecs::components::StatusTint>(defender)
+              .background_color == fl::lospec500::color_at(16));
+
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(4));
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
+  REQUIRE(party_ctx.reg()
+              .get<fl::ecs::components::StatusTint>(defender)
+              .background_color == fl::lospec500::color_at(16));
+
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));
+  REQUIRE_FALSE(
+      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
+}
+
+TEST_CASE("Freeze stops ATB accrual until it expires",
+          "[encounter][skills][freeze][atb]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &encounter = party.create_encounter();
+
+  const auto defender = party.members().front().member_id();
+  encounter.defenders().members().push_back(defender);
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
+
+  auto source = add_honey_badger(party_ctx, encounter);
+  party_ctx.bus().emit(
+      fl::events::PartyEvent{fl::events::FreezeApplied{source, defender, 9}});
+
+  tick_party(party_ctx, 2);
+  REQUIRE(
+      party_ctx.reg().get<fl::ecs::components::AtbCharge>(defender).charge ==
+      0);
+
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(5));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));
+
+  tick_party(party_ctx, 1);
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::AtbCharge>(defender).charge >
+          0);
+}
+
+TEST_CASE("Second Freeze application shatters for half max HP",
+          "[encounter][skills][freeze][shatter]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &encounter = party.create_encounter();
+
+  const auto defender = party.members().front().member_id();
+  encounter.defenders().members().push_back(defender);
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
+
+  auto source = add_honey_badger(party_ctx, encounter);
+  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+  stats.max_hp_ = 100;
+  stats.hp_ = 100;
+
+  party_ctx.bus().emit(
+      fl::events::PartyEvent{fl::events::FreezeApplied{source, defender, 9}});
+  REQUIRE(stats.hp_ == 100);
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
+
+  party_ctx.bus().emit(
+      fl::events::PartyEvent{fl::events::FreezeApplied{source, defender, 9}});
+
+  REQUIRE(stats.hp_ == 50);
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));
   REQUIRE_FALSE(
       party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
 }

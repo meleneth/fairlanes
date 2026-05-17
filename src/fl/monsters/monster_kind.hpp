@@ -9,6 +9,7 @@ enum class MonsterKind {
   MireSquish,
   BarkSmack,
   PoisonToad,
+  Yeti,
   // Wolf,
   // Slime,
   // Goblin,

@@ -4,6 +4,7 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/systems/freeze_system.hpp"
 #include "fl/ecs/systems/poison_system.hpp"
 #include "fl/skills/skill_selection.hpp"
 #include "fl/skills/skill_sequence.hpp"
@@ -105,6 +106,22 @@ EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
   wire_.poison_apply_ = fl::ecs::systems::PoisonSystem::bind_apply_listener(
       *party_ctx_, rt_.atb_.scheduler(),
       [this](entt::entity entity) { clear_pending_events_for(entity); });
+
+  wire_.freeze_apply_ = fl::ecs::systems::FreezeSystem::bind_apply_listener(
+      *party_ctx_, rt_.atb_.scheduler(),
+      [this](entt::entity entity) { clear_pending_events_for(entity); });
+
+  wire_.freeze_started_ = fl::events::ScopedPartyListener{
+      party_ctx_->bus(), std::in_place_type<fl::events::FreezeStarted>,
+      [this](const fl::events::FreezeStarted &ev) {
+        atb_in().emit(seerin::AtbInEvent{seerin::Frozen{ev.target}});
+      }};
+
+  wire_.freeze_ended_ = fl::events::ScopedPartyListener{
+      party_ctx_->bus(), std::in_place_type<fl::events::FreezeEnded>,
+      [this](const fl::events::FreezeEnded &ev) {
+        atb_in().emit(seerin::AtbInEvent{seerin::Thawed{ev.target}});
+      }};
 }
 
 } // namespace fl::primitives

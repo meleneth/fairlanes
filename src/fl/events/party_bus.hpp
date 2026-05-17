@@ -34,6 +34,17 @@ struct PoisonApplied {
   int damage_per_tick{0};
   int duration_seconds{0};
 };
+struct FreezeApplied {
+  entt::entity source{entt::null};
+  entt::entity target{entt::null};
+  int duration_seconds{0};
+};
+struct FreezeStarted {
+  entt::entity target{entt::null};
+};
+struct FreezeEnded {
+  entt::entity target{entt::null};
+};
 struct PreAttack {
   entt::entity attacker{entt::null};
   entt::entity target{entt::null};
@@ -51,7 +62,8 @@ struct PlayerDied {
 using PartyEvent =
     std::variant<PartyCreated, MemberJoined, MemberLeft, PartyWiped,
                  PartyLeftCombat, PartyGainedXP, PartyHealed,
-                 PartyRevitalizeRequested, PartyTick, PoisonApplied, PreAttack,
+                 PartyRevitalizeRequested, PartyTick, PoisonApplied,
+                 FreezeApplied, FreezeStarted, FreezeEnded, PreAttack,
                  PostAttack, PlayerDied>;
 
 using PartyBus = seerin::VariantBus<PartyEvent>;

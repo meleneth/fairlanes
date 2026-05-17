@@ -35,6 +35,9 @@ void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
   case SkillId::Poison:
     schedule_poison(attacker, target);
     return;
+  case SkillId::ColdSnap:
+    schedule_cold_snap(attacker, target);
+    return;
   case SkillId::Bump:
   case SkillId::Squish:
   case SkillId::Smack:
@@ -145,6 +148,33 @@ void SkillSequencer::schedule_poison(entt::entity attacker,
   auto finish_turn = finish_turn_;
   scheduler_.schedule_smelly_in_beats_for(
       34, attacker, "poison: finish",
+      [finish_turn, attacker] { finish_turn(attacker); });
+
+  TracyPlot("SkillSequencer.PendingEvents",
+            static_cast<double>(scheduler_.pending()));
+}
+
+void SkillSequencer::schedule_cold_snap(entt::entity attacker,
+                                        entt::entity target) {
+  ZoneScopedN("SkillSequencer::schedule_cold_snap");
+  auto const kNormalText = fl::lospec500::color_at(32);
+  auto const kIce = fl::lospec500::color_at(28);
+
+  teach_party_from_observed_skill(party_ctx_, attacker, SkillId::ColdSnap);
+
+  schedule_reek_fade(attacker, "cold snap: attacker ice pulse", 8, 18, kIce,
+                     kNormalText);
+
+  scheduler_.schedule_smelly_in_beats_for(
+      24, target, "cold snap: apply freeze",
+      [&party_ctx = party_ctx_, attacker, target] {
+        party_ctx.bus().emit(fl::events::PartyEvent{
+            fl::events::FreezeApplied{attacker, target, 9}});
+      });
+
+  auto finish_turn = finish_turn_;
+  scheduler_.schedule_smelly_in_beats_for(
+      34, attacker, "cold snap: finish",
       [finish_turn, attacker] { finish_turn(attacker); });
 
   TracyPlot("SkillSequencer.PendingEvents",

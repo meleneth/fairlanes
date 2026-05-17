@@ -13,6 +13,8 @@ AtbEngine::AtbEngine() {
   h_beat_wire_ = wire<Beat>(buses_.in, sys_);
   h_add_wire_ = wire<AddCombatant>(buses_.in, sys_);
   h_fin_wire_ = wire<FinishedTurn>(buses_.in, sys_);
+  h_frozen_wire_ = wire<Frozen>(buses_.in, sys_);
+  h_thawed_wire_ = wire<Thawed>(buses_.in, sys_);
 
   // Wire engine outputs back into system bus so we can react to BecameReady
   h_ready_wire_ = wire<BecameReady>(buses_.out, sys_);
@@ -25,6 +27,12 @@ AtbEngine::AtbEngine() {
 
   h_fin_sub_ = sys_.subscribe<FinishedTurn>(
       [this](const FinishedTurn &e) { on_finished_turn(e); });
+
+  h_frozen_sub_ =
+      sys_.subscribe<Frozen>([this](const Frozen &e) { on_frozen(e); });
+
+  h_thawed_sub_ =
+      sys_.subscribe<Thawed>([this](const Thawed &e) { on_thawed(e); });
 
   h_ready_sub_ = sys_.subscribe<BecameReady>(
       [this](const BecameReady &e) { on_became_ready(e); });
@@ -51,8 +59,7 @@ void AtbEngine::clear_pending_events() {
 void AtbEngine::clear_pending_events_for(entt::entity id) {
   ZoneScopedN("AtbEngine::clear_pending_events_for");
   // Remove from ready queue
-  ready_queue_.erase(std::remove(ready_queue_.begin(), ready_queue_.end(), id),
-                     ready_queue_.end());
+  remove_ready(id);
 
   // Reset active combatant if it's this entity
   if (active_combatant_ == id) {
@@ -157,9 +164,39 @@ void AtbEngine::on_finished_turn(const FinishedTurn &e) {
   }
 }
 
+void AtbEngine::on_frozen(const Frozen &e) {
+  ZoneScopedN("AtbEngine::on_frozen");
+  remove_ready(e.id);
+
+  if (active_combatant_ == e.id) {
+    active_combatant_ = entt::entity{};
+  }
+
+  auto it = combatants_.find(e.id);
+  if (it != combatants_.end()) {
+    it->second.sm.process_event(e);
+  }
+}
+
+void AtbEngine::on_thawed(const Thawed &e) {
+  ZoneScopedN("AtbEngine::on_thawed");
+  auto it = combatants_.find(e.id);
+  if (it != combatants_.end()) {
+    it->second.sm.process_event(e);
+  }
+}
+
 void AtbEngine::on_became_ready(const BecameReady &e) { enqueue_ready(e.id); }
 
-void AtbEngine::enqueue_ready(entt::entity id) { ready_queue_.push_back(id); }
+void AtbEngine::enqueue_ready(entt::entity id) {
+  remove_ready(id);
+  ready_queue_.push_back(id);
+}
+
+void AtbEngine::remove_ready(entt::entity id) {
+  ready_queue_.erase(std::remove(ready_queue_.begin(), ready_queue_.end(), id),
+                     ready_queue_.end());
+}
 
 void AtbEngine::pump_ready_queue() {
   ZoneScopedN("AtbEngine::pump_ready_queue");
@@ -185,8 +222,7 @@ void AtbEngine::pump_ready_queue() {
 bool AtbEngine::can_charge(entt::entity id) const { return can_charge_fn_(id); }
 
 void AtbEngine::force_out_of_turn(entt::entity id) {
-  ready_queue_.erase(std::remove(ready_queue_.begin(), ready_queue_.end(), id),
-                     ready_queue_.end());
+  remove_ready(id);
 
   if (active_combatant_ == id) {
     active_combatant_ = entt::entity{};

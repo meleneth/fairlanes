@@ -24,7 +24,8 @@ inline void safe_clear_hp_bar_color(entt::registry &reg, entt::entity e) {
   }
   if (auto *status = reg.try_get<StatusTint>(e)) {
     status->hp_bar_color.reset();
-    if (!status->body_color && !status->hp_bar_color) {
+    if (!status->body_color && !status->hp_bar_color &&
+        !status->background_color) {
       reg.remove<StatusTint>(e);
     }
   }

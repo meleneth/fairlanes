@@ -54,7 +54,8 @@ public:
 
 private:
   // Internal “system bus” so we can use wire<> everywhere.
-  using SysEvent = std::variant<Beat, AddCombatant, FinishedTurn, BecameReady>;
+  using SysEvent = std::variant<Beat, AddCombatant, FinishedTurn, Frozen,
+                                Thawed, BecameReady>;
   using SysBus = VariantBus<SysEvent>;
 
   struct Combatant {
@@ -68,11 +69,14 @@ private:
   void on_add(const AddCombatant &e);
   void on_beat(const Beat &);
   void on_finished_turn(const FinishedTurn &e);
+  void on_frozen(const Frozen &e);
+  void on_thawed(const Thawed &e);
 
   // Response to out-events (via wire from out->sys_)
   void on_became_ready(const BecameReady &e);
 
   void enqueue_ready(entt::entity id);
+  void remove_ready(entt::entity id);
   void pump_ready_queue(); // if no active and someone ready -> BecameActive
   bool can_charge(entt::entity id) const;
   void force_out_of_turn(entt::entity id);
@@ -94,6 +98,8 @@ private:
   decltype(wire<Beat>(buses_.in, sys_)) h_beat_wire_;
   decltype(wire<AddCombatant>(buses_.in, sys_)) h_add_wire_;
   decltype(wire<FinishedTurn>(buses_.in, sys_)) h_fin_wire_;
+  decltype(wire<Frozen>(buses_.in, sys_)) h_frozen_wire_;
+  decltype(wire<Thawed>(buses_.in, sys_)) h_thawed_wire_;
   decltype(wire<BecameReady>(buses_.out, sys_)) h_ready_wire_;
 
   decltype(sys_.template subscribe<Beat>([](const Beat &) {})) h_beat_sub_;
@@ -101,6 +107,10 @@ private:
       [](const AddCombatant &) {})) h_add_sub_;
   decltype(sys_.template subscribe<FinishedTurn>(
       [](const FinishedTurn &) {})) h_fin_sub_;
+  decltype(sys_.template subscribe<Frozen>(
+      [](const Frozen &) {})) h_frozen_sub_;
+  decltype(sys_.template subscribe<Thawed>(
+      [](const Thawed &) {})) h_thawed_sub_;
   decltype(sys_.template subscribe<BecameReady>(
       [](const BecameReady &) {})) h_ready_sub_;
 };

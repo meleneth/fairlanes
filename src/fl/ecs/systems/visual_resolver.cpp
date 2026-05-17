@@ -38,6 +38,7 @@ void VisualResolver::resolve(entt::registry &reg, seerin::uWu now) {
 
   reg.clear<fl::ecs::components::ResolvedColorOverride>();
   reg.clear<fl::ecs::components::ResolvedHPBarColorOverride>();
+  reg.clear<fl::ecs::components::ResolvedBackgroundColorOverride>();
 
   for (auto entity : reg.view<fl::ecs::components::Stats>()) {
     resolve_entity(reg, entity, now);
@@ -79,6 +80,7 @@ void VisualResolver::resolve_entity(entt::registry &reg, entt::entity entity,
 
   reg.remove<ResolvedColorOverride>(entity);
   reg.remove<ResolvedHPBarColorOverride>(entity);
+  reg.remove<ResolvedBackgroundColorOverride>(entity);
 
   if (auto color = resolve_body_color(reg, entity, now)) {
     reg.emplace_or_replace<ResolvedColorOverride>(
@@ -88,6 +90,11 @@ void VisualResolver::resolve_entity(entt::registry &reg, entt::entity entity,
   if (auto hp_color = resolve_hp_bar_color(reg, entity, now)) {
     reg.emplace_or_replace<ResolvedHPBarColorOverride>(
         entity, ResolvedHPBarColorOverride{*hp_color});
+  }
+
+  if (auto bg_color = resolve_background_color(reg, entity, now)) {
+    reg.emplace_or_replace<ResolvedBackgroundColorOverride>(
+        entity, ResolvedBackgroundColorOverride{*bg_color});
   }
 }
 
@@ -142,6 +149,23 @@ VisualResolver::resolve_hp_bar_color(entt::registry &reg, entt::entity entity,
   if (auto *status = reg.try_get<StatusTint>(entity);
       status != nullptr && status->hp_bar_color) {
     return status->hp_bar_color;
+  }
+
+  return std::nullopt;
+}
+
+std::optional<ftxui::Color>
+VisualResolver::resolve_background_color(entt::registry &reg,
+                                         entt::entity entity, seerin::uWu) {
+  using namespace fl::ecs::components;
+
+  if (!reg.valid(entity) || is_dead(reg, entity)) {
+    return std::nullopt;
+  }
+
+  if (auto *status = reg.try_get<StatusTint>(entity);
+      status != nullptr && status->background_color) {
+    return status->background_color;
   }
 
   return std::nullopt;

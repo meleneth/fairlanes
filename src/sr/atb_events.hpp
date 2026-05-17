@@ -16,7 +16,16 @@ struct FinishedTurn {
   entt::entity id;
 };
 
-using AtbInEvent = std::variant<Beat, AddCombatant, FinishedTurn>;
+struct Frozen {
+  entt::entity id;
+};
+
+struct Thawed {
+  entt::entity id;
+};
+
+using AtbInEvent =
+    std::variant<Beat, AddCombatant, FinishedTurn, Frozen, Thawed>;
 
 // OutBus events (observable)
 struct BecameReady {

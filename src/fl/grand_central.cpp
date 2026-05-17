@@ -436,17 +436,24 @@ void GrandCentral::resolve_visuals_for_render() {
   ZoneScopedN("ResolveVisualsForRender");
   for (auto &account : accounts_) {
     for (auto &party : account.parties()) {
+      auto visual_time = seerin::uWu{};
+      if (party.has_encounter()) {
+        visual_time = party.encounter_data().visual_time();
+      }
+
+      for (const auto &member : party.members()) {
+        fl::ecs::systems::VisualResolver::resolve_entity(
+            reg_, member.member_id(), visual_time);
+      }
+
       if (!party.has_encounter()) {
         continue;
       }
+
       auto &encounter = party.encounter_data();
       for (auto entity : encounter.attackers().members()) {
-        fl::ecs::systems::VisualResolver::resolve_entity(
-            reg_, entity, encounter.visual_time());
-      }
-      for (auto entity : encounter.defenders().members()) {
-        fl::ecs::systems::VisualResolver::resolve_entity(
-            reg_, entity, encounter.visual_time());
+        fl::ecs::systems::VisualResolver::resolve_entity(reg_, entity,
+                                                         visual_time);
       }
     }
   }

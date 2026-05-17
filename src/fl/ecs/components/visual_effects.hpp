@@ -16,6 +16,10 @@ struct ResolvedHPBarColorOverride {
   ftxui::Color color;
 };
 
+struct ResolvedBackgroundColorOverride {
+  ftxui::Color color;
+};
+
 struct DamageFlash {
   ftxui::Color color;
   seerin::uWu expires_at{};
@@ -29,6 +33,7 @@ struct ActiveGlow {
 struct StatusTint {
   std::optional<ftxui::Color> body_color;
   std::optional<ftxui::Color> hp_bar_color;
+  std::optional<ftxui::Color> background_color;
 };
 
 struct BaseVisual {

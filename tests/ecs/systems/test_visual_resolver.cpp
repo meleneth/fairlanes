@@ -44,8 +44,12 @@ TEST_CASE("VisualResolver gives dead visuals precedence over effects",
       entity,
       fl::ecs::components::DamageFlash{ftxui::Color::Red, seerin::uWu{100}});
   reg.emplace<fl::ecs::components::StatusTint>(
-      entity, fl::ecs::components::StatusTint{ftxui::Color::Green,
-                                              ftxui::Color::Yellow});
+      entity,
+      fl::ecs::components::StatusTint{ftxui::Color::Green, ftxui::Color::Yellow,
+                                      ftxui::Color::Blue});
+  reg.emplace<fl::ecs::components::ResolvedBackgroundColorOverride>(
+      entity,
+      fl::ecs::components::ResolvedBackgroundColorOverride{ftxui::Color::Blue});
 
   fl::ecs::systems::VisualResolver::resolve(reg, seerin::uWu{1});
 
@@ -53,6 +57,8 @@ TEST_CASE("VisualResolver gives dead visuals precedence over effects",
                     .color) == print(fl::lospec500::color_at(6)));
   REQUIRE_FALSE(
       reg.any_of<fl::ecs::components::ResolvedHPBarColorOverride>(entity));
+  REQUIRE_FALSE(
+      reg.any_of<fl::ecs::components::ResolvedBackgroundColorOverride>(entity));
 }
 
 TEST_CASE("VisualResolver resolves overlapping effects deterministically",
@@ -79,6 +85,12 @@ TEST_CASE("VisualResolver resolves overlapping effects deterministically",
   REQUIRE(
       reg.get<fl::ecs::components::ResolvedHPBarColorOverride>(entity).color ==
       ftxui::Color::Yellow);
+
+  reg.get<fl::ecs::components::StatusTint>(entity).background_color =
+      ftxui::Color::BlueLight;
+  fl::ecs::systems::VisualResolver::resolve(reg, seerin::uWu{1});
+  REQUIRE(reg.get<fl::ecs::components::ResolvedBackgroundColorOverride>(entity)
+              .color == ftxui::Color::BlueLight);
 
   reg.remove<fl::ecs::components::DamageFlash>(entity);
   fl::ecs::systems::VisualResolver::resolve(reg, seerin::uWu{2});

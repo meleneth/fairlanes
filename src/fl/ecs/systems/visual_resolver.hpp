@@ -21,6 +21,10 @@ public:
   static std::optional<ftxui::Color> resolve_hp_bar_color(entt::registry &reg,
                                                           entt::entity entity,
                                                           seerin::uWu now);
+
+  static std::optional<ftxui::Color>
+  resolve_background_color(entt::registry &reg, entt::entity entity,
+                           seerin::uWu now);
 };
 
 } // namespace fl::ecs::systems
