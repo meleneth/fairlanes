@@ -38,7 +38,7 @@ RootComponent::RootComponent(fl::context::AccountCtx ctx,
       [this](std::string_view command) { commands_.handle(command); });
   Add(console_overlay_);
 
-  show_party(commands_.account_index(), commands_.party_index());
+  show_account_battle(commands_.account_index());
 }
 
 bool RootComponent::OnEvent(ftxui::Event event) {
@@ -65,6 +65,41 @@ bool RootComponent::OnEvent(ftxui::Event event) {
 
   if (event == ftxui::Event::Character("h")) {
     keybind_help_open_ = true;
+    return true;
+  }
+
+  if (event == ftxui::Event::Character("/")) {
+    toggle_active_screen();
+    return true;
+  }
+
+  if (event == ftxui::Event::Character("+")) {
+    commands_.adjust_overdrive(1);
+    return true;
+  }
+
+  if (event == ftxui::Event::Character("-")) {
+    commands_.adjust_overdrive(-1);
+    return true;
+  }
+
+  if (event == ftxui::Event::Character("[")) {
+    commands_.select_party_relative(-1);
+    return true;
+  }
+
+  if (event == ftxui::Event::Character("]")) {
+    commands_.select_party_relative(1);
+    return true;
+  }
+
+  if (event == ftxui::Event::Character("{")) {
+    commands_.select_account_relative(-1);
+    return true;
+  }
+
+  if (event == ftxui::Event::Character("}")) {
+    commands_.select_account_relative(1);
     return true;
   }
 
@@ -146,6 +181,17 @@ void RootComponent::show_party(std::size_t account_index,
   Add(active_screen_);
 }
 
+void RootComponent::toggle_active_screen() {
+  switch (active_screen_kind_) {
+  case ActiveScreen::party:
+    show_account_battle(commands_.account_index());
+    return;
+  case ActiveScreen::account_battle:
+    show_party(commands_.account_index(), commands_.party_index());
+    return;
+  }
+}
+
 fl::context::AccountCtx RootComponent::make_context(std::size_t account_index) {
   return fl::context::AccountCtx{ctx_.reg(), ctx_.rng(),
                                  accounts_->at(account_index)};
@@ -188,17 +234,67 @@ void RootComponent::update_fps_counter() {
 ftxui::Element RootComponent::render_help_hint() const {
   using namespace ftxui;
 
-  const auto chrome = fl::lospec500::on_not_black(fl::lospec500::color_at(32));
+  const auto label = color(fl::lospec500::color_at(14));
+  const auto value = color(fl::lospec500::color_at(28)) | bold;
+  const auto key = color(fl::lospec500::color_at(22)) | bold;
+  const auto edge = color(fl::lospec500::color_at(15));
+  const auto muted = color(fl::lospec500::color_at(24));
+
+  auto chunk = [](std::string name, std::string value_text,
+                  Decorator label_style, Decorator value_style) {
+    return hbox({
+        text(std::move(name)) | label_style,
+        text(std::move(value_text)) | value_style,
+    });
+  };
+
+  const auto account_count = accounts_ ? accounts_->size() : 0U;
+  const auto party_count =
+      accounts_ && commands_.account_index() < accounts_->size()
+          ? accounts_->at(commands_.account_index()).parties().size()
+          : 0U;
+
+  auto metrics = hbox({
+      chunk("FPS ", std::to_string(displayed_fps_), label, value),
+      text("  ") | muted,
+      chunk("OD ", "x" + std::to_string(world_clock_->beat_rate_multiplier()),
+            label, value),
+      text("  ") | muted,
+      chunk("AC ",
+            std::to_string(commands_.account_index() + 1) + "/" +
+                std::to_string(account_count),
+            label, value),
+      text("  ") | muted,
+      chunk("PT ",
+            std::to_string(commands_.party_index() + 1) + "/" +
+                std::to_string(party_count),
+            label, value),
+      text("  ") | muted,
+      chunk("WT ", std::to_string(world_clock_->elapsed_beats()), label, value),
+  });
+
+  auto controls = hbox({
+      text("+/-") | key,
+      text(" overdrive  ") | muted,
+      text("[/]") | key,
+      text(" party  ") | muted,
+      text("{/}") | key,
+      text(" account  ") | muted,
+      text("/") | key,
+      text(" screen  ") | muted,
+      text("h") | key,
+      text(" help") | muted,
+  });
+
+  auto panel = vbox({metrics, controls}) | border | edge | clear_under;
+
   return vbox({
       filler(),
       hbox({
           filler(),
-          text("FPS " + std::to_string(displayed_fps_) + "  OD x" +
-               std::to_string(world_clock_->beat_rate_multiplier()) + "  RF " +
-               std::to_string(render_frames_) + "  WT " +
-               std::to_string(world_clock_->elapsed_beats()) + "  h for help") |
-              chrome | bgcolor(fl::lospec500::color_at(0)),
+          panel,
       }),
+      text(""),
   });
 }
 
@@ -219,15 +315,22 @@ ftxui::Element RootComponent::render_keybind_help() const {
   if (active_screen_kind_ == ActiveScreen::party) {
     lines.push_back(separator() | chrome);
     lines.push_back(text("Party") | bold | accent);
+    lines.push_back(text("/        toggle account / party screen") | chrome);
+    lines.push_back(text("+ / -    change overdrive level") | chrome);
+    lines.push_back(text("[ / ]    switch selected party") | chrome);
+    lines.push_back(text("{ / }    switch selected account") | chrome);
     lines.push_back(text("Tab      switch inventory / player details focus") |
                     chrome);
     lines.push_back(text("j / Down move inventory selection down") | chrome);
     lines.push_back(text("k / Up   move inventory selection up") | chrome);
     lines.push_back(text("PgUp/PgDn move inventory by pages") | chrome);
-    lines.push_back(text("[ / ]    change selected player details") | chrome);
   } else {
     lines.push_back(separator() | chrome);
     lines.push_back(text("Account") | bold | accent);
+    lines.push_back(text("/        toggle account / party screen") | chrome);
+    lines.push_back(text("+ / -    change overdrive level") | chrome);
+    lines.push_back(text("[ / ]    switch selected party") | chrome);
+    lines.push_back(text("{ / }    switch selected account") | chrome);
     lines.push_back(text("Use the console for account and party navigation") |
                     chrome);
   }

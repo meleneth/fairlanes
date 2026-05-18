@@ -40,6 +40,7 @@ private:
 
   ConsoleOverlay *console_overlay();
   fl::context::AccountCtx make_context(std::size_t account_index);
+  void toggle_active_screen();
   void update_fps_counter();
   ftxui::Element render_help_hint() const;
   ftxui::Element render_keybind_help() const;
@@ -49,7 +50,7 @@ private:
   FancyLog *console_log_{nullptr};
   fl::primitives::WorldClock *world_clock_{nullptr};
   UiCommandController commands_;
-  ActiveScreen active_screen_kind_{ActiveScreen::party};
+  ActiveScreen active_screen_kind_{ActiveScreen::account_battle};
   bool keybind_help_open_{false};
   bool fps_initialized_{false};
   int fps_frame_count_{0};

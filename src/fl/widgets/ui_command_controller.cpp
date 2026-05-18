@@ -198,6 +198,55 @@ std::size_t UiCommandController::party_index() const noexcept {
   return party_index_;
 }
 
+void UiCommandController::adjust_overdrive(int delta) {
+  if (!world_clock_) {
+    return;
+  }
+
+  const auto current = world_clock_->beat_rate_multiplier();
+  world_clock_->set_beat_rate_multiplier(current + delta);
+  const auto actual = world_clock_->beat_rate_multiplier();
+  write("overdrive set to x" + std::to_string(actual) + " (" +
+        std::to_string(world_clock_->effective_beats_per_wall_second()) +
+        " beats/sec)");
+}
+
+void UiCommandController::select_account_relative(int delta) {
+  if (!accounts_ || accounts_->empty()) {
+    write("No accounts.");
+    return;
+  }
+
+  const auto count = static_cast<int>(accounts_->size());
+  auto next = (static_cast<int>(account_index_) + delta) % count;
+  if (next < 0) {
+    next += count;
+  }
+
+  select_account(static_cast<std::size_t>(next));
+}
+
+void UiCommandController::select_party_relative(int delta) {
+  if (!accounts_ || account_index_ >= accounts_->size()) {
+    write("No selected account.");
+    return;
+  }
+
+  auto &parties = accounts_->at(account_index_).parties();
+  if (parties.empty()) {
+    write("No parties.");
+    return;
+  }
+
+  const auto count = static_cast<int>(parties.size());
+  auto next = (static_cast<int>(party_index_) + delta) % count;
+  if (next < 0) {
+    next += count;
+  }
+
+  select_party(static_cast<std::size_t>(next));
+}
+
 void UiCommandController::show_help(std::string_view topic) {
   if (topic.empty()) {
     write("current account: " + std::to_string(account_index_));

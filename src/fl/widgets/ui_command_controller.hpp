@@ -30,6 +30,10 @@ public:
   [[nodiscard]] std::size_t account_index() const noexcept;
   [[nodiscard]] std::size_t party_index() const noexcept;
 
+  void adjust_overdrive(int delta);
+  void select_account_relative(int delta);
+  void select_party_relative(int delta);
+
 private:
   void show_help(std::string_view topic = {});
   void show_account_view();

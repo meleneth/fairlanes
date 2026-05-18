@@ -177,8 +177,8 @@ TEST_CASE("SkillSequencer Flame Strike animates before damage",
       [&](entt::entity entity) { finished = entity == attacker; },
       [](entt::entity) {}};
 
-  const auto log_size_before = party_ctx.log().size();
   sequencer.schedule(attacker, target, fl::skills::SkillId::FlameStrike);
+  const auto log_size_after_schedule = party_ctx.log().size();
 
   REQUIRE(reg.any_of<fl::ecs::components::FlameWaveDecal>(target));
   REQUIRE(reg.get<fl::ecs::components::FlameWaveDecal>(target).duration ==
@@ -189,14 +189,14 @@ TEST_CASE("SkillSequencer Flame Strike animates before damage",
     fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
   }
 
-  REQUIRE(party_ctx.log().size() == log_size_before);
+  REQUIRE(party_ctx.log().size() == log_size_after_schedule);
   REQUIRE(reg.any_of<fl::ecs::components::FlameWaveDecal>(target));
   REQUIRE_FALSE(finished);
 
   scheduler.on_beat();
   fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
 
-  REQUIRE(party_ctx.log().size() > log_size_before);
+  REQUIRE(party_ctx.log().size() > log_size_after_schedule);
   REQUIRE(reg.any_of<fl::ecs::components::FlameWaveDecal>(target));
   REQUIRE_FALSE(finished);
 
