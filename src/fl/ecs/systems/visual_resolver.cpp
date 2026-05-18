@@ -25,6 +25,23 @@ void clear_expired(entt::registry &reg, seerin::uWu now) {
   }
 }
 
+void clear_finished_flame_waves(
+    entt::registry &reg,
+    fl::ecs::components::FlameWaveDecal::Clock::time_point now) {
+  std::vector<entt::entity> finished;
+  auto view = reg.view<fl::ecs::components::FlameWaveDecal>();
+  for (auto entity : view) {
+    const auto &effect = view.get<fl::ecs::components::FlameWaveDecal>(entity);
+    if (effect.progress_at(now) >= 1.0F) {
+      finished.push_back(entity);
+    }
+  }
+
+  for (auto entity : finished) {
+    reg.remove<fl::ecs::components::FlameWaveDecal>(entity);
+  }
+}
+
 bool is_dead(entt::registry &reg, entt::entity entity) {
   auto *stats = reg.try_get<fl::ecs::components::Stats>(entity);
   return stats != nullptr && !stats->is_alive();
@@ -34,6 +51,9 @@ bool is_dead(entt::registry &reg, entt::entity entity) {
 
 void VisualResolver::resolve(entt::registry &reg, seerin::uWu now) {
   clear_expired<fl::ecs::components::DamageFlash>(reg, now);
+  clear_expired<fl::ecs::components::FlameWaveDecal>(reg, now);
+  clear_finished_flame_waves(reg,
+                             fl::ecs::components::FlameWaveDecal::Clock::now());
   clear_expired<fl::ecs::components::ActiveGlow>(reg, now);
 
   reg.clear<fl::ecs::components::ResolvedColorOverride>();
@@ -76,6 +96,12 @@ void VisualResolver::resolve_entity(entt::registry &reg, entt::entity entity,
   if (auto *active = reg.try_get<ActiveGlow>(entity);
       active != nullptr && active->expires_at.v <= now.v) {
     reg.remove<ActiveGlow>(entity);
+  }
+
+  if (auto *flame = reg.try_get<FlameWaveDecal>(entity);
+      flame != nullptr &&
+      flame->progress_at(FlameWaveDecal::Clock::now()) >= 1.0F) {
+    reg.remove<FlameWaveDecal>(entity);
   }
 
   reg.remove<ResolvedColorOverride>(entity);

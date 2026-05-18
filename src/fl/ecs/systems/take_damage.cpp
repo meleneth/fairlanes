@@ -7,11 +7,8 @@
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/events/party_bus.hpp"
-#include "fl/loot/global_loot_table.hpp"
-#include "fl/lospec500.hpp"
 #include "fl/primitives/damage.hpp"
 #include "fl/primitives/party_data.hpp"
-#include "fl/widgets/equipment_label.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "grant_xp_to_party.hpp"
 #include "take_damage.hpp"
@@ -59,20 +56,9 @@ void TakeDamage::commit(fl::context::AttackCtx &ctx) {
     if (party_member) {
       fl::systems::GrantXPToParty::commit(
           ctx.entity_context(party_member->party_), 256);
-      auto party_ctx = party_member->party().party_data().party_ctx();
-      if (auto builder =
-              fl::loot::global_loot_table().roll(party_ctx, "loot.global")) {
-        auto item = builder->create(party_ctx.reg());
-
-        const auto &equipment =
-            party_ctx.reg().get<fl::ecs::components::Equipment>(item);
-
-        ctx.log().append(ftxui::hbox({
-            ftxui::text("Loot found: ") | fl::lospec500::at(19),
-            fl::widgets::equipment_name_label(equipment),
-        }));
-        party_member->party().party_data().add_item(item);
-      }
+      auto &party_data = party_member->party().party_data();
+      party_data.party_bus().emit(fl::events::PartyEvent{
+          fl::events::LootDropRequested{ctx.defender(), party_member->party_}});
     }
   }
   // spdlog::info("{} hits {} for {} damage ({} HP left)",

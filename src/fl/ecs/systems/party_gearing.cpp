@@ -546,6 +546,7 @@ void upgrade_inventory(fl::context::PartyCtx &ctx,
                     .armor_kind = kind,
                     .tier = *next,
                     .name = generated_name(slot, kind, *next),
+                    .unique_id = {},
                 }
                     .create(reg);
             inventory.push_back(upgraded_item);

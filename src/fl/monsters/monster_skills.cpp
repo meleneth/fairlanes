@@ -16,6 +16,8 @@ fl::skills::SkillId known_skill_for(MonsterKind kind) noexcept {
     return fl::skills::SkillId::Poison;
   case MonsterKind::Yeti:
     return fl::skills::SkillId::ColdSnap;
+  case MonsterKind::Salamander:
+    return fl::skills::SkillId::FlameStrike;
   case MonsterKind::FieldMouse:
     return fl::skills::SkillId::Thump;
   }

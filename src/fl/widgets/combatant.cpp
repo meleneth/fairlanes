@@ -6,8 +6,90 @@
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/lospec500.hpp"
+#include "fl/widgets/effects/flame_wave.hpp"
+
+#include <algorithm>
+#include <chrono>
+#include <memory>
+#include <string>
+
+#include <ftxui/dom/node.hpp>
+#include <ftxui/screen/screen.hpp>
 
 namespace fl::widgets {
+namespace {
+
+class FlameWaveDecalNode : public ftxui::Node {
+public:
+  FlameWaveDecalNode(ftxui::Element child, float progress)
+      : ftxui::Node(ftxui::Elements{std::move(child)}), progress_(progress) {}
+
+  void ComputeRequirement() override {
+    children_[0]->ComputeRequirement();
+    requirement_ = children_[0]->requirement();
+  }
+
+  void SetBox(ftxui::Box box) override {
+    box_ = box;
+    children_[0]->SetBox(box);
+  }
+
+  void Render(ftxui::Screen &screen) override {
+    children_[0]->Render(screen);
+
+    const int width = box_.x_max - box_.x_min + 1;
+    const int combatant_height = box_.y_max - box_.y_min + 1;
+    const int decal_height = combatant_height + kExtraHeight;
+    if (width <= 0 || combatant_height <= 0) {
+      return;
+    }
+
+    auto frame = fl::widgets::effects::FlameWave{}.render(progress_, width,
+                                                          decal_height);
+    const int decal_y_min = box_.y_max - decal_height + 1;
+    for (int y = 0; y < frame.height; ++y) {
+      const int screen_y = decal_y_min + y;
+      if (screen_y < 0 || screen_y >= screen.dimy()) {
+        continue;
+      }
+      for (int x = 0; x < frame.width; ++x) {
+        const int screen_x = box_.x_min + x;
+        if (screen_x < 0 || screen_x >= screen.dimx()) {
+          continue;
+        }
+
+        const auto &cell = frame.at(x, y);
+        if (!cell.active()) {
+          continue;
+        }
+
+        auto &pixel = screen.PixelAt(screen_x, screen_y);
+        const bool had_text = pixel.character != " ";
+        if (cell.bg) {
+          pixel.background_color = *cell.bg;
+        }
+        if (cell.fg) {
+          pixel.foreground_color = *cell.fg;
+        }
+        if (cell.glyph != ' ') {
+          pixel.character = std::string(1, cell.glyph);
+        } else if (had_text && cell.bg) {
+          pixel.foreground_color = ftxui::Color::White;
+        }
+      }
+    }
+  }
+
+private:
+  static constexpr int kExtraHeight = 2;
+  float progress_ = 0.0F;
+};
+
+ftxui::Element flame_wave_decal(ftxui::Element child, float progress) {
+  return std::make_shared<FlameWaveDecalNode>(std::move(child), progress);
+}
+
+} // namespace
 
 Combatant::Combatant(entt::registry &reg_, entt::entity entity_,
                      bool render_uwu)
@@ -128,6 +210,11 @@ ftxui::Element Combatant::Render() {
 
   if (auto *bg = reg.try_get<ResolvedBackgroundColorOverride>(entity)) {
     border = border | ftxui::bgcolor(bg->color);
+  }
+
+  if (auto *flame = reg.try_get<FlameWaveDecal>(entity)) {
+    border = flame_wave_decal(std::move(border),
+                              flame->progress_at(FlameWaveDecal::Clock::now()));
   }
 
   // <-- key: allow the whole Combatant box to flex horizontally

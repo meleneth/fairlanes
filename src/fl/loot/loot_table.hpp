@@ -79,6 +79,7 @@ public:
           .armor_kind = *armor_kind,
           .tier = tier,
           .name = generated_name(*slot, *armor_kind, tier),
+          .unique_id = {},
       };
     }
 
@@ -96,6 +97,7 @@ public:
           .armor_kind = *armor_kind,
           .tier = tier,
           .name = generated_name(*slot, *armor_kind, tier),
+          .unique_id = {},
       };
     }
 
@@ -110,6 +112,7 @@ public:
           .armor_kind = fl::loot::ArmorKind::none,
           .tier = tier,
           .name = generated_name(*slot, fl::loot::ArmorKind::none, tier),
+          .unique_id = {},
       };
     }
 

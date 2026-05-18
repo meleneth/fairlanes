@@ -71,8 +71,10 @@ void PoisonSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
 
   fl::ecs::components::safe_add_hp_bar_color(
       reg, target, fl::lospec500::color_at(kPoisonDimGreen));
-  party_ctx.log().append_markup(fmt::format(
-      "[ability](Poison) seeps into [player_name]({}).", target_stats->name_));
+  party_ctx.log().append_markup(
+      fmt::format("{} used [ability](Poison) on {}; poison seeps in.",
+                  party_ctx.log().name_tag_for(entt::handle{reg, source}),
+                  party_ctx.log().name_tag_for(entt::handle{reg, target})));
 
   poison.player_died_sub = fl::events::ScopedPartyListener{
       party_ctx.bus(), std::in_place_type<fl::events::PlayerDied>,
@@ -124,9 +126,10 @@ void PoisonSystem::schedule_tick(fl::context::PartyCtx &party_ctx,
             party_ctx, poison->source, target);
         attack_ctx.damage().magical = poison->damage_per_tick;
         party_ctx.log().append_markup(fmt::format(
-            "[ability](Poison) hurts [player_name]({}) for [error]({}) "
-            "damage.",
-            target_stats->name_, poison->damage_per_tick));
+            "[ability](Poison) from {} hurts {} for [error]({}) damage.",
+            party_ctx.log().name_tag_for(entt::handle{reg, poison->source}),
+            party_ctx.log().name_tag_for(entt::handle{reg, target}),
+            poison->damage_per_tick));
         fl::ecs::systems::TakeDamage::commit(attack_ctx);
 
         if (reg.valid(target)) {

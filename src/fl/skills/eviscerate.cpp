@@ -12,7 +12,6 @@ namespace fl::skills {
 
 void Eviscerate::eviscerate(fl::context::AttackCtx &&ctx) {
   auto &reg = ctx.reg();
-  auto &attacker_stats = reg.get<fl::ecs::components::Stats>(ctx.attacker());
   auto &defender_stats = reg.get<fl::ecs::components::Stats>(ctx.defender());
   const int damage_per_tick = std::max(1, defender_stats.max_hp_ / 10);
 
@@ -21,10 +20,10 @@ void Eviscerate::eviscerate(fl::context::AttackCtx &&ctx) {
   bleed.source = ctx.attacker();
   bleed.damage_per_tick = damage_per_tick;
 
-  ctx.log().append_markup(
-      fmt::format("[enemy_name]({}) used [ability](Eviscerate) on "
-                  "[player_name]({}); [error](Dire Bleed) takes hold.",
-                  attacker_stats.name_, defender_stats.name_));
+  ctx.log().append_markup(fmt::format(
+      "{} used [ability](Eviscerate) on {}; [error](Dire Bleed) takes hold.",
+      ctx.log().name_tag_for(entt::handle{reg, ctx.attacker()}),
+      ctx.log().name_tag_for(entt::handle{reg, ctx.defender()})));
 }
 
 } // namespace fl::skills

@@ -30,6 +30,7 @@ private:
   void schedule_eviscerate(entt::entity attacker, entt::entity target);
   void schedule_poison(entt::entity attacker, entt::entity target);
   void schedule_cold_snap(entt::entity attacker, entt::entity target);
+  void schedule_flame_strike(entt::entity attacker, entt::entity target);
   void schedule_observe(entt::entity attacker);
   void schedule_reek_fade(entt::entity entity, std::string_view label,
                           int start_beat, int end_beat, ftxui::Color from,

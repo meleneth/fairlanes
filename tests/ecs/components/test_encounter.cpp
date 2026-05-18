@@ -151,6 +151,40 @@ TEST_CASE("TakeDamage emits PlayerDied when a party member dies",
   REQUIRE(seen_killer == attacker);
 }
 
+TEST_CASE("TakeDamage requests loot when a player defender kills an enemy",
+          "[encounter][events][loot]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  auto &encounter = builder.thump_it_out();
+
+  const auto attacker = encounter.defenders().members().front();
+  const auto defender = encounter.attackers().members().front();
+
+  bool saw_loot_drop = false;
+  entt::entity seen_source = entt::null;
+  entt::entity seen_party = entt::null;
+
+  (void)party_ctx.party_data().party_bus().on<fl::events::LootDropRequested>(
+      [&](const fl::events::LootDropRequested &ev) {
+        saw_loot_drop = true;
+        seen_source = ev.source;
+        seen_party = ev.party;
+      });
+
+  auto attack_ctx =
+      fl::context::AttackCtx::make_attack(party_ctx, attacker, defender);
+  attack_ctx.damage().physical = 9999;
+  fl::ecs::systems::TakeDamage::commit(attack_ctx);
+
+  REQUIRE(saw_loot_drop);
+  REQUIRE(seen_source == defender);
+  REQUIRE(seen_party == party_ctx.self());
+}
+
 TEST_CASE("TakeDamage emits PartyWiped when the final party member dies",
           "[encounter][events][death]") {
   fl::GrandCentral gc{1, 1, 1};
@@ -506,6 +540,11 @@ TEST_CASE("Freeze applies a frozen background and expires after five seconds",
 
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::StatusTint>(defender));
+  REQUIRE(party_ctx.reg()
+              .get<fl::ecs::components::StatusTint>(defender)
+              .background_color == fl::lospec500::color_at(28));
+
+  tick_party(party_ctx, fl::primitives::WorldClock::kBeatsPerSecond / 4);
   REQUIRE(party_ctx.reg()
               .get<fl::ecs::components::StatusTint>(defender)
               .background_color == fl::lospec500::color_at(16));

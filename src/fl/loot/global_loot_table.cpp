@@ -144,6 +144,7 @@ LootTable global_loot_table() {
                                    .armor_kind = ArmorKind::leather,
                                    .tier = Tier::excellent,
                                    .name = "Boots of Damp Authority",
+                                   .unique_id = "boots_of_damp_authority",
                                },
                        },
                        SpecialItem{
@@ -154,6 +155,7 @@ LootTable global_loot_table() {
                                    .armor_kind = ArmorKind::cloth,
                                    .tier = Tier::fine,
                                    .name = "Mouse-Nibbled Cape",
+                                   .unique_id = "mouse_nibbled_cape",
                                },
                        },
                    }};

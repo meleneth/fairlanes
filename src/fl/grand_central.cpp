@@ -455,6 +455,10 @@ void GrandCentral::resolve_visuals_for_render() {
         fl::ecs::systems::VisualResolver::resolve_entity(reg_, entity,
                                                          visual_time);
       }
+      for (auto entity : encounter.defenders().members()) {
+        fl::ecs::systems::VisualResolver::resolve_entity(reg_, entity,
+                                                         visual_time);
+      }
     }
   }
 }

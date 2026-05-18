@@ -62,6 +62,9 @@ TEST_CASE("Woodland skill monsters have their own names and levels",
   const auto yeti = fl::primitives::EntityBuilder(context)
                         .monster(fl::monster::MonsterKind::Yeti)
                         .build();
+  const auto salamander = fl::primitives::EntityBuilder(context)
+                              .monster(fl::monster::MonsterKind::Salamander)
+                              .build();
 
   REQUIRE(party_ctx.reg().get<fl::ecs::components::Stats>(bump).name_ ==
           "Bumpkin Hare");
@@ -79,6 +82,11 @@ TEST_CASE("Woodland skill monsters have their own names and levels",
           5);
   REQUIRE(party_ctx.reg().get<fl::ecs::components::Stats>(yeti).name_ ==
           "Yeti");
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::Stats>(salamander).name_ ==
+          "Salamander");
+  REQUIRE(
+      party_ctx.reg().get<fl::ecs::components::TrackXP>(salamander).level_ ==
+      6);
 }
 
 TEST_CASE("Monster builder assigns each monster its known skill",
@@ -111,4 +119,6 @@ TEST_CASE("Monster builder assigns each monster its known skill",
                      fl::skills::SkillId::Poison);
   expect_known_skill(fl::monster::MonsterKind::Yeti,
                      fl::skills::SkillId::ColdSnap);
+  expect_known_skill(fl::monster::MonsterKind::Salamander,
+                     fl::skills::SkillId::FlameStrike);
 }

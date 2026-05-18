@@ -4,6 +4,7 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/systems/loot_drop.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/fsm/party_loop_machine.hpp"
 #include "fl/primitives/account_data.hpp"
@@ -29,6 +30,7 @@ PartyData::PartyData(entt::entity party_id,
       [this](const fl::events::PartyRevitalizeRequested &) {
         revitalize_members();
       }};
+  loot_drop_sub_ = fl::ecs::systems::LootDropSystem::bind_listener(party_ctx_);
 }
 
 void PartyData::hook_to_beat(seerin::BeatBus &gc_beat_bus) {

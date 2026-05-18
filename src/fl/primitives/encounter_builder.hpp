@@ -11,13 +11,14 @@ namespace fl::primitives {
 
 struct EncounterBuilder {
   static constexpr int kEnemyPartySize = 5;
-  static constexpr std::array<fl::monster::MonsterKind, 6> kCommonWoodland{
+  static constexpr std::array<fl::monster::MonsterKind, 7> kCommonWoodland{
       fl::monster::MonsterKind::FieldMouse,
       fl::monster::MonsterKind::BumpkinHare,
       fl::monster::MonsterKind::MireSquish,
       fl::monster::MonsterKind::BarkSmack,
       fl::monster::MonsterKind::PoisonToad,
       fl::monster::MonsterKind::Yeti,
+      fl::monster::MonsterKind::Salamander,
   };
 
   EncounterBuilder(fl::context::PartyCtx &ctx) : ctx_(ctx) {};

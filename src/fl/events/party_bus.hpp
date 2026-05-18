@@ -27,6 +27,10 @@ struct PartyHealed {
   int amount{0};
 };
 struct PartyRevitalizeRequested {};
+struct LootDropRequested {
+  entt::entity source{entt::null};
+  entt::entity party{entt::null};
+};
 struct PartyTick {};
 struct PoisonApplied {
   entt::entity source{entt::null};
@@ -62,9 +66,9 @@ struct PlayerDied {
 using PartyEvent =
     std::variant<PartyCreated, MemberJoined, MemberLeft, PartyWiped,
                  PartyLeftCombat, PartyGainedXP, PartyHealed,
-                 PartyRevitalizeRequested, PartyTick, PoisonApplied,
-                 FreezeApplied, FreezeStarted, FreezeEnded, PreAttack,
-                 PostAttack, PlayerDied>;
+                 PartyRevitalizeRequested, LootDropRequested, PartyTick,
+                 PoisonApplied, FreezeApplied, FreezeStarted, FreezeEnded,
+                 PreAttack, PostAttack, PlayerDied>;
 
 using PartyBus = seerin::VariantBus<PartyEvent>;
 

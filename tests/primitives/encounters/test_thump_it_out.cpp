@@ -104,6 +104,8 @@ TEST_CASE("EncounterBuilder common woodland pool includes new status monsters",
                     fl::monster::MonsterKind::PoisonToad) != pool.end());
   REQUIRE(std::find(pool.begin(), pool.end(), fl::monster::MonsterKind::Yeti) !=
           pool.end());
+  REQUIRE(std::find(pool.begin(), pool.end(),
+                    fl::monster::MonsterKind::Salamander) != pool.end());
 }
 
 TEST_CASE("SkillSequencer reek fade resolves DamageFlash and lets it expire",
@@ -152,6 +154,57 @@ TEST_CASE("SkillSequencer reek fade resolves DamageFlash and lets it expire",
   REQUIRE_FALSE(reg.any_of<fl::ecs::components::DamageFlash>(attacker));
   REQUIRE_FALSE(
       reg.any_of<fl::ecs::components::ResolvedColorOverride>(attacker));
+}
+
+TEST_CASE("SkillSequencer Flame Strike animates before damage",
+          "[encounter][timing][flame_strike]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  auto &encounter = builder.thump_it_out();
+
+  const entt::entity attacker = encounter.attackers().members().front();
+  const entt::entity target = encounter.defenders().members().front();
+  auto &reg = party_ctx.reg();
+
+  seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
+  bool finished = false;
+  fl::skills::SkillSequencer sequencer{
+      party_ctx, scheduler,
+      [&](entt::entity entity) { finished = entity == attacker; },
+      [](entt::entity) {}};
+
+  const auto log_size_before = party_ctx.log().size();
+  sequencer.schedule(attacker, target, fl::skills::SkillId::FlameStrike);
+
+  REQUIRE(reg.any_of<fl::ecs::components::FlameWaveDecal>(target));
+  REQUIRE(reg.get<fl::ecs::components::FlameWaveDecal>(target).duration ==
+          std::chrono::milliseconds{1000});
+
+  for (int i = 0; i < seerin::BEATS_PER_SEC - 1; ++i) {
+    scheduler.on_beat();
+    fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
+  }
+
+  REQUIRE(party_ctx.log().size() == log_size_before);
+  REQUIRE(reg.any_of<fl::ecs::components::FlameWaveDecal>(target));
+  REQUIRE_FALSE(finished);
+
+  scheduler.on_beat();
+  fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
+
+  REQUIRE(party_ctx.log().size() > log_size_before);
+  REQUIRE(reg.any_of<fl::ecs::components::FlameWaveDecal>(target));
+  REQUIRE_FALSE(finished);
+
+  scheduler.on_beat();
+  fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
+
+  REQUIRE(finished);
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::FlameWaveDecal>(target));
 }
 
 } // namespace

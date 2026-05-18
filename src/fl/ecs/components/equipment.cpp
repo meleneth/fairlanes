@@ -6,9 +6,10 @@
 namespace fl::ecs::components {
 
 Equipment::Equipment(fl::loot::EquipmentSlot slot, std::string name,
-                     fl::loot::ArmorKind armor_kind, fl::loot::Tier tier)
-    : slot_(slot), armor_kind_(armor_kind), tier_(tier),
-      name_(std::move(name)) {}
+                     fl::loot::ArmorKind armor_kind, fl::loot::Tier tier,
+                     std::string unique_id)
+    : slot_(slot), armor_kind_(armor_kind), tier_(tier), name_(std::move(name)),
+      unique_id_(std::move(unique_id)) {}
 
 fl::loot::EquipmentSlot Equipment::slot() const noexcept { return slot_; }
 
@@ -23,6 +24,10 @@ bool Equipment::is_armor() const noexcept {
 }
 
 std::string_view Equipment::name() const noexcept { return name_; }
+
+std::string_view Equipment::unique_id() const noexcept { return unique_id_; }
+
+bool Equipment::is_unique() const noexcept { return !unique_id_.empty(); }
 
 std::size_t Equipment::palette_index() const noexcept {
   using fl::loot::Tier;

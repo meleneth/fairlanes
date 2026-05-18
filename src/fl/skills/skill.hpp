@@ -11,14 +11,16 @@ enum class SkillId {
   Eviscerate,
   Poison,
   ColdSnap,
+  FlameStrike,
   Bump,
   Squish,
   Smack,
 };
 
-inline constexpr std::array<SkillId, 7> kRandomCombatSkills{
-    SkillId::Thump, SkillId::Eviscerate, SkillId::Poison, SkillId::ColdSnap,
-    SkillId::Bump,  SkillId::Squish,     SkillId::Smack};
+inline constexpr std::array<SkillId, 8> kRandomCombatSkills{
+    SkillId::Thump,    SkillId::Eviscerate,  SkillId::Poison,
+    SkillId::ColdSnap, SkillId::FlameStrike, SkillId::Bump,
+    SkillId::Squish,   SkillId::Smack};
 
 constexpr std::string_view name(SkillId skill) noexcept {
   switch (skill) {
@@ -32,6 +34,8 @@ constexpr std::string_view name(SkillId skill) noexcept {
     return "Poison";
   case SkillId::ColdSnap:
     return "Cold Snap";
+  case SkillId::FlameStrike:
+    return "Flame Strike";
   case SkillId::Bump:
     return "Bump";
   case SkillId::Squish:
@@ -54,6 +58,7 @@ constexpr int learn_chance_percent(SkillId skill) noexcept {
     return 2;
   case SkillId::Poison:
   case SkillId::ColdSnap:
+  case SkillId::FlameStrike:
     return 5;
   case SkillId::Observe:
     return 0;

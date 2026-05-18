@@ -1,8 +1,11 @@
+#include <array>
 #include <catch2/catch_test_macros.hpp>
+
 #include <entt/entt.hpp>
 
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/loot/equipment_builder.hpp"
+#include "fl/loot/unique_items.hpp"
 
 TEST_CASE("Equipment derives its Lospec palette index from tier",
           "[ecs][components][equipment]") {
@@ -42,4 +45,25 @@ TEST_CASE("EquipmentBuilder creates equipment with its tier",
   REQUIRE(equipment.name() == "Verdant Cape");
   REQUIRE(equipment.tier() == fl::loot::Tier::excellent);
   REQUIRE(equipment.palette_index() == 15);
+}
+
+TEST_CASE("Unique item helper detects existing party inventory uniques",
+          "[loot][equipment][unique]") {
+  entt::registry reg;
+  fl::loot::EquipmentBuilder builder{
+      .slot = fl::loot::EquipmentSlot::boots,
+      .armor_kind = fl::loot::ArmorKind::leather,
+      .tier = fl::loot::Tier::excellent,
+      .name = "Boots of Damp Authority",
+      .unique_id = "boots_of_damp_authority",
+  };
+
+  auto item = builder.create(reg);
+  const std::array inventory{item};
+
+  REQUIRE(reg.get<fl::ecs::components::Equipment>(item).is_unique());
+  REQUIRE(fl::loot::inventory_has_unique_item(reg, inventory,
+                                              "boots_of_damp_authority"));
+  REQUIRE_FALSE(fl::loot::inventory_has_unique_item(reg, inventory,
+                                                    "mouse_nibbled_cape"));
 }

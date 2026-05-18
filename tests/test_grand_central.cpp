@@ -9,6 +9,7 @@
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/systems/special_festival_event.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/loot/equipment_builder.hpp"
 #include "fl/primitives/party_data.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -129,4 +130,26 @@ TEST_CASE("GrandCentral starts each party with festival drops",
     REQUIRE(has_weapon);
     REQUIRE(has_jewelry);
   }
+}
+
+TEST_CASE("FancyLog colors player name tags from worn armor kind",
+          "[fancylog][gear][names]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto party_ctx = gc.account_context(0).party_context(0);
+  auto member = party_ctx.party_data().members().front().member_id();
+  auto &party_member = gc.reg().get<fl::ecs::components::PartyMember>(member);
+
+  auto item =
+      fl::loot::EquipmentBuilder{
+          .slot = fl::loot::EquipmentSlot::chest,
+          .armor_kind = fl::loot::ArmorKind::plate,
+          .tier = fl::loot::Tier::plain,
+          .name = "Plain Plate Chestpiece",
+      }
+          .create(gc.reg());
+  party_member.closet().chest = item;
+
+  REQUIRE(party_ctx.log()
+              .name_tag_for(entt::handle{gc.reg(), member})
+              .starts_with("[plate_player_name]("));
 }

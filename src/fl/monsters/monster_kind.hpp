@@ -10,6 +10,7 @@ enum class MonsterKind {
   BarkSmack,
   PoisonToad,
   Yeti,
+  Salamander,
   // Wolf,
   // Slime,
   // Goblin,

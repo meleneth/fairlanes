@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
 #include <deque>
 
@@ -39,6 +40,7 @@ private:
 
   ConsoleOverlay *console_overlay();
   fl::context::AccountCtx make_context(std::size_t account_index);
+  void update_fps_counter();
   ftxui::Element render_help_hint() const;
   ftxui::Element render_keybind_help() const;
 
@@ -49,6 +51,11 @@ private:
   UiCommandController commands_;
   ActiveScreen active_screen_kind_{ActiveScreen::party};
   bool keybind_help_open_{false};
+  bool fps_initialized_{false};
+  int fps_frame_count_{0};
+  int displayed_fps_{0};
+  std::uint64_t render_frames_{0};
+  std::chrono::steady_clock::time_point fps_window_start_{};
 
   ftxui::Component active_screen_;
   ftxui::Component console_overlay_;

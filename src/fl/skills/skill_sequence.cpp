@@ -2,6 +2,7 @@
 
 #include <fmt/format.h>
 
+#include <chrono>
 #include <string>
 
 #include "fl/ecs/components/hp_bar_color_override.hpp"
@@ -37,6 +38,9 @@ void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
     return;
   case SkillId::ColdSnap:
     schedule_cold_snap(attacker, target);
+    return;
+  case SkillId::FlameStrike:
+    schedule_flame_strike(attacker, target);
     return;
   case SkillId::Bump:
   case SkillId::Squish:
@@ -175,6 +179,42 @@ void SkillSequencer::schedule_cold_snap(entt::entity attacker,
   auto finish_turn = finish_turn_;
   scheduler_.schedule_smelly_in_beats_for(
       34, attacker, "cold snap: finish",
+      [finish_turn, attacker] { finish_turn(attacker); });
+
+  TracyPlot("SkillSequencer.PendingEvents",
+            static_cast<double>(scheduler_.pending()));
+}
+
+void SkillSequencer::schedule_flame_strike(entt::entity attacker,
+                                           entt::entity target) {
+  ZoneScopedN("SkillSequencer::schedule_flame_strike");
+  static constexpr int kAnimationBeats = seerin::BEATS_PER_SEC;
+
+  teach_party_from_observed_skill(party_ctx_, attacker, SkillId::FlameStrike);
+
+  const auto expires_at = seerin::uWu{
+      scheduler_.now().v + seerin::UWU_PER_BEAT.v * (kAnimationBeats + 1)};
+
+  if (party_ctx_.reg().valid(target)) {
+    party_ctx_.reg().emplace_or_replace<fl::ecs::components::FlameWaveDecal>(
+        target,
+        fl::ecs::components::FlameWaveDecal{
+            expires_at, fl::ecs::components::FlameWaveDecal::Clock::now(),
+            std::chrono::seconds{1}});
+  }
+
+  scheduler_.schedule_smelly_in_beats_for(
+      kAnimationBeats, target, "flame strike: apply damage",
+      [&party_ctx = party_ctx_, attacker, target] {
+        fl::skills::Thump thump;
+        thump.thump(
+            fl::context::AttackCtx::make_attack(party_ctx, attacker, target),
+            SkillId::FlameStrike);
+      });
+
+  auto finish_turn = finish_turn_;
+  scheduler_.schedule_smelly_in_beats_for(
+      kAnimationBeats + 1, attacker, "flame strike: finish",
       [finish_turn, attacker] { finish_turn(attacker); });
 
   TracyPlot("SkillSequencer.PendingEvents",

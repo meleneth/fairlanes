@@ -82,6 +82,7 @@ ftxui::Element RootComponent::Render() {
 
   auto *overlay = console_overlay();
   overlay->tick();
+  update_fps_counter();
 
   Element content = active_screen_ ? active_screen_->Render() : text("");
   content = vbox({
@@ -154,6 +155,36 @@ ConsoleOverlay *RootComponent::console_overlay() {
   return dynamic_cast<ConsoleOverlay *>(console_overlay_.get());
 }
 
+void RootComponent::update_fps_counter() {
+  ++render_frames_;
+  const auto now = std::chrono::steady_clock::now();
+  if (!fps_initialized_) {
+    fps_initialized_ = true;
+    fps_window_start_ = now;
+    fps_frame_count_ = 0;
+    displayed_fps_ = 0;
+    return;
+  }
+
+  ++fps_frame_count_;
+  const auto elapsed = now - fps_window_start_;
+  if (elapsed < std::chrono::milliseconds{500}) {
+    return;
+  }
+
+  const auto elapsed_ms =
+      std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+  if (elapsed_ms > 0) {
+    displayed_fps_ =
+        static_cast<int>((static_cast<double>(fps_frame_count_) * 1000.0 /
+                          static_cast<double>(elapsed_ms)) +
+                         0.5);
+  }
+
+  fps_frame_count_ = 0;
+  fps_window_start_ = now;
+}
+
 ftxui::Element RootComponent::render_help_hint() const {
   using namespace ftxui;
 
@@ -162,7 +193,11 @@ ftxui::Element RootComponent::render_help_hint() const {
       filler(),
       hbox({
           filler(),
-          text("h for help") | chrome | bgcolor(fl::lospec500::color_at(0)),
+          text("FPS " + std::to_string(displayed_fps_) + "  OD x" +
+               std::to_string(world_clock_->beat_rate_multiplier()) + "  RF " +
+               std::to_string(render_frames_) + "  WT " +
+               std::to_string(world_clock_->elapsed_beats()) + "  h for help") |
+              chrome | bgcolor(fl::lospec500::color_at(0)),
       }),
   });
 }

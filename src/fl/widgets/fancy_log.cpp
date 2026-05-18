@@ -1,8 +1,10 @@
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <utility>
 
 #include "fancy_log.hpp"
+#include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/lospec500.hpp"
@@ -10,6 +12,46 @@
 
 namespace fl::widgets {
 using namespace ftxui;
+
+namespace {
+std::string player_name_tag_for(entt::handle target) {
+  using fl::ecs::components::Equipment;
+  using fl::ecs::components::PartyMember;
+  using fl::loot::ArmorKind;
+
+  auto &member = target.get<PartyMember>();
+  auto &closet = member.closet();
+  auto &reg = *target.registry();
+
+  const std::array armor_slots{closet.chest,   closet.helm,  closet.pants,
+                               closet.belt,    closet.boots, closet.gloves,
+                               closet.sleeves, closet.cape};
+
+  for (auto item : armor_slots) {
+    if (item == entt::null || !reg.valid(item)) {
+      continue;
+    }
+
+    const auto *equipment = reg.try_get<Equipment>(item);
+    if (equipment == nullptr || !equipment->is_armor()) {
+      continue;
+    }
+
+    switch (equipment->armor_kind()) {
+    case ArmorKind::cloth:
+      return "cloth_player_name";
+    case ArmorKind::leather:
+      return "leather_player_name";
+    case ArmorKind::plate:
+      return "plate_player_name";
+    case ArmorKind::none:
+      break;
+    }
+  }
+
+  return "player_name";
+}
+} // namespace
 
 // ---- construction ----------------------------------------------------------
 
@@ -22,7 +64,8 @@ std::string FancyLog::name_tag_for(entt::handle target) {
   auto &target_stats = target.get<Stats>();
 
   if (target.any_of<PartyMember>()) {
-    return fmt::format("[player_name]({})", target_stats.name_);
+    return fmt::format("[{}]({})", player_name_tag_for(target),
+                       target_stats.name_);
   }
 
   return fmt::format("[enemy_name]({})", target_stats.name_);
@@ -30,6 +73,9 @@ std::string FancyLog::name_tag_for(entt::handle target) {
 
 FancyLog::FancyLog(Options opt) : opts(opt) {
   style_map = {{"player_name", fl::lospec500::at(22)},
+               {"cloth_player_name", fl::lospec500::at(29)},
+               {"leather_player_name", fl::lospec500::at(15)},
+               {"plate_player_name", fl::lospec500::at(36)},
                {"enemy_name", fl::lospec500::at(34)},
                {"xp", fl::lospec500::at(29)},
                {"level", fl::lospec500::at(15)},

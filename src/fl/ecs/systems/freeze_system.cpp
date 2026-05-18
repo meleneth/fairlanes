@@ -11,6 +11,7 @@
 #include "fl/lospec500.hpp"
 #include "fl/primitives/world_clock.hpp"
 #include "fl/widgets/fancy_log.hpp"
+#include <ftxui/screen/color.hpp>
 
 namespace fl::ecs::systems {
 namespace {
@@ -18,6 +19,9 @@ constexpr int kFreezeDurationSeconds = 5;
 constexpr int kFreezeDurationBeats =
     fl::primitives::WorldClock::beats_from_seconds(kFreezeDurationSeconds);
 constexpr std::size_t kFreezeBlue = 16;
+constexpr std::size_t kFreezeFadeStartBlue = 28;
+constexpr int kFreezeFadeInBeats =
+    fl::primitives::WorldClock::kBeatsPerSecond / 4;
 
 void set_background(entt::registry &reg, entt::entity target,
                     ftxui::Color color) {
@@ -77,9 +81,11 @@ void FreezeSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
   freeze.source = source;
   freeze.clear_after_beats = kFreezeDurationBeats;
 
-  set_background(reg, target, fl::lospec500::color_at(kFreezeBlue));
-  party_ctx.log().append_markup(fmt::format(
-      "[ability](Cold Snap) freezes [player_name]({}).", target_stats->name_));
+  set_background(reg, target, fl::lospec500::color_at(kFreezeFadeStartBlue));
+  party_ctx.log().append_markup(
+      fmt::format("{} used [ability](Cold Snap) on {}; frost takes hold.",
+                  party_ctx.log().name_tag_for(entt::handle{reg, source}),
+                  party_ctx.log().name_tag_for(entt::handle{reg, target})));
 
   freeze.player_died_sub = fl::events::ScopedPartyListener{
       party_ctx.bus(), std::in_place_type<fl::events::PlayerDied>,
@@ -97,6 +103,27 @@ void FreezeSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
 
   party_ctx.bus().emit(
       fl::events::PartyEvent{fl::events::FreezeStarted{target}});
+
+  const auto from = fl::lospec500::color_at(kFreezeFadeStartBlue);
+  const auto to = fl::lospec500::color_at(kFreezeBlue);
+  for (int beat = 1; beat <= kFreezeFadeInBeats; ++beat) {
+    const auto t = static_cast<float>(beat) /
+                   static_cast<float>(std::max(1, kFreezeFadeInBeats));
+    const auto color = beat == kFreezeFadeInBeats
+                           ? to
+                           : ftxui::Color::Interpolate(t, from, to);
+    scheduler.schedule_smelly_in_beats_for(
+        beat, target, "freeze: background fade in",
+        [&party_ctx, target, color] {
+          auto &reg = party_ctx.reg();
+          if (!reg.valid(target) ||
+              !reg.any_of<fl::ecs::components::Freeze>(target)) {
+            return;
+          }
+          set_background(reg, target, color);
+        });
+  }
+
   schedule_clear(party_ctx, scheduler, target, kFreezeDurationBeats);
 }
 
@@ -121,8 +148,9 @@ void FreezeSystem::shatter(fl::context::PartyCtx &party_ctx,
       fl::context::AttackCtx::make_attack(party_ctx, source, target);
   attack_ctx.damage().ice = damage;
   party_ctx.log().append_markup(fmt::format(
-      "[ability](Shatter) breaks [player_name]({}) for [error]({}) damage.",
-      target_name, damage));
+      "{} used [ability](Shatter) on [player_name]({}) for [error]({}) damage.",
+      party_ctx.log().name_tag_for(entt::handle{reg, source}), target_name,
+      damage));
   fl::ecs::systems::TakeDamage::commit(attack_ctx);
 }
 
