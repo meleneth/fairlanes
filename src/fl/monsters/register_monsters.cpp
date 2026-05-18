@@ -8,6 +8,7 @@ void register_all_monsters() {
   register_honey_badger();
   register_yeti();
   register_salamander();
+  register_fire_drake();
   // register_wolf();
   // register_slime();
   // ...

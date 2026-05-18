@@ -108,6 +108,16 @@ TEST_CASE("EncounterBuilder common woodland pool includes new status monsters",
                     fl::monster::MonsterKind::Salamander) != pool.end());
 }
 
+TEST_CASE("EncounterBuilder rare woodland pool includes Fire Drake",
+          "[encounter_builder][encounter][combat][rare]") {
+  const auto &pool = fl::primitives::EncounterBuilder::kRareWoodland;
+
+  REQUIRE(std::find(pool.begin(), pool.end(),
+                    fl::monster::MonsterKind::HoneyBadger) != pool.end());
+  REQUIRE(std::find(pool.begin(), pool.end(),
+                    fl::monster::MonsterKind::FireDrake) != pool.end());
+}
+
 TEST_CASE("SkillSequencer reek fade resolves DamageFlash and lets it expire",
           "[encounter][timing][color]") {
   fl::GrandCentral gc{1, 1, 1};
@@ -205,6 +215,68 @@ TEST_CASE("SkillSequencer Flame Strike animates before damage",
 
   REQUIRE(finished);
   REQUIRE_FALSE(reg.any_of<fl::ecs::components::FlameWaveDecal>(target));
+}
+
+TEST_CASE("SkillSequencer Flame Wave staggers all alive opponents",
+          "[encounter][timing][flame_wave]") {
+  fl::GrandCentral gc{1, 1, 3};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  auto &encounter = builder.thump_it_out();
+
+  const entt::entity attacker = encounter.attackers().members().front();
+  const auto targets = encounter.defenders().alive_members(party_ctx);
+  REQUIRE(targets.size() == 3);
+
+  auto &reg = party_ctx.reg();
+  seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
+  bool finished = false;
+  fl::skills::SkillSequencer sequencer{
+      party_ctx, scheduler,
+      [&](entt::entity entity) { finished = entity == attacker; },
+      [](entt::entity) {}};
+
+  sequencer.schedule(attacker, targets.front(), fl::skills::SkillId::FlameWave);
+  const auto log_size_after_schedule = party_ctx.log().size();
+
+  scheduler.on_beat();
+  fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
+  REQUIRE(reg.any_of<fl::ecs::components::FlameWaveDecal>(targets[0]));
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::FlameWaveDecal>(targets[1]));
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::FlameWaveDecal>(targets[2]));
+
+  for (int i = 0; i < 2; ++i) {
+    scheduler.on_beat();
+    fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
+  }
+  REQUIRE(reg.any_of<fl::ecs::components::FlameWaveDecal>(targets[1]));
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::FlameWaveDecal>(targets[2]));
+
+  for (int i = 0; i < 3; ++i) {
+    scheduler.on_beat();
+    fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
+  }
+  REQUIRE(reg.any_of<fl::ecs::components::FlameWaveDecal>(targets[2]));
+
+  for (int i = 0; i < 5; ++i) {
+    scheduler.on_beat();
+    fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
+  }
+  REQUIRE(party_ctx.log().size() == log_size_after_schedule);
+
+  scheduler.on_beat();
+  fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
+  REQUIRE(party_ctx.log().size() > log_size_after_schedule);
+  REQUIRE_FALSE(finished);
+
+  for (int i = 0; i < 7; ++i) {
+    scheduler.on_beat();
+    fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
+  }
+  REQUIRE(finished);
 }
 
 } // namespace

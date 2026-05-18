@@ -21,6 +21,11 @@ struct EncounterBuilder {
       fl::monster::MonsterKind::Salamander,
   };
 
+  static constexpr std::array<fl::monster::MonsterKind, 2> kRareWoodland{
+      fl::monster::MonsterKind::HoneyBadger,
+      fl::monster::MonsterKind::FireDrake,
+  };
+
   EncounterBuilder(fl::context::PartyCtx &ctx) : ctx_(ctx) {};
 
   EncounterData &thump_it_out();

@@ -65,6 +65,9 @@ TEST_CASE("Woodland skill monsters have their own names and levels",
   const auto salamander = fl::primitives::EntityBuilder(context)
                               .monster(fl::monster::MonsterKind::Salamander)
                               .build();
+  const auto fire_drake = fl::primitives::EntityBuilder(context)
+                              .monster(fl::monster::MonsterKind::FireDrake)
+                              .build();
 
   REQUIRE(party_ctx.reg().get<fl::ecs::components::Stats>(bump).name_ ==
           "Bumpkin Hare");
@@ -87,6 +90,13 @@ TEST_CASE("Woodland skill monsters have their own names and levels",
   REQUIRE(
       party_ctx.reg().get<fl::ecs::components::TrackXP>(salamander).level_ ==
       6);
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::Stats>(fire_drake).name_ ==
+          "Fire Drake");
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::Stats>(fire_drake).hp_ ==
+          500);
+  REQUIRE(
+      party_ctx.reg().get<fl::ecs::components::TrackXP>(fire_drake).level_ ==
+      8);
 }
 
 TEST_CASE("Monster builder assigns each monster its known skill",
@@ -121,4 +131,6 @@ TEST_CASE("Monster builder assigns each monster its known skill",
                      fl::skills::SkillId::ColdSnap);
   expect_known_skill(fl::monster::MonsterKind::Salamander,
                      fl::skills::SkillId::FlameStrike);
+  expect_known_skill(fl::monster::MonsterKind::FireDrake,
+                     fl::skills::SkillId::FlameWave);
 }

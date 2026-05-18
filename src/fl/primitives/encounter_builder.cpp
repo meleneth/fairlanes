@@ -30,11 +30,13 @@ void EncounterBuilder::add_random_enemy() {
   using namespace fl::ecs::components;
 
   auto rs = ctx_.rng().stream("encounter/spawn.monster");
-  const auto kind =
-      rs.random_index(20) == 0
-          ? fl::monster::MonsterKind::HoneyBadger
-          : kCommonWoodland[static_cast<std::size_t>(
-                rs.random_index(static_cast<int>(kCommonWoodland.size())))];
+  auto pick_from = [&rs](const auto &pool) {
+    return pool[static_cast<std::size_t>(
+        rs.random_index(static_cast<int>(pool.size())))];
+  };
+
+  const auto kind = rs.random_index(20) == 0 ? pick_from(kRareWoodland)
+                                             : pick_from(kCommonWoodland);
 
   auto context = ctx_.build_context();
   entt::entity ent = EntityBuilder(context).monster(kind).build();

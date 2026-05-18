@@ -11,6 +11,7 @@ enum class MonsterKind {
   PoisonToad,
   Yeti,
   Salamander,
+  FireDrake,
   // Wolf,
   // Slime,
   // Goblin,

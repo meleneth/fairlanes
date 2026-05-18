@@ -11,6 +11,7 @@
 #include "fl/ecs/systems/dire_bleed_system.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/lospec500.hpp"
+#include "fl/primitives/party_data.hpp"
 #include "fl/skills/eviscerate.hpp"
 #include "fl/skills/skill_learning.hpp"
 #include "fl/skills/thump.hpp"
@@ -41,6 +42,9 @@ void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
     return;
   case SkillId::FlameStrike:
     schedule_flame_strike(attacker, target);
+    return;
+  case SkillId::FlameWave:
+    schedule_flame_wave(attacker);
     return;
   case SkillId::Bump:
   case SkillId::Squish:
@@ -215,6 +219,82 @@ void SkillSequencer::schedule_flame_strike(entt::entity attacker,
   auto finish_turn = finish_turn_;
   scheduler_.schedule_smelly_in_beats_for(
       kAnimationBeats + 1, attacker, "flame strike: finish",
+      [finish_turn, attacker] { finish_turn(attacker); });
+
+  TracyPlot("SkillSequencer.PendingEvents",
+            static_cast<double>(scheduler_.pending()));
+}
+
+void SkillSequencer::schedule_flame_wave(entt::entity attacker) {
+  ZoneScopedN("SkillSequencer::schedule_flame_wave");
+  static constexpr int kAnimationBeats = seerin::BEATS_PER_SEC;
+  static constexpr int kStaggerBeats = 3;
+
+  teach_party_from_observed_skill(party_ctx_, attacker, SkillId::FlameWave);
+
+  auto &encounter = party_ctx_.party_data().encounter_data();
+  const auto targets = encounter.attackers().contains(attacker)
+                           ? encounter.defenders().alive_members(party_ctx_)
+                           : encounter.attackers().alive_members(party_ctx_);
+
+  int index = 0;
+  for (const auto target : targets) {
+    const int start_beat = index * kStaggerBeats;
+    const int damage_beat = start_beat + kAnimationBeats;
+    const auto expires_at = seerin::uWu{
+        scheduler_.now().v + seerin::UWU_PER_BEAT.v * (damage_beat + 1)};
+
+    scheduler_.schedule_smelly_in_beats_for(
+        start_beat, target, fmt::format("flame wave: start target {}", index),
+        [&party_ctx = party_ctx_, target, expires_at] {
+          if (!party_ctx.reg().valid(target)) {
+            return;
+          }
+
+          auto *stats =
+              party_ctx.reg().try_get<fl::ecs::components::Stats>(target);
+          if (stats == nullptr || !stats->is_alive()) {
+            return;
+          }
+
+          party_ctx.reg()
+              .emplace_or_replace<fl::ecs::components::FlameWaveDecal>(
+                  target, fl::ecs::components::FlameWaveDecal{
+                              expires_at,
+                              fl::ecs::components::FlameWaveDecal::Clock::now(),
+                              std::chrono::seconds{1}});
+        });
+
+    scheduler_.schedule_smelly_in_beats_for(
+        damage_beat, target, fmt::format("flame wave: damage target {}", index),
+        [&party_ctx = party_ctx_, attacker, target] {
+          if (!party_ctx.reg().valid(target)) {
+            return;
+          }
+
+          auto *stats =
+              party_ctx.reg().try_get<fl::ecs::components::Stats>(target);
+          if (stats == nullptr || !stats->is_alive()) {
+            return;
+          }
+
+          fl::skills::Thump thump;
+          thump.thump(
+              fl::context::AttackCtx::make_attack(party_ctx, attacker, target),
+              SkillId::FlameWave);
+        });
+
+    ++index;
+  }
+
+  auto finish_turn = finish_turn_;
+  const int finish_beat =
+      targets.empty()
+          ? 1
+          : ((static_cast<int>(targets.size()) - 1) * kStaggerBeats) +
+                kAnimationBeats + 1;
+  scheduler_.schedule_smelly_in_beats_for(
+      finish_beat, attacker, "flame wave: finish",
       [finish_turn, attacker] { finish_turn(attacker); });
 
   TracyPlot("SkillSequencer.PendingEvents",
