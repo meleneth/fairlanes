@@ -113,7 +113,9 @@ TEST_CASE("Returning to town revitalizes party members",
     REQUIRE(stats.mp_ == 0);
   }
 
-  fl::fsm::PartyLoop::Ops::exit_fixing(party_ctx);
+  for (int i = 0; i < fl::primitives::PartyData::kTownPenaltyBeats; ++i) {
+    fl::fsm::PartyLoop::Ops::fixing_tick(party_ctx);
+  }
 
   REQUIRE(saw_revitalize_request);
   REQUIRE(healed_members == static_cast<int>(party.members().size()));
@@ -122,6 +124,51 @@ TEST_CASE("Returning to town revitalizes party members",
     const auto &stats =
         party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
     REQUIRE(stats.hp_ > 0);
+    REQUIRE(stats.hp_ == stats.max_hp_);
+    REQUIRE(stats.mp_ == stats.max_mp_);
+  }
+}
+
+TEST_CASE("Party loop revitalizes members after a wipe town stay",
+          "[party][town][revitalize][fsm]") {
+  fl::GrandCentral gc{1, 1, 2};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+
+  int healed_members = 0;
+  (void)party.party_bus().on<fl::events::PartyHealed>(
+      [&](const fl::events::PartyHealed &ev) {
+        if (ev.amount > 0) {
+          ++healed_members;
+        }
+      });
+
+  for (const auto &member : party.members()) {
+    auto &stats =
+        party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
+    stats.hp_ = 0;
+    stats.mp_ = 0;
+  }
+
+  party.party_bus().emit(fl::events::PartyEvent{fl::events::PartyWiped{}});
+
+  REQUIRE_FALSE(party.in_combat());
+  REQUIRE(party.town_penalty_active());
+
+  party.loop_machine().beat_event();
+
+  for (int i = 0; i < fl::primitives::PartyData::kTownPenaltyBeats; ++i) {
+    party.loop_machine().beat_event();
+  }
+
+  REQUIRE_FALSE(party.town_penalty_active());
+  REQUIRE(healed_members == static_cast<int>(party.members().size()));
+
+  for (const auto &member : party.members()) {
+    const auto &stats =
+        party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
     REQUIRE(stats.hp_ == stats.max_hp_);
     REQUIRE(stats.mp_ == stats.max_mp_);
   }

@@ -64,8 +64,7 @@ void PartyLoop::Ops::enter_fixing(fl::context::PartyCtx &ctx) {
 
 void PartyLoop::Ops::exit_fixing(fl::context::PartyCtx &ctx) {
   ZoneScopedN("PartyLoop::exit_fixing");
-  ctx.bus().emit(
-      fl::events::PartyEvent{fl::events::PartyRevitalizeRequested{}});
+  (void)ctx;
 }
 
 void PartyLoop::Ops::enter_gearing(fl::context::PartyCtx &ctx) {
@@ -76,6 +75,10 @@ void PartyLoop::Ops::enter_gearing(fl::context::PartyCtx &ctx) {
 void PartyLoop::Ops::fixing_tick(fl::context::PartyCtx &ctx) {
   ZoneScopedN("PartyLoop::fixing_tick");
   ctx.party_data().tick_town_penalty();
+  if (!ctx.party_data().town_penalty_active()) {
+    ctx.bus().emit(
+        fl::events::PartyEvent{fl::events::PartyRevitalizeRequested{}});
+  }
 }
 
 void PartyLoop::Ops::combat_tick(fl::context::PartyCtx &ctx) {
