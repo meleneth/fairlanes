@@ -8,7 +8,7 @@
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/widgets/combatant.hpp"
-#include "fl/widgets/effects/decal_animation.hpp"
+#include "fl/widgets/effects/decal.hpp"
 
 TEST_CASE("Combatant renders ATB from ECS AtbCharge", "[widgets][combatant]") {
   fl::GrandCentral gc{1, 1, 1};

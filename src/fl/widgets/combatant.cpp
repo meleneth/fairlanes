@@ -6,7 +6,7 @@
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/lospec500.hpp"
-#include "fl/widgets/effects/decal_animation.hpp"
+#include "fl/widgets/effects/decal.hpp"
 
 #include <algorithm>
 #include <chrono>

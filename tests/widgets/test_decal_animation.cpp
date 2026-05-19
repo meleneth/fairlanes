@@ -4,7 +4,7 @@
 #include <array>
 
 #include "fl/lospec500.hpp"
-#include "fl/widgets/effects/decal_animation.hpp"
+#include "fl/widgets/effects/decal.hpp"
 
 namespace {
 

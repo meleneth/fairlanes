@@ -3,7 +3,7 @@
 #include <optional>
 
 #include "fl/skills/skill.hpp"
-#include "fl/widgets/effects/decal_animation.hpp"
+#include "fl/widgets/effects/decal.hpp"
 
 namespace fl::skills {
 

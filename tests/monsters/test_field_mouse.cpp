@@ -12,7 +12,7 @@
 #include "fl/monsters/monster_skills.hpp"
 #include "fl/primitives/entity_builder.hpp"
 #include "fl/skills/skill_visuals.hpp"
-#include "fl/widgets/effects/decal_animation.hpp"
+#include "fl/widgets/effects/decal.hpp"
 
 TEST_CASE("Field mouse monster archetype has expected stats", "[monsters]") {
   fl::GrandCentral gc{1, 1, 1};

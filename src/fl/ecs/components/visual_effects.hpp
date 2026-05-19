@@ -8,7 +8,7 @@
 
 #include <ftxui/screen/color.hpp>
 
-#include "fl/widgets/effects/decal_animation.hpp"
+#include "fl/widgets/effects/decal.hpp"
 #include "sr/uWu.hpp"
 
 namespace fl::ecs::components {
