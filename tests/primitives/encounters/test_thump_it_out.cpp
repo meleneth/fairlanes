@@ -106,6 +106,20 @@ TEST_CASE("EncounterBuilder common woodland pool includes new status monsters",
           pool.end());
   REQUIRE(std::find(pool.begin(), pool.end(),
                     fl::monster::MonsterKind::Salamander) != pool.end());
+  REQUIRE(std::find(pool.begin(), pool.end(),
+                    fl::monster::MonsterKind::StormtickImp) != pool.end());
+  REQUIRE(std::find(pool.begin(), pool.end(),
+                    fl::monster::MonsterKind::CeilingGrudge) != pool.end());
+  REQUIRE(std::find(pool.begin(), pool.end(),
+                    fl::monster::MonsterKind::MiasmaToad) != pool.end());
+  REQUIRE(std::find(pool.begin(), pool.end(),
+                    fl::monster::MonsterKind::ChoirWisp) != pool.end());
+  REQUIRE(std::find(pool.begin(), pool.end(),
+                    fl::monster::MonsterKind::GorecapSprout) != pool.end());
+  REQUIRE(std::find(pool.begin(), pool.end(),
+                    fl::monster::MonsterKind::RimefangHare) != pool.end());
+  REQUIRE(std::find(pool.begin(), pool.end(),
+                    fl::monster::MonsterKind::NullMote) != pool.end());
 }
 
 TEST_CASE("EncounterBuilder rare woodland pool includes Fire Drake",

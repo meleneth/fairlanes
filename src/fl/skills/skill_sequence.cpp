@@ -3,6 +3,7 @@
 #include <fmt/format.h>
 
 #include <chrono>
+#include <memory>
 #include <string>
 
 #include "fl/ecs/components/hp_bar_color_override.hpp"
@@ -14,11 +15,26 @@
 #include "fl/primitives/party_data.hpp"
 #include "fl/skills/eviscerate.hpp"
 #include "fl/skills/skill_learning.hpp"
+#include "fl/skills/skill_visuals.hpp"
 #include "fl/skills/thump.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include <tracy/Tracy.hpp>
 
 namespace fl::skills {
+namespace {
+
+static constexpr int kCombatantDecalWidth = 80;
+static constexpr int kCombatantDecalHeight = 8;
+
+std::shared_ptr<const fl::widgets::effects::DecalAnimation>
+make_skill_decal(SkillId skill) {
+  const auto kind = decal_animation_for(skill).value_or(
+      fl::widgets::effects::DecalAnimationKind::FlameWave);
+  return fl::widgets::effects::make_decal_animation(kind, kCombatantDecalWidth,
+                                                    kCombatantDecalHeight);
+}
+
+} // namespace
 
 SkillSequencer::SkillSequencer(fl::context::PartyCtx &party_ctx,
                                Scheduler &scheduler, FinishTurnFn finish_turn,
@@ -45,6 +61,15 @@ void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
     return;
   case SkillId::FlameWave:
     schedule_flame_wave(attacker);
+    return;
+  case SkillId::Joltspasm:
+  case SkillId::RocksFall:
+  case SkillId::SourBreath:
+  case SkillId::Mercyburst:
+  case SkillId::BloodBloom:
+  case SkillId::IceSplitter:
+  case SkillId::GravitySigh:
+    schedule_decal_strike(attacker, target, skill);
     return;
   case SkillId::Bump:
   case SkillId::Squish:
@@ -204,7 +229,7 @@ void SkillSequencer::schedule_flame_strike(entt::entity attacker,
         target,
         fl::ecs::components::FlameWaveDecal{
             expires_at, fl::ecs::components::FlameWaveDecal::Clock::now(),
-            std::chrono::seconds{1}});
+            std::chrono::seconds{1}, make_skill_decal(SkillId::FlameStrike)});
   }
 
   scheduler_.schedule_smelly_in_beats_for(
@@ -219,6 +244,42 @@ void SkillSequencer::schedule_flame_strike(entt::entity attacker,
   auto finish_turn = finish_turn_;
   scheduler_.schedule_smelly_in_beats_for(
       kAnimationBeats + 1, attacker, "flame strike: finish",
+      [finish_turn, attacker] { finish_turn(attacker); });
+
+  TracyPlot("SkillSequencer.PendingEvents",
+            static_cast<double>(scheduler_.pending()));
+}
+
+void SkillSequencer::schedule_decal_strike(entt::entity attacker,
+                                           entt::entity target, SkillId skill) {
+  ZoneScopedN("SkillSequencer::schedule_decal_strike");
+  static constexpr int kAnimationBeats = seerin::BEATS_PER_SEC;
+
+  teach_party_from_observed_skill(party_ctx_, attacker, skill);
+
+  const auto expires_at = seerin::uWu{
+      scheduler_.now().v + seerin::UWU_PER_BEAT.v * (kAnimationBeats + 1)};
+
+  if (party_ctx_.reg().valid(target)) {
+    party_ctx_.reg().emplace_or_replace<fl::ecs::components::FlameWaveDecal>(
+        target,
+        fl::ecs::components::FlameWaveDecal{
+            expires_at, fl::ecs::components::FlameWaveDecal::Clock::now(),
+            std::chrono::seconds{1}, make_skill_decal(skill)});
+  }
+
+  scheduler_.schedule_smelly_in_beats_for(
+      kAnimationBeats, target, fmt::format("{}: apply damage", name(skill)),
+      [&party_ctx = party_ctx_, attacker, target, skill] {
+        fl::skills::Thump thump;
+        thump.thump(
+            fl::context::AttackCtx::make_attack(party_ctx, attacker, target),
+            skill);
+      });
+
+  auto finish_turn = finish_turn_;
+  scheduler_.schedule_smelly_in_beats_for(
+      kAnimationBeats + 1, attacker, fmt::format("{}: finish", name(skill)),
       [finish_turn, attacker] { finish_turn(attacker); });
 
   TracyPlot("SkillSequencer.PendingEvents",
@@ -262,7 +323,8 @@ void SkillSequencer::schedule_flame_wave(entt::entity attacker) {
                   target, fl::ecs::components::FlameWaveDecal{
                               expires_at,
                               fl::ecs::components::FlameWaveDecal::Clock::now(),
-                              std::chrono::seconds{1}});
+                              std::chrono::seconds{1},
+                              make_skill_decal(SkillId::FlameWave)});
         });
 
     scheduler_.schedule_smelly_in_beats_for(

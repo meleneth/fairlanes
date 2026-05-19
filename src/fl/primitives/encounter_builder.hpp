@@ -11,7 +11,7 @@ namespace fl::primitives {
 
 struct EncounterBuilder {
   static constexpr int kEnemyPartySize = 5;
-  static constexpr std::array<fl::monster::MonsterKind, 7> kCommonWoodland{
+  static constexpr std::array<fl::monster::MonsterKind, 14> kCommonWoodland{
       fl::monster::MonsterKind::FieldMouse,
       fl::monster::MonsterKind::BumpkinHare,
       fl::monster::MonsterKind::MireSquish,
@@ -19,6 +19,13 @@ struct EncounterBuilder {
       fl::monster::MonsterKind::PoisonToad,
       fl::monster::MonsterKind::Yeti,
       fl::monster::MonsterKind::Salamander,
+      fl::monster::MonsterKind::StormtickImp,
+      fl::monster::MonsterKind::CeilingGrudge,
+      fl::monster::MonsterKind::MiasmaToad,
+      fl::monster::MonsterKind::ChoirWisp,
+      fl::monster::MonsterKind::GorecapSprout,
+      fl::monster::MonsterKind::RimefangHare,
+      fl::monster::MonsterKind::NullMote,
   };
 
   static constexpr std::array<fl::monster::MonsterKind, 2> kRareWoodland{

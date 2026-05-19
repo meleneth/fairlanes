@@ -1,5 +1,6 @@
 #pragma once
 
+#include "fl/monsters/decal_monsters.hpp"
 #include "fl/monsters/field_mouse.hpp"
 #include "fl/monsters/fire_drake.hpp"
 #include "fl/monsters/honey_badger.hpp"

@@ -6,12 +6,13 @@
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/lospec500.hpp"
-#include "fl/widgets/effects/flame_wave.hpp"
+#include "fl/widgets/effects/decal_animation.hpp"
 
 #include <algorithm>
 #include <chrono>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/screen.hpp>
@@ -19,10 +20,12 @@
 namespace fl::widgets {
 namespace {
 
-class FlameWaveDecalNode : public ftxui::Node {
+class AttackDecalNode : public ftxui::Node {
 public:
-  FlameWaveDecalNode(ftxui::Element child, float progress)
-      : ftxui::Node(ftxui::Elements{std::move(child)}), progress_(progress) {}
+  AttackDecalNode(ftxui::Element child, float progress,
+                  fl::widgets::effects::DecalAnimationKind animation_kind)
+      : ftxui::Node(ftxui::Elements{std::move(child)}), progress_(progress),
+        animation_kind_(animation_kind) {}
 
   void ComputeRequirement() override {
     children_[0]->ComputeRequirement();
@@ -32,6 +35,24 @@ public:
   void SetBox(ftxui::Box box) override {
     box_ = box;
     children_[0]->SetBox(box);
+
+    const int width = box_.x_max - box_.x_min + 1;
+    const int height = box_.y_max - box_.y_min + 1;
+    if (width <= 0 || height <= 0) {
+      animation_.reset();
+      return;
+    }
+
+    const int decal_height = height + extra_height();
+    if (animation_ && animation_width_ == width &&
+        animation_height_ == decal_height) {
+      return;
+    }
+
+    animation_width_ = width;
+    animation_height_ = decal_height;
+    animation_ = fl::widgets::effects::make_decal_animation(
+        animation_kind_, animation_width_, animation_height_);
   }
 
   void Render(ftxui::Screen &screen) override {
@@ -39,13 +60,16 @@ public:
 
     const int width = box_.x_max - box_.x_min + 1;
     const int combatant_height = box_.y_max - box_.y_min + 1;
-    const int decal_height = combatant_height + kExtraHeight;
+    const int decal_height = combatant_height + extra_height();
     if (width <= 0 || combatant_height <= 0) {
       return;
     }
 
-    auto frame = fl::widgets::effects::FlameWave{}.render(progress_, width,
-                                                          decal_height);
+    if (!animation_) {
+      return;
+    }
+
+    auto frame = animation_->render(progress_);
     const int decal_y_min = box_.y_max - decal_height + 1;
     for (int y = 0; y < frame.height; ++y) {
       const int screen_y = decal_y_min + y;
@@ -74,19 +98,33 @@ public:
         if (cell.glyph != ' ') {
           pixel.character = std::string(1, cell.glyph);
         } else if (had_text && cell.bg) {
-          pixel.foreground_color = ftxui::Color::White;
+          pixel.foreground_color = fl::lospec500::color_at(41);
         }
       }
     }
   }
 
 private:
-  static constexpr int kExtraHeight = 2;
+  [[nodiscard]] int extra_height() const noexcept {
+    return animation_kind_ ==
+                   fl::widgets::effects::DecalAnimationKind::FlameWave
+               ? kFlameWaveExtraHeight
+               : 0;
+  }
+
+  static constexpr int kFlameWaveExtraHeight = 2;
   float progress_ = 0.0F;
+  fl::widgets::effects::DecalAnimationKind animation_kind_;
+  int animation_width_ = 0;
+  int animation_height_ = 0;
+  std::shared_ptr<const fl::widgets::effects::DecalAnimation> animation_;
 };
 
-ftxui::Element flame_wave_decal(ftxui::Element child, float progress) {
-  return std::make_shared<FlameWaveDecalNode>(std::move(child), progress);
+ftxui::Element
+attack_decal(ftxui::Element child, float progress,
+             fl::widgets::effects::DecalAnimationKind animation_kind) {
+  return std::make_shared<AttackDecalNode>(std::move(child), progress,
+                                           animation_kind);
 }
 
 } // namespace
@@ -213,8 +251,9 @@ ftxui::Element Combatant::Render() {
   }
 
   if (auto *flame = reg.try_get<FlameWaveDecal>(entity)) {
-    border = flame_wave_decal(std::move(border),
-                              flame->progress_at(FlameWaveDecal::Clock::now()));
+    border = attack_decal(std::move(border),
+                          flame->progress_at(FlameWaveDecal::Clock::now()),
+                          flame->animation_kind);
   }
 
   // <-- key: allow the whole Combatant box to flex horizontally

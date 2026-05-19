@@ -2,10 +2,13 @@
 
 #include <algorithm>
 #include <chrono>
+#include <memory>
 #include <optional>
+#include <utility>
 
 #include <ftxui/screen/color.hpp>
 
+#include "fl/widgets/effects/decal_animation.hpp"
 #include "sr/uWu.hpp"
 
 namespace fl::ecs::components {
@@ -33,6 +36,25 @@ struct FlameWaveDecal {
   seerin::uWu expires_at{};
   Clock::time_point started_at = Clock::now();
   std::chrono::milliseconds duration{1000};
+  fl::widgets::effects::DecalAnimationKind animation_kind{
+      fl::widgets::effects::DecalAnimationKind::FlameWave};
+  std::shared_ptr<const fl::widgets::effects::DecalAnimation> animation{};
+
+  FlameWaveDecal() = default;
+
+  FlameWaveDecal(seerin::uWu expires, Clock::time_point started,
+                 std::chrono::milliseconds effect_duration,
+                 std::shared_ptr<const fl::widgets::effects::DecalAnimation>
+                     decal_animation = {})
+      : expires_at(expires), started_at(started), duration(effect_duration),
+        animation(std::move(decal_animation)) {
+    if (animation) {
+      animation_kind = animation->kind();
+    } else {
+      animation =
+          fl::widgets::effects::make_decal_animation(animation_kind, 1, 1);
+    }
+  }
 
   [[nodiscard]] float progress_at(Clock::time_point now) const noexcept {
     if (duration.count() <= 0) {

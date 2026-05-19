@@ -20,6 +20,20 @@ fl::skills::SkillId known_skill_for(MonsterKind kind) noexcept {
     return fl::skills::SkillId::FlameStrike;
   case MonsterKind::FireDrake:
     return fl::skills::SkillId::FlameWave;
+  case MonsterKind::StormtickImp:
+    return fl::skills::SkillId::Joltspasm;
+  case MonsterKind::CeilingGrudge:
+    return fl::skills::SkillId::RocksFall;
+  case MonsterKind::MiasmaToad:
+    return fl::skills::SkillId::SourBreath;
+  case MonsterKind::ChoirWisp:
+    return fl::skills::SkillId::Mercyburst;
+  case MonsterKind::GorecapSprout:
+    return fl::skills::SkillId::BloodBloom;
+  case MonsterKind::RimefangHare:
+    return fl::skills::SkillId::IceSplitter;
+  case MonsterKind::NullMote:
+    return fl::skills::SkillId::GravitySigh;
   case MonsterKind::FieldMouse:
     return fl::skills::SkillId::Thump;
   }

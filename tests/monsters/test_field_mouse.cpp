@@ -1,12 +1,18 @@
 // tests/monsters/test_field_mouse.cpp
 #include <catch2/catch_test_macros.hpp>
 
+#include <array>
+#include <string_view>
+
 #include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/monsters/monster_kind.hpp"
+#include "fl/monsters/monster_skills.hpp"
 #include "fl/primitives/entity_builder.hpp"
+#include "fl/skills/skill_visuals.hpp"
+#include "fl/widgets/effects/decal_animation.hpp"
 
 TEST_CASE("Field mouse monster archetype has expected stats", "[monsters]") {
   fl::GrandCentral gc{1, 1, 1};
@@ -133,4 +139,59 @@ TEST_CASE("Monster builder assigns each monster its known skill",
                      fl::skills::SkillId::FlameStrike);
   expect_known_skill(fl::monster::MonsterKind::FireDrake,
                      fl::skills::SkillId::FlameWave);
+}
+
+TEST_CASE("Decal attack monsters construct with expected skills and visuals",
+          "[monsters][skills][decal]") {
+  struct ExpectedMonster {
+    fl::monster::MonsterKind kind;
+    fl::skills::SkillId skill;
+    fl::widgets::effects::DecalAnimationKind animation;
+    std::string_view name;
+  };
+
+  constexpr std::array<ExpectedMonster, 7> expected{{
+      {fl::monster::MonsterKind::StormtickImp, fl::skills::SkillId::Joltspasm,
+       fl::widgets::effects::DecalAnimationKind::Shock, "Stormtick Imp"},
+      {fl::monster::MonsterKind::CeilingGrudge, fl::skills::SkillId::RocksFall,
+       fl::widgets::effects::DecalAnimationKind::RocksFall, "Ceiling Grudge"},
+      {fl::monster::MonsterKind::MiasmaToad, fl::skills::SkillId::SourBreath,
+       fl::widgets::effects::DecalAnimationKind::PoisonCloud, "Miasma Toad"},
+      {fl::monster::MonsterKind::ChoirWisp, fl::skills::SkillId::Mercyburst,
+       fl::widgets::effects::DecalAnimationKind::HolyNova, "Choir Wisp"},
+      {fl::monster::MonsterKind::GorecapSprout, fl::skills::SkillId::BloodBloom,
+       fl::widgets::effects::DecalAnimationKind::BloodBloom, "Gorecap Sprout"},
+      {fl::monster::MonsterKind::RimefangHare, fl::skills::SkillId::IceSplitter,
+       fl::widgets::effects::DecalAnimationKind::FrostCrack, "Rimefang Hare"},
+      {fl::monster::MonsterKind::NullMote, fl::skills::SkillId::GravitySigh,
+       fl::widgets::effects::DecalAnimationKind::VoidRipple, "Null Mote"},
+  }};
+
+  fl::GrandCentral gc{1, 1, 1};
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto context = party_ctx.build_context();
+
+  for (const auto &monster : expected) {
+    const auto entity =
+        fl::primitives::EntityBuilder(context).monster(monster.kind).build();
+    const auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(entity);
+    const auto &skills =
+        party_ctx.reg().get<fl::ecs::components::SkillSlots>(entity);
+
+    CAPTURE(monster.name);
+    REQUIRE(stats.name_ == monster.name);
+    REQUIRE(skills.knows(monster.skill));
+    REQUIRE(fl::monster::known_skill_for(monster.kind) == monster.skill);
+    REQUIRE(fl::skills::decal_animation_for(monster.skill) ==
+            monster.animation);
+  }
+}
+
+TEST_CASE("Field Mouse Thump remains a non-decal skill",
+          "[monsters][skills][decal]") {
+  REQUIRE(fl::monster::known_skill_for(fl::monster::MonsterKind::FieldMouse) ==
+          fl::skills::SkillId::Thump);
+  REQUIRE_FALSE(
+      fl::skills::decal_animation_for(fl::skills::SkillId::Thump).has_value());
 }
