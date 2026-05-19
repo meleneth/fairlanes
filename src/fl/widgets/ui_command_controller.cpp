@@ -1,5 +1,6 @@
 #include "ui_command_controller.hpp"
 
+#include <algorithm>
 #include <cctype>
 #include <charconv>
 #include <string>
@@ -10,6 +11,12 @@
 
 #include <entt/entt.hpp>
 
+#include "fl/ecs/components/atb_charge.hpp"
+#include "fl/ecs/components/dire_bleed.hpp"
+#include "fl/ecs/components/freeze.hpp"
+#include "fl/ecs/components/poison.hpp"
+#include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/visual_effects.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/widgets/fancy_log.hpp"
 
@@ -64,6 +71,137 @@ bool parse_index(std::string_view value, std::size_t &out) {
 std::string entity_label(entt::entity entity) {
   return std::to_string(
       static_cast<std::underlying_type_t<entt::entity>>(entity));
+}
+
+std::string entity_name(entt::registry &reg, entt::entity entity) {
+  if (entity == entt::null) {
+    return "<none>";
+  }
+
+  using fl::ecs::components::Stats;
+  if (auto *stats = reg.try_get<Stats>(entity)) {
+    return stats->name_;
+  }
+
+  return "entity #" + entity_label(entity);
+}
+
+std::string debug_entity_label(entt::registry &reg, entt::entity entity) {
+  if (entity == entt::null) {
+    return "<none>";
+  }
+
+  return entity_name(reg, entity) + " #" + entity_label(entity);
+}
+
+bool contains_entity(const std::vector<entt::entity> &entities,
+                     entt::entity entity) {
+  return std::find(entities.begin(), entities.end(), entity) != entities.end();
+}
+
+std::string join_strings(const std::vector<std::string> &parts,
+                         std::string_view separator) {
+  std::string out;
+  for (std::size_t i = 0; i < parts.size(); ++i) {
+    if (i > 0) {
+      out += separator;
+    }
+    out += parts[i];
+  }
+  return out;
+}
+
+std::string ready_names(entt::registry &reg,
+                        const std::vector<entt::entity> &ready_queue) {
+  if (ready_queue.empty()) {
+    return "<empty>";
+  }
+
+  std::vector<std::string> names;
+  names.reserve(ready_queue.size());
+  for (auto entity : ready_queue) {
+    names.push_back(debug_entity_label(reg, entity));
+  }
+  return join_strings(names, ", ");
+}
+
+std::size_t alive_count(entt::registry &reg,
+                        const std::vector<entt::entity> &entities) {
+  using fl::ecs::components::Stats;
+
+  std::size_t count = 0;
+  for (auto entity : entities) {
+    if (auto *stats = reg.try_get<Stats>(entity)) {
+      if (stats->is_alive()) {
+        ++count;
+      }
+    }
+  }
+  return count;
+}
+
+std::string combatant_debug_line(entt::registry &reg, std::string_view role,
+                                 entt::entity entity,
+                                 const std::vector<entt::entity> &ready_queue,
+                                 entt::entity active) {
+  namespace c = fl::ecs::components;
+
+  auto line = "  " + std::string(role) + " " + debug_entity_label(reg, entity);
+
+  if (auto *stats = reg.try_get<c::Stats>(entity)) {
+    line += " hp=" + std::to_string(stats->hp_) + "/" +
+            std::to_string(stats->max_hp_);
+    line += stats->is_alive() ? " alive" : " dead";
+  } else {
+    line += " hp=<missing-stats>";
+  }
+
+  if (auto *charge = reg.try_get<c::AtbCharge>(entity)) {
+    line += " atb=" + std::to_string(charge->charge) + "/" +
+            std::to_string(charge->max_charge);
+  } else {
+    line += " atb=<missing>";
+  }
+
+  std::vector<std::string> statuses;
+  if (entity == active) {
+    statuses.emplace_back("active");
+  }
+  if (contains_entity(ready_queue, entity)) {
+    statuses.emplace_back("ready");
+  }
+  if (auto *poison = reg.try_get<c::Poison>(entity)) {
+    statuses.emplace_back(
+        "poison dmg=" + std::to_string(poison->damage_per_tick) +
+        " ticks=" + std::to_string(poison->ticks_remaining) +
+        " source=" + entity_name(reg, poison->source));
+  }
+  if (auto *freeze = reg.try_get<c::Freeze>(entity)) {
+    statuses.emplace_back("freeze clear_after=" +
+                          std::to_string(freeze->clear_after_beats));
+  }
+  if (auto *bleed = reg.try_get<c::DireBleed>(entity)) {
+    statuses.emplace_back(
+        "dire-bleed dmg=" + std::to_string(bleed->damage_per_tick) +
+        " source=" + entity_name(reg, bleed->source));
+  }
+  if (reg.any_of<c::StatusTint>(entity)) {
+    statuses.emplace_back("status-tint");
+  }
+  if (reg.any_of<c::DamageFlash>(entity)) {
+    statuses.emplace_back("damage-flash");
+  }
+  if (reg.any_of<c::ActiveGlow>(entity)) {
+    statuses.emplace_back("active-glow");
+  }
+  if (auto *flame = reg.try_get<c::FlameWaveDecal>(entity)) {
+    statuses.emplace_back("flame-wave expires=" +
+                          std::to_string(flame->expires_at.v));
+  }
+
+  line += " statuses=";
+  line += statuses.empty() ? "none" : join_strings(statuses, "; ");
+  return line;
 }
 
 } // namespace
@@ -135,6 +273,18 @@ void UiCommandController::handle(std::string_view command) {
     }
 
     write("unknown list target: " + std::string(words[1]));
+    return;
+  }
+
+  if (verb == "debug" || verb == "dbg" || verb == "ready") {
+    if (verb == "ready" || words.size() < 2 || words[1] == "party" ||
+        words[1] == "ready") {
+      debug_party();
+      return;
+    }
+
+    write("usage: debug party");
+    write("try: help debug");
     return;
   }
 
@@ -251,7 +401,7 @@ void UiCommandController::show_help(std::string_view topic) {
   if (topic.empty()) {
     write("current account: " + std::to_string(account_index_));
     write("current party: " + std::to_string(party_index_));
-    write("commands: screen, list, account, party, overdrive, help");
+    write("commands: screen, list, debug, account, party, overdrive, help");
     write("try: help <command>");
     return;
   }
@@ -277,6 +427,12 @@ void UiCommandController::show_help(std::string_view topic) {
   if (topic == "party") {
     write("party <index>: select a party in the current account");
     write("use list parties to see valid party indices");
+    return;
+  }
+
+  if (topic == "debug" || topic == "dbg" || topic == "ready") {
+    write("debug party: show current party combat/ATB state");
+    write("ready: shortcut for debug party");
     return;
   }
 
@@ -342,6 +498,72 @@ void UiCommandController::list_parties() {
           std::string(party.name()) + " #" + entity_label(party.party_id()) +
           " members=" + std::to_string(party.members().size()) +
           " items=" + std::to_string(party.items().size()));
+  }
+}
+
+void UiCommandController::debug_party() {
+  if (!accounts_ || account_index_ >= accounts_->size()) {
+    write("No selected account.");
+    return;
+  }
+
+  auto &account = accounts_->at(account_index_);
+  auto &parties = account.parties();
+  if (party_index_ >= parties.size()) {
+    write("No selected party.");
+    return;
+  }
+
+  auto &party = parties[party_index_];
+  auto &reg = party.party_ctx().reg();
+
+  write("debug party account=" + std::to_string(account_index_) + " party=" +
+        std::to_string(party_index_) + " name=" + std::string(party.name()) +
+        " entity=#" + entity_label(party.party_id()));
+
+  if (!party.has_encounter()) {
+    write("encounter=<none> members=" + std::to_string(party.members().size()));
+    for (auto &member : party.members()) {
+      write(combatant_debug_line(reg, "member", member.member_id(), {},
+                                 entt::null));
+    }
+    return;
+  }
+
+  auto &encounter = party.encounter_data();
+  auto &atb = encounter.atb_engine();
+  const auto &ready = atb.ready_queue();
+  const auto active = atb.active_combatant();
+
+  write("encounter=in-combat visual_time=" +
+        std::to_string(encounter.visual_time().v) + " pending_events=" +
+        std::to_string(encounter.pending_scheduled_events()) +
+        " legacy_ready_size=" + std::to_string(encounter.ready_queue().size()));
+
+  if (!encounter.ready_queue().empty()) {
+    const auto &legacy_front = encounter.ready_queue().front();
+    write("legacy_ready_front actor=" +
+          debug_entity_label(reg, legacy_front.actor) +
+          " target=" + debug_entity_label(reg, legacy_front.target) +
+          " nonce=" + std::to_string(legacy_front.nonce));
+  }
+
+  write("atb_active=" + debug_entity_label(reg, active));
+  write("atb_ready size=" + std::to_string(ready.size()) + ": " +
+        ready_names(reg, ready));
+
+  const auto &attackers = encounter.attackers().members();
+  const auto &defenders = encounter.defenders().members();
+  write("attackers total=" + std::to_string(attackers.size()) +
+        " alive=" + std::to_string(alive_count(reg, attackers)));
+  for (auto entity : attackers) {
+    write(combatant_debug_line(reg, "attacker", entity, ready, active));
+  }
+
+  write("defenders total=" + std::to_string(defenders.size()) +
+        " alive=" + std::to_string(alive_count(reg, defenders)));
+  for (auto entity : defenders) {
+    write(combatant_debug_line(reg, "defender", entity, ready, active));
   }
 }
 

@@ -40,6 +40,7 @@ private:
   void show_party_view();
   void list_accounts();
   void list_parties();
+  void debug_party();
   void set_overdrive(std::string_view multiplier);
   void select_account(std::size_t account_index);
   void select_party(std::size_t party_index);

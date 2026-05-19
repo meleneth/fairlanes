@@ -46,6 +46,9 @@ public:
   fl::events::ReadyQueue &ready_queue() { return rt_.ready_queue_; }
   const fl::events::ReadyQueue &ready_queue() const { return rt_.ready_queue_; }
 
+  seerin::AtbEngine &atb_engine() noexcept { return rt_.atb_; }
+  const seerin::AtbEngine &atb_engine() const noexcept { return rt_.atb_; }
+
   seerin::AtbInBus &atb_in() noexcept { return rt_.atb_.in(); }
   const seerin::AtbInBus &atb_in() const noexcept { return rt_.atb_.in(); }
 
