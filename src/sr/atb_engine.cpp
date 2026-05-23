@@ -1,7 +1,7 @@
 #include "atb_engine.hpp"
 
 #include <algorithm>
-#include <tracy/Tracy.hpp>
+#include "fl/tracy_shim.hpp"
 #include <utility>
 
 #include "fl/ecs/components/atb_charge.hpp"

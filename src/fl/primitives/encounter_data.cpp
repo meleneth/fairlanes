@@ -10,7 +10,7 @@
 #include "fl/skills/skill_sequence.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "sr/atb_events.hpp"
-#include <tracy/Tracy.hpp>
+#include "fl/tracy_shim.hpp"
 
 namespace fl::primitives {
 

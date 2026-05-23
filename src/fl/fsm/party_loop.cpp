@@ -12,7 +12,7 @@
 #include "fl/skills/thump.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include <spdlog/spdlog.h>
-#include <tracy/Tracy.hpp>
+#include "fl/tracy_shim.hpp"
 
 namespace fl::fsm {
 void PartyLoop::Ops::enter_idle(fl::context::PartyCtx &ctx) {

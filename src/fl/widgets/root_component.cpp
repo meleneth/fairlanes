@@ -6,8 +6,7 @@
 #include <utility>
 #include <vector>
 
-#include <tracy/Tracy.hpp>
-
+#include "fl/tracy_shim.hpp"
 #include <ftxui/dom/elements.hpp>
 
 #include "account_battle_view.hpp"

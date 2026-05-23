@@ -10,7 +10,7 @@
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>
-#include <tracy/Tracy.hpp>
+#include "fl/tracy_shim.hpp"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>

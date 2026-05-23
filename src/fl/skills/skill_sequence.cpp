@@ -18,7 +18,7 @@
 #include "fl/skills/skill_visuals.hpp"
 #include "fl/skills/thump.hpp"
 #include "fl/widgets/fancy_log.hpp"
-#include <tracy/Tracy.hpp>
+#include "fl/tracy_shim.hpp"
 
 namespace fl::skills {
 namespace {
