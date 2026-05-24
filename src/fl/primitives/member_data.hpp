@@ -29,11 +29,14 @@ public:
   fl::events::PartyBus &bus() noexcept { return bus_; }
   const fl::events::PartyBus &bus() const noexcept { return bus_; }
 
+  void hook_level_progression(entt::registry &reg);
+
 private:
   entt::entity member_id_{entt::null};
   std::string name_;
 
   fl::events::PartyBus bus_;
+  fl::events::ScopedPartyListener level_gained_sub_{};
 };
 
 } // namespace fl::primitives

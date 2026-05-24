@@ -4,6 +4,7 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/fwd.hpp"
+#include "fl/fwd.hpp"
 
 #pragma once
 
@@ -22,9 +23,10 @@ struct PartyMember {
   fl::ecs::Entity party_;
   fl::context::EntityCtx ctx_;
   entt::entity closet_;
+  fl::primitives::MemberData *member_data_{};
 
   PartyMember(fl::context::EntityCtx ctx, std::string /*name*/,
-              entt::entity party);
+              entt::entity party, fl::primitives::MemberData &member_data);
 
   [[nodiscard]] Closet &closet() { return ctx_.reg().get<Closet>(closet_); }
 
@@ -40,6 +42,14 @@ struct PartyMember {
 
   [[nodiscard]] const IsParty &party() const {
     return ctx_.reg().get<IsParty>(party_);
+  }
+
+  [[nodiscard]] fl::primitives::MemberData &member_data() {
+    return *member_data_;
+  }
+
+  [[nodiscard]] const fl::primitives::MemberData &member_data() const {
+    return *member_data_;
   }
 };
 

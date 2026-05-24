@@ -23,6 +23,10 @@ struct PartyLeftCombat {};
 struct PartyGainedXP {
   int amount{0};
 };
+struct PartyGainedLevel {
+  entt::entity member{entt::null};
+  int level{1};
+};
 struct PartyHealed {
   entt::entity member{entt::null};
   int amount{0};
@@ -76,7 +80,7 @@ struct PlayerDied {
 using PartyEvent =
   std::variant<PartyCreated, MemberJoined, MemberLeft, PartyWiped,
          PartyVictory,
-                 PartyLeftCombat, PartyGainedXP, PartyHealed,
+                 PartyLeftCombat, PartyGainedXP, PartyGainedLevel, PartyHealed,
                  PartyRevitalizeRequested, LootDropRequested, PartyTick,
                  PoisonApplied, FreezeApplied, FreezeStarted, FreezeEnded,
                  PreAttack, PostAttack, FleeAttempted, CombatantFled,

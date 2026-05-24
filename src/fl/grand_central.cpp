@@ -197,6 +197,7 @@ void GrandCentral::_create_initial_accounts() {
 
         reg_.emplace<fl::ecs::components::Stats>(member.member_id(),
                                                  hero_names[player_index]);
+        member.hook_level_progression(reg_);
         auto ectx = party_data.loop_ctx().entity_context(member.member_id());
         reg_.emplace<fl::ecs::components::TrackXP>(member.member_id(),
                                                    std::move(ectx),
@@ -205,7 +206,7 @@ void GrandCentral::_create_initial_accounts() {
 
         reg_.emplace<fl::ecs::components::PartyMember>(
             member.member_id(), std::move(ectx2), member.name(),
-            party_data.party_id());
+          party_data.party_id(), member);
         reg_.emplace<fl::ecs::components::SkillSlots>(member.member_id());
 
         ++player_index;
