@@ -14,29 +14,30 @@
 using namespace fl::skills;
 
 template <typename T>
-void dump_exprtk_errors(const exprtk::parser<T> &parser,
-                        const std::string &expr_src) {
+std::string exprtk_error_report(const exprtk::parser<T> &parser,
+                                const std::string &expr_src) {
   using error_t = exprtk::parser_error::type;
 
+  std::string report;
   for (std::size_t i = 0; i < parser.error_count(); ++i) {
     const error_t err = parser.get_error(i);
     const auto pos = static_cast<std::size_t>(err.token.position);
 
-    // Build a caret indicator under the offending position.
     std::string caret(expr_src.size(), ' ');
-    if (pos < caret.size())
+    if (pos < caret.size()) {
       caret[pos] = '^';
+    }
 
-    std::fprintf(stderr,
-                 "ExprTk error %zu\n"
-                 "  Type    : [%s]\n"
-                 "  Message : %s\n"
-                 "  Position: %zu\n"
-                 "  Source  : %s\n"
-                 "             %s\n",
-                 i, exprtk::parser_error::to_str(err.mode).c_str(),
-                 err.diagnostic.c_str(), pos, expr_src.c_str(), caret.c_str());
+    report += fmt::format("ExprTk error {}\n"
+                          "  Type    : [{}]\n"
+                          "  Message : {}\n"
+                          "  Position: {}\n"
+                          "  Source  : {}\n"
+                          "             {}\n",
+                          i, exprtk::parser_error::to_str(err.mode),
+                          err.diagnostic, pos, expr_src, caret);
   }
+  return report;
 }
 
 Thump::Thump() : rng_(std::random_device{}()) {
@@ -61,9 +62,8 @@ Thump::Thump() : rng_(std::random_device{}()) {
       "damage := hit ? (base * (1 + crit)) : 0;";
 
   if (!parser_.compile(expr_src, expr_)) {
-    dump_exprtk_errors(parser_, expr_src);
-
-    throw std::runtime_error("ExprTk compile failed for Thump");
+    throw std::runtime_error("ExprTk compile failed for Thump\n" +
+                             exprtk_error_report(parser_, expr_src));
   }
 }
 

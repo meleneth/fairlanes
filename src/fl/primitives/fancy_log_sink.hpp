@@ -20,9 +20,7 @@ public:
       : bus_(bus), view_(view), min_level_(min_level),
         handle_(bus_.appendListener(
             fl::primitives::LogKey::Message,
-            [this](const fl::primitives::LogEvent &ev) { on_log(ev); })) {
-    fprintf(stderr, "Sink view=%p this=%p\n", (void *)&view_, (void *)this);
-  }
+            [this](const fl::primitives::LogEvent &ev) { on_log(ev); })) {}
 
   ~FancyLogSink() {
     bus_.removeListener(fl::primitives::LogKey::Message, handle_);
