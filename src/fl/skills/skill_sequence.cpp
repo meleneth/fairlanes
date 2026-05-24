@@ -14,6 +14,7 @@
 #include "fl/lospec500.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/skills/eviscerate.hpp"
+#include "fl/skills/skill_definition.hpp"
 #include "fl/skills/skill_learning.hpp"
 #include "fl/skills/skill_visuals.hpp"
 #include "fl/skills/thump.hpp"
@@ -28,9 +29,11 @@ static constexpr int kCombatantDecalHeight = 8;
 
 std::shared_ptr<const fl::widgets::effects::DecalAnimation>
 make_skill_decal(SkillId skill) {
-  const auto kind = decal_animation_for(skill).value_or(
-      fl::widgets::effects::DecalAnimationKind::FlameWave);
-  return fl::widgets::effects::make_decal_animation(kind, kCombatantDecalWidth,
+  const auto kind = decal_animation_for(skill);
+  if (!kind.has_value()) {
+    return nullptr;
+  }
+  return fl::widgets::effects::make_decal_animation(*kind, kCombatantDecalWidth,
                                                     kCombatantDecalHeight);
 }
 
@@ -46,38 +49,30 @@ SkillSequencer::SkillSequencer(fl::context::PartyCtx &party_ctx,
 void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
                               SkillId skill) {
   ZoneScopedN("SkillSequencer::schedule");
-  switch (skill) {
-  case SkillId::Eviscerate:
+  const auto &skill_definition = definition(skill);
+  switch (skill_definition.execution) {
+  case SkillExecutionKind::Eviscerate:
     schedule_eviscerate(attacker, target);
     return;
-  case SkillId::Poison:
+  case SkillExecutionKind::Poison:
     schedule_poison(attacker, target);
     return;
-  case SkillId::ColdSnap:
+  case SkillExecutionKind::ColdSnap:
     schedule_cold_snap(attacker, target);
     return;
-  case SkillId::FlameStrike:
+  case SkillExecutionKind::FlameStrike:
     schedule_flame_strike(attacker, target);
     return;
-  case SkillId::FlameWave:
+  case SkillExecutionKind::FlameWave:
     schedule_flame_wave(attacker);
     return;
-  case SkillId::Joltspasm:
-  case SkillId::RocksFall:
-  case SkillId::SourBreath:
-  case SkillId::Mercyburst:
-  case SkillId::BloodBloom:
-  case SkillId::IceSplitter:
-  case SkillId::GravitySigh:
+  case SkillExecutionKind::DecalStrike:
     schedule_decal_strike(attacker, target, skill);
     return;
-  case SkillId::Bump:
-  case SkillId::Squish:
-  case SkillId::Smack:
-  case SkillId::Thump:
+  case SkillExecutionKind::ThumpLike:
     schedule_thump_like(attacker, target, skill);
     return;
-  case SkillId::Observe:
+  case SkillExecutionKind::Observe:
     schedule_observe(attacker);
     return;
   }
@@ -225,11 +220,16 @@ void SkillSequencer::schedule_flame_strike(entt::entity attacker,
       scheduler_.now().v + seerin::UWU_PER_BEAT.v * (kAnimationBeats + 1)};
 
   if (party_ctx_.reg().valid(target)) {
+    auto decal = make_skill_decal(SkillId::FlameStrike);
+    if (decal == nullptr) {
+      return;
+    }
+
     party_ctx_.reg().emplace_or_replace<fl::ecs::components::FlameWaveDecal>(
         target,
         fl::ecs::components::FlameWaveDecal{
             expires_at, fl::ecs::components::FlameWaveDecal::Clock::now(),
-            std::chrono::seconds{1}, make_skill_decal(SkillId::FlameStrike)});
+            std::chrono::seconds{1}, std::move(decal)});
   }
 
   scheduler_.schedule_smelly_in_beats_for(
@@ -261,11 +261,16 @@ void SkillSequencer::schedule_decal_strike(entt::entity attacker,
       scheduler_.now().v + seerin::UWU_PER_BEAT.v * (kAnimationBeats + 1)};
 
   if (party_ctx_.reg().valid(target)) {
+    auto decal = make_skill_decal(skill);
+    if (decal == nullptr) {
+      return;
+    }
+
     party_ctx_.reg().emplace_or_replace<fl::ecs::components::FlameWaveDecal>(
         target,
         fl::ecs::components::FlameWaveDecal{
             expires_at, fl::ecs::components::FlameWaveDecal::Clock::now(),
-            std::chrono::seconds{1}, make_skill_decal(skill)});
+            std::chrono::seconds{1}, std::move(decal)});
   }
 
   scheduler_.schedule_smelly_in_beats_for(
@@ -318,13 +323,17 @@ void SkillSequencer::schedule_flame_wave(entt::entity attacker) {
             return;
           }
 
+          auto decal = make_skill_decal(SkillId::FlameWave);
+          if (decal == nullptr) {
+            return;
+          }
+
           party_ctx.reg()
               .emplace_or_replace<fl::ecs::components::FlameWaveDecal>(
                   target, fl::ecs::components::FlameWaveDecal{
                               expires_at,
                               fl::ecs::components::FlameWaveDecal::Clock::now(),
-                              std::chrono::seconds{1},
-                              make_skill_decal(SkillId::FlameWave)});
+                              std::chrono::seconds{1}, std::move(decal)});
         });
 
     scheduler_.schedule_smelly_in_beats_for(
