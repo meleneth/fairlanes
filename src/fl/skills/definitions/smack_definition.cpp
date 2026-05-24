@@ -12,6 +12,7 @@ constexpr SkillDefinition kSmackDefinition{
     "Smack",
     std::span<const SkillTag>{kSmackTags.data(), kSmackTags.size()},
     20,
+    0,
     SkillExecutionKind::ThumpLike,
     std::nullopt,
 };

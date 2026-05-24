@@ -14,6 +14,7 @@ struct SkillDefinition {
   std::string_view display_name;
   std::span<const SkillTag> tags;
   int learn_chance_percent;
+  int flee_success_percent;
   SkillExecutionKind execution;
   std::optional<fl::widgets::effects::DecalAnimationKind> decal_animation;
 };

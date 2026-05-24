@@ -8,6 +8,8 @@ fl::skills::SkillId known_skill_for(MonsterKind kind) noexcept {
     return fl::skills::SkillId::Eviscerate;
   case MonsterKind::BumpkinHare:
     return fl::skills::SkillId::Bump;
+  case MonsterKind::ScaredyCat:
+    return fl::skills::SkillId::Flee;
   case MonsterKind::MireSquish:
     return fl::skills::SkillId::Squish;
   case MonsterKind::BarkSmack:

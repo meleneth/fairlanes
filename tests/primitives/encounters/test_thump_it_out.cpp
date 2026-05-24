@@ -6,8 +6,10 @@
 #include <entt/entt.hpp>
 
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/ecs/systems/visual_resolver.hpp"
+#include "fl/events/party_bus.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/lospec500.hpp"
 #include "fl/primitives/encounter_builder.hpp"
@@ -102,6 +104,8 @@ TEST_CASE("EncounterBuilder common woodland pool includes new status monsters",
 
   REQUIRE(std::find(pool.begin(), pool.end(),
                     fl::monster::MonsterKind::PoisonToad) != pool.end());
+  REQUIRE(std::find(pool.begin(), pool.end(),
+                    fl::monster::MonsterKind::ScaredyCat) != pool.end());
   REQUIRE(std::find(pool.begin(), pool.end(), fl::monster::MonsterKind::Yeti) !=
           pool.end());
   REQUIRE(std::find(pool.begin(), pool.end(),
@@ -291,6 +295,56 @@ TEST_CASE("SkillSequencer Flame Wave staggers all alive opponents",
     fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
   }
   REQUIRE(finished);
+}
+
+TEST_CASE("Flee emits combat events and grants no XP on successful flee",
+          "[encounter][skills][flee]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  auto &encounter = builder.thump_it_out();
+
+  const entt::entity attacker = encounter.attackers().members().front();
+  const entt::entity target = encounter.defenders().members().front();
+
+  auto &reg = party_ctx.reg();
+  const auto xp_before =
+      reg.get<fl::ecs::components::TrackXP>(target).xp_;
+
+  int flee_attempt_events = 0;
+  int fled_events = 0;
+  bool saw_success = false;
+
+  fl::events::ScopedPartyListener flee_attempt_sub{
+      party_ctx.bus(), std::in_place_type<fl::events::FleeAttempted>,
+      [&](const fl::events::FleeAttempted &ev) {
+        ++flee_attempt_events;
+        if (ev.success) {
+          saw_success = true;
+        }
+      }};
+  fl::events::ScopedPartyListener fled_sub{
+      party_ctx.bus(), std::in_place_type<fl::events::CombatantFled>,
+      [&](const fl::events::CombatantFled &) { ++fled_events; }};
+
+  seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
+  fl::skills::SkillSequencer sequencer{
+      party_ctx, scheduler, [](entt::entity) {}, [](entt::entity) {}};
+
+  for (int attempt = 0; attempt < 12 && !saw_success; ++attempt) {
+    sequencer.schedule(attacker, target, fl::skills::SkillId::Flee);
+    scheduler.on_beat();
+    scheduler.on_beat();
+  }
+
+  REQUIRE(flee_attempt_events >= 1);
+  REQUIRE(saw_success);
+  REQUIRE(fled_events >= 1);
+  REQUIRE(reg.get<fl::ecs::components::Stats>(attacker).hp_ == 0);
+  REQUIRE(reg.get<fl::ecs::components::TrackXP>(target).xp_ == xp_before);
 }
 
 } // namespace

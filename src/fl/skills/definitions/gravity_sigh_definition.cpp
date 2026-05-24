@@ -13,6 +13,7 @@ constexpr SkillDefinition kGravitySighDefinition{
     std::span<const SkillTag>{kGravitySighTags.data(),
                               kGravitySighTags.size()},
     5,
+    0,
     SkillExecutionKind::DecalStrike,
     fl::widgets::effects::DecalAnimationKind::VoidRipple,
 };

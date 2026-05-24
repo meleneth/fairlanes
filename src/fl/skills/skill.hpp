@@ -8,6 +8,7 @@ namespace fl::skills {
 
 enum class SkillId {
   Observe,
+  Flee,
   Thump,
   Eviscerate,
   Poison,
@@ -26,13 +27,15 @@ enum class SkillId {
   Smack,
 };
 
-inline constexpr std::array<SkillId, 16> kRandomCombatSkills{
-    SkillId::Thump,      SkillId::Eviscerate,  SkillId::Poison,
-    SkillId::ColdSnap,   SkillId::FlameStrike, SkillId::FlameWave,
-    SkillId::Bump,       SkillId::Squish,      SkillId::Smack,
-    SkillId::Joltspasm,  SkillId::RocksFall,   SkillId::SourBreath,
-    SkillId::Mercyburst, SkillId::BloodBloom,  SkillId::IceSplitter,
-    SkillId::GravitySigh};
+inline constexpr std::array<SkillId, 17> kRandomCombatSkills{
+  SkillId::Thump,       SkillId::Eviscerate, SkillId::Poison,
+  SkillId::ColdSnap,    SkillId::FlameStrike,
+  SkillId::FlameWave,   SkillId::Bump,
+  SkillId::Squish,      SkillId::Smack,
+  SkillId::Joltspasm,   SkillId::RocksFall,
+  SkillId::SourBreath,  SkillId::Mercyburst,
+  SkillId::BloodBloom,  SkillId::IceSplitter,
+  SkillId::GravitySigh, SkillId::Flee};
 
 enum class SkillTag {
   Physical,
@@ -68,6 +71,7 @@ enum class SkillExecutionKind {
   FlameStrike,
   FlameWave,
   DecalStrike,
+  Flee,
   Observe,
 };
 

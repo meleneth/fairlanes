@@ -11,6 +11,7 @@ constexpr SkillDefinition kFlameWaveDefinition{
     "Flame Wave",
     std::span<const SkillTag>{kFlameWaveTags.data(), kFlameWaveTags.size()},
     2,
+    0,
     SkillExecutionKind::FlameWave,
     fl::widgets::effects::DecalAnimationKind::FlameWave,
 };

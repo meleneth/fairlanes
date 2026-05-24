@@ -2,9 +2,11 @@
 
 #include <fmt/format.h>
 
+#include <algorithm>
 #include <chrono>
 #include <memory>
 #include <string>
+#include <type_traits>
 
 #include "fl/ecs/components/hp_bar_color_override.hpp"
 #include "fl/ecs/components/stats.hpp"
@@ -68,6 +70,9 @@ void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
     return;
   case SkillExecutionKind::DecalStrike:
     schedule_decal_strike(attacker, target, skill);
+    return;
+  case SkillExecutionKind::Flee:
+    schedule_flee(attacker, skill);
     return;
   case SkillExecutionKind::ThumpLike:
     schedule_thump_like(attacker, target, skill);
@@ -367,6 +372,53 @@ void SkillSequencer::schedule_flame_wave(entt::entity attacker) {
   scheduler_.schedule_smelly_in_beats_for(
       finish_beat, attacker, "flame wave: finish",
       [finish_turn, attacker] { finish_turn(attacker); });
+
+  TracyPlot("SkillSequencer.PendingEvents",
+            static_cast<double>(scheduler_.pending()));
+}
+
+void SkillSequencer::schedule_flee(entt::entity attacker, SkillId skill) {
+  ZoneScopedN("SkillSequencer::schedule_flee");
+  const auto &skill_definition = definition(skill);
+  const int flee_chance = std::clamp(skill_definition.flee_success_percent, 0,
+                                     100);
+  const auto sub_seq =
+      static_cast<std::underlying_type_t<entt::entity>>(attacker);
+  auto rs = party_ctx_.rng().stream("encounter/skill/flee", sub_seq);
+  const int roll = rs.uniform_int<int>(1, 100);
+  const bool success = roll <= flee_chance;
+
+  scheduler_.schedule_smelly_in_beats(
+      1, "flee: resolve", [&party_ctx = party_ctx_, attacker, flee_chance, roll,
+                            success] {
+        party_ctx.bus().emit(fl::events::PartyEvent{fl::events::FleeAttempted{
+            attacker, flee_chance, roll, success}});
+
+        if (!success || !party_ctx.reg().valid(attacker)) {
+          return;
+        }
+
+        auto *encounter = party_ctx.party_data().has_encounter()
+                              ? &party_ctx.party_data().encounter_data()
+                              : nullptr;
+        if (encounter == nullptr) {
+          return;
+        }
+
+        auto *stats = party_ctx.reg().try_get<fl::ecs::components::Stats>(
+            attacker);
+        if (stats != nullptr) {
+          stats->hp_ = 0;
+        }
+
+        encounter->clear_pending_events_for(attacker);
+        party_ctx.bus().emit(
+            fl::events::PartyEvent{fl::events::CombatantFled{attacker}});
+      });
+
+  auto finish_turn = finish_turn_;
+  scheduler_.schedule_smelly_in_beats(
+      2, "flee: finish", [finish_turn, attacker] { finish_turn(attacker); });
 
   TracyPlot("SkillSequencer.PendingEvents",
             static_cast<double>(scheduler_.pending()));

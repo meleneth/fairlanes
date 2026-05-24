@@ -12,6 +12,7 @@ constexpr SkillDefinition kSquishDefinition{
     "Squish",
     std::span<const SkillTag>{kSquishTags.data(), kSquishTags.size()},
     20,
+    0,
     SkillExecutionKind::ThumpLike,
     std::nullopt,
 };

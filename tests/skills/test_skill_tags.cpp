@@ -44,17 +44,21 @@ TEST_CASE("Representative skills expose expected tags", "[skills][tags]") {
 
   require_tags(fl::skills::SkillId::Mercyburst,
                {fl::skills::SkillTag::Healing, fl::skills::SkillTag::Holy});
+
+    require_tags(fl::skills::SkillId::Flee,
+           {fl::skills::SkillTag::Escape, fl::skills::SkillTag::Utility});
 }
 
 TEST_CASE("Monster mappings still resolve to expected skills",
           "[skills][monsters]") {
   constexpr std::array<std::pair<fl::monster::MonsterKind, fl::skills::SkillId>,
-                       16>
+             17>
       expected{ {
           {fl::monster::MonsterKind::FieldMouse, fl::skills::SkillId::Thump},
           {fl::monster::MonsterKind::HoneyBadger,
            fl::skills::SkillId::Eviscerate},
           {fl::monster::MonsterKind::BumpkinHare, fl::skills::SkillId::Bump},
+      {fl::monster::MonsterKind::ScaredyCat, fl::skills::SkillId::Flee},
           {fl::monster::MonsterKind::MireSquish, fl::skills::SkillId::Squish},
           {fl::monster::MonsterKind::BarkSmack, fl::skills::SkillId::Smack},
           {fl::monster::MonsterKind::PoisonToad, fl::skills::SkillId::Poison},

@@ -11,6 +11,7 @@ constexpr SkillDefinition kJoltspasmDefinition{
     "Joltspasm",
     std::span<const SkillTag>{kJoltspasmTags.data(), kJoltspasmTags.size()},
     5,
+    0,
     SkillExecutionKind::DecalStrike,
     fl::widgets::effects::DecalAnimationKind::Shock,
 };

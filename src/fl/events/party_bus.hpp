@@ -58,6 +58,15 @@ struct PostAttack {
   entt::entity target{entt::null};
   int damage{0};
 };
+struct FleeAttempted {
+  entt::entity source{entt::null};
+  int chance_percent{0};
+  int roll{0};
+  bool success{false};
+};
+struct CombatantFled {
+  entt::entity source{entt::null};
+};
 struct PlayerDied {
   entt::entity player{entt::null};
   entt::entity killer{entt::null};
@@ -68,7 +77,8 @@ using PartyEvent =
                  PartyLeftCombat, PartyGainedXP, PartyHealed,
                  PartyRevitalizeRequested, LootDropRequested, PartyTick,
                  PoisonApplied, FreezeApplied, FreezeStarted, FreezeEnded,
-                 PreAttack, PostAttack, PlayerDied>;
+                 PreAttack, PostAttack, FleeAttempted, CombatantFled,
+                 PlayerDied>;
 
 using PartyBus = seerin::VariantBus<PartyEvent>;
 

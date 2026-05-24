@@ -12,6 +12,7 @@ constexpr SkillDefinition kEviscerateDefinition{
     "Eviscerate",
     std::span<const SkillTag>{kEviscerateTags.data(), kEviscerateTags.size()},
     2,
+    0,
     SkillExecutionKind::Eviscerate,
     std::nullopt,
 };

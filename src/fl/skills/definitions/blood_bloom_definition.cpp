@@ -12,6 +12,7 @@ constexpr SkillDefinition kBloodBloomDefinition{
     "Blood Bloom",
     std::span<const SkillTag>{kBloodBloomTags.data(), kBloodBloomTags.size()},
     5,
+    0,
     SkillExecutionKind::DecalStrike,
     fl::widgets::effects::DecalAnimationKind::BloodBloom,
 };

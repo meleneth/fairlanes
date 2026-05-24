@@ -34,6 +34,7 @@ private:
   void schedule_decal_strike(entt::entity attacker, entt::entity target,
                              SkillId skill);
   void schedule_flame_wave(entt::entity attacker);
+  void schedule_flee(entt::entity attacker, SkillId skill);
   void schedule_observe(entt::entity attacker);
   void schedule_reek_fade(entt::entity entity, std::string_view label,
                           int start_beat, int end_beat, ftxui::Color from,

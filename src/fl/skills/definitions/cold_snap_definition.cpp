@@ -11,6 +11,7 @@ constexpr SkillDefinition kColdSnapDefinition{
     "Cold Snap",
     std::span<const SkillTag>{kColdSnapTags.data(), kColdSnapTags.size()},
     5,
+    0,
     SkillExecutionKind::ColdSnap,
     std::nullopt,
 };

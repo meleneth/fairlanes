@@ -12,6 +12,7 @@ constexpr SkillDefinition kMercyburstDefinition{
     "Mercyburst",
     std::span<const SkillTag>{kMercyburstTags.data(), kMercyburstTags.size()},
     5,
+    0,
     SkillExecutionKind::DecalStrike,
     fl::widgets::effects::DecalAnimationKind::HolyNova,
 };

@@ -11,6 +11,7 @@ constexpr SkillDefinition kObserveDefinition{
     "Observe",
     std::span<const SkillTag>{kObserveTags.data(), kObserveTags.size()},
     0,
+    0,
     SkillExecutionKind::Observe,
     std::nullopt,
 };

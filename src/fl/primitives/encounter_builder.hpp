@@ -1,7 +1,6 @@
 #pragma once
 #include <array>
 #include <entt/entt.hpp>
-#include <vector>
 
 #include "encounter_data.hpp"
 #include "fl/context.hpp"
@@ -11,9 +10,10 @@ namespace fl::primitives {
 
 struct EncounterBuilder {
   static constexpr int kEnemyPartySize = 5;
-  static constexpr std::array<fl::monster::MonsterKind, 14> kCommonWoodland{
+    static constexpr std::array<fl::monster::MonsterKind, 15> kCommonWoodland{
       fl::monster::MonsterKind::FieldMouse,
       fl::monster::MonsterKind::BumpkinHare,
+      fl::monster::MonsterKind::ScaredyCat,
       fl::monster::MonsterKind::MireSquish,
       fl::monster::MonsterKind::BarkSmack,
       fl::monster::MonsterKind::PoisonToad,

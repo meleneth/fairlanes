@@ -7,6 +7,7 @@ namespace fl::monster {
 class WoodlandCritter {
 public:
   static void apply_bumpkin(fl::primitives::EntityBuilder &b);
+  static void apply_scaredy_cat(fl::primitives::EntityBuilder &b);
   static void apply_mire_squish(fl::primitives::EntityBuilder &b);
   static void apply_bark_smack(fl::primitives::EntityBuilder &b);
   static void apply_poison_toad(fl::primitives::EntityBuilder &b);

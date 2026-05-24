@@ -12,6 +12,7 @@ constexpr SkillDefinition kRocksFallDefinition{
     "Rocks Fall",
     std::span<const SkillTag>{kRocksFallTags.data(), kRocksFallTags.size()},
     5,
+    0,
     SkillExecutionKind::DecalStrike,
     fl::widgets::effects::DecalAnimationKind::RocksFall,
 };

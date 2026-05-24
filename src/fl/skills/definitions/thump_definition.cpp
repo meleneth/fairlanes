@@ -12,6 +12,7 @@ constexpr SkillDefinition kThumpDefinition{
     "Thump",
     std::span<const SkillTag>{kThumpTags.data(), kThumpTags.size()},
     20,
+    0,
     SkillExecutionKind::ThumpLike,
     std::nullopt,
 };

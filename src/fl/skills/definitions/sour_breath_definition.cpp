@@ -12,6 +12,7 @@ constexpr SkillDefinition kSourBreathDefinition{
     "Sour Breath",
     std::span<const SkillTag>{kSourBreathTags.data(), kSourBreathTags.size()},
     5,
+    0,
     SkillExecutionKind::DecalStrike,
     fl::widgets::effects::DecalAnimationKind::PoisonCloud,
 };

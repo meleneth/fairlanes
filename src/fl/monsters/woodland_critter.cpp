@@ -35,6 +35,10 @@ void WoodlandCritter::apply_bumpkin(EntityBuilder &b) {
   set_stats(b, "Bumpkin Hare", 7, 2);
 }
 
+void WoodlandCritter::apply_scaredy_cat(EntityBuilder &b) {
+  set_stats(b, "Scaredy Cat", 6, 2);
+}
+
 void WoodlandCritter::apply_mire_squish(EntityBuilder &b) {
   set_stats(b, "Mire Squish", 9, 3);
 }
@@ -50,6 +54,10 @@ void WoodlandCritter::apply_poison_toad(EntityBuilder &b) {
 void register_woodland_critters() {
   register_monster(fl::monster::MonsterKind::BumpkinHare,
                    [](EntityBuilder &b) { WoodlandCritter::apply_bumpkin(b); });
+  register_monster(fl::monster::MonsterKind::ScaredyCat,
+                   [](EntityBuilder &b) {
+                     WoodlandCritter::apply_scaredy_cat(b);
+                   });
   register_monster(fl::monster::MonsterKind::MireSquish, [](EntityBuilder &b) {
     WoodlandCritter::apply_mire_squish(b);
   });

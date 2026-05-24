@@ -6,6 +6,7 @@ enum class MonsterKind {
   FieldMouse,
   HoneyBadger,
   BumpkinHare,
+  ScaredyCat,
   MireSquish,
   BarkSmack,
   PoisonToad,

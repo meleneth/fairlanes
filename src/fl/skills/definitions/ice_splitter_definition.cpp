@@ -13,6 +13,7 @@ constexpr SkillDefinition kIceSplitterDefinition{
     std::span<const SkillTag>{kIceSplitterTags.data(),
                               kIceSplitterTags.size()},
     5,
+    0,
     SkillExecutionKind::DecalStrike,
     fl::widgets::effects::DecalAnimationKind::FrostCrack,
 };

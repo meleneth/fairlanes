@@ -11,6 +11,7 @@ constexpr SkillDefinition kPoisonDefinition{
     "Poison",
     std::span<const SkillTag>{kPoisonTags.data(), kPoisonTags.size()},
     5,
+    0,
     SkillExecutionKind::Poison,
     std::nullopt,
 };

@@ -12,6 +12,7 @@ constexpr SkillDefinition kBumpDefinition{
     "Bump",
     std::span<const SkillTag>{kBumpTags.data(), kBumpTags.size()},
     20,
+    0,
     SkillExecutionKind::ThumpLike,
     std::nullopt,
 };

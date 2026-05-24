@@ -59,6 +59,9 @@ TEST_CASE("Woodland skill monsters have their own names and levels",
   const auto squish = fl::primitives::EntityBuilder(context)
                           .monster(fl::monster::MonsterKind::MireSquish)
                           .build();
+        const auto scaredy_cat = fl::primitives::EntityBuilder(context)
+                                                                                                                         .monster(fl::monster::MonsterKind::ScaredyCat)
+                                                                                                                         .build();
   const auto smack = fl::primitives::EntityBuilder(context)
                          .monster(fl::monster::MonsterKind::BarkSmack)
                          .build();
@@ -82,6 +85,11 @@ TEST_CASE("Woodland skill monsters have their own names and levels",
           "Mire Squish");
   REQUIRE(party_ctx.reg().get<fl::ecs::components::TrackXP>(squish).level_ ==
           3);
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::Stats>(scaredy_cat).name_ ==
+          "Scaredy Cat");
+  REQUIRE(
+      party_ctx.reg().get<fl::ecs::components::TrackXP>(scaredy_cat).level_ ==
+      2);
   REQUIRE(party_ctx.reg().get<fl::ecs::components::Stats>(smack).name_ ==
           "Bark Smack");
   REQUIRE(party_ctx.reg().get<fl::ecs::components::TrackXP>(smack).level_ == 4);
@@ -127,6 +135,8 @@ TEST_CASE("Monster builder assigns each monster its known skill",
                      fl::skills::SkillId::Eviscerate);
   expect_known_skill(fl::monster::MonsterKind::BumpkinHare,
                      fl::skills::SkillId::Bump);
+        expect_known_skill(fl::monster::MonsterKind::ScaredyCat,
+                                                                                 fl::skills::SkillId::Flee);
   expect_known_skill(fl::monster::MonsterKind::MireSquish,
                      fl::skills::SkillId::Squish);
   expect_known_skill(fl::monster::MonsterKind::BarkSmack,
