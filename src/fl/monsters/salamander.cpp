@@ -26,7 +26,8 @@ void Salamander::apply(EntityBuilder &b) {
 
 void register_salamander() {
   register_monster(fl::monster::MonsterKind::Salamander,
-                   [](EntityBuilder &b) { Salamander::apply(b); });
+                   [](EntityBuilder &b) { Salamander::apply(b); },
+                   {fl::skills::SkillId::FlameStrike});
 }
 
 } // namespace fl::monster

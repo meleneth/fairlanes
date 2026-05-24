@@ -1,6 +1,7 @@
 #pragma once
 
 #include <entt/entt.hpp>
+#include <stdexcept>
 #include <utility>
 
 #include "fl/context.hpp"
@@ -10,7 +11,6 @@
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/monsters/monster_kind.hpp"
 #include "fl/monsters/monster_registry.hpp"
-#include "fl/monsters/monster_skills.hpp"
 #include "fl/primitives/component_builder.hpp"
 
 namespace fl::primitives {
@@ -67,9 +67,15 @@ public:
       throw std::runtime_error("MonsterKind not registered");
     }
 
-    it->second(*this);
-    with(fl::ecs::components::SkillSlots::with_known(
-        fl::monster::known_skill_for(kind)));
+    auto slots = fl::ecs::components::SkillSlots{};
+    for (const auto skill : it->second.known_skills) {
+      if (!slots.learn(skill)) {
+        throw std::runtime_error("Monster has invalid known skill list");
+      }
+    }
+
+    it->second.archetype(*this);
+    with(slots);
     return *this;
   }
 };

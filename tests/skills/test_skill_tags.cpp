@@ -1,9 +1,5 @@
-#include <array>
-
 #include <catch2/catch_test_macros.hpp>
 
-#include "fl/monsters/monster_kind.hpp"
-#include "fl/monsters/monster_skills.hpp"
 #include "fl/skills/skill_definition.hpp"
 #include "fl/skills/skill.hpp"
 
@@ -45,45 +41,7 @@ TEST_CASE("Representative skills expose expected tags", "[skills][tags]") {
   require_tags(fl::skills::SkillId::Mercyburst,
                {fl::skills::SkillTag::Healing, fl::skills::SkillTag::Holy});
 
-    require_tags(fl::skills::SkillId::Flee,
-           {fl::skills::SkillTag::Escape, fl::skills::SkillTag::Utility});
+  require_tags(fl::skills::SkillId::Flee,
+               {fl::skills::SkillTag::Escape, fl::skills::SkillTag::Utility});
 }
 
-TEST_CASE("Monster mappings still resolve to expected skills",
-          "[skills][monsters]") {
-  constexpr std::array<std::pair<fl::monster::MonsterKind, fl::skills::SkillId>,
-             17>
-      expected{ {
-          {fl::monster::MonsterKind::FieldMouse, fl::skills::SkillId::Thump},
-          {fl::monster::MonsterKind::HoneyBadger,
-           fl::skills::SkillId::Eviscerate},
-          {fl::monster::MonsterKind::BumpkinHare, fl::skills::SkillId::Bump},
-      {fl::monster::MonsterKind::ScaredyCat, fl::skills::SkillId::Flee},
-          {fl::monster::MonsterKind::MireSquish, fl::skills::SkillId::Squish},
-          {fl::monster::MonsterKind::BarkSmack, fl::skills::SkillId::Smack},
-          {fl::monster::MonsterKind::PoisonToad, fl::skills::SkillId::Poison},
-          {fl::monster::MonsterKind::Yeti, fl::skills::SkillId::ColdSnap},
-          {fl::monster::MonsterKind::Salamander,
-           fl::skills::SkillId::FlameStrike},
-          {fl::monster::MonsterKind::FireDrake,
-           fl::skills::SkillId::FlameWave},
-          {fl::monster::MonsterKind::StormtickImp,
-           fl::skills::SkillId::Joltspasm},
-          {fl::monster::MonsterKind::CeilingGrudge,
-           fl::skills::SkillId::RocksFall},
-          {fl::monster::MonsterKind::MiasmaToad,
-           fl::skills::SkillId::SourBreath},
-          {fl::monster::MonsterKind::ChoirWisp,
-           fl::skills::SkillId::Mercyburst},
-          {fl::monster::MonsterKind::GorecapSprout,
-           fl::skills::SkillId::BloodBloom},
-          {fl::monster::MonsterKind::RimefangHare,
-           fl::skills::SkillId::IceSplitter},
-          {fl::monster::MonsterKind::NullMote,
-           fl::skills::SkillId::GravitySigh},
-      } };
-
-  for (const auto &[kind, skill] : expected) {
-    REQUIRE(fl::monster::known_skill_for(kind) == skill);
-  }
-}

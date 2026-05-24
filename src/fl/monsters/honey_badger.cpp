@@ -19,7 +19,8 @@ void HoneyBadger::apply(EntityBuilder &b) {
 
 void register_honey_badger() {
   register_monster(fl::monster::MonsterKind::HoneyBadger,
-                   [](EntityBuilder &b) { HoneyBadger::apply(b); });
+                   [](EntityBuilder &b) { HoneyBadger::apply(b); },
+                   {fl::skills::SkillId::Eviscerate});
 }
 
 } // namespace fl::monster

@@ -9,7 +9,6 @@
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/monsters/monster_kind.hpp"
-#include "fl/monsters/monster_skills.hpp"
 #include "fl/primitives/entity_builder.hpp"
 #include "fl/skills/skill_visuals.hpp"
 #include "fl/widgets/effects/decal.hpp"
@@ -113,7 +112,7 @@ TEST_CASE("Woodland skill monsters have their own names and levels",
       8);
 }
 
-TEST_CASE("Monster builder assigns each monster its known skill",
+TEST_CASE("Monster builder assigns each monster its registered skills",
           "[monsters][skills]") {
   fl::GrandCentral gc{1, 1, 1};
   auto account_ctx = gc.account_context(0);
@@ -137,6 +136,8 @@ TEST_CASE("Monster builder assigns each monster its known skill",
                      fl::skills::SkillId::Bump);
         expect_known_skill(fl::monster::MonsterKind::ScaredyCat,
                                                                                  fl::skills::SkillId::Flee);
+        expect_known_skill(fl::monster::MonsterKind::ScaredyCat,
+                                                                                 fl::skills::SkillId::Thump);
   expect_known_skill(fl::monster::MonsterKind::MireSquish,
                      fl::skills::SkillId::Squish);
   expect_known_skill(fl::monster::MonsterKind::BarkSmack,
@@ -192,7 +193,6 @@ TEST_CASE("Decal attack monsters construct with expected skills and visuals",
     CAPTURE(monster.name);
     REQUIRE(stats.name_ == monster.name);
     REQUIRE(skills.knows(monster.skill));
-    REQUIRE(fl::monster::known_skill_for(monster.kind) == monster.skill);
     REQUIRE(fl::skills::decal_animation_for(monster.skill) ==
             monster.animation);
   }
@@ -200,8 +200,6 @@ TEST_CASE("Decal attack monsters construct with expected skills and visuals",
 
 TEST_CASE("Field Mouse Thump remains a non-decal skill",
           "[monsters][skills][decal]") {
-  REQUIRE(fl::monster::known_skill_for(fl::monster::MonsterKind::FieldMouse) ==
-          fl::skills::SkillId::Thump);
   REQUIRE_FALSE(
       fl::skills::decal_animation_for(fl::skills::SkillId::Thump).has_value());
 }
