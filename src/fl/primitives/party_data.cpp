@@ -1,9 +1,11 @@
 #include <fmt/core.h>
 
 #include <algorithm>
+#include <iterator>
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/systems/loot_drop.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/fsm/party_loop_machine.hpp"
@@ -87,10 +89,62 @@ void PartyData::leave_combat() {
     return;
   }
 
+  if (!all_members_dead()) {
+    party_bus_.emit(fl::events::PartyEvent{fl::events::PartyVictory{}});
+  }
+
   party_bus_.emit(fl::events::PartyEvent{fl::events::PartyLeftCombat{}});
   encounter_data_->clear_pending_events();
   encounter_data_->finalize();
   encounter_data_.reset();
+}
+
+void PartyData::watch_skill_learned_this_combat(entt::entity member,
+                                                fl::skills::SkillId skill) {
+  if (!in_combat()) {
+    return;
+  }
+
+  pending_learned_skills_.push_back(PendingLearnedSkill{.member = member,
+                                                        .skill = skill});
+  auto it = std::prev(pending_learned_skills_.end());
+
+  it->wipe_sub = fl::events::ScopedPartyListener{
+      party_bus_, std::in_place_type<fl::events::PartyWiped>,
+      [this, it](const fl::events::PartyWiped &) {
+        resolve_pending_learned_skill(it, false);
+      }};
+
+  it->victory_sub = fl::events::ScopedPartyListener{
+      party_bus_, std::in_place_type<fl::events::PartyVictory>,
+      [this, it](const fl::events::PartyVictory &) {
+        resolve_pending_learned_skill(it, true);
+      }};
+}
+
+void PartyData::resolve_pending_learned_skill(
+    std::list<PendingLearnedSkill>::iterator it, bool keep_skill) {
+  if (it == pending_learned_skills_.end()) {
+    return;
+  }
+
+  auto member = it->member;
+  auto skill = it->skill;
+
+  it->wipe_sub.reset();
+  it->victory_sub.reset();
+  pending_learned_skills_.erase(it);
+
+  if (keep_skill) {
+    return;
+  }
+
+  auto *slots = party_ctx_.reg().try_get<fl::ecs::components::SkillSlots>(member);
+  if (slots == nullptr) {
+    return;
+  }
+
+  slots->unlearn(skill);
 }
 
 void PartyData::tick_town_penalty() {

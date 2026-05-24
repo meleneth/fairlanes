@@ -38,6 +38,8 @@ bool learn_observed_skill_with_roll(fl::context::PartyCtx &party_ctx,
     return false;
   }
 
+  party_ctx.party_data().watch_skill_learned_this_combat(observer, skill);
+
   party_ctx.log().append_markup(fmt::format(
       "[player_name]({}) learned [ability]({})!", stats->name_, name(skill)));
   return true;

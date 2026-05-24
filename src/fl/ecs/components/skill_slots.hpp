@@ -52,6 +52,17 @@ struct SkillSlots {
 
     return false;
   }
+
+  bool unlearn(fl::skills::SkillId skill) noexcept {
+    for (auto &known : slots) {
+      if (known == skill) {
+        known.reset();
+        return true;
+      }
+    }
+
+    return false;
+  }
 };
 
 } // namespace fl::ecs::components

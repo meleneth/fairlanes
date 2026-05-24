@@ -3,6 +3,7 @@
 
 #include <deque>
 #include <functional> // std::invoke
+#include <list>
 #include <memory>
 #include <span>
 #include <string>
@@ -18,6 +19,7 @@
 #include "fl/fwd.hpp"
 #include "fl/primitives/encounter_data.hpp"
 #include "fl/primitives/world_clock.hpp"
+#include "fl/skills/skill.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "member_data.hpp"
 #include "sr/beat_bus.hpp"
@@ -84,6 +86,8 @@ public:
   void revitalize_members();
   void start_town_penalty();
   void leave_combat();
+  void watch_skill_learned_this_combat(entt::entity member,
+                                       fl::skills::SkillId skill);
 
   bool town_penalty_active() const noexcept {
     return town_penalty_beats_remaining_ > 0;
@@ -125,6 +129,18 @@ private:
   fl::events::ScopedPartyListener town_revitalize_sub_{};
   fl::events::ScopedPartyListener loot_drop_sub_{};
   int town_penalty_beats_remaining_{0};
+
+  struct PendingLearnedSkill {
+    entt::entity member{entt::null};
+    fl::skills::SkillId skill{fl::skills::SkillId::Observe};
+    fl::events::ScopedPartyListener wipe_sub{};
+    fl::events::ScopedPartyListener victory_sub{};
+  };
+
+  std::list<PendingLearnedSkill> pending_learned_skills_;
+
+  void resolve_pending_learned_skill(std::list<PendingLearnedSkill>::iterator it,
+                                     bool keep_skill);
 };
 
 } // namespace fl::primitives

@@ -657,3 +657,92 @@ TEST_CASE("Observe itself is not learned by observation",
       party_ctx, observer, user, fl::skills::SkillId::Observe, 1));
   REQUIRE_FALSE(slots.knows(fl::skills::SkillId::Observe));
 }
+
+TEST_CASE("Skills learned this combat are rolled back on party wipe",
+          "[encounter][skills][learning][wipe]") {
+  fl::GrandCentral gc{1, 1, 2};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &members = party.members();
+
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  (void)builder.thump_it_out();
+
+  const auto user = members.front().member_id();
+  const auto observer = members.back().member_id();
+  auto &slots = party_ctx.reg().get<fl::ecs::components::SkillSlots>(observer);
+
+  REQUIRE(fl::skills::learn_observed_skill_with_roll(
+      party_ctx, observer, user, fl::skills::SkillId::Thump, 1));
+  REQUIRE(slots.knows(fl::skills::SkillId::Thump));
+
+  for (const auto &member : members) {
+    party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id()).hp_ = 0;
+  }
+
+  party.party_bus().emit(fl::events::PartyEvent{fl::events::PartyWiped{}});
+
+  REQUIRE_FALSE(slots.knows(fl::skills::SkillId::Thump));
+}
+
+TEST_CASE("Skills learned this combat persist after successful combat exit",
+          "[encounter][skills][learning][victory]") {
+  fl::GrandCentral gc{1, 1, 2};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &members = party.members();
+
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  (void)builder.thump_it_out();
+
+  const auto user = members.front().member_id();
+  const auto observer = members.back().member_id();
+  auto &slots = party_ctx.reg().get<fl::ecs::components::SkillSlots>(observer);
+
+  REQUIRE(fl::skills::learn_observed_skill_with_roll(
+      party_ctx, observer, user, fl::skills::SkillId::Thump, 1));
+  REQUIRE(slots.knows(fl::skills::SkillId::Thump));
+
+  party.leave_combat();
+
+  REQUIRE(slots.knows(fl::skills::SkillId::Thump));
+}
+
+TEST_CASE("Later combat wipe does not remove skill learned in prior victory",
+          "[encounter][skills][learning][subscription-lifecycle]") {
+  fl::GrandCentral gc{1, 1, 2};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &members = party.members();
+
+  fl::primitives::EncounterBuilder first_builder(party_ctx);
+  (void)first_builder.thump_it_out();
+
+  const auto user = members.front().member_id();
+  const auto observer = members.back().member_id();
+  auto &slots = party_ctx.reg().get<fl::ecs::components::SkillSlots>(observer);
+
+  REQUIRE(fl::skills::learn_observed_skill_with_roll(
+      party_ctx, observer, user, fl::skills::SkillId::Thump, 1));
+  REQUIRE(slots.knows(fl::skills::SkillId::Thump));
+
+  party.leave_combat();
+  REQUIRE(slots.knows(fl::skills::SkillId::Thump));
+
+  fl::primitives::EncounterBuilder second_builder(party_ctx);
+  (void)second_builder.thump_it_out();
+
+  for (const auto &member : members) {
+    party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id()).hp_ = 0;
+  }
+
+  party.party_bus().emit(fl::events::PartyEvent{fl::events::PartyWiped{}});
+
+  REQUIRE(slots.knows(fl::skills::SkillId::Thump));
+}
