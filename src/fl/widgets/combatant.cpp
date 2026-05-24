@@ -1,5 +1,7 @@
 #include "combatant.hpp"
 
+#include "fill_bar.hpp"
+
 #include "fl/ecs/components/atb_charge.hpp"
 #include "fl/ecs/components/hp_bar_color_override.hpp"
 #include "fl/ecs/components/stats.hpp"
@@ -8,8 +10,6 @@
 #include "fl/lospec500.hpp"
 #include "fl/widgets/effects/decal.hpp"
 
-#include <algorithm>
-#include <chrono>
 #include <memory>
 #include <string>
 #include <utility>
@@ -151,40 +151,14 @@ ftxui::Element Combatant::Render() {
   auto &stats = reg.get<Stats>(entity);
   auto &level = reg.get<TrackXP>(entity);
 
-  // Avoid div-by-zero and clamp [0, 1].
-  float percent = 0.0f;
-  if (stats.max_hp_ > 0) {
-    percent = static_cast<float>(stats.hp_) / static_cast<float>(stats.max_hp_);
-    if (percent < 0.0f)
-      percent = 0.0f;
-    if (percent > 1.0f)
-      percent = 1.0f;
-  }
-
-  // Keep your fixed-width bar for stability:
   constexpr int bar_width = 20;
-  int filled = static_cast<int>(bar_width * percent);
-  if (filled < 0)
-    filled = 0;
-  if (filled > bar_width)
-    filled = bar_width;
-  int empty = bar_width - filled;
-  if (empty < 0)
-    empty = 0;
-
-  std::string bar;
-  bar.reserve(bar_width);
-  bar.append(static_cast<std::size_t>(filled), '#');
-  bar.append(static_cast<std::size_t>(empty), '-');
-
-  // Build the HP line element
-  auto hp_text = "HP: [" + bar + "] " + std::to_string(stats.hp_) + "/" +
-                 std::to_string(stats.max_hp_);
-
-  ftxui::Element hp_line = ftxui::hbox({
-      ftxui::text(hp_text),
-      ftxui::filler(),
-  });
+  const float hp_fill = stats.max_hp_ > 0
+                            ? static_cast<float>(stats.hp_) /
+                                  static_cast<float>(stats.max_hp_)
+                            : 0.0f;
+  ftxui::Element hp_line = labeled_fill_bar(
+      "HP", clamp_fill(hp_fill), bar_width,
+      std::to_string(stats.hp_) + "/" + std::to_string(stats.max_hp_));
   if (auto *hp_color = reg.try_get<HPBarColorOverride>(entity);
       hp_color != nullptr && stats.is_alive()) {
     hp_line = hp_line | ftxui::color(hp_color->color);
@@ -197,33 +171,13 @@ ftxui::Element Combatant::Render() {
   if (render_uwu_) {
     auto *atb = reg.try_get<fl::ecs::components::AtbCharge>(entity);
     if (atb != nullptr) {
-      float uwu_pct = 0.0f;
-      if (atb->max_charge > 0) {
-        uwu_pct = static_cast<float>(atb->charge) /
-                  static_cast<float>(atb->max_charge);
-        if (uwu_pct < 0.0f)
-          uwu_pct = 0.0f;
-        if (uwu_pct > 1.0f)
-          uwu_pct = 1.0f;
-      }
-      int uwu_filled = static_cast<int>(bar_width * uwu_pct);
-      if (uwu_filled < 0)
-        uwu_filled = 0;
-      if (uwu_filled > bar_width)
-        uwu_filled = bar_width;
-      int uwu_empty = bar_width - uwu_filled;
-
-      std::string uwu_bar;
-      uwu_bar.reserve(bar_width);
-      uwu_bar.append(static_cast<std::size_t>(uwu_filled), '#');
-      uwu_bar.append(static_cast<std::size_t>(uwu_empty), '-');
-
-      auto uwu_text = "ATB: [" + uwu_bar + "] " + std::to_string(atb->charge) +
-                      "/" + std::to_string(atb->max_charge);
-      content_lines.push_back(ftxui::hbox({
-          ftxui::text(uwu_text),
-          ftxui::filler(),
-      }));
+      const float atb_fill = atb->max_charge > 0
+                                 ? static_cast<float>(atb->charge) /
+                                       static_cast<float>(atb->max_charge)
+                                 : 0.0f;
+      content_lines.push_back(labeled_fill_bar(
+          "ATB", clamp_fill(atb_fill), bar_width,
+          std::to_string(atb->charge) + "/" + std::to_string(atb->max_charge)));
     }
   }
 
