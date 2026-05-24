@@ -29,6 +29,11 @@ public:
   fl::events::PartyBus &bus() noexcept { return bus_; }
   const fl::events::PartyBus &bus() const noexcept { return bus_; }
 
+  fl::events::CombatantBus &combatant_bus() noexcept { return combatant_bus_; }
+  const fl::events::CombatantBus &combatant_bus() const noexcept {
+    return combatant_bus_;
+  }
+
   void hook_level_progression(entt::registry &reg);
 
 private:
@@ -36,6 +41,7 @@ private:
   std::string name_;
 
   fl::events::PartyBus bus_;
+  fl::events::CombatantBus combatant_bus_;
   fl::events::ScopedPartyListener level_gained_sub_{};
 };
 

@@ -2,15 +2,18 @@
 
 #include <fmt/format.h>
 
+#include "fl/assert.hpp"
 #include "fl/context.hpp"
+#include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/systems/freeze_system.hpp"
 #include "fl/ecs/systems/poison_system.hpp"
+#include "fl/primitives/member_data.hpp"
 #include "fl/skills/skill_selection.hpp"
 #include "fl/skills/skill_sequence.hpp"
+#include "fl/tracy_shim.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "sr/atb_events.hpp"
-#include "fl/tracy_shim.hpp"
 
 namespace fl::primitives {
 
@@ -71,6 +74,109 @@ void EncounterData::clear_pending_events_for(entt::entity id) {
   rt_.atb_.clear_pending_events_for(id);
 }
 
+fl::events::CombatantBus &
+EncounterData::add_enemy_combatant_bus(entt::entity enemy) {
+  if (auto *bus = enemy_combatant_bus(enemy)) {
+    bind_combatant_bus(enemy, *bus);
+    return *bus;
+  }
+
+  rt_.enemy_combatant_buses_.push_back(
+      EnemyCombatantBus{.enemy = enemy, .bus = {}});
+  auto &bus = rt_.enemy_combatant_buses_.back().bus;
+  bind_combatant_bus(enemy, bus);
+  return bus;
+}
+
+fl::events::CombatantBus &
+EncounterData::add_party_combatant_bus(entt::entity member) {
+  auto &bus = combatant_bus(member);
+  bind_combatant_bus(member, bus);
+  return bus;
+}
+
+fl::events::CombatantBus &EncounterData::combatant_bus(entt::entity combatant) {
+  if (auto *bus = enemy_combatant_bus(combatant)) {
+    return *bus;
+  }
+
+  auto *member =
+      party_ctx_->reg().try_get<fl::ecs::components::PartyMember>(combatant);
+  if (member == nullptr) {
+    fl::fail("combatant bus requested for an entity not enrolled as an enemy "
+             "or party member");
+  }
+  return member->member_data().combatant_bus();
+}
+
+const fl::events::CombatantBus &
+EncounterData::combatant_bus(entt::entity combatant) const {
+  if (auto *bus = enemy_combatant_bus(combatant)) {
+    return *bus;
+  }
+
+  auto *member =
+      party_ctx_->reg().try_get<fl::ecs::components::PartyMember>(combatant);
+  if (member == nullptr) {
+    fl::fail("combatant bus requested for an entity not enrolled as an enemy "
+             "or party member");
+  }
+  return member->member_data().combatant_bus();
+}
+
+fl::events::CombatantBus *
+EncounterData::enemy_combatant_bus(entt::entity enemy) {
+  auto it = std::find_if(
+      rt_.enemy_combatant_buses_.begin(), rt_.enemy_combatant_buses_.end(),
+      [enemy](const EnemyCombatantBus &slot) { return slot.enemy == enemy; });
+  if (it == rt_.enemy_combatant_buses_.end()) {
+    return nullptr;
+  }
+  return &it->bus;
+}
+
+const fl::events::CombatantBus *
+EncounterData::enemy_combatant_bus(entt::entity enemy) const {
+  auto it = std::find_if(
+      rt_.enemy_combatant_buses_.begin(), rt_.enemy_combatant_buses_.end(),
+      [enemy](const EnemyCombatantBus &slot) { return slot.enemy == enemy; });
+  if (it == rt_.enemy_combatant_buses_.end()) {
+    return nullptr;
+  }
+  return &it->bus;
+}
+
+void EncounterData::bind_combatant_bus(
+    entt::entity combatant, fl::events::CombatantBus &combatant_bus) {
+  if (std::find(wire_.wired_combatants_.begin(), wire_.wired_combatants_.end(),
+                combatant) != wire_.wired_combatants_.end()) {
+    return;
+  }
+
+  auto &wiring = wire_.combatant_wiring_.emplace_back();
+  wiring.poison_apply_ = fl::ecs::systems::PoisonSystem::bind_apply_listener(
+      *party_ctx_, combatant_bus, rt_.atb_.scheduler(),
+      [this](entt::entity entity) { clear_pending_events_for(entity); });
+
+  wiring.freeze_apply_ = fl::ecs::systems::FreezeSystem::bind_apply_listener(
+      *party_ctx_, combatant_bus, rt_.atb_.scheduler(),
+      [this](entt::entity entity) { clear_pending_events_for(entity); });
+
+  wiring.freeze_started_ = fl::events::ScopedCombatantListener{
+      combatant_bus, std::in_place_type<fl::events::FreezeStarted>,
+      [this](const fl::events::FreezeStarted &ev) {
+        atb_in().emit(seerin::AtbInEvent{seerin::Frozen{ev.target}});
+      }};
+
+  wiring.freeze_ended_ = fl::events::ScopedCombatantListener{
+      combatant_bus, std::in_place_type<fl::events::FreezeEnded>,
+      [this](const fl::events::FreezeEnded &ev) {
+        atb_in().emit(seerin::AtbInEvent{seerin::Thawed{ev.target}});
+      }};
+
+  wire_.wired_combatants_.push_back(combatant);
+}
+
 bool EncounterData::has_alive_enemies() {
   using fl::ecs::components::Stats;
 
@@ -102,26 +208,6 @@ EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
   wire_.party_beat_ = fl::events::ScopedPartyListener{
       party_ctx_->bus(), std::in_place_type<fl::events::PartyTick>,
       [this](const fl::events::PartyTick &) { atb_in().emit(seerin::Beat{}); }};
-
-  wire_.poison_apply_ = fl::ecs::systems::PoisonSystem::bind_apply_listener(
-      *party_ctx_, rt_.atb_.scheduler(),
-      [this](entt::entity entity) { clear_pending_events_for(entity); });
-
-  wire_.freeze_apply_ = fl::ecs::systems::FreezeSystem::bind_apply_listener(
-      *party_ctx_, rt_.atb_.scheduler(),
-      [this](entt::entity entity) { clear_pending_events_for(entity); });
-
-  wire_.freeze_started_ = fl::events::ScopedPartyListener{
-      party_ctx_->bus(), std::in_place_type<fl::events::FreezeStarted>,
-      [this](const fl::events::FreezeStarted &ev) {
-        atb_in().emit(seerin::AtbInEvent{seerin::Frozen{ev.target}});
-      }};
-
-  wire_.freeze_ended_ = fl::events::ScopedPartyListener{
-      party_ctx_->bus(), std::in_place_type<fl::events::FreezeEnded>,
-      [this](const fl::events::FreezeEnded &ev) {
-        atb_in().emit(seerin::AtbInEvent{seerin::Thawed{ev.target}});
-      }};
 }
 
 } // namespace fl::primitives

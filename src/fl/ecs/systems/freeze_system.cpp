@@ -9,6 +9,7 @@
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
 #include "fl/lospec500.hpp"
+#include "fl/primitives/party_data.hpp"
 #include "fl/primitives/world_clock.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include <ftxui/screen/color.hpp>
@@ -44,12 +45,11 @@ void clear_background(entt::registry &reg, entt::entity target) {
 }
 } // namespace
 
-fl::events::ScopedPartyListener
-FreezeSystem::bind_apply_listener(fl::context::PartyCtx &party_ctx,
-                                  Scheduler &scheduler,
-                                  ClearPendingFn clear_pending) {
-  return fl::events::ScopedPartyListener{
-      party_ctx.bus(), std::in_place_type<fl::events::FreezeApplied>,
+fl::events::ScopedCombatantListener FreezeSystem::bind_apply_listener(
+    fl::context::PartyCtx &party_ctx, fl::events::CombatantBus &combatant_bus,
+    Scheduler &scheduler, ClearPendingFn clear_pending) {
+  return fl::events::ScopedCombatantListener{
+      combatant_bus, std::in_place_type<fl::events::FreezeApplied>,
       [&party_ctx, &scheduler, clear_pending = std::move(clear_pending)](
           const fl::events::FreezeApplied &ev) {
         FreezeSystem::apply(party_ctx, scheduler, ev.source, ev.target,
@@ -87,8 +87,9 @@ void FreezeSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
                   party_ctx.log().name_tag_for(entt::handle{reg, source}),
                   party_ctx.log().name_tag_for(entt::handle{reg, target})));
 
-  freeze.player_died_sub = fl::events::ScopedPartyListener{
-      party_ctx.bus(), std::in_place_type<fl::events::PlayerDied>,
+  freeze.player_died_sub = fl::events::ScopedCombatantListener{
+      party_ctx.party_data().encounter_data().combatant_bus(target),
+      std::in_place_type<fl::events::PlayerDied>,
       [&party_ctx, target, clear_pending](const fl::events::PlayerDied &ev) {
         if (ev.player == target) {
           FreezeSystem::clear(party_ctx, target, clear_pending);
@@ -101,8 +102,8 @@ void FreezeSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
         FreezeSystem::clear(party_ctx, target, clear_pending);
       }};
 
-  party_ctx.bus().emit(
-      fl::events::PartyEvent{fl::events::FreezeStarted{target}});
+  party_ctx.party_data().encounter_data().combatant_bus(target).emit(
+      fl::events::CombatantEvent{fl::events::FreezeStarted{target}});
 
   const auto from = fl::lospec500::color_at(kFreezeFadeStartBlue);
   const auto to = fl::lospec500::color_at(kFreezeBlue);
@@ -181,8 +182,8 @@ void FreezeSystem::clear(fl::context::PartyCtx &party_ctx, entt::entity target,
       reg.valid(target) && reg.any_of<fl::ecs::components::Freeze>(target);
   if (had_freeze) {
     reg.remove<fl::ecs::components::Freeze>(target);
-    party_ctx.bus().emit(
-        fl::events::PartyEvent{fl::events::FreezeEnded{target}});
+    party_ctx.party_data().encounter_data().combatant_bus(target).emit(
+        fl::events::CombatantEvent{fl::events::FreezeEnded{target}});
   }
 }
 

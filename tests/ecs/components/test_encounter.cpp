@@ -39,6 +39,7 @@ entt::entity add_honey_badger(fl::context::PartyCtx &party_ctx,
                           .build();
   encounter.attackers().members().push_back(honey_badger);
   encounter.entities_to_cleanup().push_back(honey_badger);
+  encounter.add_enemy_combatant_bus(honey_badger);
   encounter.atb_in().emit(
       seerin::AtbInEvent{seerin::AddCombatant{honey_badger}});
   return honey_badger;
@@ -134,8 +135,10 @@ TEST_CASE("TakeDamage emits PlayerDied when a party member dies",
   entt::entity seen_player = entt::null;
   entt::entity seen_killer = entt::null;
 
-  (void)party_ctx.party_data().party_bus().on<fl::events::PlayerDied>(
-      [&](const fl::events::PlayerDied &ev) {
+  (void)party_ctx.party_data()
+      .encounter_data()
+      .combatant_bus(defender)
+      .on<fl::events::PlayerDied>([&](const fl::events::PlayerDied &ev) {
         saw_player_died = true;
         seen_player = ev.player;
         seen_killer = ev.killer;
@@ -302,6 +305,7 @@ TEST_CASE(
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
+  encounter.add_party_combatant_bus(defender);
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
   auto honey_badger = add_honey_badger(party_ctx, encounter);
@@ -385,6 +389,7 @@ TEST_CASE("Dire Bleed is removed when the party leaves combat",
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
+  encounter.add_party_combatant_bus(defender);
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
   auto honey_badger = add_honey_badger(party_ctx, encounter);
@@ -415,6 +420,7 @@ TEST_CASE("Dire Bleed clears safely if the source is gone before a tick",
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
+  encounter.add_party_combatant_bus(defender);
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
   auto honey_badger = add_honey_badger(party_ctx, encounter);
@@ -444,6 +450,7 @@ TEST_CASE("Poison applies flat damage every three seconds for its duration",
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
+  encounter.add_party_combatant_bus(defender);
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
   auto source = add_honey_badger(party_ctx, encounter);
@@ -451,8 +458,9 @@ TEST_CASE("Poison applies flat damage every three seconds for its duration",
   stats.max_hp_ = 100;
   stats.hp_ = 100;
 
-  party_ctx.bus().emit(fl::events::PartyEvent{
-      fl::events::PoisonApplied{source, defender, 1, 9}});
+  party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
+      fl::events::CombatantEvent{
+          fl::events::PoisonApplied{source, defender, 1, 9}});
 
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Poison>(defender));
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::StatusTint>(defender));
@@ -506,11 +514,13 @@ TEST_CASE("Poison is applied by event and clears when combat ends",
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
+  encounter.add_party_combatant_bus(defender);
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
   auto source = add_honey_badger(party_ctx, encounter);
-  party_ctx.bus().emit(fl::events::PartyEvent{
-      fl::events::PoisonApplied{source, defender, 1, 9}});
+  party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
+      fl::events::CombatantEvent{
+          fl::events::PoisonApplied{source, defender, 1, 9}});
 
   REQUIRE(find_poison_target(party_ctx) == defender);
 
@@ -532,11 +542,13 @@ TEST_CASE("Freeze applies a frozen background and expires after five seconds",
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
+  encounter.add_party_combatant_bus(defender);
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
   auto source = add_honey_badger(party_ctx, encounter);
-  party_ctx.bus().emit(
-      fl::events::PartyEvent{fl::events::FreezeApplied{source, defender, 9}});
+  party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
+      fl::events::CombatantEvent{
+          fl::events::FreezeApplied{source, defender, 9}});
 
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::StatusTint>(defender));
@@ -572,11 +584,13 @@ TEST_CASE("Freeze stops ATB accrual until it expires",
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
+  encounter.add_party_combatant_bus(defender);
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
   auto source = add_honey_badger(party_ctx, encounter);
-  party_ctx.bus().emit(
-      fl::events::PartyEvent{fl::events::FreezeApplied{source, defender, 9}});
+  party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
+      fl::events::CombatantEvent{
+          fl::events::FreezeApplied{source, defender, 9}});
 
   tick_party(party_ctx, 2);
   REQUIRE(
@@ -602,6 +616,7 @@ TEST_CASE("Second Freeze application shatters for half max HP",
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
+  encounter.add_party_combatant_bus(defender);
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
   auto source = add_honey_badger(party_ctx, encounter);
@@ -609,13 +624,15 @@ TEST_CASE("Second Freeze application shatters for half max HP",
   stats.max_hp_ = 100;
   stats.hp_ = 100;
 
-  party_ctx.bus().emit(
-      fl::events::PartyEvent{fl::events::FreezeApplied{source, defender, 9}});
+  party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
+      fl::events::CombatantEvent{
+          fl::events::FreezeApplied{source, defender, 9}});
   REQUIRE(stats.hp_ == 100);
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
 
-  party_ctx.bus().emit(
-      fl::events::PartyEvent{fl::events::FreezeApplied{source, defender, 9}});
+  party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
+      fl::events::CombatantEvent{
+          fl::events::FreezeApplied{source, defender, 9}});
 
   REQUIRE(stats.hp_ == 50);
   REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));

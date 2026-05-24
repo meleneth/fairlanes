@@ -98,6 +98,40 @@ TEST_CASE(
   }
 }
 
+TEST_CASE("EncounterBuilder gives each enemy a stable combatant bus",
+          "[encounter_builder][encounter][combat][events]") {
+  fl::GrandCentral gc{1, 1, 3};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  auto &encounter = builder.thump_it_out();
+
+  REQUIRE(encounter.enemy_combatant_buses().size() ==
+          encounter.attackers().members().size());
+
+  const auto first_enemy = encounter.attackers().members().front();
+  auto *first_bus = encounter.enemy_combatant_bus(first_enemy);
+  REQUIRE(first_bus != nullptr);
+
+  int first_bus_events = 0;
+  fl::events::ScopedCombatantListener first_sub{
+      *first_bus, std::in_place_type<fl::events::PlayerDied>,
+      [&](const fl::events::PlayerDied &) { ++first_bus_events; }};
+
+  first_bus->emit(fl::events::CombatantEvent{
+      fl::events::PlayerDied{.player = first_enemy, .killer = entt::null}});
+  REQUIRE(first_bus_events == 1);
+
+  for (const entt::entity enemy : encounter.attackers().members()) {
+    CHECK(encounter.enemy_combatant_bus(enemy) != nullptr);
+  }
+
+  const auto *stable_first_bus = encounter.enemy_combatant_bus(first_enemy);
+  REQUIRE(stable_first_bus == first_bus);
+}
+
 TEST_CASE("EncounterBuilder common woodland pool includes new status monsters",
           "[encounter_builder][encounter][combat][status]") {
   const auto &pool = fl::primitives::EncounterBuilder::kCommonWoodland;
@@ -311,23 +345,24 @@ TEST_CASE("Flee emits combat events and grants no XP on successful flee",
   const entt::entity target = encounter.defenders().members().front();
 
   auto &reg = party_ctx.reg();
-  const auto xp_before =
-      reg.get<fl::ecs::components::TrackXP>(target).xp_;
+  const auto xp_before = reg.get<fl::ecs::components::TrackXP>(target).xp_;
 
   int flee_attempt_events = 0;
   int fled_events = 0;
   bool saw_success = false;
 
-  fl::events::ScopedPartyListener flee_attempt_sub{
-      party_ctx.bus(), std::in_place_type<fl::events::FleeAttempted>,
+  fl::events::ScopedCombatantListener flee_attempt_sub{
+      party_ctx.party_data().encounter_data().combatant_bus(attacker),
+      std::in_place_type<fl::events::FleeAttempted>,
       [&](const fl::events::FleeAttempted &ev) {
         ++flee_attempt_events;
         if (ev.success) {
           saw_success = true;
         }
       }};
-  fl::events::ScopedPartyListener fled_sub{
-      party_ctx.bus(), std::in_place_type<fl::events::CombatantFled>,
+  fl::events::ScopedCombatantListener fled_sub{
+      party_ctx.party_data().encounter_data().combatant_bus(attacker),
+      std::in_place_type<fl::events::CombatantFled>,
       [&](const fl::events::CombatantFled &) { ++fled_events; }};
 
   seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;

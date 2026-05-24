@@ -1,7 +1,6 @@
 #include "fmt/format.h"
 
 #include "fl/context.hpp"
-#include "fl/ecs/components/color_override.hpp"
 #include "fl/ecs/components/is_party.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
@@ -14,8 +13,6 @@
 #include "take_damage.hpp"
 
 namespace fl::ecs::systems {
-using fl::context::EntityCtx;
-
 void TakeDamage::commit(fl::context::AttackCtx &ctx) {
   using fl::ecs::components::Stats;
   auto &defender_stats = ctx.reg().get<Stats>(ctx.defender());
@@ -43,10 +40,12 @@ void TakeDamage::commit(fl::context::AttackCtx &ctx) {
       if (dead_party_data.has_encounter()) {
         dead_party_data.encounter_data().clear_pending_events_for(
             ctx.defender());
+        dead_party_data.encounter_data()
+            .combatant_bus(ctx.defender())
+            .emit(fl::events::CombatantEvent{
+                fl::events::PlayerDied{ctx.defender(), ctx.attacker()}});
       }
 
-      dead_party_data.party_bus().emit(fl::events::PartyEvent{
-          fl::events::PlayerDied{ctx.defender(), ctx.attacker()}});
       if (dead_party_data.all_members_dead()) {
         dead_party_data.party_bus().emit(
             fl::events::PartyEvent{fl::events::PartyWiped{}});

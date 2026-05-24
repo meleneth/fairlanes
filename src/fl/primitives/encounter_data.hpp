@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <deque>
 #include <entt/entt.hpp>
 #include <memory>
 #include <vector>
@@ -42,6 +43,30 @@ public:
 
   fl::events::BattleBus &battle_bus() { return rt_.battle_bus_; }
   const fl::events::BattleBus &battle_bus() const { return rt_.battle_bus_; }
+
+  fl::events::EncounterBus &encounter_bus() { return rt_.encounter_bus_; }
+  const fl::events::EncounterBus &encounter_bus() const {
+    return rt_.encounter_bus_;
+  }
+
+  struct EnemyCombatantBus {
+    entt::entity enemy{entt::null};
+    fl::events::CombatantBus bus;
+  };
+
+  std::deque<EnemyCombatantBus> &enemy_combatant_buses() {
+    return rt_.enemy_combatant_buses_;
+  }
+  const std::deque<EnemyCombatantBus> &enemy_combatant_buses() const {
+    return rt_.enemy_combatant_buses_;
+  }
+
+  fl::events::CombatantBus &add_enemy_combatant_bus(entt::entity enemy);
+  fl::events::CombatantBus &add_party_combatant_bus(entt::entity member);
+  fl::events::CombatantBus &combatant_bus(entt::entity combatant);
+  const fl::events::CombatantBus &combatant_bus(entt::entity combatant) const;
+  fl::events::CombatantBus *enemy_combatant_bus(entt::entity enemy);
+  const fl::events::CombatantBus *enemy_combatant_bus(entt::entity enemy) const;
 
   fl::events::ReadyQueue &ready_queue() { return rt_.ready_queue_; }
   const fl::events::ReadyQueue &ready_queue() const { return rt_.ready_queue_; }
@@ -103,20 +128,30 @@ private:
     seerin::AtbEngine atb_;
     fl::events::ReadyQueue ready_queue_;
     fl::events::BattleBus battle_bus_;
+    fl::events::EncounterBus encounter_bus_;
+    std::deque<EnemyCombatantBus> enemy_combatant_buses_;
   } rt_;
 
   struct Wiring {
+    struct CombatantWiring {
+      fl::events::ScopedCombatantListener poison_apply_;
+      fl::events::ScopedCombatantListener freeze_apply_;
+      fl::events::ScopedCombatantListener freeze_started_;
+      fl::events::ScopedCombatantListener freeze_ended_;
+    };
+
     fl::events::ScopedPartyListener party_beat_;
-    fl::events::ScopedPartyListener poison_apply_;
-    fl::events::ScopedPartyListener freeze_apply_;
-    fl::events::ScopedPartyListener freeze_started_;
-    fl::events::ScopedPartyListener freeze_ended_;
+    std::deque<CombatantWiring> combatant_wiring_;
+    std::vector<entt::entity> wired_combatants_;
     seerin::BecameActiveSub atb_active_;
   } wire_;
 
   struct Lifecycle {
     std::vector<entt::entity> entities_to_cleanup_;
   } life_;
+
+  void bind_combatant_bus(entt::entity combatant,
+                          fl::events::CombatantBus &combatant_bus);
 
   fl::context::PartyCtx *party_ctx_;
 };

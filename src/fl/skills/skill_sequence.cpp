@@ -20,8 +20,8 @@
 #include "fl/skills/skill_learning.hpp"
 #include "fl/skills/skill_visuals.hpp"
 #include "fl/skills/thump.hpp"
-#include "fl/widgets/fancy_log.hpp"
 #include "fl/tracy_shim.hpp"
+#include "fl/widgets/fancy_log.hpp"
 
 namespace fl::skills {
 namespace {
@@ -174,8 +174,9 @@ void SkillSequencer::schedule_poison(entt::entity attacker,
 
   scheduler_.schedule_smelly_in_beats_for(
       24, target, "poison: apply", [&party_ctx = party_ctx_, attacker, target] {
-        party_ctx.bus().emit(fl::events::PartyEvent{
-            fl::events::PoisonApplied{attacker, target, 1, 9}});
+        party_ctx.party_data().encounter_data().combatant_bus(target).emit(
+            fl::events::CombatantEvent{
+                fl::events::PoisonApplied{attacker, target, 1, 9}});
       });
 
   auto finish_turn = finish_turn_;
@@ -201,8 +202,9 @@ void SkillSequencer::schedule_cold_snap(entt::entity attacker,
   scheduler_.schedule_smelly_in_beats_for(
       24, target, "cold snap: apply freeze",
       [&party_ctx = party_ctx_, attacker, target] {
-        party_ctx.bus().emit(fl::events::PartyEvent{
-            fl::events::FreezeApplied{attacker, target, 9}});
+        party_ctx.party_data().encounter_data().combatant_bus(target).emit(
+            fl::events::CombatantEvent{
+                fl::events::FreezeApplied{attacker, target, 9}});
       });
 
   auto finish_turn = finish_turn_;
@@ -380,8 +382,8 @@ void SkillSequencer::schedule_flame_wave(entt::entity attacker) {
 void SkillSequencer::schedule_flee(entt::entity attacker, SkillId skill) {
   ZoneScopedN("SkillSequencer::schedule_flee");
   const auto &skill_definition = definition(skill);
-  const int flee_chance = std::clamp(skill_definition.flee_success_percent, 0,
-                                     100);
+  const int flee_chance =
+      std::clamp(skill_definition.flee_success_percent, 0, 100);
   const auto sub_seq =
       static_cast<std::underlying_type_t<entt::entity>>(attacker);
   auto rs = party_ctx_.rng().stream("encounter/skill/flee", sub_seq);
@@ -389,10 +391,11 @@ void SkillSequencer::schedule_flee(entt::entity attacker, SkillId skill) {
   const bool success = roll <= flee_chance;
 
   scheduler_.schedule_smelly_in_beats(
-      1, "flee: resolve", [&party_ctx = party_ctx_, attacker, flee_chance, roll,
-                            success] {
-        party_ctx.bus().emit(fl::events::PartyEvent{fl::events::FleeAttempted{
-            attacker, flee_chance, roll, success}});
+      1, "flee: resolve",
+      [&party_ctx = party_ctx_, attacker, flee_chance, roll, success] {
+        party_ctx.party_data().encounter_data().combatant_bus(attacker).emit(
+            fl::events::CombatantEvent{fl::events::FleeAttempted{
+                attacker, flee_chance, roll, success}});
 
         if (!success || !party_ctx.reg().valid(attacker)) {
           return;
@@ -405,15 +408,15 @@ void SkillSequencer::schedule_flee(entt::entity attacker, SkillId skill) {
           return;
         }
 
-        auto *stats = party_ctx.reg().try_get<fl::ecs::components::Stats>(
-            attacker);
+        auto *stats =
+            party_ctx.reg().try_get<fl::ecs::components::Stats>(attacker);
         if (stats != nullptr) {
           stats->hp_ = 0;
         }
 
         encounter->clear_pending_events_for(attacker);
-        party_ctx.bus().emit(
-            fl::events::PartyEvent{fl::events::CombatantFled{attacker}});
+        party_ctx.party_data().encounter_data().combatant_bus(attacker).emit(
+            fl::events::CombatantEvent{fl::events::CombatantFled{attacker}});
       });
 
   auto finish_turn = finish_turn_;

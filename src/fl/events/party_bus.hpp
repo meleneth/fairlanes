@@ -37,6 +37,15 @@ struct LootDropRequested {
   entt::entity party{entt::null};
 };
 struct PartyTick {};
+
+using PartyEvent =
+    std::variant<PartyCreated, MemberJoined, MemberLeft, PartyWiped,
+                 PartyVictory, PartyLeftCombat, PartyGainedXP,
+                 PartyGainedLevel, PartyHealed, PartyRevitalizeRequested,
+                 LootDropRequested, PartyTick>;
+
+using PartyBus = seerin::VariantBus<PartyEvent>;
+
 struct PoisonApplied {
   entt::entity source{entt::null};
   entt::entity target{entt::null};
@@ -77,26 +86,24 @@ struct PlayerDied {
   entt::entity killer{entt::null};
 };
 
-using PartyEvent =
-  std::variant<PartyCreated, MemberJoined, MemberLeft, PartyWiped,
-         PartyVictory,
-                 PartyLeftCombat, PartyGainedXP, PartyGainedLevel, PartyHealed,
-                 PartyRevitalizeRequested, LootDropRequested, PartyTick,
-                 PoisonApplied, FreezeApplied, FreezeStarted, FreezeEnded,
-                 PreAttack, PostAttack, FleeAttempted, CombatantFled,
-                 PlayerDied>;
+using CombatantEvent =
+    std::variant<PoisonApplied, FreezeApplied, FreezeStarted, FreezeEnded,
+                 FleeAttempted, CombatantFled, PlayerDied>;
 
-using PartyBus = seerin::VariantBus<PartyEvent>;
+using CombatantBus = seerin::VariantBus<CombatantEvent>;
 
-struct ScopedPartyListener {
+using EncounterEvent = std::variant<PreAttack, PostAttack>;
+
+using EncounterBus = seerin::VariantBus<EncounterEvent>;
+
+template <class Bus> struct ScopedListener {
   std::function<void()> disconnect_;
   bool connected_{false};
 
-  ScopedPartyListener() = default;
+  ScopedListener() = default;
 
   template <class T, class Fn>
-  ScopedPartyListener(fl::events::PartyBus &bus, std::in_place_type_t<T>,
-                      Fn &&fn) {
+  ScopedListener(Bus &bus, std::in_place_type_t<T>, Fn &&fn) {
     auto handle = bus.template on<T>(std::forward<Fn>(fn));
     disconnect_ = [&bus, handle]() mutable {
       bus.template callbacks<T>().remove(handle);
@@ -104,10 +111,8 @@ struct ScopedPartyListener {
     connected_ = true;
   }
 
-  ScopedPartyListener(ScopedPartyListener &&rhs) noexcept {
-    *this = std::move(rhs);
-  }
-  ScopedPartyListener &operator=(ScopedPartyListener &&rhs) noexcept {
+  ScopedListener(ScopedListener &&rhs) noexcept { *this = std::move(rhs); }
+  ScopedListener &operator=(ScopedListener &&rhs) noexcept {
     if (this == &rhs)
       return *this;
     reset();
@@ -117,7 +122,7 @@ struct ScopedPartyListener {
     return *this;
   }
 
-  ~ScopedPartyListener() { reset(); }
+  ~ScopedListener() { reset(); }
 
   void reset() {
     if (connected_ && disconnect_) {
@@ -127,8 +132,12 @@ struct ScopedPartyListener {
     disconnect_ = nullptr;
   }
 
-  ScopedPartyListener(const ScopedPartyListener &) = delete;
-  ScopedPartyListener &operator=(const ScopedPartyListener &) = delete;
+  ScopedListener(const ScopedListener &) = delete;
+  ScopedListener &operator=(const ScopedListener &) = delete;
 };
+
+using ScopedPartyListener = ScopedListener<PartyBus>;
+using ScopedCombatantListener = ScopedListener<CombatantBus>;
+using ScopedEncounterListener = ScopedListener<EncounterBus>;
 
 } // namespace fl::events

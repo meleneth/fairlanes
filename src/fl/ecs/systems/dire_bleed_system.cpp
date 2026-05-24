@@ -7,6 +7,7 @@
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
 #include "fl/events/party_bus.hpp"
+#include "fl/primitives/party_data.hpp"
 #include "fl/primitives/world_clock.hpp"
 #include "fl/widgets/fancy_log.hpp"
 
@@ -25,8 +26,9 @@ void DireBleedSystem::bind_cleanup_and_schedule(
     return;
   }
 
-  bleed->player_died_sub = fl::events::ScopedPartyListener{
-      party_ctx.bus(), std::in_place_type<fl::events::PlayerDied>,
+  bleed->player_died_sub = fl::events::ScopedCombatantListener{
+      party_ctx.party_data().encounter_data().combatant_bus(target),
+      std::in_place_type<fl::events::PlayerDied>,
       [&party_ctx, target, clear_pending](const fl::events::PlayerDied &ev) {
         if (ev.player == target) {
           DireBleedSystem::clear(party_ctx, target, clear_pending);

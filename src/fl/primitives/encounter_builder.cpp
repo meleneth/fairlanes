@@ -20,6 +20,7 @@ EncounterData &EncounterBuilder::thump_it_out() {
 
   ctx_.party_data().for_each_member([&](entt::entity member) {
     encounter_data.defenders().members().push_back(member);
+    encounter_data.add_party_combatant_bus(member);
     encounter_data.atb_in().emit(
         seerin::AtbInEvent{seerin::AddCombatant{member}});
   });
@@ -50,6 +51,7 @@ void EncounterBuilder::add_to_enemy_team(entt::entity entity) {
 
   encounter_data.attackers().members().push_back(entity);
   encounter_data.entities_to_cleanup().push_back(entity);
+  encounter_data.add_enemy_combatant_bus(entity);
   encounter_data.atb_in().emit(
       seerin::AtbInEvent{seerin::AddCombatant{entity}});
 }

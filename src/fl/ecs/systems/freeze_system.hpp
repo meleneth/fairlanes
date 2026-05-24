@@ -16,9 +16,10 @@ public:
   using Scheduler = seerin::TimedScheduler<seerin::AtbOutEvent>;
   using ClearPendingFn = std::function<void(entt::entity)>;
 
-  static fl::events::ScopedPartyListener
-  bind_apply_listener(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
-                      ClearPendingFn clear_pending);
+  static fl::events::ScopedCombatantListener
+  bind_apply_listener(fl::context::PartyCtx &party_ctx,
+                      fl::events::CombatantBus &combatant_bus,
+                      Scheduler &scheduler, ClearPendingFn clear_pending);
 
   static void apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
                     entt::entity source, entt::entity target,
