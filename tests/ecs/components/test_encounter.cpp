@@ -21,6 +21,7 @@
 #include "fl/primitives/entity_builder.hpp"
 #include "fl/primitives/world_clock.hpp"
 #include "fl/skills/skill_learning.hpp"
+#include "fl/skills/skill_sequence.hpp"
 #include "sr/atb_events.hpp"
 
 namespace {
@@ -491,7 +492,10 @@ TEST_CASE("Poison applies flat damage every three seconds for its duration",
   encounter.add_party_combatant_bus(defender);
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
-  auto source = add_honey_badger(party_ctx, encounter);
+  auto build_ctx = party_ctx.build_context();
+  auto source = fl::primitives::EntityBuilder(build_ctx)
+                    .monster(fl::monster::MonsterKind::HoneyBadger)
+                    .build();
   auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
   stats.max_hp_ = 100;
   stats.hp_ = 100;
@@ -557,8 +561,8 @@ TEST_CASE("Poison releases the active combatant when the effect is applied",
 
   auto source = add_honey_badger(party_ctx, encounter);
   party_ctx.reg().emplace_or_replace<fl::ecs::components::SkillSlots>(
-      source, fl::ecs::components::SkillSlots::with_known(
-                  fl::skills::SkillId::Poison));
+      source,
+      fl::ecs::components::SkillSlots::with_known(fl::skills::SkillId::Poison));
 
   auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
   stats.max_hp_ = 100;
@@ -880,4 +884,159 @@ TEST_CASE("Later combat wipe does not remove skill learned in prior victory",
   party.party_bus().emit(fl::events::PartyEvent{fl::events::PartyWiped{}});
 
   REQUIRE(slots.knows(fl::skills::SkillId::Thump));
+}
+
+TEST_CASE(
+    "Dire Bleed survives active-turn cleanup for the affected participant",
+    "[encounter][skills][bleed][lifetime]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &encounter = party.create_encounter();
+
+  const auto defender = party.members().front().member_id();
+  encounter.defenders().members().push_back(defender);
+  encounter.add_party_combatant_bus(defender);
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
+
+  auto honey_badger = add_honey_badger(party_ctx, encounter);
+  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+  stats.max_hp_ = 100;
+  stats.hp_ = 100;
+
+  fl::skills::SkillSequencer sequencer{
+      party_ctx, encounter.atb_engine().scheduler(), [](entt::entity) {}};
+  sequencer.schedule(honey_badger, defender, fl::skills::SkillId::Eviscerate);
+  tick_party(party_ctx, 24);
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::DireBleed>(defender));
+
+  encounter.atb_engine().active_combatant() = defender;
+  encounter.clear_active_turn_for(defender);
+  REQUIRE(encounter.atb_engine().active_combatant() == entt::entity{});
+
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(3));
+  REQUIRE(stats.hp_ == 90);
+}
+
+TEST_CASE("Poison survives active-turn cleanup for the affected participant",
+          "[encounter][skills][poison][lifetime]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &encounter = party.create_encounter();
+
+  const auto defender = party.members().front().member_id();
+  encounter.defenders().members().push_back(defender);
+  encounter.add_party_combatant_bus(defender);
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
+
+  auto source = add_honey_badger(party_ctx, encounter);
+  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+  stats.max_hp_ = 100;
+  stats.hp_ = 100;
+
+  encounter.combatant_bus(defender).emit(fl::events::CombatantEvent{
+      fl::events::PoisonApplied{source, defender, 1, 9}});
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Poison>(defender));
+
+  encounter.atb_engine().active_combatant() = defender;
+  encounter.clear_active_turn_for(defender);
+  REQUIRE(encounter.atb_engine().active_combatant() == entt::entity{});
+
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(3));
+  REQUIRE(stats.hp_ == 99);
+}
+
+TEST_CASE("Freeze survives active-turn cleanup for the affected participant",
+          "[encounter][skills][freeze][lifetime]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &encounter = party.create_encounter();
+
+  const auto defender = party.members().front().member_id();
+  encounter.defenders().members().push_back(defender);
+  encounter.add_party_combatant_bus(defender);
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
+
+  auto source = add_honey_badger(party_ctx, encounter);
+  encounter.combatant_bus(defender).emit(fl::events::CombatantEvent{
+      fl::events::FreezeApplied{source, defender, 9}});
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
+
+  encounter.atb_engine().active_combatant() = defender;
+  encounter.clear_active_turn_for(defender);
+  REQUIRE(encounter.atb_engine().active_combatant() == entt::entity{});
+
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(5));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));
+  REQUIRE_FALSE(
+      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
+}
+
+TEST_CASE("Status effects clear on party wipe and scheduled work does not leak",
+          "[encounter][skills][status][lifetime][wipe]") {
+  fl::GrandCentral gc{1, 1, 3};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &encounter = party.create_encounter();
+
+  for (const auto &member : party.members()) {
+    encounter.defenders().members().push_back(member.member_id());
+    encounter.add_party_combatant_bus(member.member_id());
+    encounter.atb_in().emit(
+        seerin::AtbInEvent{seerin::AddCombatant{member.member_id()}});
+  }
+
+  const auto bleed_target = party.members()[0].member_id();
+  const auto poison_target = party.members()[1].member_id();
+  const auto freeze_target = party.members()[2].member_id();
+  auto source = add_honey_badger(party_ctx, encounter);
+
+  auto &bleed_stats =
+      party_ctx.reg().get<fl::ecs::components::Stats>(bleed_target);
+  auto &poison_stats =
+      party_ctx.reg().get<fl::ecs::components::Stats>(poison_target);
+  bleed_stats.max_hp_ = 100;
+  bleed_stats.hp_ = 100;
+  poison_stats.max_hp_ = 100;
+  poison_stats.hp_ = 100;
+
+  fl::skills::SkillSequencer sequencer{
+      party_ctx, encounter.atb_engine().scheduler(), [](entt::entity) {}};
+  sequencer.schedule(source, bleed_target, fl::skills::SkillId::Eviscerate);
+  tick_party(party_ctx, 24);
+  encounter.combatant_bus(poison_target)
+      .emit(fl::events::CombatantEvent{
+          fl::events::PoisonApplied{source, poison_target, 1, 9}});
+  encounter.combatant_bus(freeze_target)
+      .emit(fl::events::CombatantEvent{
+          fl::events::FreezeApplied{source, freeze_target, 9}});
+
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::DireBleed>(bleed_target));
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Poison>(poison_target));
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(freeze_target));
+
+  party.party_bus().emit(fl::events::PartyEvent{fl::events::PartyWiped{}});
+
+  REQUIRE_FALSE(
+      party_ctx.reg().any_of<fl::ecs::components::DireBleed>(bleed_target));
+  REQUIRE_FALSE(
+      party_ctx.reg().any_of<fl::ecs::components::Poison>(poison_target));
+  REQUIRE_FALSE(
+      party_ctx.reg().any_of<fl::ecs::components::Freeze>(freeze_target));
+
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(5));
+  REQUIRE(bleed_stats.hp_ == 100);
+  REQUIRE(poison_stats.hp_ == 100);
+  REQUIRE_FALSE(
+      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(freeze_target));
 }

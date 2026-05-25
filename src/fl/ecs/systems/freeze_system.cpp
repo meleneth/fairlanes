@@ -7,6 +7,7 @@
 #include "fl/ecs/components/freeze.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
+#include "fl/ecs/systems/status_effect_lifetime.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
 #include "fl/lospec500.hpp"
 #include "fl/primitives/party_data.hpp"
@@ -45,21 +46,21 @@ void clear_background(entt::registry &reg, entt::entity target) {
 }
 } // namespace
 
-fl::events::ScopedCombatantListener FreezeSystem::bind_apply_listener(
-    fl::context::PartyCtx &party_ctx, fl::events::CombatantBus &combatant_bus,
-    Scheduler &scheduler, ClearPendingFn clear_pending) {
+fl::events::ScopedCombatantListener
+FreezeSystem::bind_apply_listener(fl::context::PartyCtx &party_ctx,
+                                  fl::events::CombatantBus &combatant_bus,
+                                  Scheduler &scheduler) {
   return fl::events::ScopedCombatantListener{
       combatant_bus, std::in_place_type<fl::events::FreezeApplied>,
-      [&party_ctx, &scheduler, clear_pending = std::move(clear_pending)](
-          const fl::events::FreezeApplied &ev) {
+      [&party_ctx, &scheduler](const fl::events::FreezeApplied &ev) {
         FreezeSystem::apply(party_ctx, scheduler, ev.source, ev.target,
-                            ev.duration_seconds, clear_pending);
+                            ev.duration_seconds);
       }};
 }
 
 void FreezeSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
                          entt::entity source, entt::entity target,
-                         int duration_seconds, ClearPendingFn clear_pending) {
+                         int duration_seconds) {
   auto &reg = party_ctx.reg();
   if (!reg.valid(source) || !reg.valid(target)) {
     return;
@@ -73,34 +74,28 @@ void FreezeSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
   }
 
   if (reg.any_of<fl::ecs::components::Freeze>(target)) {
-    FreezeSystem::shatter(party_ctx, source, target, clear_pending);
+    FreezeSystem::shatter(party_ctx, source, target);
     return;
   }
 
-  auto &freeze = reg.emplace_or_replace<fl::ecs::components::Freeze>(target);
+  auto &freeze = reg.emplace<fl::ecs::components::Freeze>(target);
   freeze.source = source;
   freeze.clear_after_beats = kFreezeDurationBeats;
+  freeze.effect = StatusEffectLifetime::create_instance(party_ctx, target);
+
+  StatusEffectLifetime lifetime{party_ctx, scheduler, freeze.effect};
+  lifetime.on_owner_died([&party_ctx, target](const fl::events::PlayerDied &) {
+    FreezeSystem::clear(party_ctx, target);
+  });
+  lifetime.on_combat_removed([&party_ctx, target](const auto &) {
+    FreezeSystem::clear(party_ctx, target);
+  });
 
   set_background(reg, target, fl::lospec500::color_at(kFreezeFadeStartBlue));
   party_ctx.log().append_markup(
       fmt::format("{} used [ability](Cold Snap) on {}; frost takes hold.",
                   party_ctx.log().name_tag_for(entt::handle{reg, source}),
                   party_ctx.log().name_tag_for(entt::handle{reg, target})));
-
-  freeze.player_died_sub = fl::events::ScopedCombatantListener{
-      party_ctx.party_data().encounter_data().combatant_bus(target),
-      std::in_place_type<fl::events::PlayerDied>,
-      [&party_ctx, target, clear_pending](const fl::events::PlayerDied &ev) {
-        if (ev.player == target) {
-          FreezeSystem::clear(party_ctx, target, clear_pending);
-        }
-      }};
-
-  freeze.left_combat_sub = fl::events::ScopedPartyListener{
-      party_ctx.bus(), std::in_place_type<fl::events::PartyLeftCombat>,
-      [&party_ctx, target, clear_pending](const fl::events::PartyLeftCombat &) {
-        FreezeSystem::clear(party_ctx, target, clear_pending);
-      }};
 
   party_ctx.party_data().encounter_data().combatant_bus(target).emit(
       fl::events::CombatantEvent{fl::events::FreezeStarted{target}});
@@ -113,9 +108,8 @@ void FreezeSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
     const auto color = beat == kFreezeFadeInBeats
                            ? to
                            : ftxui::Color::Interpolate(t, from, to);
-    scheduler.schedule_smelly_in_beats_for(
-        beat, target, "freeze: background fade in",
-        [&party_ctx, target, color] {
+    lifetime.schedule_in_beats(
+        beat, "freeze: background fade in", [&party_ctx, target, color] {
           auto &reg = party_ctx.reg();
           if (!reg.valid(target) ||
               !reg.any_of<fl::ecs::components::Freeze>(target)) {
@@ -129,8 +123,7 @@ void FreezeSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
 }
 
 void FreezeSystem::shatter(fl::context::PartyCtx &party_ctx,
-                           entt::entity source, entt::entity target,
-                           const ClearPendingFn &clear_pending) {
+                           entt::entity source, entt::entity target) {
   auto &reg = party_ctx.reg();
   if (!reg.valid(source) || !reg.valid(target)) {
     return;
@@ -143,13 +136,14 @@ void FreezeSystem::shatter(fl::context::PartyCtx &party_ctx,
 
   const auto damage = std::max(1, target_stats->max_hp_ / 2);
   const auto target_name = target_stats->name_;
-  FreezeSystem::clear(party_ctx, target, clear_pending);
+  FreezeSystem::clear(party_ctx, target);
 
   auto attack_ctx =
       fl::context::AttackCtx::make_attack(party_ctx, source, target);
   attack_ctx.damage().ice = damage;
   party_ctx.log().append_markup(fmt::format(
-      "{} used [ability](Shatter) on [player_name]({}) for [error]({}) damage.",
+      "{} used [ability](Shatter) on [player_name]({}) for [error]({}) "
+      "damage.",
       party_ctx.log().name_tag_for(entt::handle{reg, source}), target_name,
       damage));
   fl::ecs::systems::TakeDamage::commit(attack_ctx);
@@ -158,8 +152,15 @@ void FreezeSystem::shatter(fl::context::PartyCtx &party_ctx,
 void FreezeSystem::schedule_clear(fl::context::PartyCtx &party_ctx,
                                   Scheduler &scheduler, entt::entity target,
                                   int clear_after_beats) {
-  scheduler.schedule_smelly_in_beats_for(
-      clear_after_beats, target, "freeze: auto clear",
+  auto *scheduled_freeze =
+      party_ctx.reg().try_get<fl::ecs::components::Freeze>(target);
+  if (scheduled_freeze == nullptr) {
+    return;
+  }
+
+  StatusEffectLifetime lifetime{party_ctx, scheduler, scheduled_freeze->effect};
+  lifetime.schedule_in_beats(
+      clear_after_beats, "freeze: auto clear",
       [&party_ctx, target, clear_after_beats] {
         auto &reg = party_ctx.reg();
         auto *freeze = reg.try_get<fl::ecs::components::Freeze>(target);
@@ -168,23 +169,32 @@ void FreezeSystem::schedule_clear(fl::context::PartyCtx &party_ctx,
           return;
         }
 
-        FreezeSystem::clear(party_ctx, target, [](entt::entity) {});
+        FreezeSystem::clear(party_ctx, target);
       });
 }
 
-void FreezeSystem::clear(fl::context::PartyCtx &party_ctx, entt::entity target,
-                         const ClearPendingFn &clear_pending) {
+void FreezeSystem::clear(fl::context::PartyCtx &party_ctx,
+                         entt::entity target) {
   auto &reg = party_ctx.reg();
-  clear_pending(target);
-  clear_background(reg, target);
-
-  const bool had_freeze =
-      reg.valid(target) && reg.any_of<fl::ecs::components::Freeze>(target);
-  if (had_freeze) {
-    reg.remove<fl::ecs::components::Freeze>(target);
-    party_ctx.party_data().encounter_data().combatant_bus(target).emit(
-        fl::events::CombatantEvent{fl::events::FreezeEnded{target}});
+  if (!reg.valid(target)) {
+    return;
   }
+
+  auto *freeze = reg.try_get<fl::ecs::components::Freeze>(target);
+  if (freeze == nullptr) {
+    return;
+  }
+
+  auto &scheduler =
+      party_ctx.party_data().encounter_data().atb_engine().scheduler();
+  StatusEffectLifetime lifetime{party_ctx, scheduler, freeze->effect};
+  lifetime.clear_scheduled();
+  lifetime.destroy_instance_entity();
+
+  clear_background(reg, target);
+  reg.remove<fl::ecs::components::Freeze>(target);
+  party_ctx.party_data().encounter_data().combatant_bus(target).emit(
+      fl::events::CombatantEvent{fl::events::FreezeEnded{target}});
 }
 
 } // namespace fl::ecs::systems

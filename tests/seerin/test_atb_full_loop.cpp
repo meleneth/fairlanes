@@ -148,3 +148,27 @@ TEST_CASE("ATB: frozen ready combatants leave and re-enter the ready queue",
   REQUIRE(atb.ready_queue().size() == 2);
   REQUIRE(atb.ready_queue().back() == id);
 }
+
+TEST_CASE("ATB: active-turn cleanup removes only callbacks owned by that turn",
+          "[atb][lifetime]") {
+  entt::registry reg;
+  seerin::AtbEngine atb{reg};
+
+  const auto active_owner = reg.create();
+  const auto effect_owner = reg.create();
+  int active_callbacks = 0;
+  int effect_callbacks = 0;
+
+  atb.scheduler().schedule_smelly_in_beats_for(
+      1, active_owner, "active-turn callback", [&] { ++active_callbacks; });
+  atb.scheduler().schedule_smelly_in_beats_for(
+      1, effect_owner, "effect callback", [&] { ++effect_callbacks; });
+
+  atb.active_combatant() = active_owner;
+  atb.clear_active_turn_for(active_owner);
+  REQUIRE(atb.active_combatant() == entt::entity{});
+
+  atb.scheduler().on_beat();
+  REQUIRE(active_callbacks == 0);
+  REQUIRE(effect_callbacks == 1);
+}

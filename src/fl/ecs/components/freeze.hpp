@@ -2,15 +2,14 @@
 
 #include <entt/entt.hpp>
 
-#include "fl/events/party_bus.hpp"
+#include "fl/ecs/components/status_effect.hpp"
 
 namespace fl::ecs::components {
 
 struct Freeze {
   entt::entity source{entt::null};
   int clear_after_beats{0};
-  fl::events::ScopedCombatantListener player_died_sub;
-  fl::events::ScopedPartyListener left_combat_sub;
+  StatusEffectInstance effect;
 };
 
 } // namespace fl::ecs::components

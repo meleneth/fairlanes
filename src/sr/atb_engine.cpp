@@ -1,7 +1,7 @@
 #include "atb_engine.hpp"
 
-#include <algorithm>
 #include "fl/tracy_shim.hpp"
+#include <algorithm>
 #include <utility>
 
 #include "fl/ecs/components/atb_charge.hpp"
@@ -56,8 +56,8 @@ void AtbEngine::clear_pending_events() {
   active_combatant_ = entt::entity{};
 }
 
-void AtbEngine::clear_pending_events_for(entt::entity id) {
-  ZoneScopedN("AtbEngine::clear_pending_events_for");
+void AtbEngine::clear_active_turn_for(entt::entity id) {
+  ZoneScopedN("AtbEngine::clear_active_turn_for");
   // Remove from ready queue
   remove_ready(id);
 

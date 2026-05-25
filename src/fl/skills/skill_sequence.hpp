@@ -17,10 +17,8 @@ class SkillSequencer {
 public:
   using Scheduler = seerin::TimedScheduler<seerin::AtbOutEvent>;
   using FinishTurnFn = std::function<void(entt::entity)>;
-  using ClearPendingFn = std::function<void(entt::entity)>;
-
   SkillSequencer(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
-                 FinishTurnFn finish_turn, ClearPendingFn clear_pending);
+                 FinishTurnFn finish_turn);
 
   void schedule(entt::entity attacker, entt::entity target, SkillId skill);
 
@@ -43,7 +41,6 @@ private:
   fl::context::PartyCtx &party_ctx_;
   Scheduler &scheduler_;
   FinishTurnFn finish_turn_;
-  ClearPendingFn clear_pending_;
 };
 
 } // namespace fl::skills

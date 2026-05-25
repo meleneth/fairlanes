@@ -38,8 +38,7 @@ void TakeDamage::commit(fl::context::AttackCtx &ctx) {
     if (dead_party_member) {
       auto &dead_party_data = dead_party_member->party().party_data();
       if (dead_party_data.has_encounter()) {
-        dead_party_data.encounter_data().clear_pending_events_for(
-            ctx.defender());
+        dead_party_data.encounter_data().clear_active_turn_for(ctx.defender());
         dead_party_data.encounter_data()
             .combatant_bus(ctx.defender())
             .emit(fl::events::CombatantEvent{

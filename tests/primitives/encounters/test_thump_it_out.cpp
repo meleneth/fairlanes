@@ -191,8 +191,8 @@ TEST_CASE("SkillSequencer reek fade resolves DamageFlash and lets it expire",
       reg.any_of<fl::ecs::components::ResolvedColorOverride>(attacker));
 
   seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
-  fl::skills::SkillSequencer sequencer{
-      party_ctx, scheduler, [](entt::entity) {}, [](entt::entity) {}};
+  fl::skills::SkillSequencer sequencer{party_ctx, scheduler,
+                                       [](entt::entity) {}};
   sequencer.schedule(attacker, target, fl::skills::SkillId::Thump);
 
   for (int i = 0; i < 10; ++i) {
@@ -236,8 +236,7 @@ TEST_CASE("SkillSequencer Flame Strike animates before damage",
   bool finished = false;
   fl::skills::SkillSequencer sequencer{
       party_ctx, scheduler,
-      [&](entt::entity entity) { finished = entity == attacker; },
-      [](entt::entity) {}};
+      [&](entt::entity entity) { finished = entity == attacker; }};
 
   sequencer.schedule(attacker, target, fl::skills::SkillId::FlameStrike);
   const auto log_size_after_schedule = party_ctx.log().size();
@@ -288,8 +287,7 @@ TEST_CASE("SkillSequencer Flame Wave staggers all alive opponents",
   bool finished = false;
   fl::skills::SkillSequencer sequencer{
       party_ctx, scheduler,
-      [&](entt::entity entity) { finished = entity == attacker; },
-      [](entt::entity) {}};
+      [&](entt::entity entity) { finished = entity == attacker; }};
 
   sequencer.schedule(attacker, targets.front(), fl::skills::SkillId::FlameWave);
   const auto log_size_after_schedule = party_ctx.log().size();
@@ -366,8 +364,8 @@ TEST_CASE("Flee emits combat events and grants no XP on successful flee",
       [&](const fl::events::CombatantFled &) { ++fled_events; }};
 
   seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
-  fl::skills::SkillSequencer sequencer{
-      party_ctx, scheduler, [](entt::entity) {}, [](entt::entity) {}};
+  fl::skills::SkillSequencer sequencer{party_ctx, scheduler,
+                                       [](entt::entity) {}};
 
   for (int attempt = 0; attempt < 12 && !saw_success; ++attempt) {
     sequencer.schedule(attacker, target, fl::skills::SkillId::Flee);

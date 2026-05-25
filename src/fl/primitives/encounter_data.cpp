@@ -36,11 +36,9 @@ void EncounterData::innervate_event_system() {
         }
 
         fl::skills::SkillSequencer sequencer{
-            *party_ctx_, rt_.atb_.scheduler(),
-            [this](entt::entity entity) {
+            *party_ctx_, rt_.atb_.scheduler(), [this](entt::entity entity) {
               atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{entity}});
-            },
-            [this](entt::entity entity) { clear_pending_events_for(entity); }};
+            }};
         sequencer.schedule(attacker, target, choose_skill(attacker));
         TracyPlot("Encounter.PendingEvents",
                   static_cast<double>(rt_.atb_.scheduler().pending()));
@@ -69,9 +67,9 @@ void EncounterData::finalize() {
 
 void EncounterData::clear_pending_events() { rt_.atb_.clear_pending_events(); }
 
-void EncounterData::clear_pending_events_for(entt::entity id) {
-  ZoneScopedN("EncounterData::clear_pending_events_for");
-  rt_.atb_.clear_pending_events_for(id);
+void EncounterData::clear_active_turn_for(entt::entity id) {
+  ZoneScopedN("EncounterData::clear_active_turn_for");
+  rt_.atb_.clear_active_turn_for(id);
 }
 
 fl::events::CombatantBus &
@@ -155,12 +153,10 @@ void EncounterData::bind_combatant_bus(
 
   auto &wiring = wire_.combatant_wiring_.emplace_back();
   wiring.poison_apply_ = fl::ecs::systems::PoisonSystem::bind_apply_listener(
-      *party_ctx_, combatant_bus, rt_.atb_.scheduler(),
-      [this](entt::entity entity) { clear_pending_events_for(entity); });
+      *party_ctx_, combatant_bus, rt_.atb_.scheduler());
 
   wiring.freeze_apply_ = fl::ecs::systems::FreezeSystem::bind_apply_listener(
-      *party_ctx_, combatant_bus, rt_.atb_.scheduler(),
-      [this](entt::entity entity) { clear_pending_events_for(entity); });
+      *party_ctx_, combatant_bus, rt_.atb_.scheduler());
 
   wiring.freeze_started_ = fl::events::ScopedCombatantListener{
       combatant_bus, std::in_place_type<fl::events::FreezeStarted>,

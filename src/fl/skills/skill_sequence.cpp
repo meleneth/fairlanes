@@ -42,11 +42,9 @@ make_skill_decal(SkillId skill) {
 } // namespace
 
 SkillSequencer::SkillSequencer(fl::context::PartyCtx &party_ctx,
-                               Scheduler &scheduler, FinishTurnFn finish_turn,
-                               ClearPendingFn clear_pending)
+                               Scheduler &scheduler, FinishTurnFn finish_turn)
     : party_ctx_(party_ctx), scheduler_(scheduler),
-      finish_turn_(std::move(finish_turn)),
-      clear_pending_(std::move(clear_pending)) {}
+      finish_turn_(std::move(finish_turn)) {}
 
 void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
                               SkillId skill) {
@@ -140,15 +138,15 @@ void SkillSequencer::schedule_eviscerate(entt::entity attacker,
   auto finish_turn = finish_turn_;
   scheduler_.schedule_smelly_in_beats_for(
       24, attacker, "eviscerate: apply dire bleed and finish",
-      [&party_ctx = party_ctx_, &scheduler = scheduler_,
-       clear_pending = clear_pending_, finish_turn, attacker, target] {
+      [&party_ctx = party_ctx_, &scheduler = scheduler_, finish_turn, attacker,
+       target] {
         fl::skills::Eviscerate eviscerate;
         eviscerate.eviscerate(
             fl::context::AttackCtx::make_attack(party_ctx, attacker, target));
         fl::ecs::components::safe_add_hp_bar_color(party_ctx.reg(), target,
                                                    fl::lospec500::color_at(4));
         fl::ecs::systems::DireBleedSystem::bind_cleanup_and_schedule(
-            party_ctx, scheduler, target, clear_pending);
+            party_ctx, scheduler, target);
         finish_turn(attacker);
       });
 
@@ -406,7 +404,7 @@ void SkillSequencer::schedule_flee(entt::entity attacker, SkillId skill) {
           stats->hp_ = 0;
         }
 
-        encounter->clear_pending_events_for(attacker);
+        encounter->clear_active_turn_for(attacker);
         party_ctx.party_data().encounter_data().combatant_bus(attacker).emit(
             fl::events::CombatantEvent{fl::events::CombatantFled{attacker}});
       });

@@ -3,6 +3,7 @@
 #include <functional>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -37,6 +38,24 @@ public:
   [[nodiscard]] uWu now() const { return now_; }
   [[nodiscard]] std::size_t pending() const { return items_.size(); }
   void clear() { items_.clear(); }
+
+  void clear_smelly_callbacks_for(entt::entity owner) {
+    remove_if([owner](const TimedAction &action) {
+      if (action.valueless_by_exception()) {
+        return false;
+      }
+
+      return std::visit(
+          [owner](const auto &a) {
+            using T = std::decay_t<decltype(a)>;
+            if constexpr (std::is_same_v<T, SmellyCallback>) {
+              return a.owner == owner;
+            }
+            return false;
+          },
+          action);
+    });
+  }
 
   // Remove items matching predicate
   template <typename Predicate> void remove_if(Predicate pred) {
