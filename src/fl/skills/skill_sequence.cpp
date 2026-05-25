@@ -137,10 +137,11 @@ void SkillSequencer::schedule_eviscerate(entt::entity attacker,
   schedule_reek_fade(target, "eviscerate: defender wound", 20, 32, kYellow,
                      kRed);
 
+  auto finish_turn = finish_turn_;
   scheduler_.schedule_smelly_in_beats_for(
-      24, target, "eviscerate: apply dire bleed",
+      24, attacker, "eviscerate: apply dire bleed and finish",
       [&party_ctx = party_ctx_, &scheduler = scheduler_,
-       clear_pending = clear_pending_, attacker, target] {
+       clear_pending = clear_pending_, finish_turn, attacker, target] {
         fl::skills::Eviscerate eviscerate;
         eviscerate.eviscerate(
             fl::context::AttackCtx::make_attack(party_ctx, attacker, target));
@@ -148,12 +149,8 @@ void SkillSequencer::schedule_eviscerate(entt::entity attacker,
                                                    fl::lospec500::color_at(4));
         fl::ecs::systems::DireBleedSystem::bind_cleanup_and_schedule(
             party_ctx, scheduler, target, clear_pending);
+        finish_turn(attacker);
       });
-
-  auto finish_turn = finish_turn_;
-  scheduler_.schedule_smelly_in_beats_for(
-      34, attacker, "eviscerate: finish",
-      [finish_turn, attacker] { finish_turn(attacker); });
 
   TracyPlot("SkillSequencer.PendingEvents",
             static_cast<double>(scheduler_.pending()));
@@ -172,17 +169,15 @@ void SkillSequencer::schedule_poison(entt::entity attacker,
   schedule_reek_fade(target, "poison: defender sickly tint", 20, 32, kGreen,
                      kNormalText);
 
+  auto finish_turn = finish_turn_;
   scheduler_.schedule_smelly_in_beats_for(
-      24, target, "poison: apply", [&party_ctx = party_ctx_, attacker, target] {
+      24, attacker, "poison: apply and finish",
+      [&party_ctx = party_ctx_, finish_turn, attacker, target] {
         party_ctx.party_data().encounter_data().combatant_bus(target).emit(
             fl::events::CombatantEvent{
                 fl::events::PoisonApplied{attacker, target, 1, 9}});
+        finish_turn(attacker);
       });
-
-  auto finish_turn = finish_turn_;
-  scheduler_.schedule_smelly_in_beats_for(
-      34, attacker, "poison: finish",
-      [finish_turn, attacker] { finish_turn(attacker); });
 
   TracyPlot("SkillSequencer.PendingEvents",
             static_cast<double>(scheduler_.pending()));
@@ -199,18 +194,15 @@ void SkillSequencer::schedule_cold_snap(entt::entity attacker,
   schedule_reek_fade(attacker, "cold snap: attacker ice pulse", 8, 18, kIce,
                      kNormalText);
 
+  auto finish_turn = finish_turn_;
   scheduler_.schedule_smelly_in_beats_for(
-      24, target, "cold snap: apply freeze",
-      [&party_ctx = party_ctx_, attacker, target] {
+      24, attacker, "cold snap: apply freeze and finish",
+      [&party_ctx = party_ctx_, finish_turn, attacker, target] {
         party_ctx.party_data().encounter_data().combatant_bus(target).emit(
             fl::events::CombatantEvent{
                 fl::events::FreezeApplied{attacker, target, 9}});
+        finish_turn(attacker);
       });
-
-  auto finish_turn = finish_turn_;
-  scheduler_.schedule_smelly_in_beats_for(
-      34, attacker, "cold snap: finish",
-      [finish_turn, attacker] { finish_turn(attacker); });
 
   TracyPlot("SkillSequencer.PendingEvents",
             static_cast<double>(scheduler_.pending()));

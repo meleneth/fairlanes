@@ -335,6 +335,44 @@ TEST_CASE(
   REQUIRE(stats.hp_ == 90);
 }
 
+TEST_CASE("Dire Bleed releases the active combatant when the effect is applied",
+          "[encounter][skills][bleed][atb]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &encounter = party.create_encounter();
+
+  const auto defender = party.members().front().member_id();
+  encounter.defenders().members().push_back(defender);
+  encounter.add_party_combatant_bus(defender);
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
+
+  auto honey_badger = add_honey_badger(party_ctx, encounter);
+
+  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+  stats.max_hp_ = 100;
+  stats.hp_ = 100;
+
+  encounter.atb_engine().active_combatant() = honey_badger;
+  encounter.atb_out().emit(seerin::AtbOutEvent{seerin::BecameActive{
+      honey_badger,
+  }});
+
+  tick_party(party_ctx, 23);
+  REQUIRE(encounter.atb_engine().active_combatant() == honey_badger);
+  REQUIRE_FALSE(
+      party_ctx.reg().any_of<fl::ecs::components::DireBleed>(defender));
+
+  tick_party(party_ctx, 1);
+  REQUIRE(encounter.atb_engine().active_combatant() == entt::entity{});
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::DireBleed>(defender));
+
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(3));
+  REQUIRE(stats.hp_ == 90);
+}
+
 TEST_CASE("Dire Bleed is removed and pending target work is cleared on death",
           "[encounter][skills][bleed][death]") {
   fl::GrandCentral gc{1, 1, 2};
@@ -503,6 +541,46 @@ TEST_CASE("Poison applies flat damage every three seconds for its duration",
       party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
 }
 
+TEST_CASE("Poison releases the active combatant when the effect is applied",
+          "[encounter][skills][poison][atb]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &encounter = party.create_encounter();
+
+  const auto defender = party.members().front().member_id();
+  encounter.defenders().members().push_back(defender);
+  encounter.add_party_combatant_bus(defender);
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
+
+  auto source = add_honey_badger(party_ctx, encounter);
+  party_ctx.reg().emplace_or_replace<fl::ecs::components::SkillSlots>(
+      source, fl::ecs::components::SkillSlots::with_known(
+                  fl::skills::SkillId::Poison));
+
+  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+  stats.max_hp_ = 100;
+  stats.hp_ = 100;
+
+  encounter.atb_engine().active_combatant() = source;
+  encounter.atb_out().emit(seerin::AtbOutEvent{seerin::BecameActive{
+      source,
+  }});
+
+  tick_party(party_ctx, 23);
+  REQUIRE(encounter.atb_engine().active_combatant() == source);
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Poison>(defender));
+
+  tick_party(party_ctx, 1);
+  REQUIRE(encounter.atb_engine().active_combatant() == entt::entity{});
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Poison>(defender));
+
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(3));
+  REQUIRE(stats.hp_ == 99);
+}
+
 TEST_CASE("Poison is applied by event and clears when combat ends",
           "[encounter][skills][poison][cleanup]") {
   fl::GrandCentral gc{1, 1, 1};
@@ -571,6 +649,46 @@ TEST_CASE("Freeze applies a frozen background and expires after five seconds",
   REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));
   REQUIRE_FALSE(
       party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
+}
+
+TEST_CASE("Cold Snap releases the active combatant when freeze is applied",
+          "[encounter][skills][freeze][atb]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &encounter = party.create_encounter();
+
+  const auto defender = party.members().front().member_id();
+  encounter.defenders().members().push_back(defender);
+  encounter.add_party_combatant_bus(defender);
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
+
+  auto source = add_honey_badger(party_ctx, encounter);
+  party_ctx.reg().emplace_or_replace<fl::ecs::components::SkillSlots>(
+      source, fl::ecs::components::SkillSlots::with_known(
+                  fl::skills::SkillId::ColdSnap));
+
+  encounter.atb_engine().active_combatant() = source;
+  encounter.atb_out().emit(seerin::AtbOutEvent{seerin::BecameActive{
+      source,
+  }});
+
+  tick_party(party_ctx, 23);
+  REQUIRE(encounter.atb_engine().active_combatant() == source);
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));
+
+  tick_party(party_ctx, 1);
+  REQUIRE(encounter.atb_engine().active_combatant() == entt::entity{});
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
+
+  const auto frozen_charge =
+      party_ctx.reg().get<fl::ecs::components::AtbCharge>(defender).charge;
+  tick_party(party_ctx, 2);
+  REQUIRE(
+      party_ctx.reg().get<fl::ecs::components::AtbCharge>(defender).charge ==
+      frozen_charge);
 }
 
 TEST_CASE("Freeze stops ATB accrual until it expires",
