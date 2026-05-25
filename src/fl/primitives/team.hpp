@@ -100,6 +100,28 @@ public:
     return selected;
   }
 
+  template <fl::context::WorldCoreCtx Ctx>
+  std::optional<entt::entity> least_health_member(Ctx &ctx) const {
+    using fl::ecs::components::Stats;
+
+    std::optional<entt::entity> selected;
+    int selected_hp = 0;
+
+    for (auto e : members_) {
+      auto *stats = ctx.reg().template try_get<Stats>(e);
+      if (stats == nullptr) {
+        continue;
+      }
+
+      if (!selected.has_value() || stats->hp_ < selected_hp) {
+        selected = e;
+        selected_hp = stats->hp_;
+      }
+    }
+
+    return selected;
+  }
+
 private:
   std::vector<entt::entity> members_;
 };

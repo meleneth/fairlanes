@@ -116,6 +116,8 @@ public:
     return entt::null;
   }
 
+  entt::entity target_for_skill(entt::entity attacker,
+                                fl::skills::SkillId skill) const;
   fl::skills::SkillId choose_skill(entt::entity attacker);
 
 private:

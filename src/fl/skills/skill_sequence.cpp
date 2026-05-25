@@ -67,6 +67,10 @@ void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
     schedule_flame_wave(attacker);
     return;
   case SkillExecutionKind::DecalStrike:
+    if (skill == SkillId::Mercyburst) {
+      schedule_mercyburst(attacker, target);
+      return;
+    }
     schedule_decal_strike(attacker, target, skill);
     return;
   case SkillExecutionKind::Flee:
@@ -282,6 +286,65 @@ void SkillSequencer::schedule_decal_strike(entt::entity attacker,
   auto finish_turn = finish_turn_;
   scheduler_.schedule_smelly_in_beats_for(
       kAnimationBeats + 1, attacker, fmt::format("{}: finish", name(skill)),
+      [finish_turn, attacker] { finish_turn(attacker); });
+
+  TracyPlot("SkillSequencer.PendingEvents",
+            static_cast<double>(scheduler_.pending()));
+}
+
+void SkillSequencer::schedule_mercyburst(entt::entity attacker,
+                                         entt::entity target) {
+  ZoneScopedN("SkillSequencer::schedule_mercyburst");
+  static constexpr int kAnimationBeats = seerin::BEATS_PER_SEC;
+  static constexpr int kHealAmount = 5;
+
+  teach_party_from_observed_skill(party_ctx_, attacker, SkillId::Mercyburst);
+
+  const auto expires_at = seerin::uWu{
+      scheduler_.now().v + seerin::UWU_PER_BEAT.v * (kAnimationBeats + 1)};
+
+  if (party_ctx_.reg().valid(target)) {
+    auto decal = make_skill_decal(SkillId::Mercyburst);
+    if (decal == nullptr) {
+      return;
+    }
+
+    party_ctx_.reg().emplace_or_replace<fl::ecs::components::FlameWaveDecal>(
+        target,
+        fl::ecs::components::FlameWaveDecal{
+            expires_at, fl::ecs::components::FlameWaveDecal::Clock::now(),
+            std::chrono::seconds{1}, std::move(decal)});
+  }
+
+  scheduler_.schedule_smelly_in_beats_for(
+      kAnimationBeats, target, "Mercyburst: apply healing",
+      [&party_ctx = party_ctx_, attacker, target] {
+        if (!party_ctx.reg().valid(target)) {
+          return;
+        }
+
+        auto *target_stats =
+            party_ctx.reg().try_get<fl::ecs::components::Stats>(target);
+        if (target_stats == nullptr) {
+          return;
+        }
+
+        const int before = target_stats->hp_;
+        target_stats->hp_ =
+            std::min(target_stats->max_hp_, target_stats->hp_ + kHealAmount);
+        const int healed = target_stats->hp_ - before;
+
+        entt::handle attacker_h{party_ctx.reg(), attacker};
+        entt::handle target_h{party_ctx.reg(), target};
+        party_ctx.log().append_markup(fmt::format(
+            "{} used [ability](Mercyburst) on {} for [xp]({}) healing",
+            party_ctx.log().name_tag_for(attacker_h),
+            party_ctx.log().name_tag_for(target_h), healed));
+      });
+
+  auto finish_turn = finish_turn_;
+  scheduler_.schedule_smelly_in_beats_for(
+      kAnimationBeats + 1, attacker, "Mercyburst: finish",
       [finish_turn, attacker] { finish_turn(attacker); });
 
   TracyPlot("SkillSequencer.PendingEvents",

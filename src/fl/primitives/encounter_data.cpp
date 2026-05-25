@@ -9,6 +9,7 @@
 #include "fl/ecs/systems/freeze_system.hpp"
 #include "fl/ecs/systems/poison_system.hpp"
 #include "fl/primitives/member_data.hpp"
+#include "fl/skills/skill_definition.hpp"
 #include "fl/skills/skill_selection.hpp"
 #include "fl/skills/skill_sequence.hpp"
 #include "fl/tracy_shim.hpp"
@@ -23,7 +24,8 @@ void EncounterData::innervate_event_system() {
       [this](const seerin::BecameActive &ev) {
         ZoneScopedN("EncounterData::BecameActive");
         const entt::entity attacker = ev.id;
-        const entt::entity target = target_random_alive_opposition(attacker);
+        const auto skill = choose_skill(attacker);
+        const entt::entity target = target_for_skill(attacker, skill);
 
         if (target == entt::null) {
           party_ctx_->log().append_markup(fmt::format(
@@ -39,7 +41,7 @@ void EncounterData::innervate_event_system() {
             *party_ctx_, rt_.atb_.scheduler(), [this](entt::entity entity) {
               atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{entity}});
             }};
-        sequencer.schedule(attacker, target, choose_skill(attacker));
+        sequencer.schedule(attacker, target, skill);
         TracyPlot("Encounter.PendingEvents",
                   static_cast<double>(rt_.atb_.scheduler().pending()));
       });
@@ -49,6 +51,26 @@ fl::skills::SkillId EncounterData::choose_skill(entt::entity attacker) {
   ZoneScopedN("EncounterData::choose_skill");
   return fl::skills::choose_skill(party_ctx_->reg(), party_ctx_->rng(),
                                   attacker);
+}
+
+entt::entity EncounterData::target_for_skill(entt::entity attacker,
+                                             fl::skills::SkillId skill) const {
+  ZoneScopedN("EncounterData::target_for_skill");
+  if (fl::skills::has_tag(skill, fl::skills::SkillTag::Healing)) {
+    if (topo_.attackers_.contains(attacker)) {
+      return topo_.attackers_.least_health_member(*party_ctx_)
+          .value_or(entt::null);
+    }
+
+    if (topo_.defenders_.contains(attacker)) {
+      return topo_.defenders_.least_health_member(*party_ctx_)
+          .value_or(entt::null);
+    }
+
+    return entt::null;
+  }
+
+  return target_random_alive_opposition(attacker);
 }
 
 void EncounterData::finalize() {

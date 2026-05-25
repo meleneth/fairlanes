@@ -329,6 +329,80 @@ TEST_CASE("SkillSequencer Flame Wave staggers all alive opponents",
   REQUIRE(finished);
 }
 
+TEST_CASE("Mercyburst targets the lowest-health teammate",
+          "[encounter][skills][mercyburst]") {
+  fl::GrandCentral gc{1, 1, 3};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  auto &encounter = builder.thump_it_out();
+
+  auto &reg = party_ctx.reg();
+  const auto enemies = encounter.attackers().members();
+  REQUIRE(enemies.size() >= 2);
+  const entt::entity enemy_attacker = enemies[0];
+  const entt::entity wounded_enemy = enemies[1];
+  reg.get<fl::ecs::components::Stats>(enemy_attacker).hp_ = 8;
+  reg.get<fl::ecs::components::Stats>(wounded_enemy).hp_ = 2;
+
+  REQUIRE(encounter.target_for_skill(enemy_attacker,
+                                     fl::skills::SkillId::Mercyburst) ==
+          wounded_enemy);
+
+  const auto defenders = encounter.defenders().members();
+  REQUIRE(defenders.size() >= 2);
+  const entt::entity defender_attacker = defenders[0];
+  const entt::entity wounded_defender = defenders[1];
+  reg.get<fl::ecs::components::Stats>(defender_attacker).hp_ = 7;
+  reg.get<fl::ecs::components::Stats>(wounded_defender).hp_ = 1;
+
+  REQUIRE(encounter.target_for_skill(defender_attacker,
+                                     fl::skills::SkillId::Mercyburst) ==
+          wounded_defender);
+}
+
+TEST_CASE("SkillSequencer Mercyburst heals and clamps at max HP",
+          "[encounter][skills][mercyburst]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  auto &encounter = builder.thump_it_out();
+
+  const entt::entity attacker = encounter.attackers().members().front();
+  const entt::entity target = encounter.attackers().members().back();
+  auto &reg = party_ctx.reg();
+  auto &stats = reg.get<fl::ecs::components::Stats>(target);
+  stats.max_hp_ = 10;
+  stats.hp_ = 8;
+
+  seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
+  bool finished = false;
+  fl::skills::SkillSequencer sequencer{
+      party_ctx, scheduler,
+      [&](entt::entity entity) { finished = entity == attacker; }};
+
+  sequencer.schedule(attacker, target, fl::skills::SkillId::Mercyburst);
+  REQUIRE(reg.any_of<fl::ecs::components::FlameWaveDecal>(target));
+
+  for (int i = 0; i < seerin::BEATS_PER_SEC; ++i) {
+    scheduler.on_beat();
+    fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
+  }
+
+  REQUIRE(stats.hp_ == stats.max_hp_);
+  REQUIRE_FALSE(finished);
+
+  scheduler.on_beat();
+  fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
+  REQUIRE(finished);
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::FlameWaveDecal>(target));
+}
+
 TEST_CASE("Flee emits combat events and grants no XP on successful flee",
           "[encounter][skills][flee]") {
   fl::GrandCentral gc{1, 1, 1};
