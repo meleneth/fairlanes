@@ -4,12 +4,13 @@
 #include <iterator>
 
 #include "fl/context.hpp"
-#include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/skill_slots.hpp"
+#include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/systems/loot_drop.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/fsm/party_loop_machine.hpp"
 #include "fl/primitives/account_data.hpp"
+#include "fl/skills/skill.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "party_data.hpp"
 #include "sr/beat_bus.hpp"
@@ -105,8 +106,8 @@ void PartyData::watch_skill_learned_this_combat(entt::entity member,
     return;
   }
 
-  pending_learned_skills_.push_back(PendingLearnedSkill{.member = member,
-                                                        .skill = skill});
+  pending_learned_skills_.push_back(
+      PendingLearnedSkill{.member = member, .skill = skill});
   auto it = std::prev(pending_learned_skills_.end());
 
   it->wipe_sub = fl::events::ScopedPartyListener{
@@ -139,9 +140,17 @@ void PartyData::resolve_pending_learned_skill(
     return;
   }
 
-  auto *slots = party_ctx_.reg().try_get<fl::ecs::components::SkillSlots>(member);
+  auto *slots =
+      party_ctx_.reg().try_get<fl::ecs::components::SkillSlots>(member);
   if (slots == nullptr) {
     return;
+  }
+
+  if (auto *stats =
+          party_ctx_.reg().try_get<fl::ecs::components::Stats>(member)) {
+    log_->append_markup(
+        fmt::format("[player_name]({}) couldn't quite figure out [ability]({})",
+                    stats->name_, fl::skills::name(skill)));
   }
 
   slots->unlearn(skill);

@@ -502,7 +502,7 @@ TEST_CASE("Poison applies flat damage every three seconds for its duration",
 
   party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
       fl::events::CombatantEvent{
-          fl::events::PoisonApplied{source, defender, 1, 9}});
+          fl::events::PoisonApplied{source, defender, 1, 27}});
 
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Poison>(defender));
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::StatusTint>(defender));
@@ -514,7 +514,7 @@ TEST_CASE("Poison applies flat damage every three seconds for its duration",
               .damage_per_tick == 1);
   REQUIRE(party_ctx.reg()
               .get<fl::ecs::components::Poison>(defender)
-              .ticks_remaining == 3);
+              .ticks_remaining == 9);
 
   tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
   REQUIRE(party_ctx.reg()
@@ -538,16 +538,16 @@ TEST_CASE("Poison applies flat damage every three seconds for its duration",
           fl::lospec500::color_at(22));
   REQUIRE(party_ctx.reg()
               .get<fl::ecs::components::Poison>(defender)
-              .ticks_remaining == 2);
+              .ticks_remaining == 8);
 
   tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(5));
   REQUIRE(stats.hp_ == 98);
   REQUIRE(party_ctx.reg()
               .get<fl::ecs::components::Poison>(defender)
-              .ticks_remaining == 1);
+              .ticks_remaining == 7);
 
-  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(5));
-  REQUIRE(stats.hp_ == 97);
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(19));
+  REQUIRE(stats.hp_ == 91);
   REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Poison>(defender));
   REQUIRE_FALSE(
       party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
@@ -607,10 +607,13 @@ TEST_CASE("Poison is applied by event and clears when combat ends",
   encounter.add_party_combatant_bus(defender);
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
-  auto source = add_honey_badger(party_ctx, encounter);
+  auto build_ctx = party_ctx.build_context();
+  auto source = fl::primitives::EntityBuilder(build_ctx)
+                    .monster(fl::monster::MonsterKind::HoneyBadger)
+                    .build();
   party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
       fl::events::CombatantEvent{
-          fl::events::PoisonApplied{source, defender, 1, 9}});
+          fl::events::PoisonApplied{source, defender, 1, 27}});
 
   REQUIRE(find_poison_target(party_ctx) == defender);
 
@@ -621,7 +624,7 @@ TEST_CASE("Poison is applied by event and clears when combat ends",
       party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
 }
 
-TEST_CASE("Freeze applies a frozen background and expires after five seconds",
+TEST_CASE("Freeze applies a frozen background and expires after thirty seconds",
           "[encounter][skills][freeze]") {
   fl::GrandCentral gc{1, 1, 1};
 
@@ -635,12 +638,19 @@ TEST_CASE("Freeze applies a frozen background and expires after five seconds",
   encounter.add_party_combatant_bus(defender);
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
-  auto source = add_honey_badger(party_ctx, encounter);
+  auto build_ctx = party_ctx.build_context();
+  auto source = fl::primitives::EntityBuilder(build_ctx)
+                    .monster(fl::monster::MonsterKind::HoneyBadger)
+                    .build();
   party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
       fl::events::CombatantEvent{
-          fl::events::FreezeApplied{source, defender, 9}});
+          fl::events::FreezeApplied{source, defender, 30}});
 
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
+  REQUIRE(party_ctx.reg()
+              .get<fl::ecs::components::Freeze>(defender)
+              .clear_after_beats ==
+          fl::primitives::WorldClock::beats_from_seconds(30));
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::StatusTint>(defender));
   REQUIRE(party_ctx.reg()
               .get<fl::ecs::components::StatusTint>(defender)
@@ -651,7 +661,7 @@ TEST_CASE("Freeze applies a frozen background and expires after five seconds",
               .get<fl::ecs::components::StatusTint>(defender)
               .background_color == fl::lospec500::color_at(16));
 
-  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(4));
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(29));
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
   REQUIRE(party_ctx.reg()
               .get<fl::ecs::components::StatusTint>(defender)
@@ -717,17 +727,26 @@ TEST_CASE("Freeze stops ATB accrual until it expires",
   encounter.add_party_combatant_bus(defender);
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
-  auto source = add_honey_badger(party_ctx, encounter);
+  auto build_ctx = party_ctx.build_context();
+  auto source = fl::primitives::EntityBuilder(build_ctx)
+                    .monster(fl::monster::MonsterKind::HoneyBadger)
+                    .build();
   party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
       fl::events::CombatantEvent{
-          fl::events::FreezeApplied{source, defender, 9}});
+          fl::events::FreezeApplied{source, defender, 30}});
 
   tick_party(party_ctx, 2);
   REQUIRE(
       party_ctx.reg().get<fl::ecs::components::AtbCharge>(defender).charge ==
       0);
 
-  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(5));
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(29));
+  REQUIRE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));
+  REQUIRE(
+      party_ctx.reg().get<fl::ecs::components::AtbCharge>(defender).charge ==
+      0);
+
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
   REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));
 
   tick_party(party_ctx, 1);
@@ -756,13 +775,13 @@ TEST_CASE("Second Freeze application shatters for half max HP",
 
   party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
       fl::events::CombatantEvent{
-          fl::events::FreezeApplied{source, defender, 9}});
+          fl::events::FreezeApplied{source, defender, 30}});
   REQUIRE(stats.hp_ == 100);
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
 
   party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
       fl::events::CombatantEvent{
-          fl::events::FreezeApplied{source, defender, 9}});
+          fl::events::FreezeApplied{source, defender, 30}});
 
   REQUIRE(stats.hp_ == 50);
   REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));
@@ -829,9 +848,12 @@ TEST_CASE("Skills learned this combat are rolled back on party wipe",
     party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id()).hp_ = 0;
   }
 
+  const auto log_size_before_wipe = party.log().size();
+
   party.party_bus().emit(fl::events::PartyEvent{fl::events::PartyWiped{}});
 
   REQUIRE_FALSE(slots.knows(fl::skills::SkillId::Thump));
+  REQUIRE(party.log().size() > log_size_before_wipe);
 }
 
 TEST_CASE("Skills learned this combat persist after successful combat exit",
@@ -948,7 +970,7 @@ TEST_CASE("Poison survives active-turn cleanup for the affected participant",
   stats.hp_ = 100;
 
   encounter.combatant_bus(defender).emit(fl::events::CombatantEvent{
-      fl::events::PoisonApplied{source, defender, 1, 9}});
+      fl::events::PoisonApplied{source, defender, 1, 27}});
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Poison>(defender));
 
   encounter.atb_engine().active_combatant() = defender;
@@ -973,16 +995,19 @@ TEST_CASE("Freeze survives active-turn cleanup for the affected participant",
   encounter.add_party_combatant_bus(defender);
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
-  auto source = add_honey_badger(party_ctx, encounter);
+  auto build_ctx = party_ctx.build_context();
+  auto source = fl::primitives::EntityBuilder(build_ctx)
+                    .monster(fl::monster::MonsterKind::HoneyBadger)
+                    .build();
   encounter.combatant_bus(defender).emit(fl::events::CombatantEvent{
-      fl::events::FreezeApplied{source, defender, 9}});
+      fl::events::FreezeApplied{source, defender, 30}});
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
 
   encounter.atb_engine().active_combatant() = defender;
   encounter.clear_active_turn_for(defender);
   REQUIRE(encounter.atb_engine().active_combatant() == entt::entity{});
 
-  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(5));
+  tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(30));
   REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));
   REQUIRE_FALSE(
       party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
@@ -1024,10 +1049,10 @@ TEST_CASE("Status effects clear on party wipe and scheduled work does not leak",
   tick_party(party_ctx, 24);
   encounter.combatant_bus(poison_target)
       .emit(fl::events::CombatantEvent{
-          fl::events::PoisonApplied{source, poison_target, 1, 9}});
+          fl::events::PoisonApplied{source, poison_target, 1, 27}});
   encounter.combatant_bus(freeze_target)
       .emit(fl::events::CombatantEvent{
-          fl::events::FreezeApplied{source, freeze_target, 9}});
+          fl::events::FreezeApplied{source, freeze_target, 30}});
 
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::DireBleed>(bleed_target));
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Poison>(poison_target));

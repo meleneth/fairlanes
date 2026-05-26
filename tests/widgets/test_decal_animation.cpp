@@ -41,11 +41,10 @@ TEST_CASE(
     "[widgets][effects][decal]") {
   using fl::widgets::effects::DecalAnimationKind;
 
-  constexpr std::array<DecalAnimationKind, 7> kinds{
-      DecalAnimationKind::Shock,       DecalAnimationKind::RocksFall,
-      DecalAnimationKind::PoisonCloud, DecalAnimationKind::HolyNova,
-      DecalAnimationKind::BloodBloom,  DecalAnimationKind::FrostCrack,
-      DecalAnimationKind::VoidRipple};
+  constexpr std::array<DecalAnimationKind, 6> kinds{
+      DecalAnimationKind::Shock,      DecalAnimationKind::RocksFall,
+      DecalAnimationKind::HolyNova,   DecalAnimationKind::BloodBloom,
+      DecalAnimationKind::FrostCrack, DecalAnimationKind::VoidRipple};
 
   for (const auto kind : kinds) {
     CAPTURE(fl::widgets::effects::name(kind));
@@ -61,6 +60,24 @@ TEST_CASE(
     REQUIRE(active_cells(frame) > 0);
     require_lospec500_colors(frame);
   }
+}
+
+TEST_CASE("PoisonCloud decal renders active RGB fog",
+          "[widgets][effects][decal][poison_cloud]") {
+  using fl::widgets::effects::DecalAnimationKind;
+
+  const auto animation = fl::widgets::effects::make_decal_animation(
+      DecalAnimationKind::PoisonCloud, 40, 8);
+
+  REQUIRE(animation != nullptr);
+  REQUIRE(animation->kind() == DecalAnimationKind::PoisonCloud);
+  REQUIRE(animation->name() ==
+          fl::widgets::effects::name(DecalAnimationKind::PoisonCloud));
+
+  const auto frame = animation->render(0.5F);
+  REQUIRE(frame.width == 40);
+  REQUIRE(frame.height == 8);
+  REQUIRE(active_cells(frame) > 0);
 }
 
 TEST_CASE("Decal animation render is scrubbable for an existing object",

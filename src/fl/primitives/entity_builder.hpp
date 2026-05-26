@@ -68,6 +68,7 @@ public:
     }
 
     auto slots = fl::ecs::components::SkillSlots{};
+    slots.unlearn(fl::skills::SkillId::Observe);
     for (const auto skill : it->second.known_skills) {
       if (!slots.learn(skill)) {
         throw std::runtime_error("Monster has invalid known skill list");

@@ -14,6 +14,7 @@
 #include "fancy_log.hpp"
 #include "fl/lospec500.hpp"
 #include "moon_calendar_view.hpp"
+#include "party_battle_screen.hpp"
 #include "party_view.hpp"
 
 namespace fl::widgets {
@@ -37,7 +38,7 @@ RootComponent::RootComponent(fl::context::AccountCtx ctx,
       [this](std::string_view command) { commands_.handle(command); });
   Add(console_overlay_);
 
-  show_account_battle(commands_.account_index());
+  show_party_battle(commands_.account_index(), commands_.party_index());
 }
 
 bool RootComponent::OnEvent(ftxui::Event event) {
@@ -67,6 +68,11 @@ bool RootComponent::OnEvent(ftxui::Event event) {
     return true;
   }
 
+  if (event == ftxui::Event::Character(" ")) {
+    toggle_party_battle_screen();
+    return true;
+  }
+
   if (event == ftxui::Event::Character("/")) {
     toggle_active_screen();
     return true;
@@ -83,22 +89,42 @@ bool RootComponent::OnEvent(ftxui::Event event) {
   }
 
   if (event == ftxui::Event::Character("[")) {
+    const bool stay_on_party_battle =
+        active_screen_kind_ == ActiveScreen::party_battle;
     commands_.select_party_relative(-1);
+    if (stay_on_party_battle) {
+      show_party_battle(commands_.account_index(), commands_.party_index());
+    }
     return true;
   }
 
   if (event == ftxui::Event::Character("]")) {
+    const bool stay_on_party_battle =
+        active_screen_kind_ == ActiveScreen::party_battle;
     commands_.select_party_relative(1);
+    if (stay_on_party_battle) {
+      show_party_battle(commands_.account_index(), commands_.party_index());
+    }
     return true;
   }
 
   if (event == ftxui::Event::Character("{")) {
+    const bool stay_on_party_battle =
+        active_screen_kind_ == ActiveScreen::party_battle;
     commands_.select_account_relative(-1);
+    if (stay_on_party_battle) {
+      show_party_battle(commands_.account_index(), commands_.party_index());
+    }
     return true;
   }
 
   if (event == ftxui::Event::Character("}")) {
+    const bool stay_on_party_battle =
+        active_screen_kind_ == ActiveScreen::party_battle;
     commands_.select_account_relative(1);
+    if (stay_on_party_battle) {
+      show_party_battle(commands_.account_index(), commands_.party_index());
+    }
     return true;
   }
 
@@ -165,6 +191,21 @@ void RootComponent::show_account_battle(std::size_t account_index) {
   Add(active_screen_);
 }
 
+void RootComponent::show_party_battle(std::size_t account_index,
+                                      std::size_t party_index) {
+  ctx_ = make_context(account_index);
+  auto &parties = ctx_.account_data().parties();
+  if (!parties.empty()) {
+    party_index = std::min(party_index, parties.size() - 1);
+  } else {
+    party_index = 0;
+  }
+
+  active_screen_kind_ = ActiveScreen::party_battle;
+  active_screen_ = ftxui::Make<PartyBattleScreen>(ctx_, party_index);
+  Add(active_screen_);
+}
+
 void RootComponent::show_party(std::size_t account_index,
                                std::size_t party_index) {
   ctx_ = make_context(account_index);
@@ -186,7 +227,21 @@ void RootComponent::toggle_active_screen() {
     show_account_battle(commands_.account_index());
     return;
   case ActiveScreen::account_battle:
+  case ActiveScreen::party_battle:
     show_party(commands_.account_index(), commands_.party_index());
+    return;
+  }
+}
+
+void RootComponent::toggle_party_battle_screen() {
+  switch (active_screen_kind_) {
+  case ActiveScreen::account_battle:
+    show_party_battle(commands_.account_index(), commands_.party_index());
+    return;
+  case ActiveScreen::party_battle:
+    show_account_battle(commands_.account_index());
+    return;
+  case ActiveScreen::party:
     return;
   }
 }
@@ -281,6 +336,8 @@ ftxui::Element RootComponent::render_help_hint() const {
       text(" account  ") | muted,
       text("/") | key,
       text(" screen  ") | muted,
+      text("Space") | key,
+      text(" party battle  ") | muted,
       text("h") | key,
       text(" help") | muted,
   });
@@ -327,6 +384,7 @@ ftxui::Element RootComponent::render_keybind_help() const {
     lines.push_back(separator() | chrome);
     lines.push_back(text("Account") | bold | accent);
     lines.push_back(text("/        toggle account / party screen") | chrome);
+    lines.push_back(text("Space    toggle account / party battle") | chrome);
     lines.push_back(text("+ / -    change overdrive level") | chrome);
     lines.push_back(text("[ / ]    switch selected party") | chrome);
     lines.push_back(text("{ / }    switch selected account") | chrome);

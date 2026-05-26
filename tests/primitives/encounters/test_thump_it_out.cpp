@@ -170,7 +170,7 @@ TEST_CASE("EncounterBuilder rare woodland pool includes Fire Drake",
                     fl::monster::MonsterKind::FireDrake) != pool.end());
 }
 
-TEST_CASE("SkillSequencer reek fade resolves DamageFlash and lets it expire",
+TEST_CASE("SkillSequencer thump-like flash uses two red pulses then yellow",
           "[encounter][timing][color]") {
   fl::GrandCentral gc{1, 1, 1};
 
@@ -184,8 +184,8 @@ TEST_CASE("SkillSequencer reek fade resolves DamageFlash and lets it expire",
   const entt::entity target = encounter.defenders().members().front();
   auto &reg = party_ctx.reg();
 
-  const auto from = fl::lospec500::color_at(4);
-  const auto to = fl::lospec500::color_at(32);
+  const auto red = fl::lospec500::color_at(4);
+  const auto yellow = fl::lospec500::color_at(14);
 
   REQUIRE_FALSE(
       reg.any_of<fl::ecs::components::ResolvedColorOverride>(attacker));
@@ -195,27 +195,39 @@ TEST_CASE("SkillSequencer reek fade resolves DamageFlash and lets it expire",
                                        [](entt::entity) {}};
   sequencer.schedule(attacker, target, fl::skills::SkillId::Thump);
 
-  for (int i = 0; i < 10; ++i) {
-    scheduler.on_beat();
-    fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
-  }
+  int current_beat = 0;
+  auto advance_to = [&](int beat) {
+    while (current_beat < beat) {
+      scheduler.on_beat();
+      ++current_beat;
+      fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
+    }
+  };
+
+  advance_to(10);
   REQUIRE(
       reg.get<fl::ecs::components::ResolvedColorOverride>(attacker).color.Print(
-          false) == ftxui::Color::Interpolate(0.0F, from, to).Print(false));
+          false) == red.Print(false));
 
-  for (int i = 0; i < 9; ++i) {
-    scheduler.on_beat();
-    fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
-  }
-  REQUIRE(
-      reg.get<fl::ecs::components::ResolvedColorOverride>(attacker).color.Print(
-          false) == ftxui::Color::Interpolate(0.9F, from, to).Print(false));
-
-  scheduler.on_beat();
-  fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
+  advance_to(14);
   REQUIRE_FALSE(reg.any_of<fl::ecs::components::DamageFlash>(attacker));
   REQUIRE_FALSE(
       reg.any_of<fl::ecs::components::ResolvedColorOverride>(attacker));
+
+  advance_to(18);
+  REQUIRE(
+      reg.get<fl::ecs::components::ResolvedColorOverride>(attacker).color.Print(
+          false) == red.Print(false));
+
+  advance_to(22);
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::DamageFlash>(attacker));
+  REQUIRE(
+      reg.get<fl::ecs::components::ResolvedColorOverride>(target).color.Print(
+          false) == yellow.Print(false));
+
+  advance_to(30);
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::DamageFlash>(target));
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::ResolvedColorOverride>(target));
 }
 
 TEST_CASE("SkillSequencer Flame Strike animates before damage",

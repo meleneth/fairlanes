@@ -13,14 +13,19 @@
 
 namespace fl::widgets::effects {
 namespace {
-using detail::apply_bg_glow;
 using detail::apply_cell;
 using detail::clamp01;
 using detail::clamp_progress;
-using detail::in_bounds;
-using detail::lerp_color;
 using detail::make_frame;
-using detail::palette;
+
+[[nodiscard]] ftxui::Color rgb(int r, int g, int b) {
+  return ftxui::Color::RGB(r, g, b);
+}
+
+[[nodiscard]] ftxui::Color lerp_color(ftxui::Color a, ftxui::Color b, float t) {
+  return ftxui::Color::Interpolate(clamp01(t), a, b);
+}
+
 } // namespace
 
 struct PoisonCloud::Impl {
@@ -86,9 +91,9 @@ Frame PoisonCloud::render(float progress) const {
   }
 
   const float t = clamp_progress(progress);
-  const auto green = palette(19);
-  const auto purple = palette(30);
-  const auto deep = palette(16);
+  const auto green = rgb(64, 170, 84);
+  const auto purple = rgb(122, 66, 156);
+  const auto deep = rgb(26, 58, 38);
 
   for (const auto &blob : impl_->blobs) {
     if (t < blob.start || t > blob.end) {

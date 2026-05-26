@@ -30,17 +30,20 @@ public:
   void set_full_open();
 
   void show_account_battle(std::size_t account_index);
+  void show_party_battle(std::size_t account_index, std::size_t party_index);
   void show_party(std::size_t account_index, std::size_t party_index);
 
 private:
   enum class ActiveScreen {
     party,
     account_battle,
+    party_battle,
   };
 
   ConsoleOverlay *console_overlay();
   fl::context::AccountCtx make_context(std::size_t account_index);
   void toggle_active_screen();
+  void toggle_party_battle_screen();
   void update_fps_counter();
   ftxui::Element render_help_hint() const;
   ftxui::Element render_keybind_help() const;

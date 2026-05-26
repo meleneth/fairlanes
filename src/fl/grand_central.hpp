@@ -21,7 +21,7 @@ namespace fl {
 
 struct GrandCentralRunOptions {
   bool no_ui{false};
-  int overdrive{8};
+  int overdrive{1};
   std::optional<double> cutoff_seconds;
 };
 

@@ -120,7 +120,6 @@ void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
 void SkillSequencer::schedule_thump_like(entt::entity attacker,
                                          entt::entity target, SkillId skill) {
   ZoneScopedN("SkillSequencer::schedule_thump_like");
-  auto const kNormalText = fl::lospec500::color_at(32);
   auto const kRed = fl::lospec500::color_at(4);
   auto const kYellow = fl::lospec500::color_at(14);
 
@@ -130,17 +129,17 @@ void SkillSequencer::schedule_thump_like(entt::entity attacker,
 
   schedule_reek_fade(attacker,
                      fmt::format("{}: attacker red pulse #1", skill_name), 10,
-                     20, kRed, kNormalText);
+                     14, kRed, kRed);
 
   schedule_reek_fade(attacker,
-                     fmt::format("{}: attacker red pulse #2", skill_name), 30,
-                     40, kRed, kNormalText);
+                     fmt::format("{}: attacker red pulse #2", skill_name), 18,
+                     22, kRed, kRed);
 
   schedule_reek_fade(target, fmt::format("{}: defender yellow hit", skill_name),
-                     50, 70, kYellow, kNormalText);
+                     22, 30, kYellow, kYellow);
 
   scheduler_.schedule_smelly_in_beats(
-      60, fmt::format("{}: apply damage", skill_name),
+      26, fmt::format("{}: apply damage", skill_name),
       [&party_ctx = party_ctx_, attacker, target, skill] {
         fl::skills::Thump thump;
         thump.thump(
@@ -150,7 +149,7 @@ void SkillSequencer::schedule_thump_like(entt::entity attacker,
 
   auto finish_turn = finish_turn_;
   scheduler_.schedule_smelly_in_beats(
-      71, fmt::format("{}: finish", skill_name),
+      31, fmt::format("{}: finish", skill_name),
       [finish_turn, attacker] { finish_turn(attacker); });
 
   TracyPlot("SkillSequencer.PendingEvents",
@@ -209,7 +208,7 @@ void SkillSequencer::schedule_poison(entt::entity attacker,
       [&party_ctx = party_ctx_, finish_turn, attacker, target] {
         party_ctx.party_data().encounter_data().combatant_bus(target).emit(
             fl::events::CombatantEvent{
-                fl::events::PoisonApplied{attacker, target, 1, 9}});
+                fl::events::PoisonApplied{attacker, target, 1, 27}});
         finish_turn(attacker);
       });
 
@@ -234,7 +233,7 @@ void SkillSequencer::schedule_cold_snap(entt::entity attacker,
       [&party_ctx = party_ctx_, finish_turn, attacker, target] {
         party_ctx.party_data().encounter_data().combatant_bus(target).emit(
             fl::events::CombatantEvent{
-                fl::events::FreezeApplied{attacker, target, 9}});
+                fl::events::FreezeApplied{attacker, target, 30}});
         finish_turn(attacker);
       });
 

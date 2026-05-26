@@ -5,8 +5,13 @@
 #include <ftxui/screen/screen.hpp>
 
 #include "fl/ecs/components/atb_charge.hpp"
+#include "fl/ecs/components/dire_bleed.hpp"
+#include "fl/ecs/components/freeze.hpp"
+#include "fl/ecs/components/poison.hpp"
+#include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/skills/skill.hpp"
 #include "fl/widgets/combatant.hpp"
 #include "fl/widgets/effects/decal.hpp"
 
@@ -30,6 +35,62 @@ TEST_CASE("Combatant renders ATB from ECS AtbCharge", "[widgets][combatant]") {
   const std::string rendered = screen.ToString();
   REQUIRE(rendered.find("ATB: [") != std::string::npos);
   REQUIRE(rendered.find("160/4800") != std::string::npos);
+}
+
+TEST_CASE("Combatant renders skill slots when allocated at least nine lines",
+          "[widgets][combatant][skills]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto entity = party_ctx.party_data().members().front().member_id();
+
+  auto &slots = party_ctx.reg().get<fl::ecs::components::SkillSlots>(entity);
+  slots.slots[1] = fl::skills::SkillId::Thump;
+
+  fl::widgets::Combatant combatant{party_ctx.reg(), entity, true};
+  auto element = combatant.Render() |
+                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 48) |
+                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 9);
+
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(48),
+                                      ftxui::Dimension::Fixed(9));
+  ftxui::Render(screen, element);
+
+  const std::string rendered = screen.ToString();
+  REQUIRE(rendered.find("Observe") != std::string::npos);
+  REQUIRE(rendered.find("Thump") != std::string::npos);
+  REQUIRE(rendered.find("--") != std::string::npos);
+}
+
+TEST_CASE("Combatant renders debuff labels when allocated enough room",
+          "[widgets][combatant][debuffs]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto entity = party_ctx.party_data().members().front().member_id();
+
+  party_ctx.reg().emplace_or_replace<fl::ecs::components::Poison>(
+      entity, fl::ecs::components::Poison{});
+  party_ctx.reg().emplace_or_replace<fl::ecs::components::DireBleed>(
+      entity, fl::ecs::components::DireBleed{});
+  party_ctx.reg().emplace_or_replace<fl::ecs::components::Freeze>(
+      entity, fl::ecs::components::Freeze{});
+
+  fl::widgets::Combatant combatant{party_ctx.reg(), entity, true};
+  auto element = combatant.Render() |
+                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 56) |
+                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 9);
+
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(56),
+                                      ftxui::Dimension::Fixed(9));
+  ftxui::Render(screen, element);
+
+  const std::string rendered = screen.ToString();
+  REQUIRE(rendered.find("Poison") != std::string::npos);
+  REQUIRE(rendered.find("Dire Bleed") != std::string::npos);
+  REQUIRE(rendered.find("Frozen") != std::string::npos);
 }
 
 TEST_CASE("Combatant flame decal does not change fitted widget dimensions",

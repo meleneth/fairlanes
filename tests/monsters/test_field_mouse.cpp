@@ -58,9 +58,9 @@ TEST_CASE("Woodland skill monsters have their own names and levels",
   const auto squish = fl::primitives::EntityBuilder(context)
                           .monster(fl::monster::MonsterKind::MireSquish)
                           .build();
-        const auto scaredy_cat = fl::primitives::EntityBuilder(context)
-                                                                                                                         .monster(fl::monster::MonsterKind::ScaredyCat)
-                                                                                                                         .build();
+  const auto scaredy_cat = fl::primitives::EntityBuilder(context)
+                               .monster(fl::monster::MonsterKind::ScaredyCat)
+                               .build();
   const auto smack = fl::primitives::EntityBuilder(context)
                          .monster(fl::monster::MonsterKind::BarkSmack)
                          .build();
@@ -126,6 +126,7 @@ TEST_CASE("Monster builder assigns each monster its registered skills",
     const auto &skills =
         party_ctx.reg().get<fl::ecs::components::SkillSlots>(entity);
     REQUIRE(skills.knows(skill));
+    REQUIRE_FALSE(skills.knows(fl::skills::SkillId::Observe));
   };
 
   expect_known_skill(fl::monster::MonsterKind::FieldMouse,
@@ -134,10 +135,10 @@ TEST_CASE("Monster builder assigns each monster its registered skills",
                      fl::skills::SkillId::Eviscerate);
   expect_known_skill(fl::monster::MonsterKind::BumpkinHare,
                      fl::skills::SkillId::Bump);
-        expect_known_skill(fl::monster::MonsterKind::ScaredyCat,
-                                                                                 fl::skills::SkillId::Flee);
-        expect_known_skill(fl::monster::MonsterKind::ScaredyCat,
-                                                                                 fl::skills::SkillId::Thump);
+  expect_known_skill(fl::monster::MonsterKind::ScaredyCat,
+                     fl::skills::SkillId::Flee);
+  expect_known_skill(fl::monster::MonsterKind::ScaredyCat,
+                     fl::skills::SkillId::Thump);
   expect_known_skill(fl::monster::MonsterKind::MireSquish,
                      fl::skills::SkillId::Squish);
   expect_known_skill(fl::monster::MonsterKind::BarkSmack,
@@ -193,6 +194,7 @@ TEST_CASE("Decal attack monsters construct with expected skills and visuals",
     CAPTURE(monster.name);
     REQUIRE(stats.name_ == monster.name);
     REQUIRE(skills.knows(monster.skill));
+    REQUIRE_FALSE(skills.knows(fl::skills::SkillId::Observe));
     REQUIRE(fl::skills::decal_animation_for(monster.skill) ==
             monster.animation);
   }

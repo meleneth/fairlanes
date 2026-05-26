@@ -3,16 +3,23 @@
 #include "fill_bar.hpp"
 
 #include "fl/ecs/components/atb_charge.hpp"
+#include "fl/ecs/components/dire_bleed.hpp"
+#include "fl/ecs/components/freeze.hpp"
 #include "fl/ecs/components/hp_bar_color_override.hpp"
+#include "fl/ecs/components/poison.hpp"
+#include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/lospec500.hpp"
+#include "fl/skills/skill.hpp"
 #include "fl/widgets/effects/decal.hpp"
 
+#include <array>
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/screen.hpp>
@@ -124,6 +131,176 @@ private:
   int prepared_height_ = 0;
 };
 
+constexpr int kSkillRowsVisibleHeight = 9;
+constexpr int kSkillRowsCount = fl::ecs::components::SkillSlots::kSlotCount;
+constexpr int kDebuffRowsVisibleHeight = 9;
+constexpr int kDebuffRowsVisibleWidth = 42;
+
+class SkillRowsNode : public ftxui::Node {
+public:
+  SkillRowsNode(ftxui::Element child,
+                std::array<std::string, kSkillRowsCount> skills)
+      : ftxui::Node(ftxui::Elements{std::move(child)}),
+        skills_(std::move(skills)) {}
+
+  void ComputeRequirement() override {
+    children_[0]->ComputeRequirement();
+    requirement_ = children_[0]->requirement();
+  }
+
+  void SetBox(ftxui::Box box) override {
+    box_ = box;
+    children_[0]->SetBox(box);
+  }
+
+  void Render(ftxui::Screen &screen) override {
+    children_[0]->Render(screen);
+
+    const int width = box_.x_max - box_.x_min + 1;
+    const int height = box_.y_max - box_.y_min + 1;
+    if (width <= 4 || height < kSkillRowsVisibleHeight) {
+      return;
+    }
+
+    const int y_start = box_.y_min + 3;
+    const int x_start = box_.x_min + 2;
+    const int max_width = std::max(0, width - 4);
+    for (int row = 0; row < kSkillRowsCount; ++row) {
+      const int y = y_start + row;
+      if (y < 0 || y >= screen.dimy() || y > box_.y_max - 1) {
+        continue;
+      }
+
+      const auto &line = skills_[static_cast<std::size_t>(row)];
+      const int count = std::min(max_width, static_cast<int>(line.size()));
+      for (int x = 0; x < count; ++x) {
+        const int screen_x = x_start + x;
+        if (screen_x < 0 || screen_x >= screen.dimx() ||
+            screen_x > box_.x_max - 1) {
+          continue;
+        }
+        auto &pixel = screen.PixelAt(screen_x, y);
+        pixel.character = std::string(1, line[static_cast<std::size_t>(x)]);
+        pixel.foreground_color = fl::lospec500::color_at(32);
+      }
+    }
+  }
+
+private:
+  std::array<std::string, kSkillRowsCount> skills_;
+};
+
+std::array<std::string, kSkillRowsCount> skill_rows_for(entt::registry &reg,
+                                                        entt::entity entity) {
+  std::array<std::string, kSkillRowsCount> rows;
+  rows.fill("--");
+
+  const auto *slots = reg.try_get<fl::ecs::components::SkillSlots>(entity);
+  if (slots == nullptr) {
+    return rows;
+  }
+
+  for (std::size_t i = 0; i < rows.size(); ++i) {
+    if (slots->slots[i].has_value()) {
+      rows[i] = std::string(fl::skills::name(*slots->slots[i]));
+    }
+  }
+
+  return rows;
+}
+
+struct DebuffLabel {
+  std::string text;
+  ftxui::Color color;
+};
+
+class DebuffRowsNode : public ftxui::Node {
+public:
+  DebuffRowsNode(ftxui::Element child, std::vector<DebuffLabel> debuffs)
+      : ftxui::Node(ftxui::Elements{std::move(child)}),
+        debuffs_(std::move(debuffs)) {}
+
+  void ComputeRequirement() override {
+    children_[0]->ComputeRequirement();
+    requirement_ = children_[0]->requirement();
+  }
+
+  void SetBox(ftxui::Box box) override {
+    box_ = box;
+    children_[0]->SetBox(box);
+  }
+
+  void Render(ftxui::Screen &screen) override {
+    children_[0]->Render(screen);
+
+    const int width = box_.x_max - box_.x_min + 1;
+    const int height = box_.y_max - box_.y_min + 1;
+    if (debuffs_.empty() || width < kDebuffRowsVisibleWidth ||
+        height < kDebuffRowsVisibleHeight) {
+      return;
+    }
+
+    std::size_t max_label_width = 0;
+    for (const auto &debuff : debuffs_) {
+      max_label_width = std::max(max_label_width, debuff.text.size());
+    }
+
+    const int x_start = std::max(
+        box_.x_min + 2, box_.x_max - static_cast<int>(max_label_width));
+    const int max_width = std::max(0, box_.x_max - x_start);
+    const int y_start = box_.y_min + 3;
+    for (std::size_t row = 0; row < debuffs_.size(); ++row) {
+      const int y = y_start + static_cast<int>(row);
+      if (y < 0 || y >= screen.dimy() || y > box_.y_max - 1) {
+        continue;
+      }
+
+      const auto &debuff = debuffs_[row];
+      const int count =
+          std::min(max_width, static_cast<int>(debuff.text.size()));
+      for (int x = 0; x < count; ++x) {
+        const int screen_x = x_start + x;
+        if (screen_x < 0 || screen_x >= screen.dimx() ||
+            screen_x > box_.x_max - 1) {
+          continue;
+        }
+        auto &pixel = screen.PixelAt(screen_x, y);
+        pixel.character =
+            std::string(1, debuff.text[static_cast<std::size_t>(x)]);
+        pixel.foreground_color = debuff.color;
+      }
+    }
+  }
+
+private:
+  std::vector<DebuffLabel> debuffs_;
+};
+
+std::vector<DebuffLabel> debuff_rows_for(entt::registry &reg,
+                                         entt::entity entity) {
+  std::vector<DebuffLabel> debuffs;
+  if (reg.any_of<fl::ecs::components::Poison>(entity)) {
+    debuffs.push_back(DebuffLabel{"Poison", fl::lospec500::color_at(20)});
+  }
+  if (reg.any_of<fl::ecs::components::DireBleed>(entity)) {
+    debuffs.push_back(DebuffLabel{"Dire Bleed", fl::lospec500::color_at(6)});
+  }
+  if (reg.any_of<fl::ecs::components::Freeze>(entity)) {
+    debuffs.push_back(DebuffLabel{"Frozen", fl::lospec500::color_at(27)});
+  }
+  return debuffs;
+}
+
+ftxui::Element skill_rows(ftxui::Element child,
+                          std::array<std::string, kSkillRowsCount> rows) {
+  return std::make_shared<SkillRowsNode>(std::move(child), std::move(rows));
+}
+
+ftxui::Element debuff_rows(ftxui::Element child,
+                           std::vector<DebuffLabel> debuffs) {
+  return std::make_shared<DebuffRowsNode>(std::move(child), std::move(debuffs));
+}
+
 ftxui::Element
 attack_decal(ftxui::Element child,
              const fl::ecs::components::CombatantDecals &decals) {
@@ -206,6 +383,9 @@ ftxui::Element Combatant::Render() {
   if (auto *bg = reg.try_get<ResolvedBackgroundColorOverride>(entity)) {
     border = border | ftxui::bgcolor(bg->color);
   }
+
+  border = skill_rows(std::move(border), skill_rows_for(reg, entity));
+  border = debuff_rows(std::move(border), debuff_rows_for(reg, entity));
 
   if (auto *decals = reg.try_get<CombatantDecals>(entity)) {
     border = attack_decal(std::move(border), *decals);

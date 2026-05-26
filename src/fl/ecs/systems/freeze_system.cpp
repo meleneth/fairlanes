@@ -17,9 +17,6 @@
 
 namespace fl::ecs::systems {
 namespace {
-constexpr int kFreezeDurationSeconds = 5;
-constexpr int kFreezeDurationBeats =
-    fl::primitives::WorldClock::beats_from_seconds(kFreezeDurationSeconds);
 constexpr std::size_t kFreezeBlue = 16;
 constexpr std::size_t kFreezeFadeStartBlue = 28;
 constexpr int kFreezeFadeInBeats =
@@ -66,7 +63,8 @@ void FreezeSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
     return;
   }
 
-  (void)duration_seconds;
+  const int clear_after_beats = fl::primitives::WorldClock::beats_from_seconds(
+      std::max(1, duration_seconds));
 
   auto *target_stats = reg.try_get<fl::ecs::components::Stats>(target);
   if (target_stats == nullptr || !target_stats->is_alive()) {
@@ -80,7 +78,7 @@ void FreezeSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
 
   auto &freeze = reg.emplace<fl::ecs::components::Freeze>(target);
   freeze.source = source;
-  freeze.clear_after_beats = kFreezeDurationBeats;
+  freeze.clear_after_beats = clear_after_beats;
   freeze.effect = StatusEffectLifetime::create_instance(party_ctx, target);
 
   StatusEffectLifetime lifetime{party_ctx, scheduler, freeze.effect};
@@ -119,7 +117,7 @@ void FreezeSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
         });
   }
 
-  schedule_clear(party_ctx, scheduler, target, kFreezeDurationBeats);
+  schedule_clear(party_ctx, scheduler, target, clear_after_beats);
 }
 
 void FreezeSystem::shatter(fl::context::PartyCtx &party_ctx,
