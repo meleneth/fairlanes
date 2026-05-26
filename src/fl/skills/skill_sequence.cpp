@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <limits>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -26,17 +27,48 @@
 namespace fl::skills {
 namespace {
 
-static constexpr int kCombatantDecalWidth = 80;
-static constexpr int kCombatantDecalHeight = 8;
+static constexpr int kFlameWaveExtraHeight = 2;
+static constexpr int kHitpointNumberExtraHeight = 2;
 
-std::shared_ptr<const fl::widgets::effects::DecalAnimation>
-make_skill_decal(SkillId skill) {
+int decal_extra_height(fl::widgets::effects::DecalAnimationKind kind) {
+  return kind == fl::widgets::effects::DecalAnimationKind::FlameWave
+             ? kFlameWaveExtraHeight
+             : 0;
+}
+
+void add_skill_decal(fl::context::PartyCtx &party_ctx, entt::entity target,
+                     seerin::uWu expires_at, SkillId skill) {
   const auto kind = decal_animation_for(skill);
-  if (!kind.has_value()) {
-    return nullptr;
+  if (!kind.has_value() || !party_ctx.reg().valid(target)) {
+    return;
   }
-  return fl::widgets::effects::make_decal_animation(*kind, kCombatantDecalWidth,
-                                                    kCombatantDecalHeight);
+
+  fl::ecs::components::add_combatant_decal(
+      party_ctx.reg(), target,
+      fl::ecs::components::DecalEffect{
+          expires_at,
+          fl::ecs::components::DecalEffect::Clock::now(),
+          std::chrono::seconds{1},
+          *kind,
+          {},
+          decal_extra_height(*kind)});
+}
+
+void add_hitpoint_number_decal(fl::context::PartyCtx &party_ctx,
+                               entt::entity target, ftxui::Color color,
+                               int hitpoints) {
+  fl::widgets::effects::DecalConfig config;
+  config.color = color;
+  config.hitpoints = hitpoints;
+
+  fl::ecs::components::add_combatant_decal(
+      party_ctx.reg(), target,
+      fl::ecs::components::DecalEffect{
+          seerin::uWu{std::numeric_limits<int64_t>::max()},
+          fl::ecs::components::DecalEffect::Clock::now(),
+          std::chrono::seconds{1},
+          fl::widgets::effects::DecalAnimationKind::HitpointNumber, config,
+          kHitpointNumberExtraHeight});
 }
 
 } // namespace
@@ -220,18 +252,7 @@ void SkillSequencer::schedule_flame_strike(entt::entity attacker,
   const auto expires_at = seerin::uWu{
       scheduler_.now().v + seerin::UWU_PER_BEAT.v * (kAnimationBeats + 1)};
 
-  if (party_ctx_.reg().valid(target)) {
-    auto decal = make_skill_decal(SkillId::FlameStrike);
-    if (decal == nullptr) {
-      return;
-    }
-
-    party_ctx_.reg().emplace_or_replace<fl::ecs::components::FlameWaveDecal>(
-        target,
-        fl::ecs::components::FlameWaveDecal{
-            expires_at, fl::ecs::components::FlameWaveDecal::Clock::now(),
-            std::chrono::seconds{1}, std::move(decal)});
-  }
+  add_skill_decal(party_ctx_, target, expires_at, SkillId::FlameStrike);
 
   scheduler_.schedule_smelly_in_beats_for(
       kAnimationBeats, target, "flame strike: apply damage",
@@ -261,18 +282,7 @@ void SkillSequencer::schedule_decal_strike(entt::entity attacker,
   const auto expires_at = seerin::uWu{
       scheduler_.now().v + seerin::UWU_PER_BEAT.v * (kAnimationBeats + 1)};
 
-  if (party_ctx_.reg().valid(target)) {
-    auto decal = make_skill_decal(skill);
-    if (decal == nullptr) {
-      return;
-    }
-
-    party_ctx_.reg().emplace_or_replace<fl::ecs::components::FlameWaveDecal>(
-        target,
-        fl::ecs::components::FlameWaveDecal{
-            expires_at, fl::ecs::components::FlameWaveDecal::Clock::now(),
-            std::chrono::seconds{1}, std::move(decal)});
-  }
+  add_skill_decal(party_ctx_, target, expires_at, skill);
 
   scheduler_.schedule_smelly_in_beats_for(
       kAnimationBeats, target, fmt::format("{}: apply damage", name(skill)),
@@ -303,18 +313,7 @@ void SkillSequencer::schedule_mercyburst(entt::entity attacker,
   const auto expires_at = seerin::uWu{
       scheduler_.now().v + seerin::UWU_PER_BEAT.v * (kAnimationBeats + 1)};
 
-  if (party_ctx_.reg().valid(target)) {
-    auto decal = make_skill_decal(SkillId::Mercyburst);
-    if (decal == nullptr) {
-      return;
-    }
-
-    party_ctx_.reg().emplace_or_replace<fl::ecs::components::FlameWaveDecal>(
-        target,
-        fl::ecs::components::FlameWaveDecal{
-            expires_at, fl::ecs::components::FlameWaveDecal::Clock::now(),
-            std::chrono::seconds{1}, std::move(decal)});
-  }
+  add_skill_decal(party_ctx_, target, expires_at, SkillId::Mercyburst);
 
   scheduler_.schedule_smelly_in_beats_for(
       kAnimationBeats, target, "Mercyburst: apply healing",
@@ -333,6 +332,8 @@ void SkillSequencer::schedule_mercyburst(entt::entity attacker,
         target_stats->hp_ =
             std::min(target_stats->max_hp_, target_stats->hp_ + kHealAmount);
         const int healed = target_stats->hp_ - before;
+        add_hitpoint_number_decal(party_ctx, target,
+                                  fl::lospec500::color_at(15), healed);
 
         entt::handle attacker_h{party_ctx.reg(), attacker};
         entt::handle target_h{party_ctx.reg(), target};
@@ -383,17 +384,7 @@ void SkillSequencer::schedule_flame_wave(entt::entity attacker) {
             return;
           }
 
-          auto decal = make_skill_decal(SkillId::FlameWave);
-          if (decal == nullptr) {
-            return;
-          }
-
-          party_ctx.reg()
-              .emplace_or_replace<fl::ecs::components::FlameWaveDecal>(
-                  target, fl::ecs::components::FlameWaveDecal{
-                              expires_at,
-                              fl::ecs::components::FlameWaveDecal::Clock::now(),
-                              std::chrono::seconds{1}, std::move(decal)});
+          add_skill_decal(party_ctx, target, expires_at, SkillId::FlameWave);
         });
 
     scheduler_.schedule_smelly_in_beats_for(

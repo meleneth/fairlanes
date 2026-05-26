@@ -35,21 +35,22 @@ TEST_CASE("VisualResolver expires transient visual effects",
   REQUIRE_FALSE(reg.any_of<fl::ecs::components::ResolvedColorOverride>(entity));
 }
 
-TEST_CASE("VisualResolver removes FlameWaveDecal after render duration",
+TEST_CASE("VisualResolver removes CombatantDecals after render duration",
           "[ecs][visuals][flame]") {
   entt::registry reg;
   const auto entity = reg.create();
 
-  reg.emplace<fl::ecs::components::FlameWaveDecal>(
-      entity, fl::ecs::components::FlameWaveDecal{
-                  seerin::uWu{1000},
-                  fl::ecs::components::FlameWaveDecal::Clock::now() -
-                      std::chrono::milliseconds{1000},
-                  std::chrono::milliseconds{1000}});
+  reg.emplace<fl::ecs::components::CombatantDecals>(
+      entity,
+      fl::ecs::components::CombatantDecals{fl::ecs::components::DecalEffect{
+          seerin::uWu{1000},
+          fl::ecs::components::DecalEffect::Clock::now() -
+              std::chrono::milliseconds{1000},
+          std::chrono::milliseconds{1000}}});
 
   fl::ecs::systems::VisualResolver::resolve_entity(reg, entity, seerin::uWu{1});
 
-  REQUIRE_FALSE(reg.any_of<fl::ecs::components::FlameWaveDecal>(entity));
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::CombatantDecals>(entity));
 }
 
 TEST_CASE("VisualResolver gives dead visuals precedence over effects",

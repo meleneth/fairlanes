@@ -84,3 +84,38 @@ TEST_CASE("Decal animation render is scrubbable for an existing object",
     REQUIRE(first.cells[i].bg.has_value() == second.cells[i].bg.has_value());
   }
 }
+
+TEST_CASE("Hitpoint number decal drops a colored value",
+          "[widgets][effects][decal][hitpoints]") {
+  fl::widgets::effects::DecalConfig config;
+  config.color = fl::lospec500::color_at(15);
+  config.hitpoints = 42;
+
+  const auto animation = fl::widgets::effects::make_decal_animation(
+      fl::widgets::effects::DecalAnimationKind::HitpointNumber, 20, 6, config);
+
+  REQUIRE(animation != nullptr);
+  REQUIRE(animation->kind() ==
+          fl::widgets::effects::DecalAnimationKind::HitpointNumber);
+
+  const auto start = animation->render(0.0F);
+  const auto bottom = animation->render(1.0F);
+
+  REQUIRE(start.width == 20);
+  REQUIRE(start.height == 6);
+  REQUIRE(active_cells(start) == 2);
+  REQUIRE(active_cells(bottom) == 2);
+  require_lospec500_colors(start);
+  require_lospec500_colors(bottom);
+
+  bool saw_bottom_number = false;
+  const int landing_row = bottom.height - 2;
+  for (int x = 0; x < bottom.width; ++x) {
+    if (bottom.at(x, landing_row).glyph == '4' ||
+        bottom.at(x, landing_row).glyph == '2') {
+      saw_bottom_number = true;
+    }
+    REQUIRE(bottom.at(x, bottom.height - 1).glyph == ' ');
+  }
+  REQUIRE(saw_bottom_number);
+}

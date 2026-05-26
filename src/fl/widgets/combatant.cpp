@@ -22,10 +22,10 @@ namespace {
 
 class AttackDecalNode : public ftxui::Node {
 public:
-  AttackDecalNode(ftxui::Element child, float progress,
-                  fl::widgets::effects::DecalAnimationKind animation_kind)
-      : ftxui::Node(ftxui::Elements{std::move(child)}), progress_(progress),
-        animation_kind_(animation_kind) {}
+  AttackDecalNode(ftxui::Element child,
+                  std::vector<fl::ecs::components::DecalEffect> effects)
+      : ftxui::Node(ftxui::Elements{std::move(child)}),
+        effects_(std::move(effects)) {}
 
   void ComputeRequirement() override {
     children_[0]->ComputeRequirement();
@@ -37,22 +37,32 @@ public:
     children_[0]->SetBox(box);
 
     const int width = box_.x_max - box_.x_min + 1;
-    const int height = box_.y_max - box_.y_min + 1;
-    if (width <= 0 || height <= 0) {
-      animation_.reset();
+    const int combatant_height = box_.y_max - box_.y_min + 1;
+    if (width <= 0 || combatant_height <= 0) {
+      prepared_.clear();
+      prepared_width_ = 0;
+      prepared_height_ = 0;
       return;
     }
 
-    const int decal_height = height + extra_height();
-    if (animation_ && animation_width_ == width &&
-        animation_height_ == decal_height) {
+    if (prepared_width_ == width && prepared_height_ == combatant_height &&
+        prepared_.size() == effects_.size()) {
       return;
     }
 
-    animation_width_ = width;
-    animation_height_ = decal_height;
-    animation_ = fl::widgets::effects::make_decal_animation(
-        animation_kind_, animation_width_, animation_height_);
+    prepared_width_ = width;
+    prepared_height_ = combatant_height;
+    prepared_.clear();
+    prepared_.reserve(effects_.size());
+
+    for (const auto &effect : effects_) {
+      const int decal_height = combatant_height + effect.extra_height;
+      auto animation = fl::widgets::effects::make_decal_animation(
+          effect.animation_kind, width, decal_height, effect.config);
+      if (animation) {
+        prepared_.push_back(PreparedEffect{effect, std::move(animation)});
+      }
+    }
   }
 
   void Render(ftxui::Screen &screen) override {
@@ -60,71 +70,64 @@ public:
 
     const int width = box_.x_max - box_.x_min + 1;
     const int combatant_height = box_.y_max - box_.y_min + 1;
-    const int decal_height = combatant_height + extra_height();
     if (width <= 0 || combatant_height <= 0) {
       return;
     }
 
-    if (!animation_) {
-      return;
-    }
-
-    auto frame = animation_->render(progress_);
-    const int decal_y_min = box_.y_max - decal_height + 1;
-    for (int y = 0; y < frame.height; ++y) {
-      const int screen_y = decal_y_min + y;
-      if (screen_y < 0 || screen_y >= screen.dimy()) {
-        continue;
-      }
-      for (int x = 0; x < frame.width; ++x) {
-        const int screen_x = box_.x_min + x;
-        if (screen_x < 0 || screen_x >= screen.dimx()) {
+    const auto now = fl::ecs::components::DecalEffect::Clock::now();
+    for (const auto &prepared : prepared_) {
+      auto frame = prepared.animation->render(prepared.effect.progress_at(now));
+      const int decal_y_min = box_.y_max - frame.height + 1;
+      for (int y = 0; y < frame.height; ++y) {
+        const int screen_y = decal_y_min + y;
+        if (screen_y < 0 || screen_y >= screen.dimy()) {
           continue;
         }
+        for (int x = 0; x < frame.width; ++x) {
+          const int screen_x = box_.x_min + x;
+          if (screen_x < 0 || screen_x >= screen.dimx()) {
+            continue;
+          }
 
-        const auto &cell = frame.at(x, y);
-        if (!cell.active()) {
-          continue;
-        }
+          const auto &cell = frame.at(x, y);
+          if (!cell.active()) {
+            continue;
+          }
 
-        auto &pixel = screen.PixelAt(screen_x, screen_y);
-        const bool had_text = pixel.character != " ";
-        if (cell.bg) {
-          pixel.background_color = *cell.bg;
-        }
-        if (cell.fg) {
-          pixel.foreground_color = *cell.fg;
-        }
-        if (cell.glyph != ' ') {
-          pixel.character = std::string(1, cell.glyph);
-        } else if (had_text && cell.bg) {
-          pixel.foreground_color = fl::lospec500::color_at(41);
+          auto &pixel = screen.PixelAt(screen_x, screen_y);
+          const bool had_text = pixel.character != " ";
+          if (cell.bg) {
+            pixel.background_color = *cell.bg;
+          }
+          if (cell.fg) {
+            pixel.foreground_color = *cell.fg;
+          }
+          if (cell.glyph != ' ') {
+            pixel.character = std::string(1, cell.glyph);
+          } else if (had_text && cell.bg) {
+            pixel.foreground_color = fl::lospec500::color_at(41);
+          }
         }
       }
     }
   }
 
 private:
-  [[nodiscard]] int extra_height() const noexcept {
-    return animation_kind_ ==
-                   fl::widgets::effects::DecalAnimationKind::FlameWave
-               ? kFlameWaveExtraHeight
-               : 0;
-  }
+  struct PreparedEffect {
+    fl::ecs::components::DecalEffect effect;
+    std::shared_ptr<const fl::widgets::effects::DecalAnimation> animation;
+  };
 
-  static constexpr int kFlameWaveExtraHeight = 2;
-  float progress_ = 0.0F;
-  fl::widgets::effects::DecalAnimationKind animation_kind_;
-  int animation_width_ = 0;
-  int animation_height_ = 0;
-  std::shared_ptr<const fl::widgets::effects::DecalAnimation> animation_;
+  std::vector<fl::ecs::components::DecalEffect> effects_;
+  std::vector<PreparedEffect> prepared_;
+  int prepared_width_ = 0;
+  int prepared_height_ = 0;
 };
 
 ftxui::Element
-attack_decal(ftxui::Element child, float progress,
-             fl::widgets::effects::DecalAnimationKind animation_kind) {
-  return std::make_shared<AttackDecalNode>(std::move(child), progress,
-                                           animation_kind);
+attack_decal(ftxui::Element child,
+             const fl::ecs::components::CombatantDecals &decals) {
+  return std::make_shared<AttackDecalNode>(std::move(child), decals.effects);
 }
 
 } // namespace
@@ -152,10 +155,10 @@ ftxui::Element Combatant::Render() {
   auto &level = reg.get<TrackXP>(entity);
 
   constexpr int bar_width = 20;
-  const float hp_fill = stats.max_hp_ > 0
-                            ? static_cast<float>(stats.hp_) /
-                                  static_cast<float>(stats.max_hp_)
-                            : 0.0f;
+  const float hp_fill =
+      stats.max_hp_ > 0
+          ? static_cast<float>(stats.hp_) / static_cast<float>(stats.max_hp_)
+          : 0.0f;
   ftxui::Element hp_line = labeled_fill_bar(
       "HP", clamp_fill(hp_fill), bar_width,
       std::to_string(stats.hp_) + "/" + std::to_string(stats.max_hp_));
@@ -204,10 +207,8 @@ ftxui::Element Combatant::Render() {
     border = border | ftxui::bgcolor(bg->color);
   }
 
-  if (auto *flame = reg.try_get<FlameWaveDecal>(entity)) {
-    border = attack_decal(std::move(border),
-                          flame->progress_at(FlameWaveDecal::Clock::now()),
-                          flame->animation_kind);
+  if (auto *decals = reg.try_get<CombatantDecals>(entity)) {
+    border = attack_decal(std::move(border), *decals);
   }
 
   // <-- key: allow the whole Combatant box to flex horizontally

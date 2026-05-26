@@ -241,9 +241,10 @@ TEST_CASE("SkillSequencer Flame Strike animates before damage",
   sequencer.schedule(attacker, target, fl::skills::SkillId::FlameStrike);
   const auto log_size_after_schedule = party_ctx.log().size();
 
-  REQUIRE(reg.any_of<fl::ecs::components::FlameWaveDecal>(target));
-  REQUIRE(reg.get<fl::ecs::components::FlameWaveDecal>(target).duration ==
-          std::chrono::milliseconds{1000});
+  REQUIRE(reg.any_of<fl::ecs::components::CombatantDecals>(target));
+  REQUIRE(reg.get<fl::ecs::components::CombatantDecals>(target)
+              .effects.front()
+              .duration == std::chrono::milliseconds{1000});
 
   for (int i = 0; i < seerin::BEATS_PER_SEC - 1; ++i) {
     scheduler.on_beat();
@@ -251,21 +252,20 @@ TEST_CASE("SkillSequencer Flame Strike animates before damage",
   }
 
   REQUIRE(party_ctx.log().size() == log_size_after_schedule);
-  REQUIRE(reg.any_of<fl::ecs::components::FlameWaveDecal>(target));
+  REQUIRE(reg.any_of<fl::ecs::components::CombatantDecals>(target));
   REQUIRE_FALSE(finished);
 
   scheduler.on_beat();
   fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
 
   REQUIRE(party_ctx.log().size() > log_size_after_schedule);
-  REQUIRE(reg.any_of<fl::ecs::components::FlameWaveDecal>(target));
+  REQUIRE(reg.any_of<fl::ecs::components::CombatantDecals>(target));
   REQUIRE_FALSE(finished);
 
   scheduler.on_beat();
   fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
 
   REQUIRE(finished);
-  REQUIRE_FALSE(reg.any_of<fl::ecs::components::FlameWaveDecal>(target));
 }
 
 TEST_CASE("SkillSequencer Flame Wave staggers all alive opponents",
@@ -294,22 +294,22 @@ TEST_CASE("SkillSequencer Flame Wave staggers all alive opponents",
 
   scheduler.on_beat();
   fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
-  REQUIRE(reg.any_of<fl::ecs::components::FlameWaveDecal>(targets[0]));
-  REQUIRE_FALSE(reg.any_of<fl::ecs::components::FlameWaveDecal>(targets[1]));
-  REQUIRE_FALSE(reg.any_of<fl::ecs::components::FlameWaveDecal>(targets[2]));
+  REQUIRE(reg.any_of<fl::ecs::components::CombatantDecals>(targets[0]));
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::CombatantDecals>(targets[1]));
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::CombatantDecals>(targets[2]));
 
   for (int i = 0; i < 2; ++i) {
     scheduler.on_beat();
     fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
   }
-  REQUIRE(reg.any_of<fl::ecs::components::FlameWaveDecal>(targets[1]));
-  REQUIRE_FALSE(reg.any_of<fl::ecs::components::FlameWaveDecal>(targets[2]));
+  REQUIRE(reg.any_of<fl::ecs::components::CombatantDecals>(targets[1]));
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::CombatantDecals>(targets[2]));
 
   for (int i = 0; i < 3; ++i) {
     scheduler.on_beat();
     fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
   }
-  REQUIRE(reg.any_of<fl::ecs::components::FlameWaveDecal>(targets[2]));
+  REQUIRE(reg.any_of<fl::ecs::components::CombatantDecals>(targets[2]));
 
   for (int i = 0; i < 5; ++i) {
     scheduler.on_beat();
@@ -387,7 +387,7 @@ TEST_CASE("SkillSequencer Mercyburst heals and clamps at max HP",
       [&](entt::entity entity) { finished = entity == attacker; }};
 
   sequencer.schedule(attacker, target, fl::skills::SkillId::Mercyburst);
-  REQUIRE(reg.any_of<fl::ecs::components::FlameWaveDecal>(target));
+  REQUIRE(reg.any_of<fl::ecs::components::CombatantDecals>(target));
 
   for (int i = 0; i < seerin::BEATS_PER_SEC; ++i) {
     scheduler.on_beat();
@@ -400,7 +400,7 @@ TEST_CASE("SkillSequencer Mercyburst heals and clamps at max HP",
   scheduler.on_beat();
   fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
   REQUIRE(finished);
-  REQUIRE_FALSE(reg.any_of<fl::ecs::components::FlameWaveDecal>(target));
+  REQUIRE(reg.any_of<fl::ecs::components::CombatantDecals>(target));
 }
 
 TEST_CASE("Flee emits combat events and grants no XP on successful flee",

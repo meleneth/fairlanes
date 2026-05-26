@@ -5,6 +5,7 @@
 #include "fl/widgets/effects/blood_bloom.hpp"
 #include "fl/widgets/effects/flame_wave_animation.hpp"
 #include "fl/widgets/effects/frost_crack.hpp"
+#include "fl/widgets/effects/hitpoint_number.hpp"
 #include "fl/widgets/effects/holy_nova.hpp"
 #include "fl/widgets/effects/poison_cloud.hpp"
 #include "fl/widgets/effects/rocks_fall.hpp"
@@ -33,6 +34,10 @@ make_decal_animation(DecalAnimationKind kind, int width, int height,
     return std::make_shared<FrostCrack>(width, height, config);
   case DecalAnimationKind::VoidRipple:
     return std::make_shared<VoidRipple>(width, height, config);
+  case DecalAnimationKind::HitpointNumber:
+    return std::make_shared<HitpointNumber>(
+        width, height, config.color.value_or(ftxui::Color::White),
+        config.hitpoints, config);
   }
 
   return std::make_shared<FlameWaveAnimation>(width, height, config);

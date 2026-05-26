@@ -134,7 +134,8 @@ void PoisonSystem::schedule_tick(fl::context::PartyCtx &party_ctx,
             party_ctx.log().name_tag_for(entt::handle{reg, poison->source}),
             party_ctx.log().name_tag_for(entt::handle{reg, target}),
             poison->damage_per_tick));
-        fl::ecs::systems::TakeDamage::commit(attack_ctx);
+        fl::ecs::systems::TakeDamage::commit(
+            attack_ctx, fl::lospec500::color_at(kPoisonDimGreen));
 
         if (reg.valid(target)) {
           if (auto *remaining =

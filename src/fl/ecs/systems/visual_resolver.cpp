@@ -4,6 +4,7 @@
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/lospec500.hpp"
 
+#include <algorithm>
 #include <vector>
 
 namespace fl::ecs::systems {
@@ -25,20 +26,26 @@ void clear_expired(entt::registry &reg, seerin::uWu now) {
   }
 }
 
-void clear_finished_flame_waves(
+void clear_finished_decals(
     entt::registry &reg,
-    fl::ecs::components::FlameWaveDecal::Clock::time_point now) {
-  std::vector<entt::entity> finished;
-  auto view = reg.view<fl::ecs::components::FlameWaveDecal>();
+    fl::ecs::components::DecalEffect::Clock::time_point now,
+    seerin::uWu beat_now) {
+  std::vector<entt::entity> empty;
+  auto view = reg.view<fl::ecs::components::CombatantDecals>();
   for (auto entity : view) {
-    const auto &effect = view.get<fl::ecs::components::FlameWaveDecal>(entity);
-    if (effect.progress_at(now) >= 1.0F) {
-      finished.push_back(entity);
+    auto &decals = view.get<fl::ecs::components::CombatantDecals>(entity);
+    std::erase_if(decals.effects, [&](const auto &effect) {
+      return effect.expires_at.v <= beat_now.v ||
+             effect.progress_at(now) >= 1.0F;
+    });
+
+    if (decals.effects.empty()) {
+      empty.push_back(entity);
     }
   }
 
-  for (auto entity : finished) {
-    reg.remove<fl::ecs::components::FlameWaveDecal>(entity);
+  for (auto entity : empty) {
+    reg.remove<fl::ecs::components::CombatantDecals>(entity);
   }
 }
 
@@ -51,9 +58,8 @@ bool is_dead(entt::registry &reg, entt::entity entity) {
 
 void VisualResolver::resolve(entt::registry &reg, seerin::uWu now) {
   clear_expired<fl::ecs::components::DamageFlash>(reg, now);
-  clear_expired<fl::ecs::components::FlameWaveDecal>(reg, now);
-  clear_finished_flame_waves(reg,
-                             fl::ecs::components::FlameWaveDecal::Clock::now());
+  clear_finished_decals(reg, fl::ecs::components::DecalEffect::Clock::now(),
+                        now);
   clear_expired<fl::ecs::components::ActiveGlow>(reg, now);
 
   reg.clear<fl::ecs::components::ResolvedColorOverride>();
@@ -98,10 +104,15 @@ void VisualResolver::resolve_entity(entt::registry &reg, entt::entity entity,
     reg.remove<ActiveGlow>(entity);
   }
 
-  if (auto *flame = reg.try_get<FlameWaveDecal>(entity);
-      flame != nullptr &&
-      flame->progress_at(FlameWaveDecal::Clock::now()) >= 1.0F) {
-    reg.remove<FlameWaveDecal>(entity);
+  if (auto *decals = reg.try_get<CombatantDecals>(entity); decals != nullptr) {
+    const auto now_time = DecalEffect::Clock::now();
+    std::erase_if(decals->effects, [&](const auto &effect) {
+      return effect.expires_at.v <= now.v ||
+             effect.progress_at(now_time) >= 1.0F;
+    });
+    if (decals->effects.empty()) {
+      reg.remove<CombatantDecals>(entity);
+    }
   }
 
   reg.remove<ResolvedColorOverride>(entity);

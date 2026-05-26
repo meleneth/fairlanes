@@ -2,7 +2,10 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string_view>
+
+#include <ftxui/screen/color.hpp>
 
 #include "fl/widgets/effects/flame_wave.hpp"
 
@@ -17,6 +20,7 @@ enum class DecalAnimationKind {
   BloodBloom,
   FrostCrack,
   VoidRipple,
+  HitpointNumber,
 };
 
 struct DecalConfig {
@@ -24,6 +28,8 @@ struct DecalConfig {
   bool use_background_glow = true;
   bool use_foreground_sparks = true;
   std::uint32_t seed = 0xA17CE5EDu;
+  std::optional<ftxui::Color> color;
+  int hitpoints = 0;
 };
 
 class DecalAnimation {
@@ -59,6 +65,8 @@ name(DecalAnimationKind kind) noexcept {
     return "FrostCrack";
   case DecalAnimationKind::VoidRipple:
     return "VoidRipple";
+  case DecalAnimationKind::HitpointNumber:
+    return "HitpointNumber";
   }
 
   return "Unknown";

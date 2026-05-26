@@ -194,9 +194,8 @@ std::string combatant_debug_line(entt::registry &reg, std::string_view role,
   if (reg.any_of<c::ActiveGlow>(entity)) {
     statuses.emplace_back("active-glow");
   }
-  if (auto *flame = reg.try_get<c::FlameWaveDecal>(entity)) {
-    statuses.emplace_back("flame-wave expires=" +
-                          std::to_string(flame->expires_at.v));
+  if (auto *decals = reg.try_get<c::CombatantDecals>(entity)) {
+    statuses.emplace_back("decals=" + std::to_string(decals->effects.size()));
   }
 
   line += " statuses=";

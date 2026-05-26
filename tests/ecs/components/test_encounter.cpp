@@ -528,6 +528,14 @@ TEST_CASE("Poison applies flat damage every three seconds for its duration",
 
   tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
   REQUIRE(stats.hp_ == 99);
+  REQUIRE(
+      party_ctx.reg().any_of<fl::ecs::components::CombatantDecals>(defender));
+  const auto &poison_tick_decals =
+      party_ctx.reg().get<fl::ecs::components::CombatantDecals>(defender);
+  REQUIRE(poison_tick_decals.effects.back().animation_kind ==
+          fl::widgets::effects::DecalAnimationKind::HitpointNumber);
+  REQUIRE(poison_tick_decals.effects.back().config.color ==
+          fl::lospec500::color_at(22));
   REQUIRE(party_ctx.reg()
               .get<fl::ecs::components::Poison>(defender)
               .ticks_remaining == 2);
