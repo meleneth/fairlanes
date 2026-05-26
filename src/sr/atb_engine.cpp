@@ -125,6 +125,10 @@ void AtbEngine::on_beat(const Beat &) {
     return;
   }
 
+  if (active_combatant_ != entt::entity{}) {
+    return;
+  }
+
   // Tick all combatants that are allowed to charge.
   std::vector<entt::entity> remove_ids;
   for (auto &[id, c] : combatants_) {

@@ -70,6 +70,29 @@ TEST_CASE("ATB: BecameReady enqueues; Beat pumps to BecameActive; FinishedTurn "
   REQUIRE(trace[3].rfind("active:", 0) == 0);
 }
 
+TEST_CASE("ATB: active combatant pauses charge accrual but not scheduler work",
+          "[atb][timing]") {
+  entt::registry reg;
+  seerin::AtbEngine atb{reg};
+
+  auto waiting = reg.create();
+  auto active = reg.create();
+  atb.in().emit(seerin::AtbInEvent{seerin::AddCombatant{active}});
+  atb.in().emit(seerin::AtbInEvent{seerin::AddCombatant{waiting}});
+
+  atb.active_combatant() = active;
+  atb.scheduler().schedule_smelly_in_beats(
+      2, "test: scheduler advances while active", [&] {
+        reg.get<fl::ecs::components::AtbCharge>(active).max_charge = 1234;
+      });
+
+  emit_beats(atb.in(), 3);
+
+  REQUIRE(reg.get<fl::ecs::components::AtbCharge>(active).charge == 0);
+  REQUIRE(reg.get<fl::ecs::components::AtbCharge>(waiting).charge == 0);
+  REQUIRE(reg.get<fl::ecs::components::AtbCharge>(active).max_charge == 1234);
+}
+
 TEST_CASE(
     "ATB: dead combatants reset charge and do not accumulate until alive") {
   entt::registry reg;
@@ -129,13 +152,11 @@ TEST_CASE("ATB: frozen ready combatants leave and re-enter the ready queue",
 
   auto id = reg.create();
   auto sentinel = reg.create();
-  atb.active_combatant() = sentinel;
   atb.in().emit(seerin::AtbInEvent{seerin::AddCombatant{id}});
 
-  emit_beats(atb.in(), 60);
-  REQUIRE(reg.get<fl::ecs::components::AtbCharge>(id).charge == 4800);
-  REQUIRE(std::find(atb.ready_queue().begin(), atb.ready_queue().end(), id) !=
-          atb.ready_queue().end());
+  atb.ready_queue().push_back(id);
+  reg.get<fl::ecs::components::AtbCharge>(id).charge = 4800;
+  atb.active_combatant() = sentinel;
 
   atb.in().emit(seerin::AtbInEvent{seerin::Frozen{id}});
   REQUIRE(std::find(atb.ready_queue().begin(), atb.ready_queue().end(), id) ==

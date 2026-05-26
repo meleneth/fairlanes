@@ -6,11 +6,11 @@
 #include <optional>
 #include <string>
 
+#include "fl/tracy_shim.hpp"
 #include <entt/entt.hpp>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>
-#include "fl/tracy_shim.hpp"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
@@ -206,7 +206,7 @@ void GrandCentral::_create_initial_accounts() {
 
         reg_.emplace<fl::ecs::components::PartyMember>(
             member.member_id(), std::move(ectx2), member.name(),
-          party_data.party_id(), member);
+            party_data.party_id(), member);
         reg_.emplace<fl::ecs::components::SkillSlots>(member.member_id());
 
         ++player_index;
@@ -360,7 +360,7 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
       ZoneScopedN("RenderTickerPost");
       screen.PostEvent(ftxui::Event::Custom);
       FrameMark;
-      std::this_thread::sleep_for(16ms);
+      std::this_thread::sleep_for(33ms);
     }
   });
 
