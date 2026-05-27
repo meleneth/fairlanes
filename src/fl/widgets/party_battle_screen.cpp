@@ -1,6 +1,7 @@
 #include "party_battle_screen.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <string>
 #include <utility>
 #include <vector>
@@ -15,6 +16,7 @@
 #include "fl/primitives/party_data.hpp"
 #include "fl/widgets/combatant.hpp"
 #include "fl/widgets/party_status.hpp"
+#include "fl/widgets/textures/forest_background.hpp"
 
 namespace fl::widgets {
 namespace {
@@ -96,6 +98,18 @@ ftxui::Element labeled_separator(std::string label, int width) {
   const int fill = std::max(0, width - static_cast<int>(marker.size()));
   return text(marker + std::string(static_cast<std::size_t>(fill), '-')) |
          size(WIDTH, EQUAL, width);
+}
+
+std::uint32_t forest_seed_for_party(const std::string &party_name,
+                                    std::size_t party_index) {
+  std::uint32_t seed = 0x46A7B055u ^ static_cast<std::uint32_t>(
+                                         (party_index + 1U) * 0x9E3779B9u);
+  for (unsigned char ch : party_name) {
+    seed ^= static_cast<std::uint32_t>(ch);
+    seed *= 0x85EBCA6Bu;
+    seed ^= seed >> 13;
+  }
+  return seed;
 }
 
 std::vector<entt::entity>
@@ -199,14 +213,9 @@ ftxui::Element PartyBattleScreen::Render() {
   }
 
   const auto layout = current_layout(show_status);
+  const auto forest_seed = forest_seed_for_party(party_name, party_index_);
 
-  std::vector<Element> rows;
-  rows.reserve(show_status ? 6 : 5);
-  if (show_status) {
-    rows.push_back(status | size(WIDTH, EQUAL, layout.screen_width) |
-                   size(HEIGHT, EQUAL, layout.status_height));
-  }
-  rows.push_back(
+  auto attacker_stage =
       hbox({
           filler() | size(WIDTH, EQUAL, layout.stage_padding_width),
           render_combatant_grid(attackers, layout.combatant_cell_width,
@@ -216,11 +225,8 @@ ftxui::Element PartyBattleScreen::Render() {
           filler() | size(WIDTH, EQUAL, layout.stage_padding_width),
       }) |
       size(WIDTH, EQUAL, layout.screen_width) |
-      size(HEIGHT, EQUAL, layout.combatant_grid_height));
-  rows.push_back(labeled_separator(party_name, layout.screen_width) |
-                 size(HEIGHT, EQUAL, layout.separator_height) |
-                 fl::lospec500::on_not_black(fl::lospec500::color_at(32)));
-  rows.push_back(
+      size(HEIGHT, EQUAL, layout.combatant_grid_height);
+  auto defender_stage =
       hbox({
           filler() | size(WIDTH, EQUAL, layout.stage_padding_width),
           render_combatant_grid(defenders, layout.combatant_cell_width,
@@ -230,7 +236,23 @@ ftxui::Element PartyBattleScreen::Render() {
           filler() | size(WIDTH, EQUAL, layout.stage_padding_width),
       }) |
       size(WIDTH, EQUAL, layout.screen_width) |
-      size(HEIGHT, EQUAL, layout.combatant_grid_height));
+      size(HEIGHT, EQUAL, layout.combatant_grid_height);
+
+  std::vector<Element> rows;
+  rows.reserve(show_status ? 6 : 5);
+  if (show_status) {
+    rows.push_back(status | size(WIDTH, EQUAL, layout.screen_width) |
+                   size(HEIGHT, EQUAL, layout.status_height));
+  }
+  rows.push_back(
+      textures::ForestPanel(std::move(attacker_stage), layout.screen_width,
+                            layout.combatant_grid_height, forest_seed));
+  rows.push_back(labeled_separator(party_name, layout.screen_width) |
+                 size(HEIGHT, EQUAL, layout.separator_height) |
+                 fl::lospec500::on_not_black(fl::lospec500::color_at(32)));
+  rows.push_back(textures::ForestPanel(
+      std::move(defender_stage), layout.screen_width,
+      layout.combatant_grid_height, forest_seed ^ 0xA53C9E2Bu));
   rows.push_back(separator() | size(WIDTH, EQUAL, layout.screen_width) |
                  size(HEIGHT, EQUAL, layout.separator_height) |
                  fl::lospec500::on_not_black(fl::lospec500::color_at(32)));
@@ -249,7 +271,8 @@ ftxui::Element PartyBattleScreen::render_combatant_cell(entt::entity entity,
 
   Element content = filler();
   if (entity != entt::null && ctx_.reg().valid(entity)) {
-    content = Combatant{ctx_.reg(), entity, true}.Render();
+    content = Combatant{ctx_.reg(), entity, true}.Render() |
+              bgcolor(fl::lospec500::color_at(0)) | clear_under;
   }
 
   return content | size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height);
