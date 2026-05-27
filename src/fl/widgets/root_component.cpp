@@ -11,7 +11,6 @@
 
 #include "account_battle_view.hpp"
 #include "console_overlay.hpp"
-#include "fancy_log.hpp"
 #include "fl/lospec500.hpp"
 #include "moon_calendar_view.hpp"
 #include "party_battle_screen.hpp"

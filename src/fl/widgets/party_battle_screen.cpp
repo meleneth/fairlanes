@@ -5,7 +5,7 @@
 #include <utility>
 #include <vector>
 
-#include <ftxui/component/component.hpp>
+#include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/terminal.hpp>
 

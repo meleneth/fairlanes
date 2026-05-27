@@ -6,7 +6,6 @@
 #include "fl/ecs/components/atb_charge.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"
 #include "fl/ecs/components/freeze.hpp"
-#include "fl/ecs/components/hp_bar_color_override.hpp"
 #include "fl/ecs/components/monster_identity.hpp"
 #include "fl/ecs/components/poison.hpp"
 #include "fl/ecs/components/skill_slots.hpp"

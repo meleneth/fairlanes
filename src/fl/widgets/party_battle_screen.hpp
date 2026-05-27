@@ -3,9 +3,8 @@
 #include <cstddef>
 #include <vector>
 
-#include <entt/entt.hpp>
+#include <entt/entity/fwd.hpp>
 #include <ftxui/component/component_base.hpp>
-#include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
 
 #include "fl/context.hpp"

@@ -292,6 +292,38 @@ else()
   )
 endif()
 
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+find_program(IWYU_EXECUTABLE NAMES include-what-you-use iwyu)
+set(FAIRLANES_IWYU_ONLY_REGEX "" CACHE STRING "Only run IWYU for source paths matching this regex")
+set(FAIRLANES_IWYU_EXCLUDE_REGEX "src/fl/skills/thump\\.cpp" CACHE STRING "Skip IWYU for source paths matching this regex")
+
+if(IWYU_EXECUTABLE)
+  set(FAIRLANES_IWYU_ARGS
+      --compile-commands ${CMAKE_BINARY_DIR}/compile_commands.json
+      --iwyu ${IWYU_EXECUTABLE}
+      --root ${CMAKE_SOURCE_DIR}
+      --timeout 90
+  )
+  if(FAIRLANES_IWYU_ONLY_REGEX)
+    list(APPEND FAIRLANES_IWYU_ARGS --only-regex ${FAIRLANES_IWYU_ONLY_REGEX})
+  endif()
+  if(FAIRLANES_IWYU_EXCLUDE_REGEX)
+    list(APPEND FAIRLANES_IWYU_ARGS --exclude-regex ${FAIRLANES_IWYU_EXCLUDE_REGEX})
+  endif()
+
+  add_custom_target(include-what-you-use
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cmake/run_iwyu.py
+            ${FAIRLANES_IWYU_ARGS}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running include-what-you-use over Fairlanes sources"
+  )
+else()
+  add_custom_target(include-what-you-use
+    COMMAND ${CMAKE_COMMAND} -E echo "include-what-you-use not found"
+    COMMAND ${CMAKE_COMMAND} -E false
+  )
+endif()
+
 find_program(GCOVR_EXECUTABLE gcovr)
 
 if(GCOVR_EXECUTABLE)
