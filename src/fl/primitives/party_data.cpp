@@ -5,7 +5,6 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/party_member.hpp"
-#include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/systems/loot_drop.hpp"
 #include "fl/events/party_bus.hpp"
@@ -141,12 +140,11 @@ void PartyData::resolve_pending_learned_skill(
     return;
   }
 
-  auto *slots =
-      party_ctx_.reg().try_get<fl::ecs::components::SkillSlots>(member);
   auto *party_member =
       party_ctx_.reg().try_get<fl::ecs::components::PartyMember>(member);
   if (party_member != nullptr) {
     party_member->member_data().grimoire().unlearn(skill);
+    party_member->closet().unequip_skill(skill);
   }
 
   if (auto *stats =
@@ -154,10 +152,6 @@ void PartyData::resolve_pending_learned_skill(
     log_->append_markup(
         fmt::format("[player_name]({}) couldn't quite figure out [ability]({})",
                     stats->name_, fl::skills::name(skill)));
-  }
-
-  if (slots != nullptr) {
-    slots->unlearn(skill);
   }
 }
 

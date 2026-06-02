@@ -5,7 +5,6 @@
 #include <type_traits>
 
 #include "fl/ecs/components/party_member.hpp"
-#include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/random_hub.hpp"
@@ -21,13 +20,10 @@ bool learn_observed_skill_with_roll(fl::context::PartyCtx &party_ctx,
   }
 
   auto &reg = party_ctx.reg();
-  auto *slots = reg.try_get<fl::ecs::components::SkillSlots>(observer);
   auto *stats = reg.try_get<fl::ecs::components::Stats>(observer);
   auto *party_member = reg.try_get<fl::ecs::components::PartyMember>(observer);
-  if (slots == nullptr || stats == nullptr || party_member == nullptr ||
-      !stats->is_alive() ||
-      party_member->member_data().grimoire().knows(skill) ||
-      !slots->has_open_slot()) {
+  if (stats == nullptr || party_member == nullptr || !stats->is_alive() ||
+      party_member->member_data().grimoire().knows(skill)) {
     return false;
   }
 
@@ -40,8 +36,8 @@ bool learn_observed_skill_with_roll(fl::context::PartyCtx &party_ctx,
     return false;
   }
 
-  if (!slots->knows(skill)) {
-    (void)slots->learn(skill);
+  if (party_member->closet().has_open_skill_slot()) {
+    (void)party_member->closet().equip_skill(skill);
   }
 
   party_ctx.party_data().watch_skill_learned_this_combat(observer, skill);

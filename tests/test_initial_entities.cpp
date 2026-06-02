@@ -5,7 +5,6 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/party_member.hpp"
-#include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/tags.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/primitives/component_builder.hpp"
@@ -95,12 +94,8 @@ TEST_CASE("EntityBuilder + ComponentBuilder basics", "[entity][builder]") {
     REQUIRE(stats.name_ == "Field Mouse");
   }
 
-  SECTION("Initial players know Observe and have open skill slots") {
+  SECTION("Initial players know and equip Observe") {
     const auto member = party_ctx.party_data().members().front().member_id();
-    const auto &skills = reg.get<fl::ecs::components::SkillSlots>(member);
-
-    REQUIRE(skills.knows(fl::skills::SkillId::Observe));
-    REQUIRE(skills.has_open_slot());
 
     const auto &member_data = party_ctx.party_data().members().front();
     REQUIRE(member_data.grimoire().knows(fl::skills::SkillId::Observe));

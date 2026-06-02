@@ -9,7 +9,6 @@
 #include "fl/ecs/components/closet.hpp"
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
-#include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/skills/skill.hpp"
 #include "fl/widgets/equipment_label.hpp"
@@ -132,17 +131,6 @@ ftxui::Element PlayerDetailsPane::Render() {
     const auto &skill_slots = party_member->closet().skill_slots;
     for (int i = 0; i < fl::ecs::components::Closet::kSkillSlotCount; ++i) {
       const auto &slot = skill_slots[static_cast<std::size_t>(i)];
-      lines.push_back(hbox({
-          text(std::to_string(i + 1) + ": ") | dim,
-          text(slot.has_value() ? std::string{fl::skills::name(*slot)}
-                                : std::string{"-"}) |
-              flex,
-      }));
-    }
-  } else if (auto *skills =
-                 reg_.try_get<fl::ecs::components::SkillSlots>(member_id)) {
-    for (int i = 0; i < fl::ecs::components::SkillSlots::kSlotCount; ++i) {
-      const auto &slot = skills->slots[static_cast<std::size_t>(i)];
       lines.push_back(hbox({
           text(std::to_string(i + 1) + ": ") | dim,
           text(slot.has_value() ? std::string{fl::skills::name(*slot)}

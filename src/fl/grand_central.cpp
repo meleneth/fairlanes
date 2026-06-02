@@ -21,7 +21,6 @@
 #include "fl/ecs/components/is_account.hpp"
 #include "fl/ecs/components/is_party.hpp"
 #include "fl/ecs/components/party_member.hpp"
-#include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/systems/special_festival_event.hpp"
 #include "fl/ecs/systems/visual_resolver.hpp"
 #include "fl/monsters/register_monsters.hpp"
@@ -207,8 +206,6 @@ void GrandCentral::_create_initial_accounts() {
         reg_.emplace<fl::ecs::components::PartyMember>(
             member.member_id(), std::move(ectx2), member.name(),
             party_data.party_id(), member);
-        reg_.emplace<fl::ecs::components::SkillSlots>(member.member_id());
-
         ++player_index;
       }
 

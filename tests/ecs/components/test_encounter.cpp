@@ -244,8 +244,9 @@ TEST_CASE(
   REQUIRE(stats.hp_ == 0);
 }
 
-TEST_CASE("Encounter skill choice reads SkillSlots instead of MonsterIdentity",
-          "[encounter][skills]") {
+TEST_CASE(
+    "Monster skill choice reads monster SkillSlots instead of MonsterIdentity",
+    "[encounter][skills]") {
   fl::GrandCentral gc{1, 1, 1};
 
   auto account_ctx = gc.account_context(0);
@@ -274,9 +275,6 @@ TEST_CASE("Player skill choice reads equipped skills from the closet",
   auto &encounter = party.create_encounter();
 
   const auto member = party.members().front().member_id();
-  party_ctx.reg().emplace_or_replace<fl::ecs::components::SkillSlots>(
-      member,
-      fl::ecs::components::SkillSlots::with_known(fl::skills::SkillId::Smack));
 
   auto &party_member =
       party_ctx.reg().get<fl::ecs::components::PartyMember>(member);
@@ -824,9 +822,11 @@ TEST_CASE("Observe can teach an eligible party member",
 
   REQUIRE(fl::skills::learn_observed_skill_with_roll(
       party_ctx, observer, user, fl::skills::SkillId::Thump, 1));
-  REQUIRE(party_ctx.reg().get<fl::ecs::components::SkillSlots>(observer).knows(
-      fl::skills::SkillId::Thump));
+  auto &observer_member =
+      party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
   REQUIRE(members.back().grimoire().knows(fl::skills::SkillId::Thump));
+  REQUIRE(
+      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
 }
 
 TEST_CASE("Observe itself is not learned by observation",
@@ -839,12 +839,14 @@ TEST_CASE("Observe itself is not learned by observation",
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
-  auto &slots = party_ctx.reg().get<fl::ecs::components::SkillSlots>(observer);
-  slots.slots.fill(std::nullopt);
+  auto &observer_member =
+      party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
+  observer_member.closet().skill_slots.fill(std::nullopt);
 
   REQUIRE_FALSE(fl::skills::learn_observed_skill_with_roll(
       party_ctx, observer, user, fl::skills::SkillId::Observe, 1));
-  REQUIRE_FALSE(slots.knows(fl::skills::SkillId::Observe));
+  REQUIRE_FALSE(observer_member.closet().has_equipped_skill(
+      fl::skills::SkillId::Observe));
   REQUIRE(members.back().grimoire().knows(fl::skills::SkillId::Observe));
 }
 
@@ -862,11 +864,13 @@ TEST_CASE("Skills learned this combat are rolled back on party wipe",
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
-  auto &slots = party_ctx.reg().get<fl::ecs::components::SkillSlots>(observer);
+  auto &observer_member =
+      party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
 
   REQUIRE(fl::skills::learn_observed_skill_with_roll(
       party_ctx, observer, user, fl::skills::SkillId::Thump, 1));
-  REQUIRE(slots.knows(fl::skills::SkillId::Thump));
+  REQUIRE(
+      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
 
   for (const auto &member : members) {
     party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id()).hp_ = 0;
@@ -876,7 +880,8 @@ TEST_CASE("Skills learned this combat are rolled back on party wipe",
 
   party.party_bus().emit(fl::events::PartyEvent{fl::events::PartyWiped{}});
 
-  REQUIRE_FALSE(slots.knows(fl::skills::SkillId::Thump));
+  REQUIRE_FALSE(
+      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
   REQUIRE_FALSE(members.back().grimoire().knows(fl::skills::SkillId::Thump));
   REQUIRE(party.log().size() > log_size_before_wipe);
 }
@@ -895,15 +900,18 @@ TEST_CASE("Skills learned this combat persist after successful combat exit",
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
-  auto &slots = party_ctx.reg().get<fl::ecs::components::SkillSlots>(observer);
+  auto &observer_member =
+      party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
 
   REQUIRE(fl::skills::learn_observed_skill_with_roll(
       party_ctx, observer, user, fl::skills::SkillId::Thump, 1));
-  REQUIRE(slots.knows(fl::skills::SkillId::Thump));
+  REQUIRE(
+      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
 
   party.leave_combat();
 
-  REQUIRE(slots.knows(fl::skills::SkillId::Thump));
+  REQUIRE(
+      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
   REQUIRE(members.back().grimoire().knows(fl::skills::SkillId::Thump));
 }
 
@@ -921,14 +929,17 @@ TEST_CASE("Later combat wipe does not remove skill learned in prior victory",
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
-  auto &slots = party_ctx.reg().get<fl::ecs::components::SkillSlots>(observer);
+  auto &observer_member =
+      party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
 
   REQUIRE(fl::skills::learn_observed_skill_with_roll(
       party_ctx, observer, user, fl::skills::SkillId::Thump, 1));
-  REQUIRE(slots.knows(fl::skills::SkillId::Thump));
+  REQUIRE(
+      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
 
   party.leave_combat();
-  REQUIRE(slots.knows(fl::skills::SkillId::Thump));
+  REQUIRE(
+      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
   REQUIRE(members.back().grimoire().knows(fl::skills::SkillId::Thump));
 
   fl::primitives::EncounterBuilder second_builder(party_ctx);
@@ -940,7 +951,8 @@ TEST_CASE("Later combat wipe does not remove skill learned in prior victory",
 
   party.party_bus().emit(fl::events::PartyEvent{fl::events::PartyWiped{}});
 
-  REQUIRE(slots.knows(fl::skills::SkillId::Thump));
+  REQUIRE(
+      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
   REQUIRE(members.back().grimoire().knows(fl::skills::SkillId::Thump));
 }
 

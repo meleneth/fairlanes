@@ -11,8 +11,7 @@ struct SkillSlots {
   static constexpr int kSlotCount = 5;
 
   std::array<std::optional<fl::skills::SkillKey>, kSlotCount> slots{
-      fl::skills::SkillKey{fl::skills::SkillId::Observe}, std::nullopt,
-      std::nullopt, std::nullopt, std::nullopt};
+      std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt};
 
   static SkillSlots with_known(fl::skills::SkillKey skill) noexcept {
     SkillSlots known;
@@ -23,15 +22,6 @@ struct SkillSlots {
   [[nodiscard]] bool knows(fl::skills::SkillKey skill) const noexcept {
     for (const auto known : slots) {
       if (known == skill) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  [[nodiscard]] bool has_open_slot() const noexcept {
-    for (const auto known : slots) {
-      if (!known.has_value()) {
         return true;
       }
     }
