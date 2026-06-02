@@ -18,4 +18,16 @@ PartyMember::PartyMember(fl::context::EntityCtx context, std::string name,
   (void)name;
   ctx_.reg().emplace<Closet>(closet_);
 }
+
+bool PartyMember::can_equip_skill(fl::skills::SkillKey skill) const {
+  return member_data().grimoire().knows(skill);
+}
+
+bool PartyMember::equip_known_skill(fl::skills::SkillKey skill) noexcept {
+  if (!can_equip_skill(skill)) {
+    return false;
+  }
+
+  return closet().equip_skill(skill);
+}
 } // namespace fl::ecs::components

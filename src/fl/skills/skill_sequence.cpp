@@ -35,6 +35,14 @@ int decal_extra_height(fl::widgets::effects::DecalAnimationKind kind) {
              : 0;
 }
 
+int thump_rank_tempo_offset(SkillKey skill) noexcept {
+  if (skill.base != SkillId::Thump) {
+    return 0;
+  }
+
+  return skill.rank.value() - SkillRank::kMin;
+}
+
 void add_skill_decal(fl::context::PartyCtx &party_ctx, entt::entity target,
                      seerin::uWu expires_at, SkillKey skill) {
   const auto kind = decal_animation_for(skill);
@@ -122,7 +130,10 @@ void SkillSequencer::schedule_thump_like(entt::entity attacker,
   auto const kRed = fl::lospec500::color_at(4);
   auto const kYellow = fl::lospec500::color_at(14);
 
-  const auto skill_name = std::string{name(skill)};
+  const auto skill_name = display_name(skill);
+  const int rank_tempo_offset = thump_rank_tempo_offset(skill);
+  const int damage_beat = 26 + (rank_tempo_offset * 2);
+  const int finish_beat = 31 + (rank_tempo_offset * 3);
 
   teach_party_from_observed_skill(party_ctx_, attacker, skill);
 
@@ -138,7 +149,7 @@ void SkillSequencer::schedule_thump_like(entt::entity attacker,
                      22, 30, kYellow, kYellow);
 
   scheduler_.schedule_smelly_in_beats(
-      26, fmt::format("{}: apply damage", skill_name),
+      damage_beat, fmt::format("{}: apply damage", skill_name),
       [&party_ctx = party_ctx_, attacker, target, skill] {
         fl::skills::Thump thump;
         thump.thump(
@@ -148,7 +159,7 @@ void SkillSequencer::schedule_thump_like(entt::entity attacker,
 
   auto finish_turn = finish_turn_;
   scheduler_.schedule_smelly_in_beats(
-      31, fmt::format("{}: finish", skill_name),
+      finish_beat, fmt::format("{}: finish", skill_name),
       [finish_turn, attacker] { finish_turn(attacker); });
 
   TracyPlot("SkillSequencer.PendingEvents",
@@ -284,7 +295,8 @@ void SkillSequencer::schedule_decal_strike(entt::entity attacker,
   add_skill_decal(party_ctx_, target, expires_at, skill);
 
   scheduler_.schedule_smelly_in_beats_for(
-      kAnimationBeats, target, fmt::format("{}: apply damage", name(skill)),
+      kAnimationBeats, target,
+      fmt::format("{}: apply damage", display_name(skill)),
       [&party_ctx = party_ctx_, attacker, target, skill] {
         fl::skills::Thump thump;
         thump.thump(
@@ -294,7 +306,8 @@ void SkillSequencer::schedule_decal_strike(entt::entity attacker,
 
   auto finish_turn = finish_turn_;
   scheduler_.schedule_smelly_in_beats_for(
-      kAnimationBeats + 1, attacker, fmt::format("{}: finish", name(skill)),
+      kAnimationBeats + 1, attacker,
+      fmt::format("{}: finish", display_name(skill)),
       [finish_turn, attacker] { finish_turn(attacker); });
 
   TracyPlot("SkillSequencer.PendingEvents",

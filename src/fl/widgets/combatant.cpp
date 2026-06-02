@@ -202,7 +202,7 @@ std::array<std::string, kSkillRowsCount> skill_rows_for(entt::registry &reg,
     const auto &skill_slots = member->closet().skill_slots;
     for (std::size_t i = 0; i < rows.size(); ++i) {
       if (skill_slots[i].has_value()) {
-        rows[i] = std::string(fl::skills::name(*skill_slots[i]));
+        rows[i] = fl::skills::display_name(*skill_slots[i]);
       }
     }
     return rows;
@@ -215,7 +215,7 @@ std::array<std::string, kSkillRowsCount> skill_rows_for(entt::registry &reg,
 
   for (std::size_t i = 0; i < rows.size(); ++i) {
     if (slots->slots[i].has_value()) {
-      rows[i] = std::string(fl::skills::name(*slots->slots[i]));
+      rows[i] = fl::skills::display_name(*slots->slots[i]);
     }
   }
 

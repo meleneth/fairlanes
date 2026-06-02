@@ -151,7 +151,7 @@ void PartyData::resolve_pending_learned_skill(
           party_ctx_.reg().try_get<fl::ecs::components::Stats>(member)) {
     log_->append_markup(
         fmt::format("[player_name]({}) couldn't quite figure out [ability]({})",
-                    stats->name_, fl::skills::name(skill)));
+                    stats->name_, fl::skills::display_name(skill)));
   }
 }
 

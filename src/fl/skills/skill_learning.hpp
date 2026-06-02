@@ -7,6 +7,23 @@
 
 namespace fl::skills {
 
+enum class LearnObservedSkillResult {
+  Learned,
+  SameEntity,
+  MissingObserver,
+  ObserverDead,
+  AlreadyKnown,
+  NoObserveEquipped,
+  InsufficientObserveRank,
+  ObserveProgressionSkip,
+  RollFailed,
+};
+
+LearnObservedSkillResult
+learn_observed_skill_result_with_roll(fl::context::PartyCtx &party_ctx,
+                                      entt::entity observer, entt::entity user,
+                                      SkillKey skill, int roll);
+
 bool learn_observed_skill_with_roll(fl::context::PartyCtx &party_ctx,
                                     entt::entity observer, entt::entity user,
                                     SkillKey skill, int roll);

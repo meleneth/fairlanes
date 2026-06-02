@@ -99,6 +99,10 @@ TEST_CASE("EntityBuilder + ComponentBuilder basics", "[entity][builder]") {
 
     const auto &member_data = party_ctx.party_data().members().front();
     REQUIRE(member_data.grimoire().knows(fl::skills::SkillId::Observe));
+    REQUIRE(member_data.grimoire().knows(fl::skills::SkillKey{
+        fl::skills::SkillId::Observe, fl::skills::SkillRank::require(1)}));
+    REQUIRE_FALSE(member_data.grimoire().knows(fl::skills::SkillKey{
+        fl::skills::SkillId::Observe, fl::skills::SkillRank::require(2)}));
 
     const auto &party_member =
         reg.get<fl::ecs::components::PartyMember>(member);

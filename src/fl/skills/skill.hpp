@@ -6,6 +6,7 @@
 #include <optional>
 #include <span>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 
 namespace fl::skills {
@@ -168,6 +169,7 @@ struct SkillDefinition;
 const SkillDefinition &definition(SkillKey skill) noexcept;
 
 std::string_view name(SkillKey skill) noexcept;
+std::string display_name(SkillKey skill);
 int learn_chance_percent(SkillKey skill) noexcept;
 std::span<const SkillTag> tags(SkillKey skill) noexcept;
 bool has_tag(SkillKey skill, SkillTag tag) noexcept;

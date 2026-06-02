@@ -14,6 +14,7 @@
 #include "fl/lospec500.hpp"
 #include "fl/primitives/encounter_builder.hpp"
 #include "fl/skills/skill_sequence.hpp"
+#include "fl/skills/thump.hpp"
 #include "sr/atb_events.hpp"
 #include "sr/timed_scheduler.hpp"
 
@@ -168,6 +169,107 @@ TEST_CASE("EncounterBuilder rare woodland pool includes Fire Drake",
                     fl::monster::MonsterKind::HoneyBadger) != pool.end());
   REQUIRE(std::find(pool.begin(), pool.end(),
                     fl::monster::MonsterKind::FireDrake) != pool.end());
+}
+
+TEST_CASE("Thump ranks produce distinct damage bands",
+          "[encounter][skills][rank][thump]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  auto &encounter = builder.thump_it_out();
+
+  const entt::entity attacker = encounter.attackers().members().front();
+  const entt::entity target = encounter.defenders().members().front();
+  auto &target_stats = party_ctx.reg().get<fl::ecs::components::Stats>(target);
+  target_stats.max_hp_ = 100;
+
+  auto damage_for = [&](fl::skills::SkillKey skill) {
+    target_stats.hp_ = target_stats.max_hp_;
+    fl::skills::Thump thump;
+    return thump.thump(
+        fl::context::AttackCtx::make_attack(party_ctx, attacker, target),
+        skill);
+  };
+
+  const auto thump_i = fl::skills::SkillKey{fl::skills::SkillId::Thump};
+  const auto thump_iii = fl::skills::SkillKey{
+      fl::skills::SkillId::Thump, fl::skills::SkillRank::require(3)};
+  const auto thump_v = fl::skills::SkillKey{fl::skills::SkillId::Thump,
+                                            fl::skills::SkillRank::require(5)};
+
+  const int damage_i = damage_for(thump_i);
+  const int damage_iii = damage_for(thump_iii);
+  const int damage_v = damage_for(thump_v);
+
+  REQUIRE(damage_i >= 1);
+  REQUIRE(damage_i <= 5);
+  REQUIRE(damage_iii >= 7);
+  REQUIRE(damage_iii <= 11);
+  REQUIRE(damage_v >= 13);
+  REQUIRE(damage_v <= 17);
+  REQUIRE(damage_i < damage_iii);
+  REQUIRE(damage_iii < damage_v);
+}
+
+TEST_CASE("Thump ranks pay distinct tempo costs",
+          "[encounter][timing][rank][thump]") {
+  auto run_rank = [](fl::skills::SkillKey skill, int damage_beat,
+                     int finish_beat) {
+    fl::GrandCentral gc{1, 1, 1};
+
+    auto account_ctx = gc.account_context(0);
+    auto party_ctx = account_ctx.party_context(0);
+
+    fl::primitives::EncounterBuilder builder(party_ctx);
+    auto &encounter = builder.thump_it_out();
+
+    const entt::entity attacker = encounter.attackers().members().front();
+    const entt::entity target = encounter.defenders().members().front();
+    auto &target_stats =
+        party_ctx.reg().get<fl::ecs::components::Stats>(target);
+    target_stats.max_hp_ = 100;
+    target_stats.hp_ = 100;
+
+    bool finished = false;
+    seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
+    fl::skills::SkillSequencer sequencer{
+        party_ctx, scheduler,
+        [&](entt::entity entity) { finished = entity == attacker; }};
+    sequencer.schedule(attacker, target, skill);
+
+    int current_beat = 0;
+    auto advance_to = [&](int beat) {
+      while (current_beat < beat) {
+        scheduler.on_beat();
+        ++current_beat;
+      }
+    };
+
+    advance_to(damage_beat - 1);
+    REQUIRE(target_stats.hp_ == 100);
+    REQUIRE_FALSE(finished);
+
+    advance_to(damage_beat);
+    REQUIRE(target_stats.hp_ < 100);
+    REQUIRE_FALSE(finished);
+
+    advance_to(finish_beat - 1);
+    REQUIRE_FALSE(finished);
+
+    advance_to(finish_beat);
+    REQUIRE(finished);
+  };
+
+  run_rank(fl::skills::SkillKey{fl::skills::SkillId::Thump}, 26, 31);
+  run_rank(fl::skills::SkillKey{fl::skills::SkillId::Thump,
+                                fl::skills::SkillRank::require(3)},
+           30, 37);
+  run_rank(fl::skills::SkillKey{fl::skills::SkillId::Thump,
+                                fl::skills::SkillRank::require(5)},
+           34, 43);
 }
 
 TEST_CASE("SkillSequencer thump-like flash uses two red pulses then yellow",

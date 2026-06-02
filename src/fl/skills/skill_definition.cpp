@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdlib>
 #include <span>
+#include <string>
 
 namespace fl::skills {
 const SkillDefinition &observe_skill_definition() noexcept;
@@ -52,7 +53,7 @@ std::array<const SkillDefinition *, 18> &definitions() {
 const SkillDefinition &definition(SkillKey skill) noexcept {
   const auto &all = definitions();
   const auto it = std::find_if(all.begin(), all.end(), [skill](auto *entry) {
-    return entry->key == skill;
+    return entry->key.base == skill.base;
   });
   if (it == all.end()) {
     abort_missing_definition(skill);
@@ -67,6 +68,15 @@ std::span<const SkillDefinition *const> all_definitions() noexcept {
 
 std::string_view name(SkillKey skill) noexcept {
   return definition(skill).display_name;
+}
+
+std::string display_name(SkillKey skill) {
+  auto display = std::string{name(skill)};
+  if (skill.rank.value() != SkillRank::kMin) {
+    display += " ";
+    display += roman(skill.rank);
+  }
+  return display;
 }
 
 int learn_chance_percent(SkillKey skill) noexcept {

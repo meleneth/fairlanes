@@ -133,7 +133,7 @@ ftxui::Element PlayerDetailsPane::Render() {
       const auto &slot = skill_slots[static_cast<std::size_t>(i)];
       lines.push_back(hbox({
           text(std::to_string(i + 1) + ": ") | dim,
-          text(slot.has_value() ? std::string{fl::skills::name(*slot)}
+          text(slot.has_value() ? fl::skills::display_name(*slot)
                                 : std::string{"-"}) |
               flex,
       }));

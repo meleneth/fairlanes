@@ -13,6 +13,18 @@
 
 using namespace fl::skills;
 
+namespace {
+
+int thump_rank_damage_bonus(SkillKey skill) noexcept {
+  if (skill.base != SkillId::Thump) {
+    return 0;
+  }
+
+  return (skill.rank.value() - SkillRank::kMin) * 3;
+}
+
+} // namespace
+
 template <typename T>
 std::string exprtk_error_report(const exprtk::parser<T> &parser,
                                 const std::string &expr_src) {
@@ -76,8 +88,8 @@ int Thump::thump(fl::context::AttackCtx &&ctx, SkillKey skill) {
   wd_max_ = 5.0;
 
   // If you removed the external one-handed modifier, set sane defaults here
-  hit_rate_ = 0.90;   // 90% hit chance
-  crit_rate_ = 0.05;  // 5% crit chance
+  hit_rate_ = 1.00;   // keep the first ranked slice deterministic
+  crit_rate_ = 0.00;  // rank differences should be visible without crit noise
   skill_mult_ = 1.00; // no extra multiplier
 
   // Random uniforms in [0,1)
@@ -86,7 +98,7 @@ int Thump::thump(fl::context::AttackCtx &&ctx, SkillKey skill) {
   u_crit_ = uni_(rng_);
 
   // Evaluate expression
-  double dealt = expr_.value();
+  double dealt = expr_.value() + thump_rank_damage_bonus(skill);
 
   // Clamp and round: never deal more than current HP, never negative
   int hp_now = dst.hp_;
@@ -99,7 +111,7 @@ int Thump::thump(fl::context::AttackCtx &&ctx, SkillKey skill) {
   ctx.log().append_markup(fmt::format("{} used [ability]({}) on {} for "
                                       "[error]({}) damage",
                                       ctx.log().name_tag_for(attacker_h),
-                                      fl::skills::name(skill),
+                                      fl::skills::display_name(skill),
                                       ctx.log().name_tag_for(defender_h), dmg));
 
   fl::ecs::systems::TakeDamage::commit(ctx);

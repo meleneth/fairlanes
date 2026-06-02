@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include <array>
 #include <optional>
 
 #include "fl/context.hpp"
@@ -29,6 +30,21 @@ namespace {
 void tick_party(fl::context::PartyCtx &party_ctx, int beats) {
   for (int i = 0; i < beats; ++i) {
     party_ctx.bus().emit(fl::events::PartyEvent{fl::events::PartyTick{}});
+  }
+}
+
+void learn_and_equip_observe(fl::context::PartyCtx &party_ctx,
+                             entt::entity member, int rank) {
+  auto &party_member =
+      party_ctx.reg().get<fl::ecs::components::PartyMember>(member);
+  const auto observe = fl::skills::SkillKey{
+      fl::skills::SkillId::Observe, fl::skills::SkillRank::require(rank)};
+  auto &grimoire = party_member.member_data().grimoire();
+  if (!grimoire.knows(observe)) {
+    REQUIRE(grimoire.learn(observe));
+  }
+  if (!party_member.closet().has_equipped_skill(observe)) {
+    REQUIRE(party_member.equip_known_skill(observe));
   }
 }
 
@@ -827,6 +843,258 @@ TEST_CASE("Observe can teach an eligible party member",
   REQUIRE(members.back().grimoire().knows(fl::skills::SkillId::Thump));
   REQUIRE(
       observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
+}
+
+TEST_CASE("Observe learns exact ranked skills without inferred lower ranks",
+          "[encounter][skills][learning][rank]") {
+  fl::GrandCentral gc{1, 1, 2};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &members = party_ctx.party_data().members();
+
+  const auto user = members.front().member_id();
+  const auto observer = members.back().member_id();
+  auto &grimoire = members.back().grimoire();
+  learn_and_equip_observe(party_ctx, observer, 8);
+
+  const fl::skills::SkillKey thump_viii{fl::skills::SkillId::Thump,
+                                        fl::skills::SkillRank::require(8)};
+  REQUIRE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user,
+                                                     thump_viii, 1));
+
+  REQUIRE(grimoire.knows(thump_viii));
+  REQUIRE_FALSE(grimoire.knows(fl::skills::SkillKey{
+      fl::skills::SkillId::Thump, fl::skills::SkillRank::require(1)}));
+  REQUIRE_FALSE(grimoire.knows(fl::skills::SkillKey{
+      fl::skills::SkillId::Thump, fl::skills::SkillRank::require(7)}));
+}
+
+TEST_CASE("Observe rank gates observed skill learning",
+          "[encounter][skills][learning][rank]") {
+  fl::GrandCentral gc{1, 1, 2};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &members = party_ctx.party_data().members();
+
+  const auto user = members.front().member_id();
+  const auto observer = members.back().member_id();
+  auto &grimoire = members.back().grimoire();
+  learn_and_equip_observe(party_ctx, observer, 5);
+
+  const fl::skills::SkillKey thump_iv{fl::skills::SkillId::Thump,
+                                      fl::skills::SkillRank::require(4)};
+  const fl::skills::SkillKey thump_v{fl::skills::SkillId::Thump,
+                                     fl::skills::SkillRank::require(5)};
+  const fl::skills::SkillKey thump_vi{fl::skills::SkillId::Thump,
+                                      fl::skills::SkillRank::require(6)};
+  const fl::skills::SkillKey thump_ix{fl::skills::SkillId::Thump,
+                                      fl::skills::SkillRank::require(9)};
+
+  REQUIRE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user,
+                                                     thump_iv, 1));
+  REQUIRE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user,
+                                                     thump_v, 1));
+  REQUIRE_FALSE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer,
+                                                           user, thump_vi, 1));
+  REQUIRE_FALSE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer,
+                                                           user, thump_ix, 1));
+
+  REQUIRE(grimoire.knows(thump_iv));
+  REQUIRE(grimoire.knows(thump_v));
+  REQUIRE_FALSE(grimoire.knows(thump_vi));
+  REQUIRE_FALSE(grimoire.knows(thump_ix));
+}
+
+TEST_CASE("Gated high-rank observation does not learn lower ranks",
+          "[encounter][skills][learning][rank]") {
+  fl::GrandCentral gc{1, 1, 2};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &members = party_ctx.party_data().members();
+
+  const auto user = members.front().member_id();
+  const auto observer = members.back().member_id();
+  auto &grimoire = members.back().grimoire();
+
+  const fl::skills::SkillKey thump_vi{fl::skills::SkillId::Thump,
+                                      fl::skills::SkillRank::require(6)};
+  REQUIRE_FALSE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer,
+                                                           user, thump_vi, 1));
+
+  REQUIRE_FALSE(grimoire.knows(thump_vi));
+  REQUIRE_FALSE(grimoire.knows(fl::skills::SkillKey{
+      fl::skills::SkillId::Thump, fl::skills::SkillRank::require(1)}));
+  REQUIRE_FALSE(grimoire.knows(fl::skills::SkillKey{
+      fl::skills::SkillId::Thump, fl::skills::SkillRank::require(5)}));
+}
+
+TEST_CASE("No equipped Observe blocks observed skill learning",
+          "[encounter][skills][learning][rank]") {
+  fl::GrandCentral gc{1, 1, 2};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &members = party_ctx.party_data().members();
+
+  const auto user = members.front().member_id();
+  const auto observer = members.back().member_id();
+  auto &party_member =
+      party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
+  party_member.closet().skill_slots.fill(std::nullopt);
+
+  const auto thump_i = fl::skills::SkillKey{fl::skills::SkillId::Thump};
+  REQUIRE(fl::skills::learn_observed_skill_result_with_roll(party_ctx, observer,
+                                                            user, thump_i, 1) ==
+          fl::skills::LearnObservedSkillResult::NoObserveEquipped);
+  REQUIRE_FALSE(members.back().grimoire().knows(thump_i));
+}
+
+TEST_CASE("Multiple equipped Observe ranks use the highest rank",
+          "[encounter][skills][learning][rank]") {
+  fl::GrandCentral gc{1, 1, 2};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &members = party_ctx.party_data().members();
+
+  const auto user = members.front().member_id();
+  const auto observer = members.back().member_id();
+  learn_and_equip_observe(party_ctx, observer, 3);
+  learn_and_equip_observe(party_ctx, observer, 5);
+
+  const fl::skills::SkillKey thump_v{fl::skills::SkillId::Thump,
+                                     fl::skills::SkillRank::require(5)};
+  REQUIRE(fl::skills::learn_observed_skill_result_with_roll(party_ctx, observer,
+                                                            user, thump_v, 1) ==
+          fl::skills::LearnObservedSkillResult::Learned);
+  REQUIRE(members.back().grimoire().knows(thump_v));
+}
+
+TEST_CASE("Observe ranks progress one step at a time",
+          "[encounter][skills][learning][rank][observe]") {
+  fl::GrandCentral gc{1, 1, 2};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &members = party_ctx.party_data().members();
+
+  const auto user = members.front().member_id();
+  const auto observer = members.back().member_id();
+  auto &grimoire = members.back().grimoire();
+
+  const fl::skills::SkillKey observe_ii{fl::skills::SkillId::Observe,
+                                        fl::skills::SkillRank::require(2)};
+  REQUIRE(fl::skills::learn_observed_skill_result_with_roll(
+              party_ctx, observer, user, observe_ii, 1) ==
+          fl::skills::LearnObservedSkillResult::Learned);
+  REQUIRE(grimoire.knows(observe_ii));
+}
+
+TEST_CASE("Observe progression blocks skipped ranks",
+          "[encounter][skills][learning][rank][observe]") {
+  fl::GrandCentral gc{1, 1, 2};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &members = party_ctx.party_data().members();
+
+  const auto user = members.front().member_id();
+  const auto observer = members.back().member_id();
+  auto &grimoire = members.back().grimoire();
+
+  const fl::skills::SkillKey observe_iii{fl::skills::SkillId::Observe,
+                                         fl::skills::SkillRank::require(3)};
+  REQUIRE(fl::skills::learn_observed_skill_result_with_roll(
+              party_ctx, observer, user, observe_iii, 1) ==
+          fl::skills::LearnObservedSkillResult::ObserveProgressionSkip);
+  REQUIRE_FALSE(grimoire.knows(observe_iii));
+}
+
+TEST_CASE("Observe VIII cannot be learned directly from Observe V",
+          "[encounter][skills][learning][rank][observe]") {
+  fl::GrandCentral gc{1, 1, 2};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &members = party_ctx.party_data().members();
+
+  const auto user = members.front().member_id();
+  const auto observer = members.back().member_id();
+  auto &grimoire = members.back().grimoire();
+  learn_and_equip_observe(party_ctx, observer, 5);
+
+  const fl::skills::SkillKey observe_viii{fl::skills::SkillId::Observe,
+                                          fl::skills::SkillRank::require(8)};
+  REQUIRE(fl::skills::learn_observed_skill_result_with_roll(
+              party_ctx, observer, user, observe_viii, 1) ==
+          fl::skills::LearnObservedSkillResult::ObserveProgressionSkip);
+  REQUIRE_FALSE(grimoire.knows(observe_viii));
+}
+
+TEST_CASE("Player equipped skills are capped at five slots",
+          "[encounter][skills][closet][rank]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &member_data = party_ctx.party_data().members().front();
+  auto &party_member = party_ctx.reg().get<fl::ecs::components::PartyMember>(
+      member_data.member_id());
+
+  const std::array learned{
+      fl::skills::SkillKey{fl::skills::SkillId::Thump},
+      fl::skills::SkillKey{fl::skills::SkillId::Eviscerate},
+      fl::skills::SkillKey{fl::skills::SkillId::Poison},
+      fl::skills::SkillKey{fl::skills::SkillId::ColdSnap},
+      fl::skills::SkillKey{fl::skills::SkillId::FlameStrike},
+  };
+
+  for (const auto skill : learned) {
+    REQUIRE(member_data.grimoire().learn(skill));
+  }
+
+  REQUIRE(party_member.equip_known_skill(learned[0]));
+  REQUIRE(party_member.equip_known_skill(learned[1]));
+  REQUIRE(party_member.equip_known_skill(learned[2]));
+  REQUIRE(party_member.equip_known_skill(learned[3]));
+  REQUIRE_FALSE(party_member.closet().has_open_skill_slot());
+  REQUIRE_FALSE(party_member.equip_known_skill(learned[4]));
+  REQUIRE_FALSE(party_member.closet().has_equipped_skill(learned[4]));
+}
+
+TEST_CASE("Player can equip distinct ranks of the same known skill",
+          "[encounter][skills][closet][rank]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &encounter = party.create_encounter();
+  auto &member_data = party.members().front();
+  const auto member = member_data.member_id();
+  auto &party_member =
+      party_ctx.reg().get<fl::ecs::components::PartyMember>(member);
+
+  party_member.closet().skill_slots.fill(std::nullopt);
+
+  const fl::skills::SkillKey thump_iii{fl::skills::SkillId::Thump,
+                                       fl::skills::SkillRank::require(3)};
+  const fl::skills::SkillKey thump_v{fl::skills::SkillId::Thump,
+                                     fl::skills::SkillRank::require(5)};
+
+  REQUIRE(member_data.grimoire().learn(thump_iii));
+  REQUIRE(member_data.grimoire().learn(thump_v));
+  REQUIRE(party_member.equip_known_skill(thump_iii));
+  REQUIRE(party_member.equip_known_skill(thump_v));
+
+  REQUIRE(party_member.closet().has_equipped_skill(thump_iii));
+  REQUIRE(party_member.closet().has_equipped_skill(thump_v));
+  const auto chosen = encounter.choose_skill(member);
+  REQUIRE((chosen == thump_iii || chosen == thump_v));
+  REQUIRE(chosen != fl::skills::SkillKey{fl::skills::SkillId::Thump});
 }
 
 TEST_CASE("Observe itself is not learned by observation",

@@ -51,6 +51,9 @@ struct PartyMember {
   [[nodiscard]] const fl::primitives::MemberData &member_data() const {
     return *member_data_;
   }
+
+  [[nodiscard]] bool can_equip_skill(fl::skills::SkillKey skill) const;
+  bool equip_known_skill(fl::skills::SkillKey skill) noexcept;
 };
 
 template <typename PM = PartyMember, typename Fn>

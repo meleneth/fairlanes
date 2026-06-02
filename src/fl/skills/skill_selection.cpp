@@ -16,6 +16,15 @@ namespace {
 using EquippedSkills = std::array<std::optional<SkillKey>,
                                   fl::ecs::components::Closet::kSkillSlotCount>;
 
+bool is_random_combat_skill(SkillKey skill) noexcept {
+  for (const auto candidate : kRandomCombatSkills) {
+    if (candidate.base == skill.base) {
+      return true;
+    }
+  }
+  return false;
+}
+
 const EquippedSkills *equipped_skills_for(entt::registry &reg,
                                           entt::entity actor) {
   if (const auto *member =
@@ -40,12 +49,9 @@ SkillKey choose_skill(entt::registry &reg, fl::primitives::RandomHub &rng,
   }
 
   std::vector<SkillKey> known_combat_skills;
-  for (const auto skill : kRandomCombatSkills) {
-    for (const auto equipped : *equipped_skills) {
-      if (equipped == skill) {
-        known_combat_skills.push_back(skill);
-        break;
-      }
+  for (const auto equipped : *equipped_skills) {
+    if (equipped.has_value() && is_random_combat_skill(*equipped)) {
+      known_combat_skills.push_back(*equipped);
     }
   }
 
