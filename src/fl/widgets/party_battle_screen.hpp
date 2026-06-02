@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 #include <entt/entity/fwd.hpp>
@@ -8,6 +9,10 @@
 #include <ftxui/dom/elements.hpp>
 
 #include "fl/context.hpp"
+
+namespace fl::primitives {
+struct EncounterData;
+}
 
 namespace fl::widgets {
 using fl::context::AccountCtx;
@@ -30,10 +35,16 @@ private:
   ftxui::Element render_account_log_panel(int width, int height);
   ftxui::Element render_party_log_panel(int width, int height);
   ftxui::Element render_question_panel(int width, int height) const;
+  void update_stage_background(const fl::primitives::EncounterData *encounter);
+  ftxui::Element render_stage_background(ftxui::Element foreground, int width,
+                                         int height, std::uint32_t seed) const;
 
   AccountCtx ctx_;
   std::size_t party_index_{0};
   int focused_log_{0};
+  const fl::primitives::EncounterData *last_encounter_{nullptr};
+  std::size_t next_background_index_{0};
+  std::size_t stage_background_index_{0};
 };
 
 } // namespace fl::widgets

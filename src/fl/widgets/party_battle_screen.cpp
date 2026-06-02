@@ -16,7 +16,9 @@
 #include "fl/primitives/party_data.hpp"
 #include "fl/widgets/combatant.hpp"
 #include "fl/widgets/party_status.hpp"
+#include "fl/widgets/textures/bog_background.hpp"
 #include "fl/widgets/textures/forest_background.hpp"
+#include "fl/widgets/textures/savannah_background.hpp"
 
 namespace fl::widgets {
 namespace {
@@ -30,6 +32,7 @@ constexpr int kMinCellHeight = 5;
 constexpr int kStatusHeight = 4;
 constexpr int kSeparatorHeight = 1;
 constexpr int kMinBottomPanelHeight = 4;
+constexpr std::size_t kStageBackgroundCount = 3;
 
 struct Layout {
   int screen_width{1};
@@ -193,13 +196,16 @@ ftxui::Element PartyBattleScreen::Render() {
     primary_party = &parties[selected];
   }
 
+  const fl::primitives::EncounterData *active_encounter = nullptr;
   if (primary_party != nullptr && primary_party->has_encounter()) {
     auto &encounter = primary_party->encounter_data();
+    active_encounter = &encounter;
     attackers = encounter.attackers().members();
     defenders = encounter.defenders().members();
   } else if (primary_party != nullptr) {
     defenders = member_entities(primary_party->members());
   }
+  update_stage_background(active_encounter);
 
   const bool show_status =
       primary_party == nullptr || !primary_party->has_encounter();
@@ -245,12 +251,12 @@ ftxui::Element PartyBattleScreen::Render() {
                    size(HEIGHT, EQUAL, layout.status_height));
   }
   rows.push_back(
-      textures::ForestPanel(std::move(attacker_stage), layout.screen_width,
-                            layout.combatant_grid_height, forest_seed));
+      render_stage_background(std::move(attacker_stage), layout.screen_width,
+                              layout.combatant_grid_height, forest_seed));
   rows.push_back(labeled_separator(party_name, layout.screen_width) |
                  size(HEIGHT, EQUAL, layout.separator_height) |
                  fl::lospec500::on_not_black(fl::lospec500::color_at(32)));
-  rows.push_back(textures::ForestPanel(
+  rows.push_back(render_stage_background(
       std::move(defender_stage), layout.screen_width,
       layout.combatant_grid_height, forest_seed ^ 0xA53C9E2Bu));
   rows.push_back(separator() | size(WIDTH, EQUAL, layout.screen_width) |
@@ -263,6 +269,36 @@ ftxui::Element PartyBattleScreen::Render() {
          size(HEIGHT, EQUAL, layout.screen_height) |
          bgcolor(fl::lospec500::color_at(0)) |
          color(fl::lospec500::color_at(32));
+}
+
+void PartyBattleScreen::update_stage_background(
+    const fl::primitives::EncounterData *encounter) {
+  if (encounter == nullptr) {
+    last_encounter_ = nullptr;
+    return;
+  }
+
+  if (encounter == last_encounter_) {
+    return;
+  }
+
+  last_encounter_ = encounter;
+  stage_background_index_ = next_background_index_;
+  next_background_index_ = (next_background_index_ + 1) % kStageBackgroundCount;
+}
+
+ftxui::Element
+PartyBattleScreen::render_stage_background(ftxui::Element foreground, int width,
+                                           int height,
+                                           std::uint32_t seed) const {
+  if (stage_background_index_ == 1) {
+    return textures::SavannahPanel(std::move(foreground), width, height, seed);
+  }
+  if (stage_background_index_ == 2) {
+    return textures::BogPanel(std::move(foreground), width, height, seed);
+  }
+
+  return textures::ForestPanel(std::move(foreground), width, height, seed);
 }
 
 ftxui::Element PartyBattleScreen::render_combatant_cell(entt::entity entity,
