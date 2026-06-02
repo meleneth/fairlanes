@@ -47,14 +47,14 @@ void EncounterData::innervate_event_system() {
       });
 }
 
-fl::skills::SkillId EncounterData::choose_skill(entt::entity attacker) {
+fl::skills::SkillKey EncounterData::choose_skill(entt::entity attacker) {
   ZoneScopedN("EncounterData::choose_skill");
   return fl::skills::choose_skill(party_ctx_->reg(), party_ctx_->rng(),
                                   attacker);
 }
 
 entt::entity EncounterData::target_for_skill(entt::entity attacker,
-                                             fl::skills::SkillId skill) const {
+                                             fl::skills::SkillKey skill) const {
   ZoneScopedN("EncounterData::target_for_skill");
   if (fl::skills::has_tag(skill, fl::skills::SkillTag::Healing)) {
     if (topo_.attackers_.contains(attacker)) {

@@ -117,8 +117,8 @@ public:
   }
 
   entt::entity target_for_skill(entt::entity attacker,
-                                fl::skills::SkillId skill) const;
-  fl::skills::SkillId choose_skill(entt::entity attacker);
+                                fl::skills::SkillKey skill) const;
+  fl::skills::SkillKey choose_skill(entt::entity attacker);
 
 private:
   struct Topology {

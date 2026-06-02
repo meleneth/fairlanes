@@ -36,7 +36,7 @@ int decal_extra_height(fl::widgets::effects::DecalAnimationKind kind) {
 }
 
 void add_skill_decal(fl::context::PartyCtx &party_ctx, entt::entity target,
-                     seerin::uWu expires_at, SkillId skill) {
+                     seerin::uWu expires_at, SkillKey skill) {
   const auto kind = decal_animation_for(skill);
   if (!kind.has_value() || !party_ctx.reg().valid(target)) {
     return;
@@ -78,7 +78,7 @@ SkillSequencer::SkillSequencer(fl::context::PartyCtx &party_ctx,
       finish_turn_(std::move(finish_turn)) {}
 
 void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
-                              SkillId skill) {
+                              SkillKey skill) {
   ZoneScopedN("SkillSequencer::schedule");
   const auto &skill_definition = definition(skill);
   switch (skill_definition.execution) {
@@ -98,7 +98,7 @@ void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
     schedule_flame_wave(attacker);
     return;
   case SkillExecutionKind::DecalStrike:
-    if (skill == SkillId::Mercyburst) {
+    if (skill.base == SkillId::Mercyburst) {
       schedule_mercyburst(attacker, target);
       return;
     }
@@ -117,7 +117,7 @@ void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
 }
 
 void SkillSequencer::schedule_thump_like(entt::entity attacker,
-                                         entt::entity target, SkillId skill) {
+                                         entt::entity target, SkillKey skill) {
   ZoneScopedN("SkillSequencer::schedule_thump_like");
   auto const kRed = fl::lospec500::color_at(4);
   auto const kYellow = fl::lospec500::color_at(14);
@@ -271,7 +271,8 @@ void SkillSequencer::schedule_flame_strike(entt::entity attacker,
 }
 
 void SkillSequencer::schedule_decal_strike(entt::entity attacker,
-                                           entt::entity target, SkillId skill) {
+                                           entt::entity target,
+                                           SkillKey skill) {
   ZoneScopedN("SkillSequencer::schedule_decal_strike");
   static constexpr int kAnimationBeats = seerin::BEATS_PER_SEC;
 
@@ -421,7 +422,7 @@ void SkillSequencer::schedule_flame_wave(entt::entity attacker) {
             static_cast<double>(scheduler_.pending()));
 }
 
-void SkillSequencer::schedule_flee(entt::entity attacker, SkillId skill) {
+void SkillSequencer::schedule_flee(entt::entity attacker, SkillKey skill) {
   ZoneScopedN("SkillSequencer::schedule_flee");
   const auto &skill_definition = definition(skill);
   const int flee_chance =

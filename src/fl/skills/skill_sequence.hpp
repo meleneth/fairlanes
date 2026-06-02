@@ -20,20 +20,20 @@ public:
   SkillSequencer(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
                  FinishTurnFn finish_turn);
 
-  void schedule(entt::entity attacker, entt::entity target, SkillId skill);
+  void schedule(entt::entity attacker, entt::entity target, SkillKey skill);
 
 private:
   void schedule_thump_like(entt::entity attacker, entt::entity target,
-                           SkillId skill);
+                           SkillKey skill);
   void schedule_eviscerate(entt::entity attacker, entt::entity target);
   void schedule_poison(entt::entity attacker, entt::entity target);
   void schedule_cold_snap(entt::entity attacker, entt::entity target);
   void schedule_flame_strike(entt::entity attacker, entt::entity target);
   void schedule_decal_strike(entt::entity attacker, entt::entity target,
-                             SkillId skill);
+                             SkillKey skill);
   void schedule_mercyburst(entt::entity attacker, entt::entity target);
   void schedule_flame_wave(entt::entity attacker);
-  void schedule_flee(entt::entity attacker, SkillId skill);
+  void schedule_flee(entt::entity attacker, SkillKey skill);
   void schedule_observe(entt::entity attacker);
   void schedule_reek_fade(entt::entity entity, std::string_view label,
                           int start_beat, int end_beat, ftxui::Color from,

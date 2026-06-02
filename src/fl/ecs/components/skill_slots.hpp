@@ -10,17 +10,17 @@ namespace fl::ecs::components {
 struct SkillSlots {
   static constexpr int kSlotCount = 5;
 
-  std::array<std::optional<fl::skills::SkillId>, kSlotCount> slots{
-      fl::skills::SkillId::Observe, std::nullopt, std::nullopt, std::nullopt,
-      std::nullopt};
+  std::array<std::optional<fl::skills::SkillKey>, kSlotCount> slots{
+      fl::skills::SkillKey{fl::skills::SkillId::Observe}, std::nullopt,
+      std::nullopt, std::nullopt, std::nullopt};
 
-  static SkillSlots with_known(fl::skills::SkillId skill) noexcept {
+  static SkillSlots with_known(fl::skills::SkillKey skill) noexcept {
     SkillSlots known;
     known.learn(skill);
     return known;
   }
 
-  [[nodiscard]] bool knows(fl::skills::SkillId skill) const noexcept {
+  [[nodiscard]] bool knows(fl::skills::SkillKey skill) const noexcept {
     for (const auto known : slots) {
       if (known == skill) {
         return true;
@@ -38,7 +38,7 @@ struct SkillSlots {
     return false;
   }
 
-  bool learn(fl::skills::SkillId skill) noexcept {
+  bool learn(fl::skills::SkillKey skill) noexcept {
     if (knows(skill)) {
       return false;
     }
@@ -53,7 +53,7 @@ struct SkillSlots {
     return false;
   }
 
-  bool unlearn(fl::skills::SkillId skill) noexcept {
+  bool unlearn(fl::skills::SkillKey skill) noexcept {
     for (auto &known : slots) {
       if (known == skill) {
         known.reset();

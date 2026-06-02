@@ -4,6 +4,7 @@
 #include <nlohmann/json.hpp>
 
 #include "fl/context.hpp"
+#include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/tags.hpp"
 #include "fl/grand_central.hpp"
@@ -100,5 +101,14 @@ TEST_CASE("EntityBuilder + ComponentBuilder basics", "[entity][builder]") {
 
     REQUIRE(skills.knows(fl::skills::SkillId::Observe));
     REQUIRE(skills.has_open_slot());
+
+    const auto &member_data = party_ctx.party_data().members().front();
+    REQUIRE(member_data.grimoire().knows(fl::skills::SkillId::Observe));
+
+    const auto &party_member =
+        reg.get<fl::ecs::components::PartyMember>(member);
+    REQUIRE(
+        party_member.closet().has_equipped_skill(fl::skills::SkillId::Observe));
+    REQUIRE(party_member.closet().has_open_skill_slot());
   }
 }

@@ -10,7 +10,7 @@ class RandomHub;
 
 namespace fl::skills {
 
-SkillId choose_skill(entt::registry &reg, fl::primitives::RandomHub &rng,
-                     entt::entity actor);
+SkillKey choose_skill(entt::registry &reg, fl::primitives::RandomHub &rng,
+                      entt::entity actor);
 
 } // namespace fl::skills

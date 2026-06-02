@@ -3,9 +3,11 @@
 #include "fill_bar.hpp"
 
 #include "fl/ecs/components/atb_charge.hpp"
+#include "fl/ecs/components/closet.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"
 #include "fl/ecs/components/freeze.hpp"
 #include "fl/ecs/components/hp_bar_color_override.hpp"
+#include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/poison.hpp"
 #include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/stats.hpp"
@@ -132,7 +134,7 @@ private:
 };
 
 constexpr int kSkillRowsVisibleHeight = 9;
-constexpr int kSkillRowsCount = fl::ecs::components::SkillSlots::kSlotCount;
+constexpr int kSkillRowsCount = fl::ecs::components::Closet::kSkillSlotCount;
 constexpr int kDebuffRowsVisibleHeight = 9;
 constexpr int kDebuffRowsVisibleWidth = 42;
 
@@ -194,6 +196,17 @@ std::array<std::string, kSkillRowsCount> skill_rows_for(entt::registry &reg,
                                                         entt::entity entity) {
   std::array<std::string, kSkillRowsCount> rows;
   rows.fill("--");
+
+  if (const auto *member =
+          reg.try_get<fl::ecs::components::PartyMember>(entity)) {
+    const auto &skill_slots = member->closet().skill_slots;
+    for (std::size_t i = 0; i < rows.size(); ++i) {
+      if (skill_slots[i].has_value()) {
+        rows[i] = std::string(fl::skills::name(*skill_slots[i]));
+      }
+    }
+    return rows;
+  }
 
   const auto *slots = reg.try_get<fl::ecs::components::SkillSlots>(entity);
   if (slots == nullptr) {

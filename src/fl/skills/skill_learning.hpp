@@ -9,13 +9,13 @@ namespace fl::skills {
 
 bool learn_observed_skill_with_roll(fl::context::PartyCtx &party_ctx,
                                     entt::entity observer, entt::entity user,
-                                    SkillId skill, int roll);
+                                    SkillKey skill, int roll);
 
 bool maybe_teach_observed_skill(fl::context::PartyCtx &party_ctx,
                                 entt::entity observer, entt::entity user,
-                                SkillId skill);
+                                SkillKey skill);
 
 void teach_party_from_observed_skill(fl::context::PartyCtx &party_ctx,
-                                     entt::entity user, SkillId skill);
+                                     entt::entity user, SkillKey skill);
 
 } // namespace fl::skills

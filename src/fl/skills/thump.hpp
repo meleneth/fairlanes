@@ -18,7 +18,8 @@ public:
   Thump();
 
   // Apply one Thump from attacker->defender, returns damage dealt (int).
-  int thump(fl::context::AttackCtx &&ctx, SkillId skill = SkillId::Thump);
+  int thump(fl::context::AttackCtx &&ctx,
+            SkillKey skill = SkillKey{SkillId::Thump});
 
   // Tunables
   double hit_rate = 0.90;

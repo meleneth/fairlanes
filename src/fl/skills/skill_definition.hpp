@@ -10,7 +10,7 @@
 namespace fl::skills {
 
 struct SkillDefinition {
-  SkillId kind;
+  SkillKey key;
   std::string_view display_name;
   std::span<const SkillTag> tags;
   int learn_chance_percent;

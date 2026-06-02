@@ -7,6 +7,7 @@
 #include "fl/ecs/components/atb_charge.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"
 #include "fl/ecs/components/freeze.hpp"
+#include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/poison.hpp"
 #include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
@@ -45,8 +46,9 @@ TEST_CASE("Combatant renders skill slots when allocated at least nine lines",
   auto party_ctx = account_ctx.party_context(0);
   auto entity = party_ctx.party_data().members().front().member_id();
 
-  auto &slots = party_ctx.reg().get<fl::ecs::components::SkillSlots>(entity);
-  slots.slots[1] = fl::skills::SkillId::Thump;
+  auto &party_member =
+      party_ctx.reg().get<fl::ecs::components::PartyMember>(entity);
+  party_member.closet().skill_slots[1] = fl::skills::SkillId::Thump;
 
   fl::widgets::Combatant combatant{party_ctx.reg(), entity, true};
   auto element = combatant.Render() |

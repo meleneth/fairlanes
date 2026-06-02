@@ -42,17 +42,17 @@ std::array<const SkillDefinition *, 18> &definitions() {
   return data;
 }
 
-[[noreturn]] void abort_missing_definition(SkillId skill) {
+[[noreturn]] void abort_missing_definition(SkillKey skill) {
   (void)skill;
   std::abort();
 }
 
 } // namespace
 
-const SkillDefinition &definition(SkillId skill) noexcept {
+const SkillDefinition &definition(SkillKey skill) noexcept {
   const auto &all = definitions();
   const auto it = std::find_if(all.begin(), all.end(), [skill](auto *entry) {
-    return entry->kind == skill;
+    return entry->key == skill;
   });
   if (it == all.end()) {
     abort_missing_definition(skill);
@@ -65,19 +65,19 @@ std::span<const SkillDefinition *const> all_definitions() noexcept {
   return {all.data(), all.size()};
 }
 
-std::string_view name(SkillId skill) noexcept {
+std::string_view name(SkillKey skill) noexcept {
   return definition(skill).display_name;
 }
 
-int learn_chance_percent(SkillId skill) noexcept {
+int learn_chance_percent(SkillKey skill) noexcept {
   return definition(skill).learn_chance_percent;
 }
 
-std::span<const SkillTag> tags(SkillId skill) noexcept {
+std::span<const SkillTag> tags(SkillKey skill) noexcept {
   return definition(skill).tags;
 }
 
-bool has_tag(SkillId skill, SkillTag tag) noexcept {
+bool has_tag(SkillKey skill, SkillTag tag) noexcept {
   const auto tag_list = tags(skill);
   return std::find(tag_list.begin(), tag_list.end(), tag) != tag_list.end();
 }

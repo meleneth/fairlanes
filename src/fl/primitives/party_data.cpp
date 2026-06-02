@@ -4,6 +4,7 @@
 #include <iterator>
 
 #include "fl/context.hpp"
+#include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/systems/loot_drop.hpp"
@@ -101,7 +102,7 @@ void PartyData::leave_combat() {
 }
 
 void PartyData::watch_skill_learned_this_combat(entt::entity member,
-                                                fl::skills::SkillId skill) {
+                                                fl::skills::SkillKey skill) {
   if (!in_combat()) {
     return;
   }
@@ -142,8 +143,10 @@ void PartyData::resolve_pending_learned_skill(
 
   auto *slots =
       party_ctx_.reg().try_get<fl::ecs::components::SkillSlots>(member);
-  if (slots == nullptr) {
-    return;
+  auto *party_member =
+      party_ctx_.reg().try_get<fl::ecs::components::PartyMember>(member);
+  if (party_member != nullptr) {
+    party_member->member_data().grimoire().unlearn(skill);
   }
 
   if (auto *stats =
@@ -153,7 +156,9 @@ void PartyData::resolve_pending_learned_skill(
                     stats->name_, fl::skills::name(skill)));
   }
 
-  slots->unlearn(skill);
+  if (slots != nullptr) {
+    slots->unlearn(skill);
+  }
 }
 
 void PartyData::tick_town_penalty() {

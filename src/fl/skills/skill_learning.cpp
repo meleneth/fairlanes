@@ -15,17 +15,19 @@ namespace fl::skills {
 
 bool learn_observed_skill_with_roll(fl::context::PartyCtx &party_ctx,
                                     entt::entity observer, entt::entity user,
-                                    SkillId skill, int roll) {
-  if (observer == user || skill == SkillId::Observe) {
+                                    SkillKey skill, int roll) {
+  if (observer == user || skill.base == SkillId::Observe) {
     return false;
   }
 
   auto &reg = party_ctx.reg();
   auto *slots = reg.try_get<fl::ecs::components::SkillSlots>(observer);
   auto *stats = reg.try_get<fl::ecs::components::Stats>(observer);
-  if (slots == nullptr || stats == nullptr ||
-      !reg.any_of<fl::ecs::components::PartyMember>(observer) ||
-      !stats->is_alive() || slots->knows(skill) || !slots->has_open_slot()) {
+  auto *party_member = reg.try_get<fl::ecs::components::PartyMember>(observer);
+  if (slots == nullptr || stats == nullptr || party_member == nullptr ||
+      !stats->is_alive() ||
+      party_member->member_data().grimoire().knows(skill) ||
+      !slots->has_open_slot()) {
     return false;
   }
 
@@ -34,8 +36,12 @@ bool learn_observed_skill_with_roll(fl::context::PartyCtx &party_ctx,
     return false;
   }
 
-  if (!slots->learn(skill)) {
+  if (!party_member->member_data().grimoire().learn(skill)) {
     return false;
+  }
+
+  if (!slots->knows(skill)) {
+    (void)slots->learn(skill);
   }
 
   party_ctx.party_data().watch_skill_learned_this_combat(observer, skill);
@@ -47,7 +53,7 @@ bool learn_observed_skill_with_roll(fl::context::PartyCtx &party_ctx,
 
 bool maybe_teach_observed_skill(fl::context::PartyCtx &party_ctx,
                                 entt::entity observer, entt::entity user,
-                                SkillId skill) {
+                                SkillKey skill) {
   auto rs = party_ctx.rng().stream(
       "encounter/learn-skill",
       static_cast<std::underlying_type_t<entt::entity>>(observer));
@@ -56,7 +62,7 @@ bool maybe_teach_observed_skill(fl::context::PartyCtx &party_ctx,
 }
 
 void teach_party_from_observed_skill(fl::context::PartyCtx &party_ctx,
-                                     entt::entity user, SkillId skill) {
+                                     entt::entity user, SkillKey skill) {
   for (const auto &member : party_ctx.party_data().members()) {
     maybe_teach_observed_skill(party_ctx, member.member_id(), user, skill);
   }

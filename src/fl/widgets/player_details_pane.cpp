@@ -6,6 +6,7 @@
 #include <string_view>
 #include <type_traits>
 
+#include "fl/ecs/components/closet.hpp"
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/skill_slots.hpp"
@@ -123,7 +124,23 @@ ftxui::Element PlayerDetailsPane::Render() {
   lines.push_back(separator());
   lines.push_back(text("Skills") | bold);
 
-  if (auto *skills = reg_.try_get<fl::ecs::components::SkillSlots>(member_id)) {
+  auto *party_member =
+      reg_.try_get<fl::ecs::components::PartyMember>(member_id);
+  if (party_member && party_member->closet_entity_id() != entt::null &&
+      reg_.all_of<fl::ecs::components::Closet>(
+          party_member->closet_entity_id())) {
+    const auto &skill_slots = party_member->closet().skill_slots;
+    for (int i = 0; i < fl::ecs::components::Closet::kSkillSlotCount; ++i) {
+      const auto &slot = skill_slots[static_cast<std::size_t>(i)];
+      lines.push_back(hbox({
+          text(std::to_string(i + 1) + ": ") | dim,
+          text(slot.has_value() ? std::string{fl::skills::name(*slot)}
+                                : std::string{"-"}) |
+              flex,
+      }));
+    }
+  } else if (auto *skills =
+                 reg_.try_get<fl::ecs::components::SkillSlots>(member_id)) {
     for (int i = 0; i < fl::ecs::components::SkillSlots::kSlotCount; ++i) {
       const auto &slot = skills->slots[static_cast<std::size_t>(i)];
       lines.push_back(hbox({
@@ -140,8 +157,6 @@ ftxui::Element PlayerDetailsPane::Render() {
   lines.push_back(separator());
   lines.push_back(text("Gear") | bold);
 
-  auto *party_member =
-      reg_.try_get<fl::ecs::components::PartyMember>(member_id);
   if (!party_member || party_member->closet_entity_id() == entt::null ||
       !reg_.all_of<fl::ecs::components::Closet>(
           party_member->closet_entity_id())) {

@@ -67,7 +67,7 @@ Thump::Thump() : rng_(std::random_device{}()) {
   }
 }
 
-int Thump::thump(fl::context::AttackCtx &&ctx, SkillId skill) {
+int Thump::thump(fl::context::AttackCtx &&ctx, SkillKey skill) {
   using fl::ecs::components::Stats;
   auto &dst = ctx.reg().get<Stats>(ctx.defender());
 
