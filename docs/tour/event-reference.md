@@ -2,25 +2,26 @@
 
 Back to [Tour Home](./index.md)
 
-This page documents the event payloads that currently exist in Fairlanes and, most importantly, what triggers them. It focuses on the two active event styles in the codebase:
+This page documents the event payloads that currently exist in Fairlanes after the dead event/bus cleanup. It separates live production events from underused events that still exist because they line up with current direct behavior that may be eventified next.
 
-- SML state-machine events, which are passed with `process_event(...)`.
-- Variant/eventpp buses, mostly through `seerin::VariantBus<std::variant<...>>` and a few direct `eventpp` dispatchers.
+## Runtime Spine
 
-Some payloads are defined but do not yet have production emitters. Those are listed on purpose: they are part of the current event surface and should be audited before new combat abilities, skills, or enemies build on them.
+The active combat chain is:
 
-## Main Runtime Flow
+```text
+seerin::Beat -> PartyTick -> ATB -> BecameActive -> skill scheduling -> FinishedTurn
+```
 
-The active combat event chain is currently:
+In source terms:
 
-1. `GrandCentral::main_loop(...)` emits global `seerin::Beat` on the root `seerin::BeatBus` each simulation beat.
-2. `PartyData::hook_to_beat(...)` listens to the global beat, forwards `seerin::Beat` to the party beat bus, and calls `PartyLoopMachine::beat_event()`.
-3. `PartyLoopMachine::beat_event()` sends `fl::fsm::NextEvent` into the party SML machine.
-4. `PartyLoop::Ops::combat_tick(...)` emits `fl::events::PartyTick` while the party remains in combat.
-5. `EncounterData` listens for `PartyTick` and emits `seerin::Beat` into the encounter ATB engine.
-6. `AtbEngine` turns ATB beats into internal `BeatTick`, eventual `BecameReady`, and then `BecameActive` when no other combatant is active.
-7. `EncounterData` listens for `BecameActive`, chooses a target and skill, then schedules the skill sequence.
-8. The scheduled sequence applies effects and eventually emits `seerin::FinishedTurn` for the attacker.
+1. `GrandCentral::main_loop(...)` emits `seerin::Beat` on the root `seerin::BeatBus`.
+2. `PartyData::hook_to_beat(...)` receives that beat and advances `PartyLoopMachine`.
+3. `PartyLoopMachine` sends `fl::fsm::NextEvent` into `PartyLoop`.
+4. `PartyLoop::Ops::combat_tick(...)` emits `fl::events::PartyTick` while the party is in combat.
+5. `EncounterData` listens for `PartyTick` and emits `seerin::Beat` into `AtbEngine`.
+6. `AtbEngine` advances charge, emits/handles `BecameReady`, then emits `BecameActive` when a combatant can act.
+7. `EncounterData` listens for `BecameActive`, chooses target/skill, and delegates to `SkillSequencer`.
+8. The scheduled action emits `seerin::FinishedTurn` when the active turn is complete.
 
 ## SML Events
 
@@ -28,192 +29,129 @@ The active combat event chain is currently:
 
 Defined in `src/fl/fsm/party_loop.hpp`.
 
-Triggered by `PartyLoopMachine::beat_event()` once per forwarded party beat. The caller is `PartyData::hook_to_beat(...)`, which runs after a global `seerin::Beat` is received from `GrandCentral`.
-
-Handled by `fl::fsm::PartyLoop`:
-
-- `Idle -> Farming`: starts the farming/combat loop.
-- `Farming -> Farming` with `in_combat` guard: emits a party combat tick.
-- `Farming -> CombatIdle` without `in_combat`: leaves combat and returns to town.
-- `CombatIdle -> Gearing`: runs gear maintenance next.
-- `Dead -> Fixing`: enters town recovery.
-- `Fixing -> Fixing` while recovery is still active: decrements the town penalty.
-- `Fixing -> Gearing` when recovery is done: revives party members.
-- `Gearing -> Idle`: returns to idle loop.
+Triggered by `PartyLoopMachine::beat_event()` once per forwarded party beat. Handled by `PartyLoop` to move through idle, farming, combat, town recovery, gearing, and back to idle.
 
 ### `fl::fsm::PartyWipedEvent`
 
 Defined in `src/fl/fsm/party_loop.hpp`.
 
-Triggered by `PartyLoopMachine` when the party bus emits `fl::events::PartyWiped`. The machine subscribes to the party bus in `PartyLoopMachine::Impl` and converts the bus event into this SML event.
-
-Handled by `fl::fsm::PartyLoop` from every current state. It transitions to `Dead`, where `enter_dead(...)` logs the wipe recovery, leaves combat, and starts the town penalty.
+Triggered when `PartyLoopMachine` receives `fl::events::PartyWiped` from the party bus. Handled by `PartyLoop` from every current state, transitioning to `Dead`.
 
 ### `seerin::BeatTick`
 
-Defined in `src/sr/atb_events.hpp` as an ATB FSM-only event.
+Defined in `src/sr/atb_events.hpp`.
 
-Triggered inside `AtbEngine::on_beat(...)` for each registered combatant that is valid and allowed to charge. It is not emitted on a public bus.
+Internal ATB FSM event. `AtbEngine::on_beat(...)` sends it to each combatant that is valid and allowed to charge.
 
-Handled by `seerin::AtbMachine`:
-
-- In `Charging`, it increments the entity's `AtbCharge`.
-- If the next beat fills the charge bar, it also emits `seerin::BecameReady` and transitions to `Ready`.
-
-### `seerin::FinishedTurn` as an ATB FSM event
-
-`FinishedTurn` is also a public `AtbInEvent`, but inside `AtbEngine` it is forwarded into each combatant's SML machine when appropriate.
-
-Triggered internally when:
-
-- `AtbEngine::on_finished_turn(...)` receives public `seerin::FinishedTurn` for the active combatant.
-- `AtbEngine::on_beat(...)` sees a combatant that cannot charge, usually because it is dead, and resets that combatant.
-
-Handled by `seerin::AtbMachine` in `Ready`: resets charge to zero and returns to `Charging`.
-
-## Global And Party Beat Events
+## Live Production Events
 
 ### `seerin::Beat`
 
 Defined in `src/sr/atb_events.hpp`.
 
-Used as the active beat payload for the root `seerin::BeatBus`, party beat bus, and ATB input bus.
+Emitted by `GrandCentral`, forwarded by `PartyData`, and emitted by `EncounterData` into ATB input when a party combat tick occurs. Observed by `PartyData` and `AtbEngine`.
 
-Triggered by:
+### `fl::events::PartyTick`
 
-- `GrandCentral::main_loop(...)` in UI mode and headless mode, once per simulation beat, on the global beat bus.
-- `PartyData::hook_to_beat(...)`, which forwards each global beat to that party's `party_beat_bus_`.
-- `EncounterData`, which converts each `fl::events::PartyTick` into an ATB input beat with `atb_in().emit(seerin::Beat{})`.
+Defined in `src/fl/events/party_bus.hpp`.
 
-Observed by:
+Emitted by `PartyLoop::Ops::combat_tick(...)`. Observed by `EncounterData`, which converts it to ATB `seerin::Beat`.
 
-- `PartyData::hook_to_beat(...)` from the global bus.
-- `AtbEngine`, through `AtbInEvent`, to advance scheduled work and ATB charge.
+### `fl::events::PartyWiped`
 
-The old `fl::events::Beat`, `BeatPulse`, `BeatBus`, and `BeatClock` path was removed because production uses `seerin::Beat`.
+Emitted by `TakeDamage::commit(...)` when the final living party member dies. Observed by `PartyLoopMachine`, status cleanup listeners, and pending-skill retention logic.
 
-## Party Bus Events
+### `fl::events::PartyVictory`
 
-`fl::events::PartyEvent` is a variant bus payload defined in `src/fl/events/party_bus.hpp`.
+Emitted by `PartyData::leave_combat()` when combat ends and party members are still alive. Observed by pending-skill retention logic.
 
-### `PartyCreated`
+### `fl::events::PartyLeftCombat`
 
-Production trigger status: defined, but no production emitter was found. Party construction currently writes logs directly rather than emitting this event.
+Emitted by `PartyData::leave_combat()` before encounter teardown. Observed by status cleanup listeners.
 
-### `MemberJoined`
+### `fl::events::PartyGainedLevel`
 
-Production trigger status: defined, but no production emitter was found.
+Emitted by `TrackXP::add_xp(...)`. Observed by `MemberData::hook_level_progression(...)`, which grants permanent max HP.
 
-### `PartyWiped`
+### `fl::events::PartyHealed`
 
-Triggered by `TakeDamage::commit(...)` after a player dies and `PartyData::all_members_dead()` returns true for that player's party.
+Emitted by `PartyData::revitalize_members()` after town recovery updates HP/MP. It has test listeners today, but no production listener beyond the state change that already happened before the emit.
 
-Observed by:
+### `fl::events::PartyRevitalizeRequested`
 
-- `PartyLoopMachine`, which translates it into `fl::fsm::PartyWipedEvent`.
-- Tests and any party-bus subscribers.
+Emitted by `PartyLoop::Ops::fixing_tick(...)` when town recovery is complete. Observed by `PartyData`, which revitalizes members.
 
-### `PartyLeftCombat`
+### `fl::events::LootDropRequested`
 
-Triggered by `PartyData::leave_combat()` when an active encounter exists and is being torn down.
+Emitted by `TakeDamage::commit(...)` when a party member kills an enemy. Observed by `LootDropSystem::bind_listener(...)`.
 
-Observed by `DireBleedSystem`, which clears Dire Bleed status, visual overrides, and pending target-owned scheduled work when combat ends.
+### `fl::events::PoisonApplied`
 
-### `PartyGainedXP`
+Emitted by `SkillSequencer::schedule_poison(...)`. Observed by `PoisonSystem::bind_apply_listener(...)`.
 
-Production trigger status: defined, but no production emitter was found. XP is currently granted through `GrantXPToParty::commit(...)` without this event.
+### `fl::events::FreezeApplied`
 
-### `PartyHealed`
+Emitted by `SkillSequencer::schedule_cold_snap(...)`. Observed by `FreezeSystem::bind_apply_listener(...)`.
 
-Production trigger status: defined, but no production emitter was found. Party recovery currently happens through `PartyData::revitalize_members()` without this event.
+### `fl::events::FreezeStarted` and `FreezeEnded`
 
-### `PartyTick`
+Emitted by `FreezeSystem`. Observed by `EncounterData`, which forwards them to ATB as `seerin::Frozen` and `seerin::Thawed`.
 
-Triggered by `PartyLoop::Ops::combat_tick(...)` whenever the party SML machine receives `NextEvent` while `Farming` and `in_combat` is true.
+### `fl::events::FleeAttempted` and `CombatantFled`
 
-Observed by `EncounterData`, which turns the party tick into `seerin::Beat` on the encounter ATB input bus.
+Emitted by `SkillSequencer::schedule_flee(...)`. Tests currently assert them; production gameplay behavior is mostly performed in the emitting callback.
 
-### `PlayerDied`
+### `fl::events::PlayerDied`
 
-Triggered by `TakeDamage::commit(...)` when a defender was alive before damage and is not alive after damage, and the defender is a party member.
-
-Observed by `DireBleedSystem`, which clears Dire Bleed if the affected player dies.
-
-## ATB Bus Events
-
-`seerin::AtbInEvent` and `seerin::AtbOutEvent` are variant bus payloads defined in `src/sr/atb_events.hpp`.
+Emitted by `TakeDamage::commit(...)` when a previously alive party member dies. Observed by status cleanup through `StatusEffectLifetime`.
 
 ### `seerin::AddCombatant`
 
-Triggered by:
-
-- `EncounterBuilder::thump_it_out()` for each defending party member added to a new encounter.
-- `EncounterBuilder::add_to_enemy_team(...)` for each spawned enemy.
-- Tests that add combatants directly to an encounter or ATB engine.
-
-Handled by `AtbEngine::on_add(...)`, which registers the entity as an ATB combatant and creates/replaces its ECS `AtbCharge` component.
+Emitted by `EncounterBuilder` when party members and enemies enter an encounter. Handled by `AtbEngine::on_add(...)`.
 
 ### `seerin::FinishedTurn`
 
-Triggered by:
+Emitted by `EncounterData` when no valid target exists and by `SkillSequencer` finish callbacks. Handled by `AtbEngine::on_finished_turn(...)`.
 
-- `EncounterData` immediately when an active combatant has no valid target.
-- `SkillSequencer` finish callbacks after a scheduled skill sequence completes, such as Thump-like skills at beat 71, Eviscerate at beat 34, and Observe at beat 12.
+### `seerin::Frozen` and `Thawed`
 
-Handled by `AtbEngine::on_finished_turn(...)`, which clears the active combatant and forwards the event to that combatant's ATB state machine so charge resets.
+Emitted by `EncounterData` in response to `FreezeStarted`/`FreezeEnded`. Handled by `AtbEngine` and combatant ATB machines.
 
 ### `seerin::BecameReady`
 
-Triggered by `seerin::AtbMachine` when a `BeatTick` fills a combatant's ATB charge.
-
-Handled by `AtbEngine::on_became_ready(...)`, which enqueues the entity in the ready queue.
+Emitted by `AtbMachine` when charge fills. Handled by `AtbEngine::on_became_ready(...)`.
 
 ### `seerin::BecameActive`
 
-Triggered by `AtbEngine::pump_ready_queue()` when there is no current active combatant and a ready combatant can act.
-
-Observed by `EncounterData::innervate_event_system()`. The handler chooses a target and skill, then schedules the selected skill sequence. If no valid target exists, it emits `FinishedTurn` immediately.
-
-## Logging Events
+Emitted by `AtbEngine::pump_ready_queue()`. Observed by `EncounterData::innervate_event_system()`.
 
 ### `fl::primitives::LogEvent`
 
-Defined in `src/fl/primitives/logging.hpp` and dispatched through direct `eventpp::EventDispatcher` using `LogKey::Message`.
+Defined in `src/fl/primitives/logging.hpp`. Emitted by `Logger`; observed by `FancyLogSink`.
 
-Triggered by `fl::primitives::Logger::log(...)` and its convenience methods: `trace`, `debug`, `info`, `warn`, and `error`.
+## Intentionally Underused Events
 
-Observed by `FancyLogSink`, which appends matching log messages into a `FancyLog` view and removes its eventpp listener in its destructor.
+These events match real current behavior that still writes logs or mutates state directly.
 
-## Timer And Scheduler Events
+### `fl::events::PartyCreated`
+
+Defined but not emitted. Party construction currently logs directly.
+
+### `fl::events::MemberJoined`
+
+Defined but not emitted. Member creation currently logs directly.
+
+### `fl::events::PartyGainedXP`
+
+Defined but not emitted. `GrantXPToParty::commit(...)` currently logs and applies XP directly.
+
+## Scheduler Payloads
 
 ### `seerin::TimedScheduler<AtbOutEvent>::EmitEvent`
 
-Defined in `src/sr/timed_scheduler.hpp` as a scheduled wrapper around a typed event variant.
-
-Triggered by `schedule_at(...)`, `schedule_in(...)`, and `schedule_in_beats(...)`. Emitted when `TimedScheduler::on_beat()` advances far enough.
-
-Current production status: the generic typed-event path exists, but the active skill code mostly uses smelly callbacks instead of typed scheduled events.
+Typed scheduled event wrapper in `src/sr/timed_scheduler.hpp`. The API exists, but current skill code mostly uses callbacks.
 
 ### `seerin::TimedScheduler<AtbOutEvent>::SmellyCallback`
 
-Defined in `src/sr/timed_scheduler.hpp` as a scheduled callback with a note and optional owner entity.
+The active scheduling tool for skill visuals, delayed damage, status ticks, and turn completion. Callback notes are part of the current debugging surface.
 
-Triggered by `schedule_smelly_at(...)`, `schedule_smelly_in(...)`, `schedule_smelly_in_beats(...)`, and their owner-aware variants. Executed when `TimedScheduler::on_beat()` advances far enough.
-
-Used by the current implemented skills and statuses:
-
-- Thump-like skills schedule attacker color pulses, defender hit color, damage application, and turn completion.
-- Eviscerate schedules slash/wound visuals, Dire Bleed application, and turn completion.
-- Observe schedules a log message and turn completion.
-- Dire Bleed schedules repeated bleed ticks until cleanup conditions remove the status.
-
-## Audit Notes For Combat Content
-
-The current implemented combat content is driven less by domain events and more by scheduled callbacks:
-
-- Skills are selected when `BecameActive` fires.
-- Skill timing is represented by `TimedScheduler` callback notes.
-- Damage is applied directly by skill callbacks through `TakeDamage::commit(...)`.
-- Death and party wipe are the main gameplay outcomes currently published to the party bus.
-
-That means the next audit should decide whether ability milestones such as action requested, effect applied, attack resolved, status applied, status ticked, and status cleared should become typed events rather than callback notes and direct system calls.

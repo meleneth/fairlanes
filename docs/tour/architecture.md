@@ -1,42 +1,31 @@
 # Architecture
 
-ECS-based FSMs and event-driven wiring, forming a highly maintainable skeleton that is still in need of some organs.
+Fairlanes is a C++20 autobattler experiment built around ECS data, FSM-driven flow, and a small set of live event buses.
 
-## What that means
+## Primary Pieces
 
-Fairlanes is built from three primary pieces:
+- **ECS (EnTT)** defines what exists: entities and components.
+- **FSMs (SML / Seerin / PartyLoop)** define how time and combat progress.
+- **Event buses (eventpp through `seerin::VariantBus`)** define the few places where systems need decoupled signals.
 
-- **ECS (EnTT)** — defines what exists (entities and their data)
-- **FSMs (SML / Seerin / PartyLoop)** — define how things progress over time
-- **Event buses (eventpp)** — define how systems communicate
+## Reading Order
 
-Together, they separate:
-- structure (what things are)
-- flow (what happens next)
-- communication (who reacts)
+If you are trying to understand behavior:
 
-## How to read the codebase
+1. Read the data: ECS components and owner objects.
+2. Read the flow: `PartyLoop`, `PartyLoopMachine`, and Seerin ATB.
+3. Read the signals: `PartyBus`, `CombatantBus`, and ATB input/output events.
 
-If you are trying to understand a behavior:
+## Current Combat Shape
 
-1. Look at the **data** (ECS components)
-2. Look at the **flow** (FSM / Seerin / PartyLoop)
-3. Look at the **signals** (event dispatch + listeners)
+The runtime spine is:
 
-## Current state
+```text
+seerin::Beat -> PartyTick -> ATB -> BecameActive -> skill scheduling -> FinishedTurn
+```
 
-The skeleton is strong:
-- clear boundaries
-- explicit flow
-- modular data
+Most skill effects still apply through scheduled callbacks and direct system calls. Events are used where multiple systems need to observe the same fact: party wipe, combat exit, status application, freeze/thaw, loot requests, and ATB readiness/activation.
 
-What’s still evolving:
-- richer gameplay systems
-- more complete interactions between subsystems
-- deeper content layered on top of the structure
+## Fairlanes Take
 
-## Fairlanes take
-
-We are optimizing for **clarity of structure first**, then layering gameplay complexity on top.
-
-The bones are in place. The muscles come next.
+Use events when a gameplay fact needs observers. Use direct calls when there is one clear owner. Delete stubs that are not part of the current runtime.
