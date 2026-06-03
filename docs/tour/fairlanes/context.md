@@ -35,7 +35,21 @@ Most Fairlanes contexts expose the same core world access:
 |------------|---------|
 | `reg()` | ECS world access |
 | `rng()` | randomness for gameplay and simulation |
-| `log()` | human-facing trace / debugging surface |
+| `log()` | human-facing trace / debugging surface for this scope |
+
+## Log Scope Matters
+
+`log()` is not a global logger hiding behind a convenient accessor. It is part of the context's authority boundary.
+
+Fairlanes currently has separate human-facing logs at least at the account and party levels:
+
+- `AccountCtx::log()` writes to the account log.
+- `PartyCtx::log()` writes to that party's log.
+- `EntityCtx` and `AttackCtx` preserve whichever scoped log was used to create them.
+
+That means two pieces of code can both call `ctx.log()` and still be writing to different trace surfaces. This is intentional: the context says not only what world data code can see, but also where the player-facing/debug narration for that work belongs.
+
+Future narrower scopes, such as party-member-level logs, should follow the same rule: context conversion must preserve or deliberately narrow the log scope rather than falling back to a global log.
 
 ## Context-specific surface
 

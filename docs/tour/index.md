@@ -49,6 +49,7 @@ A good guided tour should do three things:
 1. [Architecture](./architecture.md)
 2. [Event Flow](./event-flow.md)
 3. [Event Reference](./event-reference.md)
+4. [Animation Decals](./fairlanes/widgets/animation_decals.md)
 
 ## What belongs on this page
 

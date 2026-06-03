@@ -18,6 +18,7 @@ It is responsible for showing things like:
 - identity
 - stats
 - current state (alive, acting, etc.)
+- transient [animation decals](./animation_decals.md) layered over the combatant
 
 ## What to notice
 
