@@ -1,231 +1,121 @@
-Fairlanes
+# Fairlanes
 
-One day, a Field Mouse thumped me.
+One day, a Field Mouse thumped me. That part is still true.
 
+Fairlanes is a C++20 terminal autobattler / Progress Quest-like game experiment. The machine drives the parties; the interesting work is in the simulation loop, combat timing, skill observation, status effects, loot, and the UI that lets you watch the little world grind forward.
 
+## Current Shape
 
+The current runtime is built around:
 
-tl:dr
+- **EnTT ECS** for entities and components.
+- **SML / PartyLoop** for party progression through farming, combat, town recovery, and gearing.
+- **Seerin ATB** for combat timing, readiness, active turns, freeze/thaw, and scheduled action work.
+- **eventpp through `seerin::VariantBus`** for the live party, combatant, beat, and ATB event buses.
+- **FTXUI** for the terminal UI.
 
-8 accounts.
-5 parties per account
-5 players per party
-5 skills per player
+The important combat spine is:
 
-dynamic TUI animation effects?
-
-up next: event driven w/animation timed combat simulation
-see!  field mouse flash twice!
-see!  targetted player flash the result! (crit/dmg/heal)
-
-
-step one: get the code compiling with enough pieces it could maybe eventually work
-step two: write tests for major classes to prove functionality works as expected
-step thr: Observe Thump from a Field Mouse, and be Enlightened
-
-
-
-
-
-
-
-
-to build:
-
-    mkdir build
-    cd build
-    cmake ..
-
-windows
-    cmake --build .
-
-linux
-    cmake --build . -- -j16
-
-f1-f8 will switch between accounts
-
-Tracy is integrated, grab it from https://github.com/wolfpld/tracy/releases and you should be able to connect
-
-# Blather
-
-Playing around w/EnTT, FTX::UI, boost_ext / SML and <strike>turn based</strike> combat systems
-
-    cmake --build . --target clang-format
-
-    find src -type f \( -name '_.cpp' -o -name '_.hpp' -o -name '_.c' -o -name '_.h' \) -exec clang-format -i {} +
-
-This is the design doc at the moment, none of the below is implemented.
-
-At the start, for dev purposes, this is scoped as an autobattler that the machine itself plays - this is basically a advanced version of Progress Quest.
-
-The Loop:
-Go to (Area) kill monsters get loot
-return to town, heal up
-craft gear, maintain gear
-on level up, progress skills (assuming skills are level-cap based)
-get consumables
-goto 11
-
-# Story
-
-We start in a small village, and life is simple enough. As we get to a certain level, the village is attacked and we must explore the larger world.
-
-A core part of the progression is that we start in a small village, w/no magic - just normal swords / daggers / maces etc. at 25% into the game, we start seeing magic. at 50%, we start seeing modern weapons. at 75%, we start seeing cyber + lazer weapons. (modern / magic introductions are still 'up in the air' for ordering)
-
-This progression means that old defenses are invalidated as we move 'chapters'. This implies at the least gearing resets, and possibly different sets of gear depending on what types of enemies you are expecting to encounter.
-
-# Questions
-
-How is area selected? is it level locked or ability to kill locked?
-is creature selection biome based?
-what damage types do we have?
-what are caps for resistances?
-what are the damage reduction formulas?
-
-# Skills
-
-so by default, you don't know anything
-but you venture into the forest, and a field mouse uses Thump on you
-and then you learn the skill Thump
-and the power spiral begins
-
-we're making 5's a thing here. so each acccount has 5 parties, each party has 5 members, and each party member has 5 skills.
-
-Skills can be abandoned at any time. Some skills will leave behind permanent buffs even when abandoned, others require the skill to be learned (and optionally levelled!) for their effects.
-
-We're going to need tags for the skills. Thump is a damage, physical skill. It doesn't use any weapons.
-
-## how does experience work?
-
-Level cap is 100
-at level 1, you need to kill 10 things to get to level 2
-at level 70, you would need to kill 710 things to get to level 71
-
-## Biomes
-
-Plains - Wolves, Horses, Meerkats
-Tundra - Bison
-Forest - Spiders, Squirrels, Wolves
-Dark Forest - Snails
-Jungle - Snakes, Gecko
-Murky Swamp - Mosquitos, Dragonflies
-Fetid Swamp - active rot - Mushrooms
-Oceanside - Crabs, Eels, Octopus
-Caves - Bats, Blind Scorpions
-Desert - Scorpions, Tarantula
-Mines - Dark Bats,
-Ship - Narwahl, Swordfish, Kraken
-Ice (berg? or just snowy outside?) - Yeti
-
-# Drops
-
-Loot tables are biome based
-Each monster type has a specific rare drop
-most monsters do not drop currency, but they do drop trash that merchants will buy
-bag full = go sell
-
-# Farming minigame
-
-Grow reagents for consumables, seeds are purchasable or available as drops in certain biomes
-plot size and time passing
-mutations?
-
-# Consumables
-
-- Healing Potion (1 for each 10 levels)
-- Mana Potion (1 for each 10 levels)
-- Micro, Mini, Tiny, Little, Small, Plain, Extra, Large, Huge, Gigantic
-
-# Entity Component Types
-
-please generate the documentation and refer to fl::ecs::components
-
-# Areas
-
-## Cycle I: Origin
-
-## Cycle II: Resonance
-
-## Cycle III: Conflict
-
-## Cycle IV: Singularity
-
-## Filigree: Experience-Bound Armor Progression
-
-Armor in *Fairlanes* does not gain power solely through upgrades or abstract currencies. It learns—and it has limits.
-
-Each piece of armor accumulates **filigree**—Cycle-specific experience—based on when it is worn and what it endures. Fighting during a given Cycle while wearing a coat will shape that coat’s affinity for that phase of the world. Over time, the armor becomes attuned through lived use.
-
-Only the filigree relevant to the current Cycle is active:
-
-```cpp
-effective_filigree = armor.filigree[current_cycle]
+```text
+seerin::Beat -> PartyTick -> ATB -> BecameActive -> skill scheduling -> FinishedTurn
 ```
 
-This creates a simple but powerful rule:
+In practice:
 
-> You can only get good at what you actually do.
+1. `GrandCentral` emits global `seerin::Beat` events.
+2. `PartyData` forwards beats into the party loop.
+3. `PartyLoop` emits `PartyTick` while the party is in combat.
+4. `EncounterData` converts party ticks into ATB beats.
+5. `AtbEngine` chooses one active combatant at a time.
+6. `SkillSequencer` schedules visuals, effects, damage, status work, and turn completion.
 
-### Armor Tiers and Filigree Caps
+## What Exists Now
 
-Armor quality defines how much experience it can meaningfully hold.
+Fairlanes currently has:
 
-* **Higher-tier armor**
+- 8 accounts, each with parties and party members.
+- Automated encounter creation and ATB-driven combat.
+- Skill selection and timed skill sequences.
+- Thump-like attacks, Flame Strike, Flame Wave, Mercyburst, Observe, Poison, Cold Snap, Eviscerate, and Flee behavior.
+- Poison, Freeze, and Dire Bleed status effects with cleanup on death/combat exit.
+- XP, level gains, town recovery, loot requests, starting festival drops, and basic gear maintenance.
+- Account/party battle views, combatant projections, logs, inventory rows, and console/debug commands.
 
-  * greater filigree caps per Cycle
-  * better base damage absorption
-  * higher cost and investment
+The codebase has moved past speculative event/bus scaffolding. If a type is not part of the current runtime, it should not be treated as architecture.
 
-* **Lower-tier armor**
+## Build And Test
 
-  * reaches mastery quickly
-  * but caps out earlier
+Use the existing debug build tree for normal local checks:
 
-This creates a natural tension:
+```sh
+cmake --build build-linux-debug
+ctest --test-dir build-linux-debug --output-on-failure
+```
 
-> Do you invest in better armor with long-term potential, or master what you have right now?
+Fresh build:
 
-### Design Implications
+```sh
+cmake -S . -B build-linux-debug -DCMAKE_BUILD_TYPE=Debug
+cmake --build build-linux-debug
+ctest --test-dir build-linux-debug --output-on-failure
+```
 
-* **Experience is temporal**
-  Progress is tied to *when* actions occur, not just where.
+Formatting target:
 
-* **Gear has memory**
-  A well-worn piece reflects the Cycles it has survived.
+```sh
+cmake --build build-linux-debug --target clang-format
+```
 
-* **Upgrades extend potential, not replace experience**
-  New armor does not inherit mastery—it must earn it.
+## Running
 
-* **No stat stacking or slot puzzles**
-  Filigree is additive in storage, but selectively active in context.
+```sh
+cmake --build build-linux-debug
+./build-linux-debug/fairlanes
+```
 
-* **Natural progression loop**
-  Enter a Cycle → endure → strengthen that Cycle’s filigree → push further as it returns.
+Function keys `F1` through `F8` switch between accounts.
 
-* **Closets become lived loadouts**
-  Players curate sets of gear shaped by different phases of the world.
+Tracy profiling is integrated. If Tracy is enabled in the build, the game may open a profiling connection when it runs.
 
-This system keeps gear relevant indefinitely: rather than being replaced, armor becomes increasingly specialized—while higher-tier equipment expands how far that specialization can go.
+## Reading The Code
 
-# Item Slots
+Hosted docs: https://meleneth.github.io/fairlanes/
 
-Chest      (core defense + filigree anchor)
-Helm       (perception / status)
-Boots      (movement / positioning)
-Gloves     (execution / precision)
-Belt       (resources / utility)
+Start here:
 
-Cape       (stance / targeting / decision bias)
+- `docs/tour/index.md`
+- `docs/tour/architecture.md`
+- `docs/tour/event-flow.md`
+- `docs/tour/event-reference.md`
+- `docs/tour/fairlanes/context.md`
+- `docs/tour/seerin/combat_engine.md`
 
-Necklace   (global modifier)
-Ring x2    (fine-grain modifiers)
+Useful source entry points:
 
-# Currencies
+- `src/fl/grand_central.cpp`
+- `src/fl/primitives/party_data.cpp`
+- `src/fl/fsm/party_loop.cpp`
+- `src/fl/primitives/encounter_data.cpp`
+- `src/sr/atb_engine.cpp`
+- `src/fl/skills/skill_sequence.cpp`
+- `src/fl/events/party_bus.hpp`
 
-ᛞ Darrin-mark
+## Design Direction
 
-# The Code
+The gameplay loop is:
 
-We currently have a god object, GrandCentral. Nothing else is allowed to know about GrandCentral, it's just the owner for all the things.
+```text
+go to an area -> fight -> get loot/xp -> return to town -> recover -> maintain gear -> repeat
+```
 
-AppContext has log*, registry*, and rng\_.
+Skill learning is still one of the central images: a party member sees a creature use a skill, studies it through Observe, and may carry that skill forward if the fight is won.
+
+Longer-term lore and item ideas, including Cycles, filigree armor, and Darrin-mark, live in the docs and brainstorm files until the code promotes them into runtime systems.
+
+## Contributing Notes
+
+Keep UI widgets as projections. Gameplay authority belongs in systems, state machines, context-scoped logic, and data models.
+
+Use the narrowest context that fits. `GrandCentral` owns the world, but normal code should not reach for it.
+
+Prefer concrete runtime events over aspirational stubs. If a new event exists, it should have a real producer, a real consumer, or a very clear near-term integration path.
