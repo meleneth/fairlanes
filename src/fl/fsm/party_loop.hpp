@@ -27,6 +27,52 @@ struct PartyLoop {
     static bool in_combat(fl::context::PartyCtx &ctx);
     static bool fixing_done(fl::context::PartyCtx &ctx);
   };
+
+  struct EnterIdle {
+    void operator()(fl::context::PartyCtx &ctx) const { Ops::enter_idle(ctx); }
+  };
+  struct EnterFarming {
+    void operator()(fl::context::PartyCtx &ctx) const {
+      Ops::enter_farming(ctx);
+    }
+  };
+  struct ExitFarming {
+    void operator()(fl::context::PartyCtx &ctx) const {
+      Ops::exit_farming(ctx);
+    }
+  };
+  struct EnterDead {
+    void operator()(fl::context::PartyCtx &ctx) const { Ops::enter_dead(ctx); }
+  };
+  struct EnterFixing {
+    void operator()(fl::context::PartyCtx &ctx) const {
+      Ops::enter_fixing(ctx);
+    }
+  };
+  struct ExitFixing {
+    void operator()(fl::context::PartyCtx &ctx) const { Ops::exit_fixing(ctx); }
+  };
+  struct EnterGearing {
+    void operator()(fl::context::PartyCtx &ctx) const {
+      Ops::enter_gearing(ctx);
+    }
+  };
+  struct CombatTick {
+    void operator()(fl::context::PartyCtx &ctx) const { Ops::combat_tick(ctx); }
+  };
+  struct FixingTick {
+    void operator()(fl::context::PartyCtx &ctx) const { Ops::fixing_tick(ctx); }
+  };
+  struct InCombat {
+    bool operator()(fl::context::PartyCtx &ctx) const {
+      return Ops::in_combat(ctx);
+    }
+  };
+  struct FixingDone {
+    bool operator()(fl::context::PartyCtx &ctx) const {
+      return Ops::fixing_done(ctx);
+    }
+  };
   auto operator()() const {
     using namespace sml;
 
@@ -37,49 +83,12 @@ struct PartyLoop {
     struct Gearing {};
     struct CombatIdle {};
 
-    // Actions
-    const auto enter_idle = [](fl::context::PartyCtx &ctx) {
-      Ops::enter_idle(ctx);
-    };
-    const auto enter_farming = [](fl::context::PartyCtx &ctx) {
-      Ops::enter_farming(ctx);
-    };
-    const auto exit_farming = [](fl::context::PartyCtx &ctx) {
-      Ops::exit_farming(ctx);
-    };
-    const auto enter_dead = [](fl::context::PartyCtx &ctx) {
-      Ops::enter_dead(ctx);
-    };
-    const auto enter_fixing = [](fl::context::PartyCtx &ctx) {
-      Ops::enter_fixing(ctx);
-    };
-    const auto exit_fixing = [](fl::context::PartyCtx &ctx) {
-      Ops::exit_fixing(ctx);
-    };
-    const auto enter_gearing = [](fl::context::PartyCtx &ctx) {
-      Ops::enter_gearing(ctx);
-    };
-    const auto combat_tick = [](fl::context::PartyCtx &ctx) {
-      Ops::combat_tick(ctx);
-    };
-    const auto fixing_tick = [](fl::context::PartyCtx &ctx) {
-      Ops::fixing_tick(ctx);
-    };
-
-    // Guards
-    const auto in_combat = [](fl::context::PartyCtx &ctx) {
-      return Ops::in_combat(ctx);
-    };
-    const auto fixing_done = [](fl::context::PartyCtx &ctx) {
-      return Ops::fixing_done(ctx);
-    };
-
     return make_transition_table(
-        *state<Idle> + sml::on_entry<_> / enter_idle,
-        state<Farming> + sml::on_entry<_> / enter_farming,
-        state<Dead> + sml::on_entry<_> / enter_dead,
-        state<Fixing> + sml::on_entry<_> / enter_fixing,
-        state<Gearing> + sml::on_entry<_> / enter_gearing,
+        *state<Idle> + sml::on_entry<_> / EnterIdle{},
+        state<Farming> + sml::on_entry<_> / EnterFarming{},
+        state<Dead> + sml::on_entry<_> / EnterDead{},
+        state<Fixing> + sml::on_entry<_> / EnterFixing{},
+        state<Gearing> + sml::on_entry<_> / EnterGearing{},
 
         state<Idle> + event<NextEvent> = state<Farming>,
         state<Idle> + event<PartyWipedEvent> = state<Dead>,
@@ -88,13 +97,13 @@ struct PartyLoop {
         state<Fixing> + event<PartyWipedEvent> = state<Dead>,
         state<Gearing> + event<PartyWipedEvent> = state<Dead>,
         state<Dead> + event<PartyWipedEvent> = state<Dead>,
-        state<Farming> + event<NextEvent>[in_combat] / combat_tick,
-        state<Farming> + event<NextEvent> / exit_farming = state<CombatIdle>,
+        state<Farming> + event<NextEvent>[InCombat{}] / CombatTick{},
+        state<Farming> + event<NextEvent> / ExitFarming{} = state<CombatIdle>,
         state<CombatIdle> + event<NextEvent> = state<Gearing>,
         state<Dead> + event<NextEvent> = state<Fixing>,
-        state<Fixing> + event<NextEvent>[fixing_done] / exit_fixing =
+        state<Fixing> + event<NextEvent>[FixingDone{}] / ExitFixing{} =
             state<Gearing>,
-        state<Fixing> + event<NextEvent> / fixing_tick = state<Fixing>,
+        state<Fixing> + event<NextEvent> / FixingTick{} = state<Fixing>,
         state<Gearing> + event<NextEvent> = state<Idle>);
   }
 };

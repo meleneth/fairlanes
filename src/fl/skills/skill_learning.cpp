@@ -204,92 +204,130 @@ struct ObserveLearning {
     }
   };
 
+  struct SameEntity {
+    bool operator()(const ObserveLearningCtx &ctx) const noexcept {
+      return Ops::same_entity(ctx);
+    }
+  };
+  struct MissingObserver {
+    bool operator()(const ObserveLearningCtx &ctx) const noexcept {
+      return Ops::missing_observer(ctx);
+    }
+  };
+  struct ObserverDead {
+    bool operator()(const ObserveLearningCtx &ctx) const noexcept {
+      return Ops::observer_dead(ctx);
+    }
+  };
+  struct AlreadyKnown {
+    bool operator()(const ObserveLearningCtx &ctx) const noexcept {
+      return Ops::already_known(ctx);
+    }
+  };
+  struct ObserveNoObserve {
+    bool operator()(const ObserveLearningCtx &ctx) const noexcept {
+      return Ops::observes_observe(ctx) && Ops::no_observe_equipped(ctx);
+    }
+  };
+  struct ObserveProgressionSkip {
+    bool operator()(const ObserveLearningCtx &ctx) const noexcept {
+      return Ops::observes_observe(ctx) &&
+             Ops::observe_progression_would_skip(ctx);
+    }
+  };
+  struct ObserveLearnable {
+    bool operator()(const ObserveLearningCtx &ctx) const noexcept {
+      return Ops::observes_observe(ctx);
+    }
+  };
+  struct NonObserveNoObserve {
+    bool operator()(const ObserveLearningCtx &ctx) const noexcept {
+      return Ops::observes_non_observe(ctx) && Ops::no_observe_equipped(ctx);
+    }
+  };
+  struct NonObserveInsufficient {
+    bool operator()(const ObserveLearningCtx &ctx) const noexcept {
+      return Ops::observes_non_observe(ctx) &&
+             Ops::observed_skill_exceeds_observe_rank(ctx);
+    }
+  };
+  struct NonObserveRollFailed {
+    bool operator()(const ObserveLearningCtx &ctx) const noexcept {
+      return Ops::observes_non_observe(ctx) && Ops::roll_failed(ctx);
+    }
+  };
+
+  struct SetSameEntity {
+    void operator()(ObserveLearningCtx &ctx) const noexcept {
+      Ops::set_same_entity(ctx);
+    }
+  };
+  struct SetMissingObserver {
+    void operator()(ObserveLearningCtx &ctx) const noexcept {
+      Ops::set_missing_observer(ctx);
+    }
+  };
+  struct SetObserverDead {
+    void operator()(ObserveLearningCtx &ctx) const noexcept {
+      Ops::set_observer_dead(ctx);
+    }
+  };
+  struct SetAlreadyKnown {
+    void operator()(ObserveLearningCtx &ctx) const noexcept {
+      Ops::set_already_known(ctx);
+    }
+  };
+  struct BlockNoObserve {
+    void operator()(ObserveLearningCtx &ctx) const {
+      Ops::block_no_observe(ctx);
+    }
+  };
+  struct BlockInsufficientObserve {
+    void operator()(ObserveLearningCtx &ctx) const {
+      Ops::block_insufficient_observe(ctx);
+    }
+  };
+  struct BlockProgressionSkip {
+    void operator()(ObserveLearningCtx &ctx) const {
+      Ops::block_progression_skip(ctx);
+    }
+  };
+  struct SetRollFailed {
+    void operator()(ObserveLearningCtx &ctx) const noexcept {
+      Ops::set_roll_failed(ctx);
+    }
+  };
+  struct Learn {
+    void operator()(ObserveLearningCtx &ctx) const { Ops::learn(ctx); }
+  };
+
   auto operator()() const {
     using namespace sml;
 
-    const auto same_entity = [](const ObserveLearningCtx &ctx) {
-      return Ops::same_entity(ctx);
-    };
-    const auto missing_observer = [](const ObserveLearningCtx &ctx) {
-      return Ops::missing_observer(ctx);
-    };
-    const auto observer_dead = [](const ObserveLearningCtx &ctx) {
-      return Ops::observer_dead(ctx);
-    };
-    const auto already_known = [](const ObserveLearningCtx &ctx) {
-      return Ops::already_known(ctx);
-    };
-    const auto observe_no_observe = [](const ObserveLearningCtx &ctx) {
-      return Ops::observes_observe(ctx) && Ops::no_observe_equipped(ctx);
-    };
-    const auto observe_progression_skip = [](const ObserveLearningCtx &ctx) {
-      return Ops::observes_observe(ctx) &&
-             Ops::observe_progression_would_skip(ctx);
-    };
-    const auto observe_learnable = [](const ObserveLearningCtx &ctx) {
-      return Ops::observes_observe(ctx);
-    };
-    const auto non_observe_no_observe = [](const ObserveLearningCtx &ctx) {
-      return Ops::observes_non_observe(ctx) && Ops::no_observe_equipped(ctx);
-    };
-    const auto non_observe_insufficient = [](const ObserveLearningCtx &ctx) {
-      return Ops::observes_non_observe(ctx) &&
-             Ops::observed_skill_exceeds_observe_rank(ctx);
-    };
-    const auto non_observe_roll_failed = [](const ObserveLearningCtx &ctx) {
-      return Ops::observes_non_observe(ctx) && Ops::roll_failed(ctx);
-    };
-
-    const auto set_same_entity = [](ObserveLearningCtx &ctx) {
-      Ops::set_same_entity(ctx);
-    };
-    const auto set_missing_observer = [](ObserveLearningCtx &ctx) {
-      Ops::set_missing_observer(ctx);
-    };
-    const auto set_observer_dead = [](ObserveLearningCtx &ctx) {
-      Ops::set_observer_dead(ctx);
-    };
-    const auto set_already_known = [](ObserveLearningCtx &ctx) {
-      Ops::set_already_known(ctx);
-    };
-    const auto block_no_observe = [](ObserveLearningCtx &ctx) {
-      Ops::block_no_observe(ctx);
-    };
-    const auto block_insufficient_observe = [](ObserveLearningCtx &ctx) {
-      Ops::block_insufficient_observe(ctx);
-    };
-    const auto block_progression_skip = [](ObserveLearningCtx &ctx) {
-      Ops::block_progression_skip(ctx);
-    };
-    const auto set_roll_failed = [](ObserveLearningCtx &ctx) {
-      Ops::set_roll_failed(ctx);
-    };
-    const auto learn = [](ObserveLearningCtx &ctx) { Ops::learn(ctx); };
-
     return make_transition_table(
-        *state<Idle> + event<EvaluateLearning>[same_entity] / set_same_entity =
+        *state<Idle> + event<EvaluateLearning>[SameEntity{}] / SetSameEntity{} =
             state<Done>,
-        state<Idle> + event<EvaluateLearning>[missing_observer] /
-                          set_missing_observer = state<Done>,
-        state<Idle> + event<EvaluateLearning>[observer_dead] /
-                          set_observer_dead = state<Done>,
-        state<Idle> + event<EvaluateLearning>[already_known] /
-                          set_already_known = state<Done>,
+        state<Idle> + event<EvaluateLearning>[MissingObserver{}] /
+                          SetMissingObserver{} = state<Done>,
+        state<Idle> + event<EvaluateLearning>[ObserverDead{}] /
+                          SetObserverDead{} = state<Done>,
+        state<Idle> + event<EvaluateLearning>[AlreadyKnown{}] /
+                          SetAlreadyKnown{} = state<Done>,
 
-        state<Idle> + event<EvaluateLearning>[observe_no_observe] /
-                          block_no_observe = state<Done>,
-        state<Idle> + event<EvaluateLearning>[observe_progression_skip] /
-                          block_progression_skip = state<Done>,
-        state<Idle> + event<EvaluateLearning>[observe_learnable] / learn =
+        state<Idle> + event<EvaluateLearning>[ObserveNoObserve{}] /
+                          BlockNoObserve{} = state<Done>,
+        state<Idle> + event<EvaluateLearning>[ObserveProgressionSkip{}] /
+                          BlockProgressionSkip{} = state<Done>,
+        state<Idle> + event<EvaluateLearning>[ObserveLearnable{}] / Learn{} =
             state<Done>,
 
-        state<Idle> + event<EvaluateLearning>[non_observe_no_observe] /
-                          block_no_observe = state<Done>,
-        state<Idle> + event<EvaluateLearning>[non_observe_insufficient] /
-                          block_insufficient_observe = state<Done>,
-        state<Idle> + event<EvaluateLearning>[non_observe_roll_failed] /
-                          set_roll_failed = state<Done>,
-        state<Idle> + event<EvaluateLearning> / learn = state<Done>);
+        state<Idle> + event<EvaluateLearning>[NonObserveNoObserve{}] /
+                          BlockNoObserve{} = state<Done>,
+        state<Idle> + event<EvaluateLearning>[NonObserveInsufficient{}] /
+                          BlockInsufficientObserve{} = state<Done>,
+        state<Idle> + event<EvaluateLearning>[NonObserveRollFailed{}] /
+                          SetRollFailed{} = state<Done>,
+        state<Idle> + event<EvaluateLearning> / Learn{} = state<Done>);
   }
 };
 

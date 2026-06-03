@@ -20,57 +20,84 @@ struct AtbMachine {
   AtbOutBus &out;
   entt::entity id;
 
+  static constexpr int kChargePerBeat{80};
+
+  static fl::ecs::components::AtbCharge &charge(entt::registry &reg,
+                                                entt::entity id) {
+    return reg.get<fl::ecs::components::AtbCharge>(id);
+  }
+
+  struct WillBeFull {
+    entt::registry &reg;
+    entt::entity id;
+
+    bool operator()() const {
+      const auto &ctx = charge(reg, id);
+      return (ctx.charge + kChargePerBeat) >= ctx.max_charge;
+    }
+  };
+
+  struct Accrue {
+    entt::registry &reg;
+    entt::entity id;
+
+    void operator()() const { charge(reg, id).charge += kChargePerBeat; }
+  };
+
+  struct AccrueAndEmitReady {
+    entt::registry &reg;
+    AtbOutBus &out;
+    entt::entity id;
+
+    void operator()() const {
+      charge(reg, id).charge += kChargePerBeat;
+      out.emit(AtbOutEvent{BecameReady{id}});
+    }
+  };
+
+  struct IsFull {
+    entt::registry &reg;
+    entt::entity id;
+
+    bool operator()() const {
+      const auto &ctx = charge(reg, id);
+      return ctx.charge >= ctx.max_charge;
+    }
+  };
+
+  struct EmitReady {
+    AtbOutBus &out;
+    entt::entity id;
+
+    void operator()() const { out.emit(AtbOutEvent{BecameReady{id}}); }
+  };
+
+  struct ResetCharge {
+    entt::registry &reg;
+    entt::entity id;
+
+    void operator()() const { charge(reg, id).charge = 0; }
+  };
+
   auto operator()() const {
     using namespace sml;
 
-    const auto will_be_full = [this] {
-      auto &ctx = reg.get<fl::ecs::components::AtbCharge>(id);
-      return (ctx.charge + 80) >= ctx.max_charge;
-    };
-
-    const auto accrue = [this] {
-      auto &ctx = reg.get<fl::ecs::components::AtbCharge>(id);
-      ctx.charge += 80;
-      // out.emit(AtbOutEvent{BecameReady{id}});
-    };
-
-    const auto accrue_and_emit_ready = [this] {
-      auto &ctx = reg.get<fl::ecs::components::AtbCharge>(id);
-      ctx.charge += 80;
-      out.emit(AtbOutEvent{BecameReady{id}});
-    };
-
-    const auto is_full = [this] {
-      auto &ctx = reg.get<fl::ecs::components::AtbCharge>(id);
-      return ctx.charge >= ctx.max_charge;
-    };
-
-    const auto emit_ready = [this] { out.emit(AtbOutEvent{BecameReady{id}}); };
-
     return make_transition_table(
-        *state<Charging> + event<BeatTick>[will_be_full] /
-                               accrue_and_emit_ready = state<Ready>,
-        state<Charging> + event<BeatTick> / accrue = state<Charging>,
+        *state<Charging> + event<BeatTick>[WillBeFull{reg, id}] /
+                               AccrueAndEmitReady{reg, out, id} = state<Ready>,
+        state<Charging> + event<BeatTick> / Accrue{reg, id} = state<Charging>,
 
         state<Charging> + event<Frozen> = state<FrozenState>,
         state<Ready> + event<Frozen> = state<FrozenState>,
         state<FrozenState> + event<BeatTick> = state<FrozenState>,
-        state<FrozenState> + event<Thawed>[is_full] / emit_ready = state<Ready>,
+        state<FrozenState> +
+            event<Thawed>[IsFull{reg, id}] / EmitReady{out, id} = state<Ready>,
         state<FrozenState> + event<Thawed> = state<Charging>,
 
-        // NEW: consume the turn, reset, start charging again
-        state<Ready> + event<FinishedTurn> /
-                           [this] {
-                             auto &ctx =
-                                 reg.get<fl::ecs::components::AtbCharge>(id);
-                             ctx.charge = 0;
-                           } = state<Charging>,
-        state<FrozenState> +
-            event<FinishedTurn> /
-                [this] {
-                  auto &ctx = reg.get<fl::ecs::components::AtbCharge>(id);
-                  ctx.charge = 0;
-                } = state<Charging>);
+        state<Ready> + event<FinishedTurn> / ResetCharge{reg, id} =
+            state<Charging>,
+        state<FrozenState> + event<FinishedTurn> / ResetCharge{reg, id} =
+            state<Charging>);
   };
 };
 } // namespace seerin

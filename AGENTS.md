@@ -193,8 +193,12 @@ are examples worth studying before adding more subscriptions.
 
 ## FSM And Combat Flow
 
-FSMs are first-class structure in this repo. When reading or changing FSM-heavy
-code, identify:
+FSMs are first-class structure in this repo. Do not put inline lambdas inside
+SML or other state-machine transition table definitions. Use named guard/action
+callables and named Ops functions so the table reads as states, events, guards,
+and actions instead of embedded policy.
+
+When reading or changing FSM-heavy code, identify:
 
 1. Current state.
 2. Triggering event.
