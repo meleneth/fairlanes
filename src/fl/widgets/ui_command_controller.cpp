@@ -536,16 +536,7 @@ void UiCommandController::debug_party() {
 
   write("encounter=in-combat visual_time=" +
         std::to_string(encounter.visual_time().v) + " pending_events=" +
-        std::to_string(encounter.pending_scheduled_events()) +
-        " legacy_ready_size=" + std::to_string(encounter.ready_queue().size()));
-
-  if (!encounter.ready_queue().empty()) {
-    const auto &legacy_front = encounter.ready_queue().front();
-    write("legacy_ready_front actor=" +
-          debug_entity_label(reg, legacy_front.actor) +
-          " target=" + debug_entity_label(reg, legacy_front.target) +
-          " nonce=" + std::to_string(legacy_front.nonce));
-  }
+        std::to_string(encounter.pending_scheduled_events()));
 
   write("atb_active=" + debug_entity_label(reg, active));
   write("atb_ready size=" + std::to_string(ready.size()) + ": " +

@@ -77,7 +77,7 @@ Handled by `seerin::AtbMachine` in `Ready`: resets charge to zero and returns to
 
 Defined in `src/sr/atb_events.hpp`.
 
-Used as the currently active beat payload for the root `seerin::BeatBus`, party beat bus, and ATB input bus.
+Used as the active beat payload for the root `seerin::BeatBus`, party beat bus, and ATB input bus.
 
 Triggered by:
 
@@ -90,13 +90,7 @@ Observed by:
 - `PartyData::hook_to_beat(...)` from the global bus.
 - `AtbEngine`, through `AtbInEvent`, to advance scheduled work and ATB charge.
 
-### `fl::events::Beat` and `fl::events::BeatPulse`
-
-Defined in `src/fl/events/beat.hpp` and `src/fl/events/beat_bus.hpp`.
-
-`fl::events::Beat` carries timestamp, delta, and beat index. `BeatPulse` wraps it for `fl::events::BeatBus`.
-
-Production trigger status: defined, but no production emitter was found in the current code. The active runtime currently uses `seerin::Beat` instead.
+The old `fl::events::Beat`, `BeatPulse`, `BeatBus`, and `BeatClock` path was removed because production uses `seerin::Beat`.
 
 ## Party Bus Events
 
@@ -107,10 +101,6 @@ Production trigger status: defined, but no production emitter was found in the c
 Production trigger status: defined, but no production emitter was found. Party construction currently writes logs directly rather than emitting this event.
 
 ### `MemberJoined`
-
-Production trigger status: defined, but no production emitter was found.
-
-### `MemberLeft`
 
 Production trigger status: defined, but no production emitter was found.
 
@@ -142,14 +132,6 @@ Production trigger status: defined, but no production emitter was found. Party r
 Triggered by `PartyLoop::Ops::combat_tick(...)` whenever the party SML machine receives `NextEvent` while `Farming` and `in_combat` is true.
 
 Observed by `EncounterData`, which turns the party tick into `seerin::Beat` on the encounter ATB input bus.
-
-### `PreAttack`
-
-Production trigger status: defined, but no production emitter was found. Current skills call attack/effect systems directly from scheduled callbacks.
-
-### `PostAttack`
-
-Production trigger status: defined, but no production emitter was found. Current damage resolution does not emit a post-attack party event.
 
 ### `PlayerDied`
 
@@ -192,62 +174,6 @@ Triggered by `AtbEngine::pump_ready_queue()` when there is no current active com
 
 Observed by `EncounterData::innervate_event_system()`. The handler chooses a target and skill, then schedules the selected skill sequence. If no valid target exists, it emits `FinishedTurn` immediately.
 
-## Seerin Encounter Events
-
-Defined in `src/sr/encounter_events.hpp` as `seerin::EncounterEvent`.
-
-### `seerin::ActionRequested`
-
-Production trigger status: defined, but no production emitter was found. Current active combat flow schedules skills from `BecameActive` directly instead of emitting this intent event.
-
-### `seerin::ApplyEffect`
-
-Production trigger status: defined, but no production emitter was found. Current skill effects call ECS systems directly from scheduler callbacks.
-
-`EncounterEvent` also includes `Beat`, `AddCombatant`, and `BecameReady`; those are documented above under the active ATB flow.
-
-## Battle Bus Events
-
-`fl::events::BattleEvent` is a variant bus payload defined in `src/fl/events/battle_bus.hpp`.
-
-### `StartCombat`
-
-Triggered by `BattleBus::start_combat(encounter)`.
-
-Production trigger status: the helper exists and is tested, but no production caller was found in the current code.
-
-### `BattleTick`
-
-Triggered by `BattleBus::tick(dt)`.
-
-Production trigger status: the helper exists and is tested, but no production caller was found in the current code.
-
-### `EndCombat`
-
-Triggered by `BattleBus::end_combat(encounter, reason)`.
-
-Production trigger status: the helper exists and is tested, but no production caller was found in the current code.
-
-## Account Bus Events
-
-`fl::events::AccountEvent` is a variant bus payload defined in `src/fl/events/account_bus.hpp`.
-
-### `AccountCreated`
-
-Production trigger status: defined, but no production emitter was found.
-
-### `AccountDeleted`
-
-Production trigger status: defined, but no production emitter was found.
-
-### `AccountRenamed`
-
-Production trigger status: defined, but no production emitter was found.
-
-### `AccountTick`
-
-Production trigger status: defined, but no production emitter was found.
-
 ## Logging Events
 
 ### `fl::primitives::LogEvent`
@@ -258,21 +184,7 @@ Triggered by `fl::primitives::Logger::log(...)` and its convenience methods: `tr
 
 Observed by `FancyLogSink`, which appends matching log messages into a `FancyLog` view and removes its eventpp listener in its destructor.
 
-### `fl::events::LogEvent`
-
-Defined separately in `src/fl/events/log_event.hpp`.
-
-Production trigger status: defined, but no production emitter was found. The active logging path uses `fl::primitives::LogEvent`.
-
 ## Timer And Scheduler Events
-
-### `fl::events::TimerEvent`
-
-Defined in `src/fl/events/timed_event_queue.hpp` and stored in a direct `eventpp::EventQueue`.
-
-Triggered by `TimedEventQueue::schedule_in(...)` and `TimedEventQueue::schedule_at(...)`, then executed when `TimedEventQueue::process_events(dt)` advances the queue window past the event's `when` time.
-
-Production trigger status: the queue is tested, but no production caller was found.
 
 ### `seerin::TimedScheduler<AtbOutEvent>::EmitEvent`
 
@@ -294,54 +206,6 @@ Used by the current implemented skills and statuses:
 - Eviscerate schedules slash/wound visuals, Dire Bleed application, and turn completion.
 - Observe schedules a log message and turn completion.
 - Dire Bleed schedules repeated bleed ticks until cleanup conditions remove the status.
-
-## Animation Events
-
-### `fl::events::AnimationFinished`
-
-Defined in `src/fl/events/animation_finished.hpp` with `AnimBus` as direct `eventpp::EventDispatcher<int, void(const AnimationFinished &)>`.
-
-Production trigger status: defined, but no production emitter was found.
-
-## Older Or Unwired Combat Events
-
-Defined in `src/fl/events/combat.hpp`.
-
-### `fl::events::Tick`
-
-Production trigger status: defined, but no production emitter was found. Current beat/tick flow uses `seerin::Beat` and `fl::events::PartyTick`.
-
-### `fl::events::PlayerCommandAttack`
-
-Production trigger status: defined, but no production emitter was found. Current combat is automated through ATB activation and skill selection.
-
-### `fl::events::AttackResolved`
-
-Production trigger status: defined, but no production emitter was found. Current damage resolution mutates ECS state directly and emits death/wipe party events only when applicable.
-
-## Legacy Party Combat Bus
-
-Defined in `src/fl/combat/party_bus.hpp`.
-
-### `fl::combat::PartyInEvent`
-
-Variant currently containing `seerin::Beat`.
-
-Production trigger status: defined, but no production emitter was found. Current party beat forwarding uses `seerin::BeatBus` directly in `PartyData`.
-
-### `fl::combat::PartyOutEvent`
-
-Variant currently containing `seerin::BecameReady`.
-
-Production trigger status: defined, but no production emitter was found.
-
-## Ready Queue Data
-
-### `fl::events::Decision`
-
-Defined in `src/fl/events/ready_queue.hpp` and stored by `fl::events::ReadyQueue`.
-
-Production trigger status: defined, but no production caller was found. The active ready queue is currently `AtbEngine::ready_queue_`, which stores `entt::entity` values and emits `seerin::BecameActive` when one is selected.
 
 ## Audit Notes For Combat Content
 

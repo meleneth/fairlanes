@@ -25,15 +25,6 @@ struct Closet;
 } // namespace fl::ecs::components
 
 namespace fl::events {
-class TimedEventQueue;
-struct AnimationFinished;
-struct AttackResolved;
-struct LogEvent;
-struct PlayerCommandAttack;
-struct Tick;
-struct TimerCompare;
-struct TimerEvent;
-struct TimerPolicy;
 } // namespace fl::events
 
 namespace fl::fsm {

@@ -14,9 +14,6 @@ struct PartyCreated {};
 struct MemberJoined {
   entt::entity member{entt::null};
 };
-struct MemberLeft {
-  entt::entity member{entt::null};
-};
 struct PartyWiped {};
 struct PartyVictory {};
 struct PartyLeftCombat {};
@@ -39,10 +36,10 @@ struct LootDropRequested {
 struct PartyTick {};
 
 using PartyEvent =
-    std::variant<PartyCreated, MemberJoined, MemberLeft, PartyWiped,
-                 PartyVictory, PartyLeftCombat, PartyGainedXP,
-                 PartyGainedLevel, PartyHealed, PartyRevitalizeRequested,
-                 LootDropRequested, PartyTick>;
+    std::variant<PartyCreated, MemberJoined, PartyWiped, PartyVictory,
+                 PartyLeftCombat, PartyGainedXP, PartyGainedLevel,
+                 PartyHealed, PartyRevitalizeRequested, LootDropRequested,
+                 PartyTick>;
 
 using PartyBus = seerin::VariantBus<PartyEvent>;
 
@@ -63,15 +60,6 @@ struct FreezeStarted {
 struct FreezeEnded {
   entt::entity target{entt::null};
 };
-struct PreAttack {
-  entt::entity attacker{entt::null};
-  entt::entity target{entt::null};
-};
-struct PostAttack {
-  entt::entity attacker{entt::null};
-  entt::entity target{entt::null};
-  int damage{0};
-};
 struct FleeAttempted {
   entt::entity source{entt::null};
   int chance_percent{0};
@@ -91,10 +79,6 @@ using CombatantEvent =
                  FleeAttempted, CombatantFled, PlayerDied>;
 
 using CombatantBus = seerin::VariantBus<CombatantEvent>;
-
-using EncounterEvent = std::variant<PreAttack, PostAttack>;
-
-using EncounterBus = seerin::VariantBus<EncounterEvent>;
 
 template <class Bus> struct ScopedListener {
   std::function<void()> disconnect_;
@@ -138,6 +122,5 @@ template <class Bus> struct ScopedListener {
 
 using ScopedPartyListener = ScopedListener<PartyBus>;
 using ScopedCombatantListener = ScopedListener<CombatantBus>;
-using ScopedEncounterListener = ScopedListener<EncounterBus>;
 
 } // namespace fl::events

@@ -6,9 +6,7 @@
 #include <vector>
 
 #include "fl/context.hpp"
-#include "fl/events/battle_bus.hpp"
 #include "fl/events/party_bus.hpp"
-#include "fl/events/ready_queue.hpp"
 #include "fl/primitives/team.hpp"
 #include "fl/skills/skill.hpp"
 #include "sr/atb_bus.hpp"
@@ -41,14 +39,6 @@ public:
     return life_.entities_to_cleanup_;
   }
 
-  fl::events::BattleBus &battle_bus() { return rt_.battle_bus_; }
-  const fl::events::BattleBus &battle_bus() const { return rt_.battle_bus_; }
-
-  fl::events::EncounterBus &encounter_bus() { return rt_.encounter_bus_; }
-  const fl::events::EncounterBus &encounter_bus() const {
-    return rt_.encounter_bus_;
-  }
-
   struct EnemyCombatantBus {
     entt::entity enemy{entt::null};
     fl::events::CombatantBus bus;
@@ -67,9 +57,6 @@ public:
   const fl::events::CombatantBus &combatant_bus(entt::entity combatant) const;
   fl::events::CombatantBus *enemy_combatant_bus(entt::entity enemy);
   const fl::events::CombatantBus *enemy_combatant_bus(entt::entity enemy) const;
-
-  fl::events::ReadyQueue &ready_queue() { return rt_.ready_queue_; }
-  const fl::events::ReadyQueue &ready_queue() const { return rt_.ready_queue_; }
 
   seerin::AtbEngine &atb_engine() noexcept { return rt_.atb_; }
   const seerin::AtbEngine &atb_engine() const noexcept { return rt_.atb_; }
@@ -128,9 +115,6 @@ private:
 
   struct Runtime {
     seerin::AtbEngine atb_;
-    fl::events::ReadyQueue ready_queue_;
-    fl::events::BattleBus battle_bus_;
-    fl::events::EncounterBus encounter_bus_;
     std::deque<EnemyCombatantBus> enemy_combatant_buses_;
   } rt_;
 

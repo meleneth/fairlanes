@@ -6,7 +6,6 @@
 
 #include <entt/entt.hpp>
 
-#include "fl/events/account_bus.hpp"
 #include "fl/fwd.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "party_data.hpp"
@@ -33,9 +32,6 @@ public:
     return *log_;
   }
 
-  fl::events::AccountBus &bus() { return bus_; }
-  const fl::events::AccountBus &bus() const { return bus_; }
-
   std::deque<PartyData> &parties() { return parties_; }
   const std::deque<PartyData> &parties() const { return parties_; }
 
@@ -46,7 +42,6 @@ private:
   entt::entity account_id_{entt::null};
   std::unique_ptr<fl::widgets::FancyLog> log_{};
 
-  fl::events::AccountBus bus_{};    // per-account event bus
   std::deque<PartyData> parties_{}; // owned parties
 };
 

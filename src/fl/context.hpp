@@ -3,7 +3,6 @@
 #include <concepts>
 #include <entt/entt.hpp>
 
-#include "fl/events/account_bus.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/fwd.hpp" // if this already forward-declares some of these
 #include "fl/primitives/damage.hpp"
@@ -136,7 +135,6 @@ public:
     return *account_data_;
   }
   fl::widgets::FancyLog &log() const;
-  fl::events::AccountBus &bus() const;
 
   entt::entity self() const;
 
@@ -151,9 +149,6 @@ private:
   entt::registry *reg_{};
   fl::primitives::RandomHub *rng_{};
   fl::primitives::AccountData *account_data_{};
-  // TODO this has to be broken
-  // fl::widgets::FancyLog *log_{};
-  // fl::events::AccountBus *bus_{};
 };
 
 struct AttackCtx {

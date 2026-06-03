@@ -21,7 +21,6 @@ In Fairlanes, that gives us a way to move gameplay-relevant signals through the 
 The clearest entry points are our bus typedefs:
 
 - [`PartyBus`](https://github.com/meleneth/fairlanes/blob/89571fb5f3e6396d5e191a557602c2b25c79a31c/src/fl/events/party_bus.hpp)
-- [`AccountBus`](https://github.com/meleneth/fairlanes/blob/89571fb5f3e6396d5e191a557602c2b25c79a31c/src/fl/events/account_bus.hpp)
 
 These are built on `eventpp::EventDispatcher`.
 
@@ -29,7 +28,7 @@ These are built on `eventpp::EventDispatcher`.
 
 Fairlanes does not generally spread raw `eventpp::...` usage everywhere.
 
-Instead, we wrap it in project-level types like `PartyBus` and `AccountBus`, which means the interesting layer is usually:
+Instead, we wrap it in project-level types like `PartyBus`, which means the interesting layer is usually:
 
 - what events exist
 - where they are dispatched
@@ -44,7 +43,6 @@ Searching for `eventpp` directly may not show much.
 Better project-wide searches are:
 
 - `PartyBus`
-- `AccountBus`
 - `PartyEvent`
 - `AccountEvent`
 - `appendListener`

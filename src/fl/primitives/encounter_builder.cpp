@@ -7,7 +7,7 @@
 #include "fl/primitives/entity_builder.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/team.hpp"
-#include "sr/encounter_events.hpp"
+#include "sr/atb_events.hpp"
 
 namespace fl::primitives {
 

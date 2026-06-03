@@ -4,7 +4,6 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/is_party.hpp"
-#include "fl/events/account_bus.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/party_data.hpp"
@@ -19,11 +18,6 @@ fl::widgets::FancyLog &AccountCtx::log() const {
   // FL_ASSERT(log_);
   return account_data_->log();
 }
-fl::events::AccountBus &AccountCtx::bus() const {
-  // FL_ASSERT(bus_);
-  return account_data_->bus();
-}
-
 EntityCtx::EntityCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
                      fl::widgets::FancyLog &log, entt::entity self)
     : reg_(&reg), rng_(&rng), log_(&log), self_(self) {}
