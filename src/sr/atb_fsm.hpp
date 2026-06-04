@@ -1,5 +1,8 @@
 #pragma once
 
+#include <algorithm>
+#include <cstdint>
+
 #include <boost/sml.hpp>
 #include <entt/entt.hpp>
 
@@ -22,6 +25,10 @@ struct AtbMachine {
 
   static constexpr int kChargePerBeat{80};
 
+  static int64_t charge_per_beat(entt::registry &reg, entt::entity id) {
+    return std::max<int64_t>(0, charge(reg, id).charge_per_beat);
+  }
+
   static fl::ecs::components::AtbCharge &charge(entt::registry &reg,
                                                 entt::entity id) {
     return reg.get<fl::ecs::components::AtbCharge>(id);
@@ -33,7 +40,7 @@ struct AtbMachine {
 
     bool operator()() const {
       const auto &ctx = charge(reg, id);
-      return (ctx.charge + kChargePerBeat) >= ctx.max_charge;
+      return (ctx.charge + charge_per_beat(reg, id)) >= ctx.max_charge;
     }
   };
 
@@ -41,7 +48,7 @@ struct AtbMachine {
     entt::registry &reg;
     entt::entity id;
 
-    void operator()() const { charge(reg, id).charge += kChargePerBeat; }
+    void operator()() const { charge(reg, id).charge += charge_per_beat(reg, id); }
   };
 
   struct AccrueAndEmitReady {
@@ -50,7 +57,7 @@ struct AtbMachine {
     entt::entity id;
 
     void operator()() const {
-      charge(reg, id).charge += kChargePerBeat;
+      charge(reg, id).charge += charge_per_beat(reg, id);
       out.emit(AtbOutEvent{BecameReady{id}});
     }
   };

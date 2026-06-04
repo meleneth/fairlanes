@@ -9,6 +9,7 @@ namespace fl::ecs::components {
 struct AtbCharge {
   int64_t charge{0};
   int64_t max_charge{4800};
+  int64_t charge_per_beat{80};
 };
 
 } // namespace fl::ecs::components

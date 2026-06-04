@@ -1,9 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "fl/context.hpp"
+#include "fl/ecs/components/atb_charge.hpp"
 #include "fl/ecs/components/combat_status.hpp"
 #include "fl/ecs/components/field_debuff.hpp"
-#include "fl/ecs/components/monster_skills.hpp"
 #include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/poison.hpp"
 #include "fl/ecs/components/stats.hpp"
@@ -15,6 +15,7 @@
 #include "fl/primitives/world_clock.hpp"
 #include "fl/skills/skill.hpp"
 #include "fl/skills/skill_selection.hpp"
+#include "fl/skills/skill_sequence.hpp"
 
 namespace {
 
@@ -117,13 +118,11 @@ TEST_CASE("Silence blocks spell-tagged skills but leaves other skills usable",
       h.party_ctx.reg(), actor,
       fl::skills::SkillKey{fl::skills::SkillId::Thump}));
 
-  h.party_ctx.reg().remove<fl::ecs::components::SkillSlots>(actor);
-  h.party_ctx.reg().emplace_or_replace<fl::ecs::components::MonsterSkills>(
-      actor, fl::ecs::components::MonsterSkills{
-                 {{fl::skills::SkillKey{fl::skills::SkillId::FlameStrike},
-                   100}}});
+  h.party_ctx.reg().emplace_or_replace<fl::ecs::components::SkillSlots>(
+      actor, fl::ecs::components::SkillSlots::with_known(
+                 fl::skills::SkillKey{fl::skills::SkillId::FlameStrike}));
   REQUIRE(fl::skills::choose_skill(h.party_ctx.reg(), h.party_ctx.rng(), actor) ==
-          fl::skills::SkillKey{fl::skills::SkillId::Thump});
+          fl::skills::SkillKey{fl::skills::SkillId::Observe});
 }
 
 TEST_CASE("Slow and Haste expose shared turn tempo modifiers",
@@ -251,4 +250,285 @@ TEST_CASE("Field debuffs are encounter-scoped and feed shared damage modifiers",
                                                FieldDebuffKind::DamageDown));
   REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 10);
   REQUIRE(hp(h.party_ctx, h.defender()) == 90);
+}
+
+TEST_CASE("Field AccuracyDown expires and stops forcing misses",
+          "[combat-status][field][expiry]") {
+  BuiltEncounter h;
+  set_hp(h.party_ctx, h.defender(), 100, 100);
+
+  CombatStatusSystem::apply_field_debuff(
+      h.party_ctx, h.scheduler(), {.team = FieldTeam::Attackers,
+                                   .kind = FieldDebuffKind::AccuracyDown,
+                                   .name = "Brief Fog",
+                                   .source = h.defender(),
+                                   .value = 100,
+                                   .duration_seconds = 1});
+
+  REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 0);
+  tick_party(h.party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
+  REQUIRE_FALSE(CombatStatusSystem::has_field_debuff(
+      h.party_ctx, FieldTeam::Attackers, FieldDebuffKind::AccuracyDown));
+  REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 20);
+}
+
+TEST_CASE("Field DamageDown expires and stops reducing outgoing damage",
+          "[combat-status][field][expiry]") {
+  BuiltEncounter h;
+  set_hp(h.party_ctx, h.defender(), 100, 100);
+
+  CombatStatusSystem::apply_field_debuff(
+      h.party_ctx, h.scheduler(), {.team = FieldTeam::Attackers,
+                                   .kind = FieldDebuffKind::DamageDown,
+                                   .name = "Brief Drag",
+                                   .source = h.defender(),
+                                   .value = 50,
+                                   .duration_seconds = 1});
+
+  REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 10);
+  tick_party(h.party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
+  REQUIRE_FALSE(CombatStatusSystem::has_field_debuff(
+      h.party_ctx, FieldTeam::Attackers, FieldDebuffKind::DamageDown));
+  REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 20);
+}
+
+TEST_CASE("Field Vulnerable expires and stops increasing incoming damage",
+          "[combat-status][field][expiry]") {
+  BuiltEncounter h;
+  set_hp(h.party_ctx, h.defender(), 100, 100);
+
+  CombatStatusSystem::apply_field_debuff(
+      h.party_ctx, h.scheduler(), {.team = FieldTeam::Defenders,
+                                   .kind = FieldDebuffKind::Vulnerable,
+                                   .name = "Brief Opening",
+                                   .source = h.attacker(),
+                                   .value = 50,
+                                   .duration_seconds = 1});
+
+  REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 30);
+  tick_party(h.party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
+  REQUIRE_FALSE(CombatStatusSystem::has_field_debuff(
+      h.party_ctx, FieldTeam::Defenders, FieldDebuffKind::Vulnerable));
+  REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 20);
+}
+
+TEST_CASE("Multiple field debuffs coexist and expire independently",
+          "[combat-status][field][expiry]") {
+  BuiltEncounter h;
+
+  CombatStatusSystem::apply_field_debuff(
+      h.party_ctx, h.scheduler(), {.team = FieldTeam::Attackers,
+                                   .kind = FieldDebuffKind::AccuracyDown,
+                                   .name = "Short Fog",
+                                   .source = h.defender(),
+                                   .value = 20,
+                                   .duration_seconds = 1});
+  CombatStatusSystem::apply_field_debuff(
+      h.party_ctx, h.scheduler(), {.team = FieldTeam::Attackers,
+                                   .kind = FieldDebuffKind::DamageDown,
+                                   .name = "Long Drag",
+                                   .source = h.defender(),
+                                   .value = 30,
+                                   .duration_seconds = 2});
+
+  tick_party(h.party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
+  REQUIRE_FALSE(CombatStatusSystem::has_field_debuff(
+      h.party_ctx, FieldTeam::Attackers, FieldDebuffKind::AccuracyDown));
+  REQUIRE(CombatStatusSystem::field_debuff_value(
+              h.party_ctx, FieldTeam::Attackers,
+              FieldDebuffKind::DamageDown) == 30);
+
+  tick_party(h.party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
+  REQUIRE_FALSE(CombatStatusSystem::has_field_debuff(
+      h.party_ctx, FieldTeam::Attackers, FieldDebuffKind::DamageDown));
+}
+
+TEST_CASE("Permanent field debuffs remain when no finite duration is set",
+          "[combat-status][field][expiry]") {
+  BuiltEncounter h;
+
+  CombatStatusSystem::apply_field_debuff(
+      h.party_ctx, h.scheduler(), {.team = FieldTeam::Attackers,
+                                   .kind = FieldDebuffKind::DamageDown,
+                                   .name = "Standing Drag",
+                                   .source = h.defender(),
+                                   .value = 25,
+                                   .duration_seconds = 0});
+
+  tick_party(h.party_ctx, fl::primitives::WorldClock::beats_from_seconds(5));
+  REQUIRE(CombatStatusSystem::field_debuff_value(
+              h.party_ctx, FieldTeam::Attackers,
+              FieldDebuffKind::DamageDown) == 25);
+}
+
+namespace {
+
+struct TempoHarness {
+  fl::GrandCentral gc{1, 1, 2};
+  fl::context::AccountCtx account_ctx{gc.account_context(0)};
+  fl::context::PartyCtx party_ctx{account_ctx.party_context(0)};
+  fl::primitives::EncounterData &encounter{party_ctx.party_data().create_encounter()};
+  entt::entity actor{party_ctx.party_data().members().front().member_id()};
+  entt::entity caster{party_ctx.party_data().members().back().member_id()};
+
+  TempoHarness() {
+    encounter.defenders().members().push_back(actor);
+    encounter.defenders().members().push_back(caster);
+    encounter.add_party_combatant_bus(actor);
+    encounter.add_party_combatant_bus(caster);
+  }
+
+  CombatStatusSystem::Scheduler &scheduler() {
+    return encounter.atb_engine().scheduler();
+  }
+
+  void add_actor_to_atb() {
+    encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{actor}});
+  }
+
+  int beats_until_active(int limit = 200) {
+    for (int beat = 1; beat <= limit; ++beat) {
+      encounter.atb_in().emit(seerin::AtbInEvent{seerin::Beat{}});
+      if (encounter.atb_engine().active_combatant() == actor) {
+        return beat;
+      }
+    }
+    return -1;
+  }
+
+};
+
+} // namespace
+
+TEST_CASE("Slow reduces ATB charge rate through shared tempo modifiers",
+          "[combat-status][tempo][atb]") {
+  TempoHarness h;
+  REQUIRE(CombatStatusSystem::apply_status(
+      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Slow,
+                                   .name = "Test Slow",
+                                   .source = h.caster,
+                                   .target = h.actor,
+                                   .value = 25}));
+
+  h.add_actor_to_atb();
+
+  REQUIRE(h.beats_until_active() == 80);
+  REQUIRE(h.party_ctx.reg()
+              .get<fl::ecs::components::AtbCharge>(h.actor)
+              .charge_per_beat == 60);
+}
+
+TEST_CASE("Haste increases ATB charge rate through shared tempo modifiers",
+          "[combat-status][tempo][atb]") {
+  TempoHarness h;
+  REQUIRE(CombatStatusSystem::apply_status(
+      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Haste,
+                                   .name = "Test Haste",
+                                   .source = h.caster,
+                                   .target = h.actor,
+                                   .value = 25,
+                                   .negative = false}));
+
+  h.add_actor_to_atb();
+
+  REQUIRE(h.beats_until_active() == 48);
+  REQUIRE(h.party_ctx.reg()
+              .get<fl::ecs::components::AtbCharge>(h.actor)
+              .charge_per_beat == 100);
+}
+
+TEST_CASE("Applied Slow affects ATB readiness timing",
+          "[combat-status][tempo][atb]") {
+  TempoHarness h;
+
+  REQUIRE(CombatStatusSystem::apply_status(
+      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Slow,
+                                   .name = "Applied Slow",
+                                   .source = h.caster,
+                                   .target = h.actor,
+                                   .value = 25}));
+  h.add_actor_to_atb();
+
+  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.actor,
+                                         CombatStatusKind::Slow));
+  REQUIRE(h.beats_until_active() == 80);
+}
+
+TEST_CASE("Applied Haste affects ATB readiness timing",
+          "[combat-status][tempo][atb]") {
+  TempoHarness h;
+
+  REQUIRE(CombatStatusSystem::apply_status(
+      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Haste,
+                                   .name = "Applied Haste",
+                                   .source = h.caster,
+                                   .target = h.actor,
+                                   .value = 25,
+                                   .negative = false}));
+  h.add_actor_to_atb();
+
+  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.actor,
+                                         CombatStatusKind::Haste));
+  REQUIRE(h.beats_until_active() == 48);
+}
+
+TEST_CASE("Cleanse removes Slow timing impact",
+          "[combat-status][tempo][atb][cleanse]") {
+  TempoHarness h;
+  REQUIRE(CombatStatusSystem::apply_status(
+      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Slow,
+                                   .name = "Test Slow",
+                                   .source = h.caster,
+                                   .target = h.actor,
+                                   .value = 25}));
+
+  REQUIRE(CombatStatusSystem::cleanse(h.party_ctx, h.caster, h.actor) == 1);
+  h.add_actor_to_atb();
+
+  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.actor,
+                                               CombatStatusKind::Slow));
+  REQUIRE(h.beats_until_active() == 60);
+}
+
+TEST_CASE("Expired Slow stops affecting future ATB charge timing",
+          "[combat-status][tempo][atb][expiry]") {
+  TempoHarness h;
+  REQUIRE(CombatStatusSystem::apply_status(
+      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Slow,
+                                   .name = "Brief Slow",
+                                   .source = h.caster,
+                                   .target = h.actor,
+                                   .duration_seconds = 1,
+                                   .value = 25}));
+
+  tick_party(h.party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
+  h.add_actor_to_atb();
+
+  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.actor,
+                                               CombatStatusKind::Slow));
+  REQUIRE(h.beats_until_active() == 60);
+}
+
+TEST_CASE("Slow and Haste combine deterministically by net tempo modifier",
+          "[combat-status][tempo][atb]") {
+  TempoHarness h;
+  REQUIRE(CombatStatusSystem::apply_status(
+      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Slow,
+                                   .name = "Test Slow",
+                                   .source = h.caster,
+                                   .target = h.actor,
+                                   .value = 25}));
+  REQUIRE(CombatStatusSystem::apply_status(
+      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Haste,
+                                   .name = "Test Haste",
+                                   .source = h.caster,
+                                   .target = h.actor,
+                                   .value = 25,
+                                   .negative = false}));
+
+  h.add_actor_to_atb();
+
+  REQUIRE(CombatStatusSystem::turn_tempo_modifier_percent(h.party_ctx.reg(),
+                                                          h.actor) == 0);
+  REQUIRE(h.beats_until_active() == 60);
 }

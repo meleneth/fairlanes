@@ -19,6 +19,8 @@ enum class FieldDebuffKind {
 };
 
 struct FieldDebuffEffect {
+  int id{0};
+  entt::entity effect_id{entt::null};
   FieldTeam team{FieldTeam::Defenders};
   FieldDebuffKind kind{FieldDebuffKind::AccuracyDown};
   std::string name;
@@ -29,6 +31,7 @@ struct FieldDebuffEffect {
 };
 
 struct FieldDebuffs {
+  int next_id{1};
   std::vector<FieldDebuffEffect> effects;
 };
 

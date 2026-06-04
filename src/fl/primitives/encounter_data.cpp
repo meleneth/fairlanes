@@ -230,6 +230,11 @@ EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
     return stats && stats->is_alive();
   });
 
+  rt_.atb_.set_charge_rate_percent_fn([this](entt::entity entity) {
+    return 100 + fl::ecs::systems::CombatStatusSystem::turn_tempo_modifier_percent(
+                     party_ctx_->reg(), entity);
+  });
+
   wire_.party_beat_ = fl::events::ScopedPartyListener{
       party_ctx_->bus(), std::in_place_type<fl::events::PartyTick>,
       [this](const fl::events::PartyTick &) { atb_in().emit(seerin::Beat{}); }};

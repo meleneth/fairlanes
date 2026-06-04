@@ -2,6 +2,7 @@
 
 #include "fl/tracy_shim.hpp"
 #include <algorithm>
+#include <cstdint>
 #include <utility>
 
 #include "fl/ecs/components/atb_charge.hpp"
@@ -47,6 +48,15 @@ void AtbEngine::set_can_charge_fn(CanChargeFn fn) {
   }
 
   can_charge_fn_ = [](entt::entity) { return true; };
+}
+
+void AtbEngine::set_charge_rate_percent_fn(ChargeRatePercentFn fn) {
+  if (fn) {
+    charge_rate_percent_fn_ = std::move(fn);
+    return;
+  }
+
+  charge_rate_percent_fn_ = [](entt::entity) { return 100; };
 }
 
 void AtbEngine::clear_pending_events() {
@@ -145,6 +155,8 @@ void AtbEngine::on_beat(const Beat &) {
       continue;
     }
 
+    reg_->get<fl::ecs::components::AtbCharge>(id).charge_per_beat =
+        charge_per_beat(id);
     c.sm.process_event(BeatTick{});
   }
 
@@ -224,6 +236,15 @@ void AtbEngine::pump_ready_queue() {
 }
 
 bool AtbEngine::can_charge(entt::entity id) const { return can_charge_fn_(id); }
+
+int AtbEngine::charge_rate_percent(entt::entity id) const {
+  return std::clamp(charge_rate_percent_fn_(id), 1, 300);
+}
+
+int64_t AtbEngine::charge_per_beat(entt::entity id) const {
+  return std::max<int64_t>(1,
+      (AtbMachine::kChargePerBeat * static_cast<int64_t>(charge_rate_percent(id))) / 100);
+}
 
 void AtbEngine::force_out_of_turn(entt::entity id) {
   remove_ready(id);

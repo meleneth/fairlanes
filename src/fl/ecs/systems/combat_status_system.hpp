@@ -81,6 +81,9 @@ public:
 
   static void apply_field_debuff(fl::context::PartyCtx &party_ctx,
                                  const FieldDebuffRequest &request);
+  static void apply_field_debuff(fl::context::PartyCtx &party_ctx,
+                                 Scheduler &scheduler,
+                                 const FieldDebuffRequest &request);
   static bool has_field_debuff(fl::context::PartyCtx &party_ctx,
                                fl::ecs::components::FieldTeam team,
                                fl::ecs::components::FieldDebuffKind kind);
@@ -96,6 +99,8 @@ private:
   static void schedule_burn_tick(fl::context::PartyCtx &party_ctx,
                                  Scheduler &scheduler, entt::entity target,
                                  int status_id);
+  static void clear_field_debuff_by_id(fl::context::PartyCtx &party_ctx,
+                                       int field_id);
 };
 
 } // namespace fl::ecs::systems

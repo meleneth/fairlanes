@@ -504,6 +504,41 @@ void CombatStatusSystem::schedule_burn_tick(fl::context::PartyCtx &party_ctx,
       });
 }
 
+void CombatStatusSystem::clear_field_debuff_by_id(
+    fl::context::PartyCtx &party_ctx, int field_id) {
+  auto &reg = party_ctx.reg();
+  auto *field = reg.try_get<FieldDebuffs>(party_ctx.self());
+  if (field == nullptr) {
+    return;
+  }
+
+  auto it = std::find_if(field->effects.begin(), field->effects.end(),
+                         [field_id](const auto &effect) {
+                           return effect.id == field_id;
+                         });
+  if (it == field->effects.end()) {
+    return;
+  }
+
+  const auto effect_id = it->effect_id;
+  const auto name = it->name;
+  if (effect_id != entt::null) {
+    auto &scheduler = party_ctx.party_data().encounter_data().atb_engine().scheduler();
+    scheduler.clear_smelly_callbacks_for(effect_id);
+    if (reg.valid(effect_id)) {
+      reg.destroy(effect_id);
+    }
+  }
+
+  field->effects.erase(it);
+  party_ctx.log().append_markup(
+      fmt::format("[ability]({}) fades from the field.", name));
+
+  if (field->effects.empty()) {
+    reg.remove<FieldDebuffs>(party_ctx.self());
+  }
+}
+
 void CombatStatusSystem::apply_field_debuff(fl::context::PartyCtx &party_ctx,
                                             const FieldDebuffRequest &request) {
   auto &reg = party_ctx.reg();
@@ -514,10 +549,19 @@ void CombatStatusSystem::apply_field_debuff(fl::context::PartyCtx &party_ctx,
                                   effect.kind == request.kind;
                          });
   if (it != field.effects.end()) {
+    if (it->effect_id != entt::null) {
+      auto &scheduler = party_ctx.party_data().encounter_data().atb_engine().scheduler();
+      scheduler.clear_smelly_callbacks_for(it->effect_id);
+      if (reg.valid(it->effect_id)) {
+        reg.destroy(it->effect_id);
+      }
+    }
     field.effects.erase(it);
   }
 
   field.effects.push_back(fl::ecs::components::FieldDebuffEffect{
+      .id = field.next_id++,
+      .effect_id = entt::null,
       .team = request.team,
       .kind = request.kind,
       .name = std::string{request.name},
@@ -529,6 +573,56 @@ void CombatStatusSystem::apply_field_debuff(fl::context::PartyCtx &party_ctx,
 
   party_ctx.log().append_markup(fmt::format("[ability]({}) settles over the field.",
                                             request.name));
+}
+
+void CombatStatusSystem::apply_field_debuff(fl::context::PartyCtx &party_ctx,
+                                            Scheduler &scheduler,
+                                            const FieldDebuffRequest &request) {
+  auto &reg = party_ctx.reg();
+  auto &field = reg.get_or_emplace<FieldDebuffs>(party_ctx.self());
+  auto it = std::find_if(field.effects.begin(), field.effects.end(),
+                         [&request](const auto &effect) {
+                           return effect.team == request.team &&
+                                  effect.kind == request.kind;
+                         });
+  if (it != field.effects.end()) {
+    if (it->effect_id != entt::null) {
+      scheduler.clear_smelly_callbacks_for(it->effect_id);
+      if (reg.valid(it->effect_id)) {
+        reg.destroy(it->effect_id);
+      }
+    }
+    field.effects.erase(it);
+  }
+
+  const int field_id = field.next_id++;
+  const auto effect_id = request.duration_seconds > 0 ? reg.create() : entt::null;
+  field.effects.push_back(fl::ecs::components::FieldDebuffEffect{
+      .id = field_id,
+      .effect_id = effect_id,
+      .team = request.team,
+      .kind = request.kind,
+      .name = std::string{request.name},
+      .source = request.source,
+      .value = request.value,
+      .duration_seconds = request.duration_seconds,
+      .removable = request.removable,
+  });
+
+  party_ctx.log().append_markup(fmt::format("[ability]({}) settles over the field.",
+                                            request.name));
+
+  if (request.duration_seconds <= 0) {
+    return;
+  }
+
+  const int clear_after_beats = fl::primitives::WorldClock::beats_from_seconds(
+      std::max(1, request.duration_seconds));
+  scheduler.schedule_smelly_in_beats_for(
+      clear_after_beats, effect_id, "field debuff: expire",
+      [&party_ctx, field_id] {
+        CombatStatusSystem::clear_field_debuff_by_id(party_ctx, field_id);
+      });
 }
 
 bool CombatStatusSystem::has_field_debuff(fl::context::PartyCtx &party_ctx,

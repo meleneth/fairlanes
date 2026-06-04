@@ -19,6 +19,7 @@ namespace seerin {
 class AtbEngine {
 public:
   using CanChargeFn = std::function<bool(entt::entity)>;
+  using ChargeRatePercentFn = std::function<int(entt::entity)>;
 
   AtbEngine();
   explicit AtbEngine(entt::registry &reg);
@@ -32,6 +33,7 @@ public:
   void bind_registry(entt::registry &reg) noexcept { reg_ = &reg; }
 
   void set_can_charge_fn(CanChargeFn fn);
+  void set_charge_rate_percent_fn(ChargeRatePercentFn fn);
   void clear_pending_events();
   void clear_active_turn_for(entt::entity id);
 
@@ -79,6 +81,8 @@ private:
   void remove_ready(entt::entity id);
   void pump_ready_queue(); // if no active and someone ready -> BecameActive
   bool can_charge(entt::entity id) const;
+  int charge_rate_percent(entt::entity id) const;
+  int64_t charge_per_beat(entt::entity id) const;
   void force_out_of_turn(entt::entity id);
 
 private:
@@ -92,6 +96,7 @@ private:
   std::unordered_map<entt::entity, Combatant> combatants_;
   TimedScheduler<AtbOutEvent> scheduler_;
   CanChargeFn can_charge_fn_ = [](entt::entity) { return true; };
+  ChargeRatePercentFn charge_rate_percent_fn_ = [](entt::entity) { return 100; };
 
   // Wiring and subscription handles must be destroyed before scheduler_ and
   // other state touched by callbacks that capture this.
