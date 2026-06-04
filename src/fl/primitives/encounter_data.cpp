@@ -6,6 +6,7 @@
 #include "fl/context.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/systems/combat_status_system.hpp"
 #include "fl/ecs/systems/freeze_system.hpp"
 #include "fl/ecs/systems/poison_system.hpp"
 #include "fl/primitives/member_data.hpp"
@@ -24,6 +25,12 @@ void EncounterData::innervate_event_system() {
       [this](const seerin::BecameActive &ev) {
         ZoneScopedN("EncounterData::BecameActive");
         const entt::entity attacker = ev.id;
+        if (fl::ecs::systems::CombatStatusSystem::consume_stun_turn(
+                *party_ctx_, attacker)) {
+          atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{attacker}});
+          return;
+        }
+
         const auto skill = choose_skill(attacker);
         const entt::entity target = target_for_skill(attacker, skill);
 

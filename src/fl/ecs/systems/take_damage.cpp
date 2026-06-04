@@ -6,6 +6,7 @@
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
+#include "fl/ecs/systems/combat_status_system.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/lospec500.hpp"
 #include "fl/primitives/damage.hpp"
@@ -18,17 +19,22 @@
 #include <limits>
 
 namespace fl::ecs::systems {
-void TakeDamage::commit(fl::context::AttackCtx &ctx) {
-  commit(ctx, fl::lospec500::color_at(4));
+int TakeDamage::commit(fl::context::AttackCtx &ctx) {
+  return commit(ctx, fl::lospec500::color_at(4));
 }
 
-void TakeDamage::commit(fl::context::AttackCtx &ctx,
-                        ftxui::Color damage_number_color) {
+int TakeDamage::commit(fl::context::AttackCtx &ctx,
+                       ftxui::Color damage_number_color) {
   using fl::ecs::components::Stats;
   auto &defender_stats = ctx.reg().get<Stats>(ctx.defender());
 
+  if (fl::ecs::systems::CombatStatusSystem::attack_misses(ctx)) {
+    return 0;
+  }
+
   auto adjusted = fl::primitives::apply_resistance(ctx.damage(),
                                                    defender_stats.resistances_);
+  fl::ecs::systems::CombatStatusSystem::apply_damage_modifiers(ctx, adjusted);
   int total = adjusted.physical + adjusted.magical + adjusted.fire +
               adjusted.ice + adjusted.lightning;
   auto &attacker_stats = ctx.reg().get<Stats>(ctx.attacker());
@@ -85,6 +91,7 @@ void TakeDamage::commit(fl::context::AttackCtx &ctx,
   }
   // spdlog::info("{} hits {} for {} damage ({} HP left)",
   //            attacker.name(), name_, total, hp_);
+  return total;
 }
 
 } // namespace fl::ecs::systems

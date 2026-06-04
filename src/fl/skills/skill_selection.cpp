@@ -8,6 +8,7 @@
 #include "fl/ecs/components/closet.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/skill_slots.hpp"
+#include "fl/ecs/systems/combat_status_system.hpp"
 #include "fl/primitives/random_hub.hpp"
 
 namespace fl::skills {
@@ -50,7 +51,9 @@ SkillKey choose_skill(entt::registry &reg, fl::primitives::RandomHub &rng,
 
   std::vector<SkillKey> known_combat_skills;
   for (const auto equipped : *equipped_skills) {
-    if (equipped.has_value() && is_random_combat_skill(*equipped)) {
+    if (equipped.has_value() && is_random_combat_skill(*equipped) &&
+        fl::ecs::systems::CombatStatusSystem::can_use_skill(reg, actor,
+                                                            *equipped)) {
       known_combat_skills.push_back(*equipped);
     }
   }
