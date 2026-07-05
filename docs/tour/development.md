@@ -120,6 +120,27 @@ You should not need to install libraries manually.
 
 ---
 
+## Generated Content Prototype
+
+The Ruby content generator is currently a mirror of handwritten C++; it is not
+runtime source of truth. It validates the decal skill/monster declarations and
+writes build-tree artifacts under:
+
+```sh
+<build-dir>/generated/fairlanes_content
+```
+
+Run the content check target after changing decal skill or monster metadata:
+
+```sh
+cmake --build build --target fairlanes_content_check
+```
+
+The generated Catch2 source is compiled into `fairlanes_tests`, and the generated
+Markdown balance report is for review only.
+
+---
+
 ## Tracy
 
 Fairlanes includes [Tracy](https://github.com/wolfpld/tracy) for runtime profiling.

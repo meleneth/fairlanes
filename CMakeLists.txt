@@ -326,6 +326,38 @@ endif()
 
 find_program(GCOVR_EXECUTABLE gcovr)
 
+find_program(RUBY_EXECUTABLE ruby)
+if(NOT RUBY_EXECUTABLE)
+  message(FATAL_ERROR "ruby not found; required for Fairlanes content generation")
+endif()
+
+set(FAIRLANES_CONTENT_GENERATED_DIR
+  "${CMAKE_BINARY_DIR}/generated/fairlanes_content")
+set(FAIRLANES_CONTENT_GENERATED_TEST
+  "${FAIRLANES_CONTENT_GENERATED_DIR}/generated_decal_content_tests.cpp")
+set(FAIRLANES_CONTENT_GENERATED_REPORT
+  "${FAIRLANES_CONTENT_GENERATED_DIR}/decal_content_balance.md")
+
+add_custom_command(
+  OUTPUT
+    "${FAIRLANES_CONTENT_GENERATED_TEST}"
+    "${FAIRLANES_CONTENT_GENERATED_REPORT}"
+  COMMAND "${CMAKE_COMMAND}" -E make_directory "${FAIRLANES_CONTENT_GENERATED_DIR}"
+  COMMAND "${RUBY_EXECUTABLE}"
+          "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+          --out-dir "${FAIRLANES_CONTENT_GENERATED_DIR}"
+  DEPENDS
+    "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+  COMMENT "Generating Fairlanes content artifacts"
+  VERBATIM
+)
+
+add_custom_target(fairlanes_content_check
+  DEPENDS
+    "${FAIRLANES_CONTENT_GENERATED_TEST}"
+    "${FAIRLANES_CONTENT_GENERATED_REPORT}"
+)
+
 if(GCOVR_EXECUTABLE)
   add_custom_target(coverage-lcov
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
@@ -525,8 +557,10 @@ if(FL_BUILD_TESTS)
   file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_SOURCE_DIR}/tests/*.cpp
   )
+  list(APPEND TEST_SOURCES "${FAIRLANES_CONTENT_GENERATED_TEST}")
 
   add_executable(fairlanes_tests ${TEST_SOURCES})
+  add_dependencies(fairlanes_tests fairlanes_content_check)
 
   target_compile_options(fairlanes_tests PRIVATE -O0 -g ${BIGOBJ_FLAG})
   set_property(TARGET fairlanes_tests PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
