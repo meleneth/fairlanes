@@ -10,7 +10,6 @@ FactoryBot.define do
                 cpp_id: "Thump",
                 display: "Thump",
                 learn_chance_percent: 20,
-                random_combat: true,
                 execution: :thump_like,
                 tags: %i[physical blunt melee],
                 declarative_shape: :handwritten_behavior

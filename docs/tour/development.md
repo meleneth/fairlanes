@@ -158,6 +158,16 @@ The generated Catch2 source is compiled into `fairlanes_tests`. The generated
 Markdown balance report, effect gallery metadata, JSON manifest, and manifest
 schema are for review and tooling only.
 
+Declaration IDs default to the matching C++ enum spelling and display spelling:
+`:flame_wave` becomes `FlameWave` and `Flame Wave`. Keep explicit `cpp_id:` or
+`display:` only when the runtime spelling intentionally differs from that
+convention. Skills default to random-combat availability; use
+`random_combat: false` for explicit opt-outs such as `Observe`.
+
+Use `decal_skill` for the simple decal-strike family. It fixes the execution kind
+and declarative shape to the generated decal primitive while keeping visual,
+tags, and metadata declarative.
+
 ---
 
 ## Tracy
