@@ -827,11 +827,52 @@ def validate_manifest_shape!(manifest_json)
   exit 1
 end
 
+def generated_artifacts(manifest_json)
+  {
+    "generated_decal_content_tests.cpp" => generate_test_cpp,
+    "decal_content_balance.md" => generate_report,
+    "effect_gallery.md" => generate_gallery,
+    "content_manifest.json" => manifest_json,
+    "content_manifest.schema.json" => generate_manifest_schema
+  }
+end
+
+def check_artifacts!(out_dir, artifacts)
+  errors = []
+
+  artifacts.each do |filename, expected|
+    path = File.join(out_dir, filename)
+    unless File.exist?(path)
+      errors << "#{filename} is missing"
+      next
+    end
+
+    actual = File.read(path)
+    errors << "#{filename} is stale" unless actual == expected
+  end
+
+  return if errors.empty?
+
+  warn "Fairlanes generated content check failed:"
+  errors.each { |error| warn "  - #{error}" }
+  exit 1
+end
+
+def write_artifacts!(out_dir, artifacts)
+  FileUtils.mkdir_p(out_dir)
+  artifacts.each do |filename, contents|
+    File.write(File.join(out_dir, filename), contents)
+  end
+end
+
 options = {}
 OptionParser.new do |parser|
   parser.banner = "Usage: ruby scripts/fairlanes_content_codegen.rb --out-dir DIR"
   parser.on("--out-dir DIR", "Directory for generated artifacts") do |dir|
     options[:out_dir] = dir
+  end
+  parser.on("--check", "Fail if generated artifacts are missing or stale") do
+    options[:check] = true
   end
 end.parse!
 
@@ -843,10 +884,10 @@ end
 validate!
 manifest_json = generate_manifest
 validate_manifest_shape!(manifest_json)
+artifacts = generated_artifacts(manifest_json)
 
-FileUtils.mkdir_p(options[:out_dir])
-File.write(File.join(options[:out_dir], "generated_decal_content_tests.cpp"), generate_test_cpp)
-File.write(File.join(options[:out_dir], "decal_content_balance.md"), generate_report)
-File.write(File.join(options[:out_dir], "effect_gallery.md"), generate_gallery)
-File.write(File.join(options[:out_dir], "content_manifest.json"), manifest_json)
-File.write(File.join(options[:out_dir], "content_manifest.schema.json"), generate_manifest_schema)
+if options[:check]
+  check_artifacts!(options[:out_dir], artifacts)
+else
+  write_artifacts!(options[:out_dir], artifacts)
+end

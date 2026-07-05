@@ -137,6 +137,12 @@ Run the content check target after changing decal skill or monster metadata:
 cmake --build build --target fairlanes_content_check
 ```
 
+To verify an existing generated output directory without rewriting files:
+
+```sh
+ruby scripts/fairlanes_content_codegen.rb --out-dir build/generated/fairlanes_content --check
+```
+
 The generated Catch2 source is compiled into `fairlanes_tests`. The generated
 Markdown balance report, effect gallery metadata, JSON manifest, and manifest
 schema are for review and tooling only.
