@@ -34,6 +34,9 @@ module FairlanesContent
               ExpectedMonster{
                   #{monster_cpp(monster)},
                   #{cpp_string(monster.display)},
+                  #{monster.hp},
+                  #{monster.mp},
+                  #{monster.level || 0},
                   std::array<fl::skills::SkillId, #{monster.known_skills.size}>{#{known_skills}},
                   Pool::#{pool_cpp(monster.pool)},
               },
@@ -68,6 +71,7 @@ module FairlanesContent
 
         #include "fl/ecs/components/skill_slots.hpp"
         #include "fl/ecs/components/stats.hpp"
+        #include "fl/ecs/components/track_xp.hpp"
         #include "fl/grand_central.hpp"
         #include "fl/monsters/monster_kind.hpp"
         #include "fl/monsters/monster_registry.hpp"
@@ -99,6 +103,9 @@ module FairlanesContent
         struct ExpectedMonster {
           fl::monster::MonsterKind monster;
           std::string_view monster_name;
+          int hp;
+          int mp;
+          int level;
           std::array<fl::skills::SkillId, KnownSkillCount> known_skills;
           Pool pool;
         };
@@ -197,6 +204,14 @@ module FairlanesContent
             const auto &stats =
                 party_ctx.reg().get<fl::ecs::components::Stats>(entity);
             REQUIRE(stats.name_ == expected.monster_name);
+            REQUIRE(stats.hp_ == expected.hp);
+            REQUIRE(stats.max_hp_ == expected.hp);
+            REQUIRE(stats.mp_ == expected.mp);
+            if (expected.level > 0) {
+              const auto &xp =
+                  party_ctx.reg().get<fl::ecs::components::TrackXP>(entity);
+              REQUIRE(xp.level_ == expected.level);
+            }
             const auto &slots =
                 party_ctx.reg().get<fl::ecs::components::SkillSlots>(entity);
             for (const auto skill : expected.known_skills) {
@@ -333,12 +348,21 @@ module FairlanesContent
         #pragma once
 
         #include <span>
+        #include <string_view>
 
         #include "fl/monsters/monster_kind.hpp"
         #include "fl/skills/skill.hpp"
 
         namespace fl::monster::generated_content {
 
+        struct MonsterStats {
+          std::string_view display_name;
+          int hp;
+          int mp;
+          int level;
+        };
+
+        MonsterStats stats(MonsterKind kind) noexcept;
         std::span<const fl::skills::SkillId> known_skills(MonsterKind kind) noexcept;
         std::span<const MonsterKind> common_woodland() noexcept;
         std::span<const MonsterKind> rare_woodland() noexcept;
@@ -370,6 +394,24 @@ module FairlanesContent
         "constexpr std::array k#{monster.cpp_id}KnownSkills{#{known_skills}};"
       end.join("\n")
 
+      stat_rows = monsters.map do |monster|
+        <<~CPP
+          constexpr MonsterStats k#{monster.cpp_id}Stats{
+              #{cpp_string(monster.display)},
+              #{monster.hp},
+              #{monster.mp},
+              #{monster.level || 0},
+          };
+        CPP
+      end.join("\n")
+
+      stat_cases = monsters.map do |monster|
+        <<~CPP
+          case MonsterKind::#{monster.cpp_id}:
+            return k#{monster.cpp_id}Stats;
+        CPP
+      end.join
+
       known_skill_cases = monsters.map do |monster|
         <<~CPP
           case MonsterKind::#{monster.cpp_id}:
@@ -392,6 +434,7 @@ module FairlanesContent
 
         #include <array>
         #include <span>
+        #include <string_view>
 
         #include "fl/monsters/monster_kind.hpp"
         #include "fl/skills/skill.hpp"
@@ -400,6 +443,8 @@ module FairlanesContent
         namespace {
 
         #{known_skill_arrays}
+
+        #{stat_rows}
 
         constexpr std::array<MonsterKind, #{monsters.count { |monster| monster.pool == :common_woodland }}> kCommonWoodland{{
         #{common_rows}
@@ -410,6 +455,13 @@ module FairlanesContent
         }};
 
         } // namespace
+
+        MonsterStats stats(MonsterKind kind) noexcept {
+          switch (kind) {
+        #{stat_cases}
+          }
+          return MonsterStats{"", 0, 0, 0};
+        }
 
         std::span<const fl::skills::SkillId> known_skills(MonsterKind kind) noexcept {
           switch (kind) {
@@ -475,14 +527,17 @@ module FairlanesContent
         "",
         "## Monster Topology",
         "",
-        "| Monster | C++ ID | Known skills | Pool |",
-        "| --- | --- | --- | --- |"
+        "| Monster | C++ ID | HP | MP | Level | Known skills | Pool |",
+        "| --- | --- | ---: | ---: | ---: | --- | --- |"
       ]
 
       monsters.each do |monster|
         lines << [
           monster.display,
           monster.cpp_id,
+          monster.hp,
+          monster.mp,
+          monster.level || "",
           monster.known_skills.map { |skill| skill_metadata_by_id.fetch(skill).display }.join(", "),
           monster.pool
         ].join(" | ").then { |row| "| #{row} |" }
@@ -589,6 +644,9 @@ module FairlanesContent
             "id" => monster.id.to_s,
             "cpp_id" => monster.cpp_id,
             "display" => monster.display,
+            "hp" => monster.hp,
+            "mp" => monster.mp,
+            "level" => monster.level,
             "known_skills" => monster.known_skills.map(&:to_s),
             "pool" => monster.pool.to_s
           }
@@ -629,11 +687,14 @@ module FairlanesContent
           ),
           "random_combat_skills" => { "type" => "array", "items" => string_type },
           "monsters" => array_schema(
-            %w[id cpp_id display known_skills pool],
+            %w[id cpp_id display hp mp level known_skills pool],
             {
               "id" => string_type,
               "cpp_id" => string_type,
               "display" => string_type,
+              "hp" => { "type" => "integer", "minimum" => 1 },
+              "mp" => { "type" => "integer", "minimum" => 0 },
+              "level" => { "type" => %w[integer null], "minimum" => 1 },
               "known_skills" => { "type" => "array", "minItems" => 1, "items" => string_type },
               "pool" => string_type
             }

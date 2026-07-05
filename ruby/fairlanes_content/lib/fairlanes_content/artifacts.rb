@@ -136,8 +136,17 @@ module FairlanesContent
       return unless manifest["monsters"].is_a?(Array)
 
       manifest["monsters"].each do |monster|
-        %w[id cpp_id display known_skills pool].each do |key|
+        %w[id cpp_id display hp mp level known_skills pool].each do |key|
           errors << "manifest monster missing #{key}" unless monster.key?(key)
+        end
+        unless monster["hp"].is_a?(Integer)
+          errors << "manifest monster #{monster['id']} hp is not an integer"
+        end
+        unless monster["mp"].is_a?(Integer)
+          errors << "manifest monster #{monster['id']} mp is not an integer"
+        end
+        unless monster["level"].nil? || monster["level"].is_a?(Integer)
+          errors << "manifest monster #{monster['id']} level is not an integer or null"
         end
         unless monster["known_skills"].is_a?(Array)
           errors << "manifest monster #{monster['id']} known_skills must be an array"

@@ -12,6 +12,7 @@ RSpec.describe FairlanesContent::Validator do
     declarations.monster :honey_badger,
                          cpp_id: "HoneyBadger",
                          display: "Honey Badger",
+                         hp: 500,
                          known_skills: %i[eviscerate],
                          pool: :rare_woodland
 
@@ -63,11 +64,29 @@ RSpec.describe FairlanesContent::Validator do
     declarations = build(:declaration_set)
     declarations.monster :other_mouse,
                          cpp_id: "FieldMouse",
+                         hp: 5,
                          known_skills: %i[thump],
                          pool: :common_woodland
 
     expect(described_class.new(declarations).validate)
       .to include("duplicate monster C++ ids")
+  end
+
+  it "rejects invalid monster stats" do
+    declarations = build(:declaration_set)
+    declarations.monster :bad_mouse,
+                         hp: 0,
+                         mp: -1,
+                         level: 0,
+                         known_skills: %i[thump],
+                         pool: :common_woodland
+
+    expect(described_class.new(declarations).validate)
+      .to include(
+        "monster bad_mouse has invalid hp 0",
+        "monster bad_mouse has invalid mp -1",
+        "monster bad_mouse has invalid level 0"
+      )
   end
 
   it "rejects unknown tags" do

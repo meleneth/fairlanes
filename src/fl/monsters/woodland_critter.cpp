@@ -1,54 +1,31 @@
 #include "woodland_critter.hpp"
 
-#include <string>
-#include <utility>
-
-#include "fl/ecs/components/stats.hpp"
-#include "fl/ecs/components/track_xp.hpp"
+#include "fl/monsters/apply_monster_stats.hpp"
 #include "fl/monsters/monster_kind.hpp"
 #include "fl/monsters/monster_registry.hpp"
 
 namespace fl::monster {
 
-using fl::ecs::components::Stats;
-using fl::ecs::components::TrackXP;
 using fl::primitives::EntityBuilder;
 
-namespace {
-
-void set_stats(EntityBuilder &b, std::string name, int hp, int level) {
-  auto &s = b.ctx().reg().get<Stats>(b.entity());
-  s.name_ = std::move(name);
-  s.hp_ = hp;
-  s.max_hp_ = hp;
-  s.mp_ = 0;
-
-  auto &xp = b.ctx().reg().get<TrackXP>(b.entity());
-  xp.level_ = level;
-  xp.xp_ = xp.xp_for_level(level);
-  xp.next_level_at = xp.xp_for_level(level + 1);
-}
-
-} // namespace
-
 void WoodlandCritter::apply_bumpkin(EntityBuilder &b) {
-  set_stats(b, "Bumpkin Hare", 7, 2);
+  apply_monster_stats(b, MonsterKind::BumpkinHare);
 }
 
 void WoodlandCritter::apply_scaredy_cat(EntityBuilder &b) {
-  set_stats(b, "Scaredy Cat", 6, 2);
+  apply_monster_stats(b, MonsterKind::ScaredyCat);
 }
 
 void WoodlandCritter::apply_mire_squish(EntityBuilder &b) {
-  set_stats(b, "Mire Squish", 9, 3);
+  apply_monster_stats(b, MonsterKind::MireSquish);
 }
 
 void WoodlandCritter::apply_bark_smack(EntityBuilder &b) {
-  set_stats(b, "Bark Smack", 12, 4);
+  apply_monster_stats(b, MonsterKind::BarkSmack);
 }
 
 void WoodlandCritter::apply_poison_toad(EntityBuilder &b) {
-  set_stats(b, "Poison Toad", 16, 5);
+  apply_monster_stats(b, MonsterKind::PoisonToad);
 }
 
 void register_woodland_critters() {

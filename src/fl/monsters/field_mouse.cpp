@@ -1,24 +1,15 @@
 #include "field_mouse.hpp"
 
-#include <algorithm>
-
-#include "fl/ecs/components/stats.hpp"
+#include "fl/monsters/apply_monster_stats.hpp"
 #include "fl/monsters/monster_registry.hpp"
-#include "fl/primitives/component_builder.hpp"
 #include "fl/primitives/entity_builder.hpp"
 
 namespace fl::monster {
 
-using fl::ecs::components::Stats;
 using fl::primitives::EntityBuilder;
 
 void FieldMouse::apply(EntityBuilder &b) {
-  // Ensure Stats exists (either defaulted elsewhere or create fresh)
-  auto &s = b.ctx().reg().get<Stats>(b.entity());
-  s.name_ = "Field Mouse";
-  s.hp_ = 5;
-  s.max_hp_ = 5;
-  s.mp_ = 0;
+  apply_monster_stats(b, MonsterKind::FieldMouse);
 
   // Optional tags
   // auto &t = reg.get_or_emplace<Tags>(b.entity());

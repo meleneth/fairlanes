@@ -131,6 +131,15 @@ module FairlanesContent
       declarations.monsters.each do |monster|
         errors << "monster #{monster.id} is missing a C++ id" if monster.cpp_id.to_s.empty?
         errors << "monster #{monster.id} is missing a display name" if monster.display.to_s.empty?
+        unless positive_integer?(monster.hp)
+          errors << "monster #{monster.id} has invalid hp #{monster.hp}"
+        end
+        unless non_negative_integer?(monster.mp)
+          errors << "monster #{monster.id} has invalid mp #{monster.mp}"
+        end
+        unless monster.level.nil? || positive_integer?(monster.level)
+          errors << "monster #{monster.id} has invalid level #{monster.level}"
+        end
         errors << "monster #{monster.id} has invalid pool #{monster.pool}" unless VALID_POOLS.include?(monster.pool)
         errors << "monster #{monster.id} has no known skills" if monster.known_skills.empty?
         unless monster.known_skills.uniq.size == monster.known_skills.size
@@ -144,6 +153,14 @@ module FairlanesContent
 
     def percent?(value)
       value.is_a?(Integer) && value >= 0 && value <= 100
+    end
+
+    def positive_integer?(value)
+      value.is_a?(Integer) && value.positive?
+    end
+
+    def non_negative_integer?(value)
+      value.is_a?(Integer) && value >= 0
     end
   end
 end

@@ -17,6 +17,7 @@ FactoryBot.define do
       set.monster :field_mouse,
                   cpp_id: "FieldMouse",
                   display: "Field Mouse",
+                  hp: 5,
                   known_skills: %i[thump],
                   pool: :common_woodland
     end

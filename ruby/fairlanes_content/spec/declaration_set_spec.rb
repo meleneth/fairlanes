@@ -28,12 +28,16 @@ RSpec.describe FairlanesContent::DeclarationSet do
     declarations = described_class.new
 
     declarations.monster :field_mouse,
+                         hp: 5,
                          known_skills: %i[thump],
                          pool: :common_woodland
 
     monster = declarations.monsters.fetch(0)
     expect(monster.cpp_id).to eq("FieldMouse")
     expect(monster.display).to eq("Field Mouse")
+    expect(monster.hp).to eq(5)
+    expect(monster.mp).to eq(0)
+    expect(monster.level).to be_nil
   end
 
   it "allows explicit names to override defaults" do
