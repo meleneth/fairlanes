@@ -17,7 +17,7 @@ using EquippedSkills = std::array<std::optional<SkillKey>,
                                   fl::ecs::components::Closet::kSkillSlotCount>;
 
 bool is_random_combat_skill(SkillKey skill) noexcept {
-  for (const auto candidate : kRandomCombatSkills) {
+  for (const auto candidate : random_combat_skills()) {
     if (candidate.base == skill.base) {
       return true;
     }

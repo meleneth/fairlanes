@@ -35,6 +35,8 @@ module FairlanesContent
 
       {
         "generated_decal_content_tests.cpp" => renderer.test_cpp,
+        "fl/generated/skill_content.hpp" => renderer.skill_content_hpp,
+        "fl/generated/skill_content.cpp" => renderer.skill_content_cpp,
         "decal_content_balance.md" => renderer.balance_report,
         "effect_gallery.md" => renderer.effect_gallery,
         "content_manifest.json" => manifest_json,
@@ -48,6 +50,7 @@ module FairlanesContent
         path = File.join(out_dir, filename)
         next if File.exist?(path) && File.binread(path) == contents
 
+        FileUtils.mkdir_p(File.dirname(path))
         File.binwrite(path, contents)
       end
     end

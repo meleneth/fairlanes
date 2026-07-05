@@ -120,12 +120,17 @@ You should not need to install libraries manually.
 
 ---
 
-## Generated Content Prototype
+## Generated Content
 
-The Ruby content declarations are currently a mirror of handwritten C++; they are
-not runtime source of truth. Generator code lives in the local
-`ruby/fairlanes_content` gem. Fairlanes-specific DSL usage lives outside the gem
-in `scripts/fairlanes_content_declarations.rb`.
+The Ruby content declarations are the source of truth for generated skill
+metadata C++: display names, learn chances, flee chances, execution kind tags,
+visual mappings, and random-combat membership. Handwritten C++ remains the
+authority for skill behavior, combat effects, rendering implementation, monster
+construction, and encounter pools.
+
+Generator code lives in the local `ruby/fairlanes_content` gem.
+Fairlanes-specific DSL usage lives outside the gem in
+`scripts/fairlanes_content_declarations.rb`.
 
 The thin launcher, `scripts/fairlanes_content_codegen.rb`, loads the local gem,
 validates the decal skill/monster declarations, and writes build-tree artifacts
@@ -154,9 +159,10 @@ cd ruby/fairlanes_content
 rspec
 ```
 
-The generated Catch2 source is compiled into `fairlanes_tests`. The generated
-Markdown balance report, effect gallery metadata, JSON manifest, and manifest
-schema are for review and tooling only.
+The generated skill metadata source is compiled into `fl`. The generated Catch2
+source is compiled into `fairlanes_tests`. The generated Markdown balance report,
+effect gallery metadata, JSON manifest, and manifest schema are for review and
+tooling.
 
 Declaration IDs default to the matching C++ enum spelling and display spelling:
 `:flame_wave` becomes `FlameWave` and `Flame Wave`. Keep explicit `cpp_id:` or

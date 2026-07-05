@@ -115,16 +115,7 @@ struct SkillKeyHash {
   }
 };
 
-inline constexpr std::array<SkillKey, 17> kRandomCombatSkills{
-    SkillKey{SkillId::Thump},       SkillKey{SkillId::Eviscerate},
-    SkillKey{SkillId::Poison},      SkillKey{SkillId::ColdSnap},
-    SkillKey{SkillId::FlameStrike}, SkillKey{SkillId::FlameWave},
-    SkillKey{SkillId::Bump},        SkillKey{SkillId::Squish},
-    SkillKey{SkillId::Smack},       SkillKey{SkillId::Joltspasm},
-    SkillKey{SkillId::RocksFall},   SkillKey{SkillId::SourBreath},
-    SkillKey{SkillId::Mercyburst},  SkillKey{SkillId::BloodBloom},
-    SkillKey{SkillId::IceSplitter}, SkillKey{SkillId::GravitySigh},
-    SkillKey{SkillId::Flee}};
+std::span<const SkillKey> random_combat_skills() noexcept;
 
 enum class SkillTag {
   Physical,

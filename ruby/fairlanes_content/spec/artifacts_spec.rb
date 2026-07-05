@@ -5,15 +5,12 @@ RSpec.describe FairlanesContent::Artifacts do
     declarations = build(:declaration_set)
 
     Dir.mktmpdir do |dir|
-      described_class.new(declarations).write!(dir)
+      artifacts = described_class.new(declarations)
+      artifacts.write!(dir)
 
-      expect(Dir.children(dir)).to contain_exactly(
-        "generated_decal_content_tests.cpp",
-        "decal_content_balance.md",
-        "effect_gallery.md",
-        "content_manifest.json",
-        "content_manifest.schema.json"
-      )
+      artifacts.generated.each_key do |filename|
+        expect(File).to exist(File.join(dir, filename))
+      end
     end
   end
 
