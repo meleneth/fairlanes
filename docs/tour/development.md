@@ -137,8 +137,8 @@ Run the content check target after changing decal skill or monster metadata:
 cmake --build build --target fairlanes_content_check
 ```
 
-The generated Catch2 source is compiled into `fairlanes_tests`, and the generated
-Markdown balance report is for review only.
+The generated Catch2 source is compiled into `fairlanes_tests`. The generated
+Markdown balance report and effect gallery metadata are for review only.
 
 ---
 
