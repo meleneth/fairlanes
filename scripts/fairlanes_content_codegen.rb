@@ -5,6 +5,8 @@ require "fileutils"
 require "optparse"
 require "set"
 
+DECLARATIONS_FILE = File.expand_path("fairlanes_content_declarations.rb", __dir__)
+
 Skill = Struct.new(
   :id, :cpp_id, :display, :learn_chance_percent, :random_combat,
   :execution, :visual, :tags, :declarative_shape,
@@ -16,361 +18,54 @@ Monster = Struct.new(
   keyword_init: true
 )
 
-VISUAL_CPP = {
-  flame_wave: "FlameWave",
-  shock: "Shock",
-  rocks_fall: "RocksFall",
-  poison_cloud: "PoisonCloud",
-  holy_nova: "HolyNova",
-  blood_bloom: "BloodBloom",
-  frost_crack: "FrostCrack",
-  void_ripple: "VoidRipple"
-}.freeze
+VISUAL_CPP = {}
+SKILLS = []
+RANDOM_COMBAT_SKILLS = []
+MONSTERS = []
 
 VALID_POOLS = Set[:common_woodland, :rare_woodland].freeze
 
-SKILLS = [
-  Skill.new(
-    id: :observe,
-    cpp_id: "Observe",
-    display: "Observe",
-    learn_chance_percent: 0,
-    random_combat: false,
-    execution: :observe,
-    visual: nil,
-    tags: %i[observe utility],
-    declarative_shape: :handwritten_behavior
-  ),
-  Skill.new(
-    id: :flee,
-    cpp_id: "Flee",
-    display: "Flee",
-    learn_chance_percent: 0,
-    random_combat: true,
-    execution: :flee,
-    visual: nil,
-    tags: %i[utility escape],
-    declarative_shape: :handwritten_behavior
-  ),
-  Skill.new(
-    id: :thump,
-    cpp_id: "Thump",
-    display: "Thump",
-    learn_chance_percent: 20,
-    random_combat: true,
-    execution: :thump_like,
-    visual: nil,
-    tags: %i[physical blunt melee],
-    declarative_shape: :handwritten_behavior
-  ),
-  Skill.new(
-    id: :eviscerate,
-    cpp_id: "Eviscerate",
-    display: "Eviscerate",
-    learn_chance_percent: 2,
-    random_combat: true,
-    execution: :eviscerate,
-    visual: nil,
-    tags: %i[physical slashing bleed melee],
-    declarative_shape: :handwritten_behavior
-  ),
-  Skill.new(
-    id: :poison,
-    cpp_id: "Poison",
-    display: "Poison",
-    learn_chance_percent: 5,
-    random_combat: true,
-    execution: :poison,
-    visual: nil,
-    tags: %i[poison disease],
-    declarative_shape: :handwritten_behavior
-  ),
-  Skill.new(
-    id: :cold_snap,
-    cpp_id: "ColdSnap",
-    display: "Cold Snap",
-    learn_chance_percent: 5,
-    random_combat: true,
-    execution: :cold_snap,
-    visual: nil,
-    tags: %i[cold control],
-    declarative_shape: :handwritten_behavior
-  ),
-  Skill.new(
-    id: :flame_strike,
-    cpp_id: "FlameStrike",
-    display: "Flame Strike",
-    learn_chance_percent: 5,
-    random_combat: true,
-    execution: :flame_strike,
-    visual: :flame_wave,
-    tags: %i[fire projectile],
-    declarative_shape: :handwritten_behavior
-  ),
-  Skill.new(
-    id: :flame_wave,
-    cpp_id: "FlameWave",
-    display: "Flame Wave",
-    learn_chance_percent: 2,
-    random_combat: true,
-    execution: :flame_wave,
-    visual: :flame_wave,
-    tags: %i[fire area],
-    declarative_shape: :handwritten_behavior
-  ),
-  Skill.new(
-    id: :joltspasm,
-    cpp_id: "Joltspasm",
-    display: "Joltspasm",
-    learn_chance_percent: 5,
-    random_combat: true,
-    execution: :decal_strike,
-    visual: :shock,
-    tags: %i[lightning projectile],
-    declarative_shape: :decal_strike
-  ),
-  Skill.new(
-    id: :rocks_fall,
-    cpp_id: "RocksFall",
-    display: "Rocks Fall",
-    learn_chance_percent: 5,
-    random_combat: true,
-    execution: :decal_strike,
-    visual: :rocks_fall,
-    tags: %i[earth projectile],
-    declarative_shape: :decal_strike
-  ),
-  Skill.new(
-    id: :sour_breath,
-    cpp_id: "SourBreath",
-    display: "Sour Breath",
-    learn_chance_percent: 5,
-    random_combat: true,
-    execution: :decal_strike,
-    visual: :poison_cloud,
-    tags: %i[poison acid projectile],
-    declarative_shape: :decal_strike
-  ),
-  Skill.new(
-    id: :mercyburst,
-    cpp_id: "Mercyburst",
-    display: "Mercyburst",
-    learn_chance_percent: 5,
-    random_combat: true,
-    execution: :decal_strike,
-    visual: :holy_nova,
-    tags: %i[healing holy area],
-    declarative_shape: :decal_strike
-  ),
-  Skill.new(
-    id: :blood_bloom,
-    cpp_id: "BloodBloom",
-    display: "Blood Bloom",
-    learn_chance_percent: 5,
-    random_combat: true,
-    execution: :decal_strike,
-    visual: :blood_bloom,
-    tags: %i[bleed projectile],
-    declarative_shape: :decal_strike
-  ),
-  Skill.new(
-    id: :ice_splitter,
-    cpp_id: "IceSplitter",
-    display: "Ice Splitter",
-    learn_chance_percent: 5,
-    random_combat: true,
-    execution: :decal_strike,
-    visual: :frost_crack,
-    tags: %i[cold projectile],
-    declarative_shape: :decal_strike
-  ),
-  Skill.new(
-    id: :gravity_sigh,
-    cpp_id: "GravitySigh",
-    display: "Gravity Sigh",
-    learn_chance_percent: 5,
-    random_combat: true,
-    execution: :decal_strike,
-    visual: :void_ripple,
-    tags: %i[gravity control],
-    declarative_shape: :decal_strike
-  ),
-  Skill.new(
-    id: :bump,
-    cpp_id: "Bump",
-    display: "Bump",
-    learn_chance_percent: 20,
-    random_combat: true,
-    execution: :thump_like,
-    visual: nil,
-    tags: %i[physical blunt melee],
-    declarative_shape: :handwritten_behavior
-  ),
-  Skill.new(
-    id: :squish,
-    cpp_id: "Squish",
-    display: "Squish",
-    learn_chance_percent: 20,
-    random_combat: true,
-    execution: :thump_like,
-    visual: nil,
-    tags: %i[physical blunt melee],
-    declarative_shape: :handwritten_behavior
-  ),
-  Skill.new(
-    id: :smack,
-    cpp_id: "Smack",
-    display: "Smack",
-    learn_chance_percent: 20,
-    random_combat: true,
-    execution: :thump_like,
-    visual: nil,
-    tags: %i[physical blunt melee],
-    declarative_shape: :handwritten_behavior
-  )
-].freeze
+def visual(id, cpp:)
+  VISUAL_CPP[id] = cpp
+end
 
-RANDOM_COMBAT_SKILLS = %i[
-  thump
-  eviscerate
-  poison
-  cold_snap
-  flame_strike
-  flame_wave
-  bump
-  squish
-  smack
-  joltspasm
-  rocks_fall
-  sour_breath
-  mercyburst
-  blood_bloom
-  ice_splitter
-  gravity_sigh
-  flee
-].freeze
-
-MONSTERS = [
-  Monster.new(
-    id: :field_mouse,
-    cpp_id: "FieldMouse",
-    display: "Field Mouse",
-    known_skills: %i[thump],
-    pool: :common_woodland
-  ),
-  Monster.new(
-    id: :honey_badger,
-    cpp_id: "HoneyBadger",
-    display: "Honey Badger",
-    known_skills: %i[eviscerate],
-    pool: :rare_woodland
-  ),
-  Monster.new(
-    id: :bumpkin_hare,
-    cpp_id: "BumpkinHare",
-    display: "Bumpkin Hare",
-    known_skills: %i[bump],
-    pool: :common_woodland
-  ),
-  Monster.new(
-    id: :scaredy_cat,
-    cpp_id: "ScaredyCat",
-    display: "Scaredy Cat",
-    known_skills: %i[flee thump],
-    pool: :common_woodland
-  ),
-  Monster.new(
-    id: :mire_squish,
-    cpp_id: "MireSquish",
-    display: "Mire Squish",
-    known_skills: %i[squish],
-    pool: :common_woodland
-  ),
-  Monster.new(
-    id: :bark_smack,
-    cpp_id: "BarkSmack",
-    display: "Bark Smack",
-    known_skills: %i[smack],
-    pool: :common_woodland
-  ),
-  Monster.new(
-    id: :poison_toad,
-    cpp_id: "PoisonToad",
-    display: "Poison Toad",
-    known_skills: %i[poison],
-    pool: :common_woodland
-  ),
-  Monster.new(
-    id: :yeti,
-    cpp_id: "Yeti",
-    display: "Yeti",
-    known_skills: %i[cold_snap],
-    pool: :common_woodland
-  ),
-  Monster.new(
-    id: :salamander,
-    cpp_id: "Salamander",
-    display: "Salamander",
-    known_skills: %i[flame_strike],
-    pool: :common_woodland
-  ),
-  Monster.new(
-    id: :fire_drake,
-    cpp_id: "FireDrake",
-    display: "Fire Drake",
-    known_skills: %i[flame_wave],
-    pool: :rare_woodland
-  ),
-  Monster.new(
-    id: :stormtick_imp,
-    cpp_id: "StormtickImp",
-    display: "Stormtick Imp",
-    known_skills: %i[joltspasm],
-    pool: :common_woodland
-  ),
-  Monster.new(
-    id: :ceiling_grudge,
-    cpp_id: "CeilingGrudge",
-    display: "Ceiling Grudge",
-    known_skills: %i[rocks_fall],
-    pool: :common_woodland
-  ),
-  Monster.new(
-    id: :miasma_toad,
-    cpp_id: "MiasmaToad",
-    display: "Miasma Toad",
-    known_skills: %i[sour_breath],
-    pool: :common_woodland
-  ),
-  Monster.new(
-    id: :choir_wisp,
-    cpp_id: "ChoirWisp",
-    display: "Choir Wisp",
-    known_skills: %i[mercyburst],
-    pool: :common_woodland
-  ),
-  Monster.new(
-    id: :gorecap_sprout,
-    cpp_id: "GorecapSprout",
-    display: "Gorecap Sprout",
-    known_skills: %i[blood_bloom],
-    pool: :common_woodland
-  ),
-  Monster.new(
-    id: :rimefang_hare,
-    cpp_id: "RimefangHare",
-    display: "Rimefang Hare",
-    known_skills: %i[ice_splitter],
-    pool: :common_woodland
-  ),
-  Monster.new(
-    id: :null_mote,
-    cpp_id: "NullMote",
-    display: "Null Mote",
-    known_skills: %i[gravity_sigh],
-    pool: :common_woodland
+def skill(id, cpp_id:, display:, learn_chance_percent:, random_combat:,
+          execution:, visual: nil, tags:, declarative_shape:)
+  SKILLS << Skill.new(
+    id: id,
+    cpp_id: cpp_id,
+    display: display,
+    learn_chance_percent: learn_chance_percent,
+    random_combat: random_combat,
+    execution: execution,
+    visual: visual,
+    tags: tags,
+    declarative_shape: declarative_shape
   )
-].freeze
+end
+
+def random_combat_skills(*ids)
+  RANDOM_COMBAT_SKILLS.replace(ids)
+end
+
+def monster(id, cpp_id:, display:, known_skills:, pool:)
+  MONSTERS << Monster.new(
+    id: id,
+    cpp_id: cpp_id,
+    display: display,
+    known_skills: known_skills,
+    pool: pool
+  )
+end
+
+load DECLARATIONS_FILE
+
+VISUAL_CPP.freeze
+SKILLS.each(&:freeze)
+SKILLS.freeze
+RANDOM_COMBAT_SKILLS.freeze
+MONSTERS.each(&:freeze)
+MONSTERS.freeze
 
 def validate!
   errors = []
@@ -446,6 +141,18 @@ def visual_cpp(skill)
   "fl::widgets::effects::DecalAnimationKind::#{VISUAL_CPP.fetch(skill.visual)}"
 end
 
+def cpp_enum_name(id)
+  id.to_s.split("_").map(&:capitalize).join
+end
+
+def execution_cpp(skill)
+  "fl::skills::SkillExecutionKind::#{cpp_enum_name(skill.execution)}"
+end
+
+def tag_cpp(tag)
+  "fl::skills::SkillTag::#{cpp_enum_name(tag)}"
+end
+
 def pool_cpp(pool)
   pool == :rare_woodland ? "RareWoodland" : "CommonWoodland"
 end
@@ -478,6 +185,21 @@ def generate_test_cpp
               std::array<fl::skills::SkillId, #{monster.known_skills.size}>{#{known_skills}},
               Pool::#{pool_cpp(monster.pool)},
           },
+    CPP
+  end.join
+
+  skill_tag_sections = SKILLS.map do |skill|
+    tag_checks = skill.tags.map do |tag|
+      "      REQUIRE(fl::skills::has_tag(skill, #{tag_cpp(tag)}));"
+    end.join("\n")
+    <<~CPP
+        SECTION(#{cpp_string(skill.display)}) {
+          const auto skill = #{skill_key_cpp(skill)};
+          const auto &definition = fl::skills::definition(skill);
+          REQUIRE(definition.execution == #{execution_cpp(skill)});
+          REQUIRE(definition.tags.size() == #{skill.tags.size});
+    #{tag_checks}
+        }
     CPP
   end.join
 
@@ -579,6 +301,11 @@ def generate_test_cpp
                               fl::skills::kRandomCombatSkills.end(),
                               fl::skills::SkillKey{fl::skills::SkillId::Observe}) !=
                     fl::skills::kRandomCombatSkills.end());
+    }
+
+    TEST_CASE("Generated skill tags and execution kinds mirror runtime definitions",
+              "[generated][content][skills][tags]") {
+    #{skill_tag_sections}
     }
 
     TEST_CASE("Generated monster declarations mirror runtime registry",

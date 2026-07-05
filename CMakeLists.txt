@@ -348,6 +348,7 @@ add_custom_command(
           --out-dir "${FAIRLANES_CONTENT_GENERATED_DIR}"
   DEPENDS
     "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+    "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
   COMMENT "Generating Fairlanes content artifacts"
   VERBATIM
 )

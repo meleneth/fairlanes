@@ -122,9 +122,10 @@ You should not need to install libraries manually.
 
 ## Generated Content Prototype
 
-The Ruby content generator is currently a mirror of handwritten C++; it is not
-runtime source of truth. It validates the decal skill/monster declarations and
-writes build-tree artifacts under:
+The Ruby content declarations are currently a mirror of handwritten C++; they are
+not runtime source of truth. The generator reads
+`scripts/fairlanes_content_declarations.rb`, validates the decal skill/monster
+declarations, and writes build-tree artifacts under:
 
 ```sh
 <build-dir>/generated/fairlanes_content
