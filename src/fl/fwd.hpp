@@ -31,10 +31,6 @@ namespace fl::fsm {
 struct PartyLoop;
 } // namespace fl::fsm
 
-namespace fl::monster {
-class FieldMouse;
-}
-
 namespace fl::primitives {
 class EntityBuilder;
 class FancyLogSink;

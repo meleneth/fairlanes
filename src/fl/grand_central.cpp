@@ -21,6 +21,8 @@
 #include "fl/ecs/components/is_account.hpp"
 #include "fl/ecs/components/is_party.hpp"
 #include "fl/ecs/components/party_member.hpp"
+#include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/systems/special_festival_event.hpp"
 #include "fl/ecs/systems/visual_resolver.hpp"
 #include "fl/monsters/register_monsters.hpp"

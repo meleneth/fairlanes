@@ -41,6 +41,8 @@ module FairlanesContent
         "fl/generated/monster_kinds.hpp" => renderer.monster_kinds_hpp,
         "fl/generated/monster_content.hpp" => renderer.monster_content_hpp,
         "fl/generated/monster_content.cpp" => renderer.monster_content_cpp,
+        "fl/generated/monster_registration.hpp" => renderer.monster_registration_hpp,
+        "fl/generated/monster_registration.cpp" => renderer.monster_registration_cpp,
         "decal_content_balance.md" => renderer.balance_report,
         "effect_gallery.md" => renderer.effect_gallery,
         "content_manifest.json" => manifest_json,
