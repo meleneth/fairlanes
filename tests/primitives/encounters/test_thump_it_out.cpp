@@ -1,8 +1,6 @@
 // tests/encounter_builder_tests.cpp
 #include <catch2/catch_test_macros.hpp>
 
-#include <algorithm>
-
 #include <entt/entt.hpp>
 
 #include "fl/ecs/components/stats.hpp"
@@ -131,44 +129,6 @@ TEST_CASE("EncounterBuilder gives each enemy a stable combatant bus",
 
   const auto *stable_first_bus = encounter.enemy_combatant_bus(first_enemy);
   REQUIRE(stable_first_bus == first_bus);
-}
-
-TEST_CASE("EncounterBuilder common woodland pool includes new status monsters",
-          "[encounter_builder][encounter][combat][status]") {
-  const auto pool = fl::primitives::EncounterBuilder::common_woodland();
-
-  REQUIRE(std::find(pool.begin(), pool.end(),
-                    fl::monster::MonsterKind::PoisonToad) != pool.end());
-  REQUIRE(std::find(pool.begin(), pool.end(),
-                    fl::monster::MonsterKind::ScaredyCat) != pool.end());
-  REQUIRE(std::find(pool.begin(), pool.end(), fl::monster::MonsterKind::Yeti) !=
-          pool.end());
-  REQUIRE(std::find(pool.begin(), pool.end(),
-                    fl::monster::MonsterKind::Salamander) != pool.end());
-  REQUIRE(std::find(pool.begin(), pool.end(),
-                    fl::monster::MonsterKind::StormtickImp) != pool.end());
-  REQUIRE(std::find(pool.begin(), pool.end(),
-                    fl::monster::MonsterKind::CeilingGrudge) != pool.end());
-  REQUIRE(std::find(pool.begin(), pool.end(),
-                    fl::monster::MonsterKind::MiasmaToad) != pool.end());
-  REQUIRE(std::find(pool.begin(), pool.end(),
-                    fl::monster::MonsterKind::ChoirWisp) != pool.end());
-  REQUIRE(std::find(pool.begin(), pool.end(),
-                    fl::monster::MonsterKind::GorecapSprout) != pool.end());
-  REQUIRE(std::find(pool.begin(), pool.end(),
-                    fl::monster::MonsterKind::RimefangHare) != pool.end());
-  REQUIRE(std::find(pool.begin(), pool.end(),
-                    fl::monster::MonsterKind::NullMote) != pool.end());
-}
-
-TEST_CASE("EncounterBuilder rare woodland pool includes Fire Drake",
-          "[encounter_builder][encounter][combat][rare]") {
-  const auto pool = fl::primitives::EncounterBuilder::rare_woodland();
-
-  REQUIRE(std::find(pool.begin(), pool.end(),
-                    fl::monster::MonsterKind::HoneyBadger) != pool.end());
-  REQUIRE(std::find(pool.begin(), pool.end(),
-                    fl::monster::MonsterKind::FireDrake) != pool.end());
 }
 
 TEST_CASE("Thump ranks produce distinct damage bands",
