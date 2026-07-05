@@ -9,28 +9,9 @@
 #include <string>
 #include <string_view>
 
-namespace fl::skills {
+#include "fl/generated/skill_ids.hpp"
 
-enum class SkillId {
-  Observe,
-  Flee,
-  Thump,
-  Eviscerate,
-  Poison,
-  ColdSnap,
-  FlameStrike,
-  FlameWave,
-  Joltspasm,
-  RocksFall,
-  SourBreath,
-  Mercyburst,
-  BloodBloom,
-  IceSplitter,
-  GravitySigh,
-  Bump,
-  Squish,
-  Smack,
-};
+namespace fl::skills {
 
 class SkillRank {
 public:

@@ -14,18 +14,6 @@ module FairlanesContent
 
   class Validator
     VALID_POOLS = Set[:common_woodland, :rare_woodland].freeze
-    VALID_SKILL_CPP_IDS = Set[
-      "Observe", "Flee", "Thump", "Eviscerate", "Poison", "ColdSnap",
-      "FlameStrike", "FlameWave", "Joltspasm", "RocksFall", "SourBreath",
-      "Mercyburst", "BloodBloom", "IceSplitter", "GravitySigh", "Bump",
-      "Squish", "Smack"
-    ].freeze
-    VALID_MONSTER_CPP_IDS = Set[
-      "FieldMouse", "HoneyBadger", "BumpkinHare", "ScaredyCat",
-      "MireSquish", "BarkSmack", "PoisonToad", "Yeti", "Salamander",
-      "FireDrake", "StormtickImp", "CeilingGrudge", "MiasmaToad",
-      "ChoirWisp", "GorecapSprout", "RimefangHare", "NullMote"
-    ].freeze
     VALID_EXECUTIONS = Set[
       :thump_like, :eviscerate, :poison, :cold_snap, :flame_strike,
       :flame_wave, :decal_strike, :flee, :observe
@@ -73,8 +61,12 @@ module FairlanesContent
     def validate_duplicate_ids(errors)
       skill_ids = declarations.skills.map(&:id)
       monster_ids = declarations.monsters.map(&:id)
+      skill_cpp_ids = declarations.skills.map(&:cpp_id)
+      monster_cpp_ids = declarations.monsters.map(&:cpp_id)
       errors << "duplicate skill ids" unless skill_ids.uniq.size == skill_ids.size
       errors << "duplicate monster ids" unless monster_ids.uniq.size == monster_ids.size
+      errors << "duplicate skill C++ ids" unless skill_cpp_ids.uniq.size == skill_cpp_ids.size
+      errors << "duplicate monster C++ ids" unless monster_cpp_ids.uniq.size == monster_cpp_ids.size
     end
 
     def validate_visuals(errors)
@@ -86,9 +78,6 @@ module FairlanesContent
     def validate_skills(errors)
       declarations.skills.each do |skill|
         errors << "skill #{skill.id} is missing a C++ id" if skill.cpp_id.to_s.empty?
-        unless VALID_SKILL_CPP_IDS.include?(skill.cpp_id)
-          errors << "skill #{skill.id} has invalid C++ id #{skill.cpp_id}"
-        end
         errors << "skill #{skill.id} is missing a display name" if skill.display.to_s.empty?
         unless percent?(skill.learn_chance_percent)
           errors << "skill #{skill.id} has invalid learn chance #{skill.learn_chance_percent}"
@@ -141,9 +130,6 @@ module FairlanesContent
 
       declarations.monsters.each do |monster|
         errors << "monster #{monster.id} is missing a C++ id" if monster.cpp_id.to_s.empty?
-        unless VALID_MONSTER_CPP_IDS.include?(monster.cpp_id)
-          errors << "monster #{monster.id} has invalid C++ id #{monster.cpp_id}"
-        end
         errors << "monster #{monster.id} is missing a display name" if monster.display.to_s.empty?
         errors << "monster #{monster.id} has invalid pool #{monster.pool}" unless VALID_POOLS.include?(monster.pool)
         errors << "monster #{monster.id} has no known skills" if monster.known_skills.empty?

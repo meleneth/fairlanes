@@ -43,6 +43,33 @@ RSpec.describe FairlanesContent::Validator do
       .to include("random combat skill order has duplicate entries")
   end
 
+  it "rejects duplicate skill C++ ids" do
+    declarations = FairlanesContent::DeclarationSet.new
+    2.times do |index|
+      declarations.skill :"thump_#{index}",
+                         cpp_id: "Thump",
+                         display: "Thump",
+                         learn_chance_percent: 20,
+                         execution: :thump_like,
+                         tags: %i[physical blunt melee],
+                         declarative_shape: :handwritten_behavior
+    end
+
+    expect(described_class.new(declarations).validate)
+      .to include("duplicate skill C++ ids")
+  end
+
+  it "rejects duplicate monster C++ ids" do
+    declarations = build(:declaration_set)
+    declarations.monster :other_mouse,
+                         cpp_id: "FieldMouse",
+                         known_skills: %i[thump],
+                         pool: :common_woodland
+
+    expect(described_class.new(declarations).validate)
+      .to include("duplicate monster C++ ids")
+  end
+
   it "rejects unknown tags" do
     declarations = FairlanesContent::DeclarationSet.new
     declarations.skill :thump,

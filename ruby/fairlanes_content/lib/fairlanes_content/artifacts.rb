@@ -35,8 +35,10 @@ module FairlanesContent
 
       {
         "generated_decal_content_tests.cpp" => renderer.test_cpp,
+        "fl/generated/skill_ids.hpp" => renderer.skill_ids_hpp,
         "fl/generated/skill_content.hpp" => renderer.skill_content_hpp,
         "fl/generated/skill_content.cpp" => renderer.skill_content_cpp,
+        "fl/generated/monster_kinds.hpp" => renderer.monster_kinds_hpp,
         "fl/generated/monster_content.hpp" => renderer.monster_content_hpp,
         "fl/generated/monster_content.cpp" => renderer.monster_content_cpp,
         "decal_content_balance.md" => renderer.balance_report,
