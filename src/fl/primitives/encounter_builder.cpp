@@ -2,6 +2,7 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/encounter.hpp"
+#include "fl/generated/monster_content.hpp"
 #include "fl/monsters/monster_kind.hpp"
 #include "fl/primitives/encounter_data.hpp"
 #include "fl/primitives/entity_builder.hpp"
@@ -10,6 +11,16 @@
 #include "sr/atb_events.hpp"
 
 namespace fl::primitives {
+
+std::span<const fl::monster::MonsterKind>
+EncounterBuilder::common_woodland() noexcept {
+  return fl::monster::generated_content::common_woodland();
+}
+
+std::span<const fl::monster::MonsterKind>
+EncounterBuilder::rare_woodland() noexcept {
+  return fl::monster::generated_content::rare_woodland();
+}
 
 EncounterData &EncounterBuilder::thump_it_out() {
   auto &encounter_data = ctx_.party_data().create_encounter();
@@ -36,8 +47,8 @@ void EncounterBuilder::add_random_enemy() {
         rs.random_index(static_cast<int>(pool.size())))];
   };
 
-  const auto kind = rs.random_index(20) == 0 ? pick_from(kRareWoodland)
-                                             : pick_from(kCommonWoodland);
+  const auto kind = rs.random_index(20) == 0 ? pick_from(rare_woodland())
+                                             : pick_from(common_woodland());
 
   auto context = ctx_.build_context();
   entt::entity ent = EntityBuilder(context).monster(kind).build();

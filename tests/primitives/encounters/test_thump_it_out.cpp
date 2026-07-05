@@ -135,7 +135,7 @@ TEST_CASE("EncounterBuilder gives each enemy a stable combatant bus",
 
 TEST_CASE("EncounterBuilder common woodland pool includes new status monsters",
           "[encounter_builder][encounter][combat][status]") {
-  const auto &pool = fl::primitives::EncounterBuilder::kCommonWoodland;
+  const auto pool = fl::primitives::EncounterBuilder::common_woodland();
 
   REQUIRE(std::find(pool.begin(), pool.end(),
                     fl::monster::MonsterKind::PoisonToad) != pool.end());
@@ -163,7 +163,7 @@ TEST_CASE("EncounterBuilder common woodland pool includes new status monsters",
 
 TEST_CASE("EncounterBuilder rare woodland pool includes Fire Drake",
           "[encounter_builder][encounter][combat][rare]") {
-  const auto &pool = fl::primitives::EncounterBuilder::kRareWoodland;
+  const auto pool = fl::primitives::EncounterBuilder::rare_woodland();
 
   REQUIRE(std::find(pool.begin(), pool.end(),
                     fl::monster::MonsterKind::HoneyBadger) != pool.end());

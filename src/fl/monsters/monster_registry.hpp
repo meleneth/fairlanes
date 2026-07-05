@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "fl/generated/monster_content.hpp"
 #include "fl/monsters/monster_kind.hpp"
 #include "fl/skills/skill.hpp"
 namespace fl::primitives {
@@ -32,7 +33,8 @@ monster_registry() {
 inline void register_monster(fl::monster::MonsterKind kind,
                              MonsterArchetypeFn fn,
                              std::initializer_list<fl::skills::SkillId>
-                                 known_skills = {}) {
+                                 = {}) {
+  const auto known_skills = generated_content::known_skills(kind);
   monster_registry()[kind] =
       MonsterDefinition{std::move(fn), std::vector<fl::skills::SkillId>(
                                            known_skills.begin(),
