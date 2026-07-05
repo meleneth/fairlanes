@@ -9,7 +9,7 @@ DECLARATIONS_FILE = File.expand_path("fairlanes_content_declarations.rb", __dir_
 
 Skill = Struct.new(
   :id, :cpp_id, :display, :learn_chance_percent, :random_combat,
-  :execution, :visual, :tags, :declarative_shape,
+  :flee_success_percent, :execution, :visual, :tags, :declarative_shape,
   keyword_init: true
 )
 
@@ -30,6 +30,7 @@ def visual(id, cpp:)
 end
 
 def skill(id, cpp_id:, display:, learn_chance_percent:, random_combat:,
+          flee_success_percent: 0,
           execution:, visual: nil, tags:, declarative_shape:)
   SKILLS << Skill.new(
     id: id,
@@ -37,6 +38,7 @@ def skill(id, cpp_id:, display:, learn_chance_percent:, random_combat:,
     display: display,
     learn_chance_percent: learn_chance_percent,
     random_combat: random_combat,
+    flee_success_percent: flee_success_percent,
     execution: execution,
     visual: visual,
     tags: tags,
@@ -83,6 +85,12 @@ def validate!
     errors << "skill #{skill.id} is missing a display name" if skill.display.to_s.empty?
     if skill.learn_chance_percent.negative? || skill.learn_chance_percent > 100
       errors << "skill #{skill.id} has invalid learn chance #{skill.learn_chance_percent}"
+    end
+    if skill.flee_success_percent.negative? || skill.flee_success_percent > 100
+      errors << "skill #{skill.id} has invalid flee success #{skill.flee_success_percent}"
+    end
+    if skill.execution != :flee && skill.flee_success_percent != 0
+      errors << "skill #{skill.id} has flee success but is not a flee execution"
     end
     errors << "skill #{skill.id} has invalid visual #{skill.visual}" if skill.visual && !VISUAL_CPP.key?(skill.visual)
     errors << "skill #{skill.id} has no tags" if skill.tags.empty?
@@ -165,6 +173,7 @@ def generate_test_cpp
               #{skill_key_cpp(skill)},
               #{cpp_string(skill.display)},
               #{skill.learn_chance_percent},
+              #{skill.flee_success_percent},
               #{skill.random_combat ? "true" : "false"},
               #{visual},
           },
@@ -238,6 +247,7 @@ def generate_test_cpp
       fl::skills::SkillKey skill;
       std::string_view skill_name;
       int learn_chance_percent;
+      int flee_success_percent;
       bool random_combat;
       std::optional<fl::widgets::effects::DecalAnimationKind> visual;
     };
@@ -276,6 +286,8 @@ def generate_test_cpp
         REQUIRE(fl::skills::name(expected.skill) == expected.skill_name);
         REQUIRE(fl::skills::learn_chance_percent(expected.skill) ==
                 expected.learn_chance_percent);
+        REQUIRE(fl::skills::definition(expected.skill).flee_success_percent ==
+                expected.flee_success_percent);
         REQUIRE(fl::skills::decal_animation_for(expected.skill) == expected.visual);
       }
     }
@@ -291,6 +303,12 @@ def generate_test_cpp
         REQUIRE_FALSE(skill.skill_name.empty());
         REQUIRE(skill.learn_chance_percent >= 0);
         REQUIRE(skill.learn_chance_percent <= 100);
+        REQUIRE(skill.flee_success_percent >= 0);
+        REQUIRE(skill.flee_success_percent <= 100);
+        if (fl::skills::definition(skill.skill).execution !=
+            fl::skills::SkillExecutionKind::Flee) {
+          REQUIRE(skill.flee_success_percent == 0);
+        }
 
         for (std::size_t j = i + 1; j < kExpectedSkills.size(); ++j) {
           REQUIRE(skill.skill.base != kExpectedSkills[j].skill.base);
@@ -386,8 +404,8 @@ def generate_report
     "",
     "## Skill Metadata",
     "",
-    "| Skill | C++ ID | Learn chance | Random combat | Execution | Visual | Monsters | Shape |",
-    "| --- | --- | ---: | --- | --- | --- | --- | --- |"
+    "| Skill | C++ ID | Learn chance | Flee success | Random combat | Execution | Visual | Monsters | Shape |",
+    "| --- | --- | ---: | ---: | --- | --- | --- | --- | --- |"
   ]
 
   SKILLS.each do |skill|
@@ -395,6 +413,7 @@ def generate_report
       skill.display,
       skill.cpp_id,
       skill.learn_chance_percent,
+      skill.flee_success_percent,
       skill.random_combat ? "yes" : "no",
       skill.execution,
       skill.visual ? VISUAL_CPP.fetch(skill.visual) : "",

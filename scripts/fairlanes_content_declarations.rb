@@ -26,6 +26,7 @@ skill :flee,
       display: "Flee",
       learn_chance_percent: 0,
       random_combat: true,
+      flee_success_percent: 65,
       execution: :flee,
       tags: %i[utility escape],
       declarative_shape: :handwritten_behavior
