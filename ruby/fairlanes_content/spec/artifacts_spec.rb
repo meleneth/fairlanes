@@ -17,6 +17,39 @@ RSpec.describe FairlanesContent::Artifacts do
     end
   end
 
+  it "does not rewrite artifacts whose contents are unchanged" do
+    declarations = build(:declaration_set)
+
+    Dir.mktmpdir do |dir|
+      artifacts = described_class.new(declarations)
+      artifacts.write!(dir)
+
+      path = File.join(dir, "content_manifest.json")
+      old_time = Time.at(1)
+      File.utime(old_time, old_time, path)
+
+      artifacts.write!(dir)
+
+      expect(File.mtime(path)).to eq(old_time)
+    end
+  end
+
+  it "rewrites artifacts whose contents changed" do
+    declarations = build(:declaration_set)
+
+    Dir.mktmpdir do |dir|
+      artifacts = described_class.new(declarations)
+      artifacts.write!(dir)
+
+      path = File.join(dir, "content_manifest.json")
+      File.write(path, "{}\n")
+
+      artifacts.write!(dir)
+
+      expect(File.read(path)).to eq(artifacts.generated.fetch("content_manifest.json"))
+    end
+  end
+
   it "checks current generated artifacts without rewriting them" do
     declarations = build(:declaration_set)
 

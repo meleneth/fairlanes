@@ -45,7 +45,10 @@ module FairlanesContent
     def write!(out_dir)
       FileUtils.mkdir_p(out_dir)
       generated.each do |filename, contents|
-        File.write(File.join(out_dir, filename), contents)
+        path = File.join(out_dir, filename)
+        next if File.exist?(path) && File.binread(path) == contents
+
+        File.binwrite(path, contents)
       end
     end
 
