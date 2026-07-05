@@ -4,7 +4,7 @@ require "fairlanes_content/models"
 
 module FairlanesContent
   class DeclarationSet
-    attr_reader :visuals, :skills, :random_combat_skills, :monsters
+    attr_reader :visuals, :skills, :random_combat_skills, :monsters, :statuses
 
     def self.load_file(path)
       new.tap { |set| set.load_file(path) }
@@ -15,6 +15,7 @@ module FairlanesContent
       @skills = []
       @random_combat_skills = []
       @monsters = []
+      @statuses = []
     end
 
     def load_file(path)
@@ -79,6 +80,18 @@ module FairlanesContent
       )
     end
 
+    def status(id, cpp_id: nil, display: nil, debug_name: nil, component: nil,
+               palette_index:)
+      statuses << Status.new(
+        id: id,
+        cpp_id: cpp_id || cpp_name(id),
+        display: display || display_name(id),
+        debug_name: debug_name || id.to_s.tr("_", "-"),
+        component: component || cpp_name(id),
+        palette_index: palette_index
+      )
+    end
+
     private
 
     def cpp_name(id)
@@ -96,6 +109,8 @@ module FairlanesContent
       random_combat_skills.freeze
       monsters.each(&:freeze)
       monsters.freeze
+      statuses.each(&:freeze)
+      statuses.freeze
     end
   end
 end

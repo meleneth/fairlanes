@@ -11,4 +11,9 @@ module FairlanesContent
     :id, :cpp_id, :display, :hp, :mp, :level, :known_skills, :pool,
     keyword_init: true
   )
+
+  Status = Struct.new(
+    :id, :cpp_id, :display, :debug_name, :component, :palette_index,
+    keyword_init: true
+  )
 end

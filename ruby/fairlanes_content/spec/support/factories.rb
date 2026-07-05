@@ -6,6 +6,11 @@ FactoryBot.define do
 
     after(:build) do |set|
       set.visual :shock, cpp: "Shock"
+      set.status :poison,
+                 cpp_id: "Poison",
+                 display: "Poison",
+                 component: "Poison",
+                 palette_index: 20
       set.skill :thump,
                 cpp_id: "Thump",
                 display: "Thump",

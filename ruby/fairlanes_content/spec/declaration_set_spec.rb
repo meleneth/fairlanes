@@ -40,6 +40,20 @@ RSpec.describe FairlanesContent::DeclarationSet do
     expect(monster.level).to be_nil
   end
 
+  it "defaults status metadata from declaration ids" do
+    declarations = described_class.new
+
+    declarations.status :dire_bleed,
+                        palette_index: 6
+
+    status = declarations.statuses.fetch(0)
+    expect(status.cpp_id).to eq("DireBleed")
+    expect(status.display).to eq("Dire Bleed")
+    expect(status.debug_name).to eq("dire-bleed")
+    expect(status.component).to eq("DireBleed")
+    expect(status.palette_index).to eq(6)
+  end
+
   it "allows explicit names to override defaults" do
     declarations = described_class.new
 

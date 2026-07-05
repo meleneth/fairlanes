@@ -38,6 +38,8 @@ module FairlanesContent
         "fl/generated/skill_ids.hpp" => renderer.skill_ids_hpp,
         "fl/generated/skill_content.hpp" => renderer.skill_content_hpp,
         "fl/generated/skill_content.cpp" => renderer.skill_content_cpp,
+        "fl/generated/status_content.hpp" => renderer.status_content_hpp,
+        "fl/generated/status_content.cpp" => renderer.status_content_cpp,
         "fl/generated/monster_kinds.hpp" => renderer.monster_kinds_hpp,
         "fl/generated/monster_content.hpp" => renderer.monster_content_hpp,
         "fl/generated/monster_content.cpp" => renderer.monster_content_cpp,
@@ -92,6 +94,7 @@ module FairlanesContent
         source
         runtime_authority
         visuals
+        statuses
         skills
         random_combat_skills
         monsters
@@ -100,6 +103,7 @@ module FairlanesContent
 
       errors << "manifest schema_version must be 1" unless manifest["schema_version"] == 1
       errors << "manifest visuals must be an array" unless manifest["visuals"].is_a?(Array)
+      errors << "manifest statuses must be an array" unless manifest["statuses"].is_a?(Array)
       errors << "manifest skills must be an array" unless manifest["skills"].is_a?(Array)
       unless manifest["random_combat_skills"].is_a?(Array)
         errors << "manifest random_combat_skills must be an array"
@@ -107,6 +111,7 @@ module FairlanesContent
       errors << "manifest monsters must be an array" unless manifest["monsters"].is_a?(Array)
 
       validate_manifest_skills(manifest, errors)
+      validate_manifest_statuses(manifest, errors)
       validate_manifest_monsters(manifest, errors)
 
       raise ManifestShapeError, errors unless errors.empty?
@@ -131,6 +136,19 @@ module FairlanesContent
           errors << "manifest skill #{skill['id']} random_combat is not boolean"
         end
         errors << "manifest skill #{skill['id']} tags must be an array" unless skill["tags"].is_a?(Array)
+      end
+    end
+
+    def validate_manifest_statuses(manifest, errors)
+      return unless manifest["statuses"].is_a?(Array)
+
+      manifest["statuses"].each do |status|
+        %w[id cpp_id display debug_name component palette_index].each do |key|
+          errors << "manifest status missing #{key}" unless status.key?(key)
+        end
+        unless status["palette_index"].is_a?(Integer)
+          errors << "manifest status #{status['id']} palette_index is not an integer"
+        end
       end
     end
 

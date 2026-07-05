@@ -12,6 +12,22 @@ visual :blood_bloom
 visual :frost_crack
 visual :void_ripple
 
+status :poison,
+       display: "Poison",
+       component: "Poison",
+       palette_index: 20
+
+status :dire_bleed,
+       display: "Dire Bleed",
+       debug_name: "dire-bleed",
+       component: "DireBleed",
+       palette_index: 6
+
+status :freeze,
+       display: "Frozen",
+       component: "Freeze",
+       palette_index: 27
+
 skill :observe,
       learn_chance_percent: 0,
       random_combat: false,

@@ -48,6 +48,7 @@ module FairlanesContent
       errors = []
       validate_duplicate_ids(errors)
       validate_visuals(errors)
+      validate_statuses(errors)
       validate_skills(errors)
       validate_random_combat_skills(errors)
       validate_monsters(errors)
@@ -63,15 +64,31 @@ module FairlanesContent
       monster_ids = declarations.monsters.map(&:id)
       skill_cpp_ids = declarations.skills.map(&:cpp_id)
       monster_cpp_ids = declarations.monsters.map(&:cpp_id)
+      status_ids = declarations.statuses.map(&:id)
+      status_cpp_ids = declarations.statuses.map(&:cpp_id)
       errors << "duplicate skill ids" unless skill_ids.uniq.size == skill_ids.size
       errors << "duplicate monster ids" unless monster_ids.uniq.size == monster_ids.size
+      errors << "duplicate status ids" unless status_ids.uniq.size == status_ids.size
       errors << "duplicate skill C++ ids" unless skill_cpp_ids.uniq.size == skill_cpp_ids.size
       errors << "duplicate monster C++ ids" unless monster_cpp_ids.uniq.size == monster_cpp_ids.size
+      errors << "duplicate status C++ ids" unless status_cpp_ids.uniq.size == status_cpp_ids.size
     end
 
     def validate_visuals(errors)
       declarations.visuals.each do |id, cpp|
         errors << "visual #{id} has invalid C++ id #{cpp}" unless VALID_VISUAL_CPP.include?(cpp)
+      end
+    end
+
+    def validate_statuses(errors)
+      declarations.statuses.each do |status|
+        errors << "status #{status.id} is missing a C++ id" if status.cpp_id.to_s.empty?
+        errors << "status #{status.id} is missing a display name" if status.display.to_s.empty?
+        errors << "status #{status.id} is missing a debug name" if status.debug_name.to_s.empty?
+        errors << "status #{status.id} is missing a component" if status.component.to_s.empty?
+        unless non_negative_integer?(status.palette_index) && status.palette_index <= 31
+          errors << "status #{status.id} has invalid palette index #{status.palette_index}"
+        end
       end
     end
 

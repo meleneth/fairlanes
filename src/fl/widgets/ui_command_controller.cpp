@@ -17,6 +17,7 @@
 #include "fl/ecs/components/poison.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
+#include "fl/generated/status_content.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/widgets/fancy_log.hpp"
 
@@ -171,18 +172,26 @@ std::string combatant_debug_line(entt::registry &reg, std::string_view role,
     statuses.emplace_back("ready");
   }
   if (auto *poison = reg.try_get<c::Poison>(entity)) {
+    const auto metadata =
+        fl::status::generated_content::metadata(fl::status::StatusId::Poison);
     statuses.emplace_back(
-        "poison dmg=" + std::to_string(poison->damage_per_tick) +
+        std::string{metadata.debug_name} +
+        " dmg=" + std::to_string(poison->damage_per_tick) +
         " ticks=" + std::to_string(poison->ticks_remaining) +
         " source=" + entity_name(reg, poison->source));
   }
   if (auto *freeze = reg.try_get<c::Freeze>(entity)) {
-    statuses.emplace_back("freeze clear_after=" +
+    const auto metadata =
+        fl::status::generated_content::metadata(fl::status::StatusId::Freeze);
+    statuses.emplace_back(std::string{metadata.debug_name} + " clear_after=" +
                           std::to_string(freeze->clear_after_beats));
   }
   if (auto *bleed = reg.try_get<c::DireBleed>(entity)) {
+    const auto metadata = fl::status::generated_content::metadata(
+        fl::status::StatusId::DireBleed);
     statuses.emplace_back(
-        "dire-bleed dmg=" + std::to_string(bleed->damage_per_tick) +
+        std::string{metadata.debug_name} +
+        " dmg=" + std::to_string(bleed->damage_per_tick) +
         " source=" + entity_name(reg, bleed->source));
   }
   if (reg.any_of<c::StatusTint>(entity)) {

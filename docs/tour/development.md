@@ -125,12 +125,12 @@ You should not need to install libraries manually.
 The Ruby content declarations are the source of truth for generated skill
 metadata C++: stable IDs/enums, display names, learn chances, flee chances,
 execution kind tags, visual mappings, and random-combat membership. They also
-generate monster stable IDs/enums, known-skill metadata, and encounter pool
-membership. Monster stat metadata such as name, HP, MP, and level is generated
-from the same declarations, along with the thin monster registration glue that
-applies those generated stats. Handwritten C++ remains the authority for skill
-behavior, combat effects, rendering implementation, and monster construction
-primitives.
+generate status display/debug metadata, monster stable IDs/enums, known-skill
+metadata, and encounter pool membership. Monster stat metadata such as name, HP,
+MP, and level is generated from the same declarations, along with the thin
+monster registration glue that applies those generated stats. Handwritten C++
+remains the authority for skill behavior, status lifecycles, combat effects,
+rendering implementation, and monster construction primitives.
 
 Generator code lives in the local `ruby/fairlanes_content` gem.
 Fairlanes-specific DSL usage lives outside the gem in

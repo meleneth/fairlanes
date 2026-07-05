@@ -72,6 +72,33 @@ RSpec.describe FairlanesContent::Validator do
       .to include("duplicate monster C++ ids")
   end
 
+  it "rejects duplicate status C++ ids" do
+    declarations = build(:declaration_set)
+    declarations.status :bleeding,
+                        cpp_id: "Poison",
+                        palette_index: 6
+
+    expect(described_class.new(declarations).validate)
+      .to include("duplicate status C++ ids")
+  end
+
+  it "rejects invalid status metadata" do
+    declarations = build(:declaration_set)
+    declarations.status :bad_status,
+                        display: "",
+                        debug_name: "",
+                        component: "",
+                        palette_index: 32
+
+    expect(described_class.new(declarations).validate)
+      .to include(
+        "status bad_status is missing a display name",
+        "status bad_status is missing a debug name",
+        "status bad_status is missing a component",
+        "status bad_status has invalid palette index 32"
+      )
+  end
+
   it "rejects invalid monster stats" do
     declarations = build(:declaration_set)
     declarations.monster :bad_mouse,

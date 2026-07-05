@@ -13,6 +13,7 @@
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
+#include "fl/generated/status_content.hpp"
 #include "fl/lospec500.hpp"
 #include "fl/skills/skill.hpp"
 #include "fl/widgets/effects/decal.hpp"
@@ -292,14 +293,20 @@ private:
 std::vector<DebuffLabel> debuff_rows_for(entt::registry &reg,
                                          entt::entity entity) {
   std::vector<DebuffLabel> debuffs;
+  const auto label_for = [](const fl::status::StatusId status) {
+    const auto metadata = fl::status::generated_content::metadata(status);
+    return DebuffLabel{std::string{metadata.display_name},
+                       fl::lospec500::color_at(metadata.palette_index)};
+  };
+
   if (reg.any_of<fl::ecs::components::Poison>(entity)) {
-    debuffs.push_back(DebuffLabel{"Poison", fl::lospec500::color_at(20)});
+    debuffs.push_back(label_for(fl::status::StatusId::Poison));
   }
   if (reg.any_of<fl::ecs::components::DireBleed>(entity)) {
-    debuffs.push_back(DebuffLabel{"Dire Bleed", fl::lospec500::color_at(6)});
+    debuffs.push_back(label_for(fl::status::StatusId::DireBleed));
   }
   if (reg.any_of<fl::ecs::components::Freeze>(entity)) {
-    debuffs.push_back(DebuffLabel{"Frozen", fl::lospec500::color_at(27)});
+    debuffs.push_back(label_for(fl::status::StatusId::Freeze));
   }
   return debuffs;
 }
