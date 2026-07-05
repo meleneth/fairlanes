@@ -24,6 +24,96 @@ RANDOM_COMBAT_SKILLS = []
 MONSTERS = []
 
 VALID_POOLS = Set[:common_woodland, :rare_woodland].freeze
+VALID_SKILL_CPP_IDS = Set[
+  "Observe",
+  "Flee",
+  "Thump",
+  "Eviscerate",
+  "Poison",
+  "ColdSnap",
+  "FlameStrike",
+  "FlameWave",
+  "Joltspasm",
+  "RocksFall",
+  "SourBreath",
+  "Mercyburst",
+  "BloodBloom",
+  "IceSplitter",
+  "GravitySigh",
+  "Bump",
+  "Squish",
+  "Smack"
+].freeze
+VALID_MONSTER_CPP_IDS = Set[
+  "FieldMouse",
+  "HoneyBadger",
+  "BumpkinHare",
+  "ScaredyCat",
+  "MireSquish",
+  "BarkSmack",
+  "PoisonToad",
+  "Yeti",
+  "Salamander",
+  "FireDrake",
+  "StormtickImp",
+  "CeilingGrudge",
+  "MiasmaToad",
+  "ChoirWisp",
+  "GorecapSprout",
+  "RimefangHare",
+  "NullMote"
+].freeze
+VALID_EXECUTIONS = Set[
+  :thump_like,
+  :eviscerate,
+  :poison,
+  :cold_snap,
+  :flame_strike,
+  :flame_wave,
+  :decal_strike,
+  :flee,
+  :observe
+].freeze
+VALID_TAGS = Set[
+  :physical,
+  :blunt,
+  :piercing,
+  :slashing,
+  :bleed,
+  :poison,
+  :disease,
+  :acid,
+  :fire,
+  :cold,
+  :lightning,
+  :earth,
+  :gravity,
+  :sonic,
+  :healing,
+  :holy,
+  :control,
+  :area,
+  :projectile,
+  :melee,
+  :observe,
+  :utility,
+  :escape
+].freeze
+VALID_VISUAL_CPP = Set[
+  "FlameWave",
+  "Shock",
+  "RocksFall",
+  "PoisonCloud",
+  "HolyNova",
+  "BloodBloom",
+  "FrostCrack",
+  "VoidRipple",
+  "HitpointNumber"
+].freeze
+VALID_DECLARATIVE_SHAPES = Set[
+  :handwritten_behavior,
+  :decal_strike
+].freeze
 
 def visual(id, cpp:)
   VISUAL_CPP[id] = cpp
@@ -80,8 +170,13 @@ def validate!
   skills_by_id = SKILLS.to_h { |skill| [skill.id, skill] }
   random_skill_ids = SKILLS.select(&:random_combat).map(&:id)
 
+  VISUAL_CPP.each do |id, cpp|
+    errors << "visual #{id} has invalid C++ id #{cpp}" unless VALID_VISUAL_CPP.include?(cpp)
+  end
+
   SKILLS.each do |skill|
     errors << "skill #{skill.id} is missing a C++ id" if skill.cpp_id.to_s.empty?
+    errors << "skill #{skill.id} has invalid C++ id #{skill.cpp_id}" unless VALID_SKILL_CPP_IDS.include?(skill.cpp_id)
     errors << "skill #{skill.id} is missing a display name" if skill.display.to_s.empty?
     if skill.learn_chance_percent.negative? || skill.learn_chance_percent > 100
       errors << "skill #{skill.id} has invalid learn chance #{skill.learn_chance_percent}"
@@ -92,10 +187,23 @@ def validate!
     if skill.execution != :flee && skill.flee_success_percent != 0
       errors << "skill #{skill.id} has flee success but is not a flee execution"
     end
+    errors << "skill #{skill.id} has invalid execution #{skill.execution}" unless VALID_EXECUTIONS.include?(skill.execution)
     errors << "skill #{skill.id} has invalid visual #{skill.visual}" if skill.visual && !VISUAL_CPP.key?(skill.visual)
     errors << "skill #{skill.id} has no tags" if skill.tags.empty?
+    skill.tags.each do |tag|
+      errors << "skill #{skill.id} has invalid tag #{tag}" unless VALID_TAGS.include?(tag)
+    end
+    unless skill.tags.uniq.size == skill.tags.size
+      errors << "skill #{skill.id} has duplicate tags"
+    end
+    unless VALID_DECLARATIVE_SHAPES.include?(skill.declarative_shape)
+      errors << "skill #{skill.id} has invalid declarative shape #{skill.declarative_shape}"
+    end
   end
 
+  unless RANDOM_COMBAT_SKILLS.uniq.size == RANDOM_COMBAT_SKILLS.size
+    errors << "random combat skill order has duplicate entries"
+  end
   RANDOM_COMBAT_SKILLS.each do |skill_id|
     errors << "random combat skill #{skill_id} is unknown" unless skills_by_id.key?(skill_id)
     errors << "random combat skill #{skill_id} is not marked random_combat" unless random_skill_ids.include?(skill_id)
@@ -107,9 +215,13 @@ def validate!
 
   MONSTERS.each do |monster|
     errors << "monster #{monster.id} is missing a C++ id" if monster.cpp_id.to_s.empty?
+    errors << "monster #{monster.id} has invalid C++ id #{monster.cpp_id}" unless VALID_MONSTER_CPP_IDS.include?(monster.cpp_id)
     errors << "monster #{monster.id} is missing a display name" if monster.display.to_s.empty?
     errors << "monster #{monster.id} has invalid pool #{monster.pool}" unless VALID_POOLS.include?(monster.pool)
     errors << "monster #{monster.id} has no known skills" if monster.known_skills.empty?
+    unless monster.known_skills.uniq.size == monster.known_skills.size
+      errors << "monster #{monster.id} has duplicate known skills"
+    end
     monster.known_skills.each do |skill_id|
       errors << "monster #{monster.id} references unknown skill #{skill_id}" unless skills_by_id.key?(skill_id)
     end
