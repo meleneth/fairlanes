@@ -667,6 +667,166 @@ def generate_manifest
   }.then { |manifest| "#{JSON.pretty_generate(manifest)}\n" }
 end
 
+def generate_manifest_schema
+  string_type = { "type" => "string", "minLength" => 1 }
+  percent_type = { "type" => "integer", "minimum" => 0, "maximum" => 100 }
+
+  schema = {
+    "$schema" => "https://json-schema.org/draft/2020-12/schema",
+    "$id" => "https://fairlanes.local/generated/content_manifest.schema.json",
+    "title" => "Fairlanes Generated Content Manifest",
+    "type" => "object",
+    "additionalProperties" => false,
+    "required" => %w[
+      schema_version
+      source
+      runtime_authority
+      visuals
+      skills
+      random_combat_skills
+      monsters
+    ],
+    "properties" => {
+      "schema_version" => { "const" => 1 },
+      "source" => string_type,
+      "runtime_authority" => string_type,
+      "visuals" => {
+        "type" => "array",
+        "items" => {
+          "type" => "object",
+          "additionalProperties" => false,
+          "required" => %w[id cpp_id],
+          "properties" => {
+            "id" => string_type,
+            "cpp_id" => string_type
+          }
+        }
+      },
+      "skills" => {
+        "type" => "array",
+        "items" => {
+          "type" => "object",
+          "additionalProperties" => false,
+          "required" => %w[
+            id
+            cpp_id
+            display
+            learn_chance_percent
+            flee_success_percent
+            random_combat
+            execution
+            visual
+            tags
+            declarative_shape
+          ],
+          "properties" => {
+            "id" => string_type,
+            "cpp_id" => string_type,
+            "display" => string_type,
+            "learn_chance_percent" => percent_type,
+            "flee_success_percent" => percent_type,
+            "random_combat" => { "type" => "boolean" },
+            "execution" => string_type,
+            "visual" => { "type" => %w[string null] },
+            "tags" => {
+              "type" => "array",
+              "minItems" => 1,
+              "items" => string_type
+            },
+            "declarative_shape" => string_type
+          }
+        }
+      },
+      "random_combat_skills" => {
+        "type" => "array",
+        "items" => string_type
+      },
+      "monsters" => {
+        "type" => "array",
+        "items" => {
+          "type" => "object",
+          "additionalProperties" => false,
+          "required" => %w[id cpp_id display known_skills pool],
+          "properties" => {
+            "id" => string_type,
+            "cpp_id" => string_type,
+            "display" => string_type,
+            "known_skills" => {
+              "type" => "array",
+              "minItems" => 1,
+              "items" => string_type
+            },
+            "pool" => string_type
+          }
+        }
+      }
+    }
+  }
+
+  "#{JSON.pretty_generate(schema)}\n"
+end
+
+def validate_manifest_shape!(manifest_json)
+  manifest = JSON.parse(manifest_json)
+  errors = []
+
+  required = %w[
+    schema_version
+    source
+    runtime_authority
+    visuals
+    skills
+    random_combat_skills
+    monsters
+  ]
+  required.each do |key|
+    errors << "manifest missing #{key}" unless manifest.key?(key)
+  end
+
+  errors << "manifest schema_version must be 1" unless manifest["schema_version"] == 1
+  errors << "manifest visuals must be an array" unless manifest["visuals"].is_a?(Array)
+  errors << "manifest skills must be an array" unless manifest["skills"].is_a?(Array)
+  unless manifest["random_combat_skills"].is_a?(Array)
+    errors << "manifest random_combat_skills must be an array"
+  end
+  errors << "manifest monsters must be an array" unless manifest["monsters"].is_a?(Array)
+
+  if manifest["skills"].is_a?(Array)
+    manifest["skills"].each do |skill|
+      %w[id cpp_id display execution tags declarative_shape].each do |key|
+        errors << "manifest skill missing #{key}" unless skill.key?(key)
+      end
+      unless skill["learn_chance_percent"].is_a?(Integer)
+        errors << "manifest skill #{skill['id']} learn_chance_percent is not an integer"
+      end
+      unless skill["flee_success_percent"].is_a?(Integer)
+        errors << "manifest skill #{skill['id']} flee_success_percent is not an integer"
+      end
+      unless skill["random_combat"] == true || skill["random_combat"] == false
+        errors << "manifest skill #{skill['id']} random_combat is not boolean"
+      end
+      errors << "manifest skill #{skill['id']} tags must be an array" unless skill["tags"].is_a?(Array)
+    end
+  end
+
+  if manifest["monsters"].is_a?(Array)
+    manifest["monsters"].each do |monster|
+      %w[id cpp_id display known_skills pool].each do |key|
+        errors << "manifest monster missing #{key}" unless monster.key?(key)
+      end
+      unless monster["known_skills"].is_a?(Array)
+        errors << "manifest monster #{monster['id']} known_skills must be an array"
+      end
+    end
+  end
+
+  return if errors.empty?
+
+  warn "Fairlanes generated manifest validation failed:"
+  errors.each { |error| warn "  - #{error}" }
+  exit 1
+end
+
 options = {}
 OptionParser.new do |parser|
   parser.banner = "Usage: ruby scripts/fairlanes_content_codegen.rb --out-dir DIR"
@@ -681,9 +841,12 @@ unless options[:out_dir]
 end
 
 validate!
+manifest_json = generate_manifest
+validate_manifest_shape!(manifest_json)
 
 FileUtils.mkdir_p(options[:out_dir])
 File.write(File.join(options[:out_dir], "generated_decal_content_tests.cpp"), generate_test_cpp)
 File.write(File.join(options[:out_dir], "decal_content_balance.md"), generate_report)
 File.write(File.join(options[:out_dir], "effect_gallery.md"), generate_gallery)
-File.write(File.join(options[:out_dir], "content_manifest.json"), generate_manifest)
+File.write(File.join(options[:out_dir], "content_manifest.json"), manifest_json)
+File.write(File.join(options[:out_dir], "content_manifest.schema.json"), generate_manifest_schema)

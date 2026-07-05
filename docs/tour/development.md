@@ -138,8 +138,8 @@ cmake --build build --target fairlanes_content_check
 ```
 
 The generated Catch2 source is compiled into `fairlanes_tests`. The generated
-Markdown balance report, effect gallery metadata, and JSON manifest are for
-review and tooling only.
+Markdown balance report, effect gallery metadata, JSON manifest, and manifest
+schema are for review and tooling only.
 
 ---
 
