@@ -123,9 +123,13 @@ You should not need to install libraries manually.
 ## Generated Content Prototype
 
 The Ruby content declarations are currently a mirror of handwritten C++; they are
-not runtime source of truth. The generator reads
-`scripts/fairlanes_content_declarations.rb`, validates the decal skill/monster
-declarations, and writes build-tree artifacts under:
+not runtime source of truth. Generator code lives in the local
+`ruby/fairlanes_content` gem. Fairlanes-specific DSL usage lives outside the gem
+in `scripts/fairlanes_content_declarations.rb`.
+
+The thin launcher, `scripts/fairlanes_content_codegen.rb`, loads the local gem,
+validates the decal skill/monster declarations, and writes build-tree artifacts
+under:
 
 ```sh
 <build-dir>/generated/fairlanes_content
@@ -141,6 +145,13 @@ To verify an existing generated output directory without rewriting files:
 
 ```sh
 ruby scripts/fairlanes_content_codegen.rb --out-dir build/generated/fairlanes_content --check
+```
+
+Run the Ruby generator specs with:
+
+```sh
+cd ruby/fairlanes_content
+rspec
 ```
 
 The generated Catch2 source is compiled into `fairlanes_tests`. The generated

@@ -331,6 +331,10 @@ if(NOT RUBY_EXECUTABLE)
   message(FATAL_ERROR "ruby not found; required for Fairlanes content generation")
 endif()
 
+file(GLOB_RECURSE FAIRLANES_CONTENT_RUBY_SOURCES CONFIGURE_DEPENDS
+  "${CMAKE_SOURCE_DIR}/ruby/fairlanes_content/lib/*.rb"
+)
+
 set(FAIRLANES_CONTENT_GENERATED_DIR
   "${CMAKE_BINARY_DIR}/generated/fairlanes_content")
 set(FAIRLANES_CONTENT_GENERATED_TEST
@@ -358,6 +362,7 @@ add_custom_command(
   DEPENDS
     "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
     "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
+    ${FAIRLANES_CONTENT_RUBY_SOURCES}
   COMMENT "Generating Fairlanes content artifacts"
   VERBATIM
 )
