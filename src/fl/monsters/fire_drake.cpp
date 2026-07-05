@@ -26,8 +26,7 @@ void FireDrake::apply(EntityBuilder &b) {
 
 void register_fire_drake() {
   register_monster(fl::monster::MonsterKind::FireDrake,
-                   [](EntityBuilder &b) { FireDrake::apply(b); },
-                   {fl::skills::SkillId::FlameWave});
+                   [](EntityBuilder &b) { FireDrake::apply(b); });
 }
 
 } // namespace fl::monster

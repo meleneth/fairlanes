@@ -27,8 +27,7 @@ void FieldMouse::apply(EntityBuilder &b) {
 
 void register_field_mouse() {
   register_monster(fl::monster::MonsterKind::FieldMouse,
-                   [](EntityBuilder &b) { FieldMouse::apply(b); },
-                   {fl::skills::SkillId::Thump});
+                   [](EntityBuilder &b) { FieldMouse::apply(b); });
 }
 
 } // namespace fl::monster

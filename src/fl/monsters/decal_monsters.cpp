@@ -62,30 +62,23 @@ void DecalMonster::apply_null_mote(EntityBuilder &b) {
 void register_decal_monsters() {
   register_monster(MonsterKind::StormtickImp, [](EntityBuilder &b) {
     DecalMonster::apply_stormtick_imp(b);
-  },
-                   {fl::skills::SkillId::Joltspasm});
+  });
   register_monster(MonsterKind::CeilingGrudge, [](EntityBuilder &b) {
     DecalMonster::apply_ceiling_grudge(b);
-  },
-                   {fl::skills::SkillId::RocksFall});
+  });
   register_monster(MonsterKind::MiasmaToad, [](EntityBuilder &b) {
     DecalMonster::apply_miasma_toad(b);
-  },
-                   {fl::skills::SkillId::SourBreath});
+  });
   register_monster(MonsterKind::ChoirWisp,
-                   [](EntityBuilder &b) { DecalMonster::apply_choir_wisp(b); },
-                   {fl::skills::SkillId::Mercyburst});
+                   [](EntityBuilder &b) { DecalMonster::apply_choir_wisp(b); });
   register_monster(MonsterKind::GorecapSprout, [](EntityBuilder &b) {
     DecalMonster::apply_gorecap_sprout(b);
-  },
-                   {fl::skills::SkillId::BloodBloom});
+  });
   register_monster(MonsterKind::RimefangHare, [](EntityBuilder &b) {
     DecalMonster::apply_rimefang_hare(b);
-  },
-                   {fl::skills::SkillId::IceSplitter});
+  });
   register_monster(MonsterKind::NullMote,
-                   [](EntityBuilder &b) { DecalMonster::apply_null_mote(b); },
-                   {fl::skills::SkillId::GravitySigh});
+                   [](EntityBuilder &b) { DecalMonster::apply_null_mote(b); });
 }
 
 } // namespace fl::monster

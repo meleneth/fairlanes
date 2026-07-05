@@ -53,25 +53,20 @@ void WoodlandCritter::apply_poison_toad(EntityBuilder &b) {
 
 void register_woodland_critters() {
   register_monster(fl::monster::MonsterKind::BumpkinHare,
-                   [](EntityBuilder &b) { WoodlandCritter::apply_bumpkin(b); },
-                   {fl::skills::SkillId::Bump});
+                   [](EntityBuilder &b) { WoodlandCritter::apply_bumpkin(b); });
   register_monster(fl::monster::MonsterKind::ScaredyCat,
                    [](EntityBuilder &b) {
                      WoodlandCritter::apply_scaredy_cat(b);
-                   },
-                   {fl::skills::SkillId::Flee, fl::skills::SkillId::Thump});
+                   });
   register_monster(fl::monster::MonsterKind::MireSquish, [](EntityBuilder &b) {
     WoodlandCritter::apply_mire_squish(b);
-  },
-                   {fl::skills::SkillId::Squish});
+  });
   register_monster(fl::monster::MonsterKind::BarkSmack, [](EntityBuilder &b) {
     WoodlandCritter::apply_bark_smack(b);
-  },
-                   {fl::skills::SkillId::Smack});
+  });
   register_monster(fl::monster::MonsterKind::PoisonToad, [](EntityBuilder &b) {
     WoodlandCritter::apply_poison_toad(b);
-  },
-                   {fl::skills::SkillId::Poison});
+  });
 }
 
 } // namespace fl::monster

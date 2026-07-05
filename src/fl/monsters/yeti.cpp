@@ -19,8 +19,7 @@ void Yeti::apply(EntityBuilder &b) {
 
 void register_yeti() {
   register_monster(fl::monster::MonsterKind::Yeti,
-                   [](EntityBuilder &b) { Yeti::apply(b); },
-                   {fl::skills::SkillId::ColdSnap});
+                   [](EntityBuilder &b) { Yeti::apply(b); });
 }
 
 } // namespace fl::monster

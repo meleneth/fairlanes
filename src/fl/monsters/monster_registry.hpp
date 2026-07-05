@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <initializer_list>
 #include <unordered_map>
 #include <vector>
 
@@ -31,9 +30,7 @@ monster_registry() {
 
 // Helper to register one monster.
 inline void register_monster(fl::monster::MonsterKind kind,
-                             MonsterArchetypeFn fn,
-                             std::initializer_list<fl::skills::SkillId>
-                                 = {}) {
+                             MonsterArchetypeFn fn) {
   const auto known_skills = generated_content::known_skills(kind);
   monster_registry()[kind] =
       MonsterDefinition{std::move(fn), std::vector<fl::skills::SkillId>(
