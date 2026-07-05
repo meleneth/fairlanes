@@ -232,7 +232,14 @@ GrandCentral::GrandCentral(uint8_t num_accounts,
   bootstrap_logs();
 }
 
-GrandCentral::~GrandCentral() { fancy_log_sink_.reset(); }
+GrandCentral::~GrandCentral() {
+  fancy_log_sink_.reset();
+
+  // Components such as Poison, Freeze, and DireBleed own party-bus listener
+  // handles. Destroy ECS components while AccountData/PartyData still own the
+  // buses those handles disconnect from.
+  reg_.clear();
+}
 
 // Convenience accessor if you want the root FTXUI component:
 ftxui::Component GrandCentral::root_component() {

@@ -825,6 +825,72 @@ TEST_CASE("Second Freeze application shatters for half max HP",
       party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
 }
 
+TEST_CASE("GrandCentral teardown clears lingering status listeners before party "
+          "buses die",
+          "[encounter][skills][status][lifetime]") {
+  SECTION("dire bleed") {
+    fl::GrandCentral gc{1, 1, 1};
+
+    auto account_ctx = gc.account_context(0);
+    auto party_ctx = account_ctx.party_context(0);
+    auto &party = party_ctx.party_data();
+    auto &encounter = party.create_encounter();
+
+    const auto defender = party.members().front().member_id();
+    encounter.defenders().members().push_back(defender);
+    encounter.atb_in().emit(
+        seerin::AtbInEvent{seerin::AddCombatant{defender}});
+
+    auto honey_badger = add_honey_badger(party_ctx, encounter);
+    encounter.atb_out().emit(seerin::AtbOutEvent{seerin::BecameActive{
+        honey_badger,
+    }});
+    tick_party(party_ctx, 24);
+
+    REQUIRE(party_ctx.reg().all_of<fl::ecs::components::DireBleed>(defender));
+  }
+
+  SECTION("poison") {
+    fl::GrandCentral gc{1, 1, 1};
+
+    auto account_ctx = gc.account_context(0);
+    auto party_ctx = account_ctx.party_context(0);
+    auto &party = party_ctx.party_data();
+    auto &encounter = party.create_encounter();
+
+    const auto defender = party.members().front().member_id();
+    encounter.defenders().members().push_back(defender);
+    encounter.atb_in().emit(
+        seerin::AtbInEvent{seerin::AddCombatant{defender}});
+
+    auto source = add_honey_badger(party_ctx, encounter);
+    party_ctx.bus().emit(fl::events::PartyEvent{
+        fl::events::PoisonApplied{source, defender, 1, 9}});
+
+    REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Poison>(defender));
+  }
+
+  SECTION("freeze") {
+    fl::GrandCentral gc{1, 1, 1};
+
+    auto account_ctx = gc.account_context(0);
+    auto party_ctx = account_ctx.party_context(0);
+    auto &party = party_ctx.party_data();
+    auto &encounter = party.create_encounter();
+
+    const auto defender = party.members().front().member_id();
+    encounter.defenders().members().push_back(defender);
+    encounter.atb_in().emit(
+        seerin::AtbInEvent{seerin::AddCombatant{defender}});
+
+    auto source = add_honey_badger(party_ctx, encounter);
+    party_ctx.bus().emit(
+        fl::events::PartyEvent{fl::events::FreezeApplied{source, defender, 9}});
+
+    REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
+  }
+}
+
 TEST_CASE("Observe can teach an eligible party member",
           "[encounter][skills][learning]") {
   fl::GrandCentral gc{1, 1, 2};
