@@ -36,6 +36,12 @@ PartyData::PartyData(entt::entity party_id,
   loot_drop_sub_ = fl::ecs::systems::LootDropSystem::bind_listener(party_ctx_);
 }
 
+PartyData::~PartyData() {
+  // EncounterData owns listeners into MemberData combatant buses. Clear it
+  // before members_ is destroyed so listener handles disconnect from live buses.
+  encounter_data_.reset();
+}
+
 void PartyData::hook_to_beat(seerin::BeatBus &gc_beat_bus) {
   gc_forward_sub_ =
       gc_beat_bus.subscribe<seerin::Beat>([this](const seerin::Beat &) {

@@ -2,8 +2,10 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <iostream>
 #include <span>
 #include <string>
+#include <type_traits>
 
 #include "fl/generated/skill_content.hpp"
 
@@ -12,7 +14,9 @@ namespace fl::skills {
 namespace {
 
 [[noreturn]] void abort_missing_definition(SkillKey skill) {
-  (void)skill;
+  std::cerr << "fairlanes: missing skill definition base="
+            << static_cast<std::underlying_type_t<SkillId>>(skill.base)
+            << " rank=" << skill.rank.value() << '\n';
   std::abort();
 }
 

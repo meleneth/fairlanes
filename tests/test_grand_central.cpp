@@ -78,6 +78,18 @@ TEST_CASE("GrandCentral context helpers work",
   // accordingly. For now we just ensure the log reference is obtainable.
 }
 
+TEST_CASE("GrandCentral headless main loop honors cutoff",
+          "[grand_central][headless][smoke]") {
+  fl::GrandCentral gc{8, 5, 5};
+  gc.innervate_event_system();
+
+  gc.main_loop(fl::GrandCentralRunOptions{
+      .no_ui = true,
+      .overdrive = 8,
+      .cutoff_seconds = 3.0,
+  });
+}
+
 TEST_CASE("GrandCentral creates each player with a gear closet",
           "[grand_central][closet]") {
   fl::GrandCentral gc{2, 3, 5};

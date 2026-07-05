@@ -1,6 +1,7 @@
 #include "grand_central.hpp"
 
 #include <deque>
+#include <exception>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -288,42 +289,51 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
 
   if (opts.no_ui) {
     std::atomic<bool> running{true};
+    std::exception_ptr update_error;
 
     std::jthread update_ticker([&](std::stop_token st) {
-      using clock = std::chrono::steady_clock;
-      auto next_tick = clock::now();
+      try {
+        using clock = std::chrono::steady_clock;
+        auto next_tick = clock::now();
 
-      while (!st.stop_requested() && running.load(std::memory_order_relaxed)) {
-        ZoneScopedN("HeadlessFrameTick");
+        while (!st.stop_requested() && running.load(std::memory_order_relaxed)) {
+          ZoneScopedN("HeadlessFrameTick");
 
-        if (cutoff_reached()) {
-          running.store(false, std::memory_order_relaxed);
-          break;
+          if (cutoff_reached()) {
+            running.store(false, std::memory_order_relaxed);
+            break;
+          }
+
+          const auto frame_dt = std::chrono::duration_cast<clock::duration>(
+              std::chrono::duration<double>(
+                  1.0 / world_clock_.effective_beats_per_wall_second()));
+
+          TracyPlot("GC.EffectiveBeatRate",
+                    static_cast<int64_t>(
+                        world_clock_.effective_beats_per_wall_second()));
+
+          {
+            ZoneScopedN("HeadlessBeatDispatch");
+            std::scoped_lock lock(frame_mutex_);
+            world_clock_.advance_beat();
+            ++elapsed_beats;
+            gc_beat_bus_.emit(seerin::Beat{});
+          }
+
+          FrameMark;
+          next_tick += frame_dt;
+          std::this_thread::sleep_until(next_tick);
         }
-
-        const auto frame_dt = std::chrono::duration_cast<clock::duration>(
-            std::chrono::duration<double>(
-                1.0 / world_clock_.effective_beats_per_wall_second()));
-
-        TracyPlot("GC.EffectiveBeatRate",
-                  static_cast<int64_t>(
-                      world_clock_.effective_beats_per_wall_second()));
-
-        {
-          ZoneScopedN("HeadlessBeatDispatch");
-          std::scoped_lock lock(frame_mutex_);
-          world_clock_.advance_beat();
-          ++elapsed_beats;
-          gc_beat_bus_.emit(seerin::Beat{});
-        }
-
-        FrameMark;
-        next_tick += frame_dt;
-        std::this_thread::sleep_until(next_tick);
+      } catch (...) {
+        update_error = std::current_exception();
+        running.store(false, std::memory_order_relaxed);
       }
     });
 
     update_ticker.join();
+    if (update_error) {
+      std::rethrow_exception(update_error);
+    }
     return;
   }
 

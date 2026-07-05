@@ -34,6 +34,7 @@ public:
 
   explicit PartyData(entt::entity party_id,
                      fl::context::AccountCtx &account_ctx, std::string name);
+  ~PartyData();
 
   PartyData(PartyData &&) = delete;
   PartyData &operator=(PartyData &&) = delete;

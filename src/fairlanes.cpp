@@ -1,6 +1,9 @@
 #include <CLI/CLI.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 
+#include <exception>
+#include <iostream>
+
 #include "fl/grand_central.hpp"
 #include "fl/primitives/world_clock.hpp"
 
@@ -26,10 +29,18 @@ int main(int argc, char **argv) {
 
   CLI11_PARSE(app, argc, argv);
 
-  GrandCentral gc{8, 5, 5};
-  gc.innervate_event_system();
+  try {
+    GrandCentral gc{8, 5, 5};
+    gc.innervate_event_system();
 
-  gc.main_loop(opts);
+    gc.main_loop(opts);
+  } catch (const std::exception &ex) {
+    std::cerr << "fairlanes: " << ex.what() << '\n';
+    return 1;
+  } catch (...) {
+    std::cerr << "fairlanes: unknown fatal error\n";
+    return 1;
+  }
 
   return 0;
 }
