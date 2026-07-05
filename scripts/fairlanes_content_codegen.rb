@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require "fileutils"
+require "json"
 require "optparse"
 require "set"
 
@@ -628,6 +629,44 @@ def generate_gallery
   "#{lines.join("\n")}\n"
 end
 
+def generate_manifest
+  {
+    "schema_version" => 1,
+    "source" => "scripts/fairlanes_content_declarations.rb",
+    "runtime_authority" => "handwritten C++ SkillDefinition, monster registry, and encounter pool tables",
+    "visuals" => VISUAL_CPP.map do |id, cpp_id|
+      {
+        "id" => id.to_s,
+        "cpp_id" => cpp_id
+      }
+    end,
+    "skills" => SKILLS.map do |skill|
+      {
+        "id" => skill.id.to_s,
+        "cpp_id" => skill.cpp_id,
+        "display" => skill.display,
+        "learn_chance_percent" => skill.learn_chance_percent,
+        "flee_success_percent" => skill.flee_success_percent,
+        "random_combat" => skill.random_combat,
+        "execution" => skill.execution.to_s,
+        "visual" => skill.visual&.to_s,
+        "tags" => skill.tags.map(&:to_s),
+        "declarative_shape" => skill.declarative_shape.to_s
+      }
+    end,
+    "random_combat_skills" => RANDOM_COMBAT_SKILLS.map(&:to_s),
+    "monsters" => MONSTERS.map do |monster|
+      {
+        "id" => monster.id.to_s,
+        "cpp_id" => monster.cpp_id,
+        "display" => monster.display,
+        "known_skills" => monster.known_skills.map(&:to_s),
+        "pool" => monster.pool.to_s
+      }
+    end
+  }.then { |manifest| "#{JSON.pretty_generate(manifest)}\n" }
+end
+
 options = {}
 OptionParser.new do |parser|
   parser.banner = "Usage: ruby scripts/fairlanes_content_codegen.rb --out-dir DIR"
@@ -647,3 +686,4 @@ FileUtils.mkdir_p(options[:out_dir])
 File.write(File.join(options[:out_dir], "generated_decal_content_tests.cpp"), generate_test_cpp)
 File.write(File.join(options[:out_dir], "decal_content_balance.md"), generate_report)
 File.write(File.join(options[:out_dir], "effect_gallery.md"), generate_gallery)
+File.write(File.join(options[:out_dir], "content_manifest.json"), generate_manifest)
