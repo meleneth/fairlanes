@@ -17,6 +17,7 @@ Monster = Struct.new(
 )
 
 VISUAL_CPP = {
+  flame_wave: "FlameWave",
   shock: "Shock",
   rocks_fall: "RocksFall",
   poison_cloud: "PoisonCloud",
@@ -102,7 +103,7 @@ SKILLS = [
     learn_chance_percent: 5,
     random_combat: true,
     execution: :flame_strike,
-    visual: nil,
+    visual: :flame_wave,
     tags: %i[fire projectile],
     declarative_shape: :handwritten_behavior
   ),
@@ -113,7 +114,7 @@ SKILLS = [
     learn_chance_percent: 2,
     random_combat: true,
     execution: :flame_wave,
-    visual: nil,
+    visual: :flame_wave,
     tags: %i[fire area],
     declarative_shape: :handwritten_behavior
   ),

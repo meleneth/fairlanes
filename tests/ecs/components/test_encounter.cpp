@@ -838,6 +838,7 @@ TEST_CASE("GrandCentral teardown clears lingering status listeners before party 
 
     const auto defender = party.members().front().member_id();
     encounter.defenders().members().push_back(defender);
+    encounter.add_party_combatant_bus(defender);
     encounter.atb_in().emit(
         seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
@@ -860,11 +861,12 @@ TEST_CASE("GrandCentral teardown clears lingering status listeners before party 
 
     const auto defender = party.members().front().member_id();
     encounter.defenders().members().push_back(defender);
+    encounter.add_party_combatant_bus(defender);
     encounter.atb_in().emit(
         seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
     auto source = add_honey_badger(party_ctx, encounter);
-    party_ctx.bus().emit(fl::events::PartyEvent{
+    encounter.combatant_bus(defender).emit(fl::events::CombatantEvent{
         fl::events::PoisonApplied{source, defender, 1, 9}});
 
     REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Poison>(defender));
@@ -880,12 +882,13 @@ TEST_CASE("GrandCentral teardown clears lingering status listeners before party 
 
     const auto defender = party.members().front().member_id();
     encounter.defenders().members().push_back(defender);
+    encounter.add_party_combatant_bus(defender);
     encounter.atb_in().emit(
         seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
     auto source = add_honey_badger(party_ctx, encounter);
-    party_ctx.bus().emit(
-        fl::events::PartyEvent{fl::events::FreezeApplied{source, defender, 9}});
+    encounter.combatant_bus(defender).emit(fl::events::CombatantEvent{
+        fl::events::FreezeApplied{source, defender, 9}});
 
     REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
   }

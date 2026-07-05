@@ -288,6 +288,9 @@ TEST_CASE("SkillSequencer thump-like flash uses two red pulses then yellow",
 
   const auto red = fl::lospec500::color_at(4);
   const auto yellow = fl::lospec500::color_at(14);
+  const auto scheduled_red = ftxui::Color::Interpolate(0.0F, red, red);
+  const auto scheduled_yellow =
+      ftxui::Color::Interpolate(0.0F, yellow, yellow);
 
   REQUIRE_FALSE(
       reg.any_of<fl::ecs::components::ResolvedColorOverride>(attacker));
@@ -309,7 +312,7 @@ TEST_CASE("SkillSequencer thump-like flash uses two red pulses then yellow",
   advance_to(10);
   REQUIRE(
       reg.get<fl::ecs::components::ResolvedColorOverride>(attacker).color.Print(
-          false) == red.Print(false));
+          false) == scheduled_red.Print(false));
 
   advance_to(14);
   REQUIRE_FALSE(reg.any_of<fl::ecs::components::DamageFlash>(attacker));
@@ -319,13 +322,13 @@ TEST_CASE("SkillSequencer thump-like flash uses two red pulses then yellow",
   advance_to(18);
   REQUIRE(
       reg.get<fl::ecs::components::ResolvedColorOverride>(attacker).color.Print(
-          false) == red.Print(false));
+          false) == scheduled_red.Print(false));
 
   advance_to(22);
   REQUIRE_FALSE(reg.any_of<fl::ecs::components::DamageFlash>(attacker));
   REQUIRE(
       reg.get<fl::ecs::components::ResolvedColorOverride>(target).color.Print(
-          false) == yellow.Print(false));
+          false) == scheduled_yellow.Print(false));
 
   advance_to(30);
   REQUIRE_FALSE(reg.any_of<fl::ecs::components::DamageFlash>(target));
