@@ -30,6 +30,14 @@
 namespace fl::widgets {
 namespace {
 
+bool preserves_foreground_text(const ftxui::Pixel &pixel) {
+  return pixel.character != " " ||
+         pixel.foreground_color != ftxui::Color::Default ||
+         pixel.background_color != ftxui::Color::Default || pixel.bold ||
+         pixel.dim || pixel.inverted || pixel.underlined ||
+         pixel.underlined_double || pixel.strikethrough;
+}
+
 class AttackDecalNode : public ftxui::Node {
 public:
   AttackDecalNode(ftxui::Element child,
@@ -242,7 +250,7 @@ public:
         if (x < 0 || y < 0 || x >= screen.dimx() || y >= screen.dimy()) {
           continue;
         }
-        if (saved.character != " ") {
+        if (preserves_foreground_text(saved)) {
           screen.PixelAt(x, y) = saved;
         }
       }

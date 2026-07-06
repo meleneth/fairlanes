@@ -35,9 +35,10 @@ enum class DecalAnimationKind {
   Glitch,
   Aura,
   Field,
+  Observe,
 };
 
-inline constexpr std::array<DecalAnimationKind, 22>
+inline constexpr std::array<DecalAnimationKind, 23>
     kAvailableDecalAnimationKinds{
         DecalAnimationKind::FlameWave,  DecalAnimationKind::Shock,
         DecalAnimationKind::RocksFall,  DecalAnimationKind::PoisonCloud,
@@ -50,9 +51,10 @@ inline constexpr std::array<DecalAnimationKind, 22>
         DecalAnimationKind::Beam,       DecalAnimationKind::Heal,
         DecalAnimationKind::Cleanse,    DecalAnimationKind::Glitch,
         DecalAnimationKind::Aura,       DecalAnimationKind::Field,
+        DecalAnimationKind::Observe,
     };
 
-[[nodiscard]] constexpr const std::array<DecalAnimationKind, 22> &
+[[nodiscard]] constexpr const std::array<DecalAnimationKind, 23> &
 available_decal_animation_kinds() noexcept {
   return kAvailableDecalAnimationKinds;
 }
@@ -128,6 +130,8 @@ name(DecalAnimationKind kind) noexcept {
     return "Aura";
   case DecalAnimationKind::Field:
     return "Field";
+  case DecalAnimationKind::Observe:
+    return "Observe";
   }
 
   return "Unknown";

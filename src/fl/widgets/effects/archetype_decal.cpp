@@ -89,6 +89,7 @@ bool is_archetype_kind(DecalAnimationKind kind) {
   case DecalAnimationKind::Glitch:
   case DecalAnimationKind::Aura:
   case DecalAnimationKind::Field:
+  case DecalAnimationKind::Observe:
     return true;
   case DecalAnimationKind::FlameWave:
   case DecalAnimationKind::Shock:
@@ -387,6 +388,96 @@ void render_field(Frame &frame, float t, std::uint32_t seed) {
   }
 }
 
+void render_observe(Frame &frame, float t, std::uint32_t seed) {
+  const float cx = static_cast<float>(frame.width - 1) * 0.5f;
+  const float cy = static_cast<float>(frame.height - 1) * 0.52f;
+  const float half_width =
+      std::max(4.0f, static_cast<float>(frame.width) * 0.34f);
+  const float half_height =
+      std::max(2.0f, static_cast<float>(frame.height) * 0.32f);
+  const float open = smoothstep(0.02f, 0.24f, t) *
+                     (1.0f - 0.35f * smoothstep(0.72f, 1.0f, t));
+  const auto sclera = palette(41);
+  const auto iris = palette(27);
+  const auto pupil = palette(1);
+  const auto vein = palette(5);
+  const auto glow = palette(31);
+  const auto sick = palette(22);
+
+  apply_bg_glow(frame, iround(cx), iround(cy),
+                std::max(3, std::min(frame.width, frame.height) / 2), glow,
+                0.16f + 0.18f * (1.0f - std::abs(0.5f - t) * 2.0f));
+
+  for (int y = 0; y < frame.height; ++y) {
+    for (int x = 0; x < frame.width; ++x) {
+      const float dx = (static_cast<float>(x) - cx) / half_width;
+      const float dy = (static_cast<float>(y) - cy) /
+                       std::max(0.1f, half_height * open);
+      const float eye = dx * dx + dy * dy;
+      if (eye > 1.08f) {
+        continue;
+      }
+
+      const float rim = 1.0f - std::abs(eye - 1.0f) / 0.22f;
+      if (rim > 0.0f) {
+        const char glyph = dy < -0.35f ? '^' : dy > 0.35f ? 'v' : '=';
+        apply_cell(frame, x, y, glyph, sclera, glow, 0.76f * clamp01(rim));
+        continue;
+      }
+
+      if (eye < 0.92f) {
+        const auto r = mix(seed + static_cast<std::uint32_t>(x * 67 + y * 131));
+        const bool bloodshot = (r % 100U) < 12U || std::abs(dy) < 0.08f;
+        apply_cell(frame, x, y, bloodshot ? '~' : '.', bloodshot ? vein : sclera,
+                   std::nullopt, bloodshot ? 0.58f : 0.28f);
+      }
+    }
+  }
+
+  const float wobble =
+      std::sin((t * 6.2831853f * 1.5f) + static_cast<float>(seed & 7U));
+  const float pupil_cx = cx + wobble * std::max(1.0f, half_width * 0.08f);
+  const float iris_radius = std::max(1.6f, std::min(half_width, half_height) *
+                                               (0.34f + 0.08f * open));
+  const float pupil_radius = std::max(1.0f, iris_radius * 0.48f);
+  for (int y = 0; y < frame.height; ++y) {
+    for (int x = 0; x < frame.width; ++x) {
+      const float dx = static_cast<float>(x) - pupil_cx;
+      const float dy = (static_cast<float>(y) - cy) * 1.8f;
+      const float d = std::sqrt(dx * dx + dy * dy);
+      if (d <= pupil_radius) {
+        apply_cell(frame, x, y, '@', pupil, iris, 0.98f);
+      } else if (d <= iris_radius) {
+        const char glyph = ((x + y) % 2 == 0) ? '*' : '+';
+        apply_cell(frame, x, y, glyph, iris, sick,
+                   0.84f * (1.0f - d / std::max(1.0f, iris_radius) * 0.25f));
+      }
+    }
+  }
+
+  const int lash_count = std::max(6, frame.width / 8);
+  for (int i = 0; i < lash_count; ++i) {
+    const float u = lash_count == 1
+                        ? 0.0f
+                        : static_cast<float>(i) /
+                              static_cast<float>(lash_count - 1);
+    const float px = cx - half_width * 0.86f + u * half_width * 1.72f;
+    const int top_y = std::clamp(iround(cy - half_height * open *
+                                                (0.58f + 0.36f *
+                                                            std::sin(u *
+                                                                     3.14159f))),
+                                 0, std::max(0, frame.height - 1));
+    const int bottom_y = std::clamp(iround(cy + half_height * open *
+                                                   (0.56f + 0.24f *
+                                                               std::sin(u *
+                                                                        3.14159f))),
+                                    0, std::max(0, frame.height - 1));
+    const int x = std::clamp(iround(px), 0, std::max(0, frame.width - 1));
+    apply_cell(frame, x, top_y - 1, '/', vein, std::nullopt, 0.62f * open);
+    apply_cell(frame, x, bottom_y + 1, '\\', vein, std::nullopt, 0.48f * open);
+  }
+}
+
 float duration_multiplier_for(DecalAnimationKind kind) {
   switch (kind) {
   case DecalAnimationKind::Sweep:
@@ -474,6 +565,9 @@ Frame ArchetypeDecal::render(float progress) const {
     break;
   case DecalAnimationKind::Field:
     render_field(frame, t, config_.seed);
+    break;
+  case DecalAnimationKind::Observe:
+    render_observe(frame, t, config_.seed);
     break;
   case DecalAnimationKind::FlameWave:
   case DecalAnimationKind::Shock:

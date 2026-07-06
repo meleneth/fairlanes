@@ -34,9 +34,12 @@ static constexpr int kFlameWaveExtraHeight = 2;
 static constexpr int kHitpointNumberExtraHeight = 2;
 
 int decal_extra_height(fl::widgets::effects::DecalAnimationKind kind) {
-  return kind == fl::widgets::effects::DecalAnimationKind::FlameWave
-             ? kFlameWaveExtraHeight
-             : 0;
+  switch (kind) {
+  case fl::widgets::effects::DecalAnimationKind::FlameWave:
+    return kFlameWaveExtraHeight;
+  default:
+    return 0;
+  }
 }
 
 int thump_rank_tempo_offset(SkillKey skill) noexcept {

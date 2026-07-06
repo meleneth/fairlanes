@@ -142,7 +142,7 @@ TEST_CASE("Skill visual archetype decals render distinct shape languages",
     std::string_view characteristic_glyphs;
   };
 
-  constexpr std::array<ExpectedArchetypeRender, 12> expected{{
+  constexpr std::array<ExpectedArchetypeRender, 13> expected{{
       {DecalAnimationKind::Impact, "X#<>/\\"},
       {DecalAnimationKind::Slash, "/"},
       {DecalAnimationKind::Bite, "V^"},
@@ -155,6 +155,7 @@ TEST_CASE("Skill visual archetype decals render distinct shape languages",
       {DecalAnimationKind::Glitch, "#%@?/\\|!"},
       {DecalAnimationKind::Aura, "o^"},
       {DecalAnimationKind::Field, "~:"},
+      {DecalAnimationKind::Observe, "@*+~=^v/\\"},
   }};
 
   for (const auto &entry : expected) {
@@ -173,6 +174,27 @@ TEST_CASE("Skill visual archetype decals render distinct shape languages",
     REQUIRE(frame_contains_any(frame, entry.characteristic_glyphs));
     require_lospec500_colors(frame);
   }
+}
+
+TEST_CASE("Observe decal renders a large bloodshot eyeball",
+          "[widgets][effects][decal][observe]") {
+  using fl::widgets::effects::DecalAnimationKind;
+
+  const auto animation = fl::widgets::effects::make_decal_animation(
+      DecalAnimationKind::Observe, 48, 11);
+
+  REQUIRE(animation != nullptr);
+  REQUIRE(animation->kind() == DecalAnimationKind::Observe);
+  REQUIRE(animation->name() ==
+          fl::widgets::effects::name(DecalAnimationKind::Observe));
+
+  const auto frame = animation->render(0.5F);
+  REQUIRE(frame.width == 48);
+  REQUIRE(frame.height == 11);
+  REQUIRE(active_cells(frame) > 45);
+  REQUIRE(glyph_count(frame, '@') >= 2);
+  REQUIRE(frame_contains_any(frame, "~=^v"));
+  require_lospec500_colors(frame);
 }
 
 TEST_CASE("Impact renders compact physical hit phases without reticle shapes",

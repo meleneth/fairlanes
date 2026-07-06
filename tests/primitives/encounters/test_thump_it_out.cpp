@@ -13,6 +13,7 @@
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/ecs/systems/combat_status_system.hpp"
+#include "fl/ecs/systems/combatant_status_visuals.hpp"
 #include "fl/ecs/systems/visual_resolver.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/grand_central.hpp"
@@ -711,6 +712,43 @@ TEST_CASE("Flee emits combat events and grants no XP on successful flee",
   REQUIRE(fled_events >= 1);
   REQUIRE(reg.get<fl::ecs::components::Stats>(attacker).hp_ == 0);
   REQUIRE(reg.get<fl::ecs::components::TrackXP>(target).xp_ == xp_before);
+}
+
+TEST_CASE("Observe active effect renders as underlay without cast decal",
+          "[encounter][skills][observe][visuals]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  auto &encounter = builder.thump_it_out();
+
+  const entt::entity observer = encounter.defenders().members().front();
+  const entt::entity target = encounter.attackers().members().front();
+  auto &reg = party_ctx.reg();
+
+  seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
+  bool finished = false;
+  fl::skills::SkillSequencer sequencer{
+      party_ctx, scheduler, [&](entt::entity) { finished = true; }};
+
+  sequencer.schedule(observer, target, fl::skills::SkillId::Observe);
+
+  const auto underlays = fl::ecs::systems::combatant_status_visuals_for(
+      reg, observer, fl::ecs::systems::CombatantVisualLayer::Underlay,
+      fl::ecs::systems::CombatantVisualRegion::WholeCombatant);
+  REQUIRE(std::ranges::any_of(underlays, [](const auto &visual) {
+    return visual.decal.has_value() &&
+           visual.decal->animation_kind ==
+               fl::widgets::effects::DecalAnimationKind::Observe;
+  }));
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::CombatantDecals>(observer));
+
+  for (int i = 0; i < 12; ++i) {
+    scheduler.on_beat();
+  }
+  REQUIRE(finished);
 }
 
 } // namespace

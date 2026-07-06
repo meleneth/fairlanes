@@ -19,7 +19,7 @@ Generated artifacts currently provide runtime skill metadata C++, status metadat
 
 | Skill | C++ ID | Learn chance | Flee success | Random combat | Execution | Visual | Monsters | Shape |
 | --- | --- | ---: | ---: | --- | --- | --- | --- | --- |
-| Observe | Observe | 0 | 0 | no | observe |  |  | handwritten_behavior |
+| Observe | Observe | 0 | 0 | no | observe | Observe |  | handwritten_behavior |
 | Flee | Flee | 0 | 65 | yes | flee |  | Scaredy Cat, Prairie Meerkat, Squirrel Brigand, Dragonfly Cutter, Cave Bat, Echo Moth, Dust Hare, Glass Lizard, Powder Rat, Rifle Hare, Chrome Gecko | handwritten_behavior |
 | Thump | Thump | 20 | 0 | yes | thump_like |  | Field Mouse, Scaredy Cat, Bristle Boar, Prairie Meerkat | handwritten_behavior |
 | Eviscerate | Eviscerate | 2 | 0 | yes | eviscerate |  | Honey Badger, Grenadier Badger | handwritten_behavior |
@@ -177,6 +177,7 @@ Generated artifacts currently provide runtime skill metadata C++, status metadat
 
 | Skill | Monster | Visual | Tags |
 | --- | --- | --- | --- |
+| Observe |  | Observe | observe, utility |
 | Flame Strike | Salamander, Prism Newt | FlameWave | fire, spell, enemy, damage |
 | Flame Wave | Fire Drake, Starfire Anomaly | FlameWave | fire, area, spell, group, damage |
 | Joltspasm | Stormtick Imp, Prism Newt, Bilge Eel | Shock | lightning, control, enemy, damage |

@@ -54,6 +54,7 @@ make_decal_animation(DecalAnimationKind kind, int width, int height,
   case DecalAnimationKind::Glitch:
   case DecalAnimationKind::Aura:
   case DecalAnimationKind::Field:
+  case DecalAnimationKind::Observe:
     return std::make_shared<ArchetypeDecal>(kind, width, height, config);
   }
 

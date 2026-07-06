@@ -15,11 +15,13 @@ This is review metadata for the handwritten decal renderer and generated skill m
 | FrostCrack | Ice Splitter | Rimefang Hare, Berg Wyrm, Orbital Yeti | cold, piercing, projectile, enemy, damage | decal_strike |
 | VoidRipple | Gravity Sigh | Null Mote, Starfire Anomaly | gravity, control, area, group, damage | decal_strike |
 | Starfire | Starblaze | Starfire Anomaly | fire, arcane, spell, enemy, damage | decal_strike |
+| Observe | Observe |  | observe, utility | handwritten_behavior |
 
 ## Skill Entries
 
 | Skill | Visual | Execution | Monsters | Tags |
 | --- | --- | --- | --- | --- |
+| Observe | Observe | observe |  | observe, utility |
 | Flame Strike | FlameWave | flame_strike | Salamander, Prism Newt | fire, spell, enemy, damage |
 | Flame Wave | FlameWave | flame_wave | Fire Drake, Starfire Anomaly | fire, area, spell, group, damage |
 | Joltspasm | Shock | decal_strike | Stormtick Imp, Prism Newt, Bilge Eel | lightning, control, enemy, damage |

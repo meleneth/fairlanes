@@ -6,6 +6,7 @@
 #include "fl/ecs/components/combat_status.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"
 #include "fl/ecs/components/freeze.hpp"
+#include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/poison.hpp"
 #include "fl/ecs/systems/combat_status_system.hpp"
 #include "fl/ecs/systems/combatant_status_visuals.hpp"
@@ -133,6 +134,26 @@ TEST_CASE("Removing shared combat statuses removes derived combatant visuals",
   REQUIRE_FALSE(has_visual(h.party_ctx.reg(), actor, CombatStatusKind::Slow,
                            CombatantVisualLayer::Underlay,
                            CombatantVisualRegion::Feet));
+}
+
+TEST_CASE("Equipped Observe wires and unwires a whole-combatant underlay",
+          "[combat-status][visuals][observe]") {
+  BuiltEncounter h;
+  const auto actor = h.defender();
+  auto &reg = h.party_ctx.reg();
+
+  REQUIRE(has_decal(reg, actor,
+                    fl::widgets::effects::DecalAnimationKind::Observe));
+
+  auto &member = reg.get<fl::ecs::components::PartyMember>(actor);
+  REQUIRE(member.closet().unequip_skill(fl::skills::SkillId::Observe));
+
+  REQUIRE_FALSE(has_decal(
+      reg, actor, fl::widgets::effects::DecalAnimationKind::Observe));
+
+  REQUIRE(member.closet().equip_skill(fl::skills::SkillId::Observe));
+  REQUIRE(has_decal(reg, actor,
+                    fl::widgets::effects::DecalAnimationKind::Observe));
 }
 
 TEST_CASE("Legacy targeted status visuals are discoverable without flattening",

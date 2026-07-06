@@ -7,8 +7,10 @@
 
 #include "fl/ecs/components/dire_bleed.hpp"
 #include "fl/ecs/components/freeze.hpp"
+#include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/poison.hpp"
 #include "fl/lospec500.hpp"
+#include "fl/skills/skill.hpp"
 #include "fl/widgets/effects/decal.hpp"
 
 namespace fl::ecs::systems {
@@ -21,6 +23,7 @@ using fl::ecs::components::DecalEffect;
 using fl::widgets::effects::DecalAnimationKind;
 
 constexpr int kLegacyStatusPriority = 100;
+constexpr int kObserveUnderlayPriority = 150;
 constexpr int kGenericStatusPriority = 200;
 constexpr int kExistingUnderlayPriority = 300;
 
@@ -71,6 +74,23 @@ CombatantStatusVisual label_for(const CombatStatusEffect &effect,
 bool is_custom_underlay_status(const CombatStatusEffect &effect) {
   return effect.kind == CombatStatusKind::Haste &&
          effect.name == "Starfire Drift";
+}
+
+bool has_active_observe(entt::registry &reg, entt::entity entity) {
+  const auto *member =
+      reg.try_get<fl::ecs::components::PartyMember>(entity);
+  return member != nullptr &&
+         member->closet().has_equipped_skill(fl::skills::SkillId::Observe);
+}
+
+void append_observe_visual(std::vector<CombatantStatusVisual> &out) {
+  CombatantStatusVisual visual;
+  visual.layer = CombatantVisualLayer::Underlay;
+  visual.region = CombatantVisualRegion::WholeCombatant;
+  visual.priority = kObserveUnderlayPriority;
+  visual.label = "Observe";
+  visual.decal = persistent_decal(DecalAnimationKind::Observe);
+  out.push_back(std::move(visual));
 }
 
 void append_shared_status_visuals(std::vector<CombatantStatusVisual> &out,
@@ -182,6 +202,10 @@ combatant_status_visuals(entt::registry &reg, entt::entity entity) {
     for (const auto &effect : statuses->effects) {
       append_shared_status_visuals(visuals, effect);
     }
+  }
+
+  if (has_active_observe(reg, entity)) {
+    append_observe_visual(visuals);
   }
 
   append_existing_underlays(visuals, reg, entity);

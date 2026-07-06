@@ -22,6 +22,7 @@ enum class SkillVisualArchetype {
   Glitch,
   Aura,
   Field,
+  Observe,
 };
 
 struct SkillVisualSpec {
@@ -56,6 +57,8 @@ name(SkillVisualArchetype archetype) noexcept {
     return "Aura";
   case SkillVisualArchetype::Field:
     return "Field";
+  case SkillVisualArchetype::Observe:
+    return "Observe";
   }
 
   return "Unknown";
@@ -90,6 +93,8 @@ decal_animation_for(SkillVisualArchetype archetype) noexcept {
     return DecalAnimationKind::Aura;
   case SkillVisualArchetype::Field:
     return DecalAnimationKind::Field;
+  case SkillVisualArchetype::Observe:
+    return DecalAnimationKind::Observe;
   }
 
   return std::nullopt;
@@ -170,6 +175,7 @@ visual_archetype_for(SkillKey skill) noexcept {
   case SkillId::EventHorizon:
     return SkillVisualArchetype::Field;
   case SkillId::Observe:
+    return SkillVisualArchetype::Observe;
   case SkillId::Flee:
   case SkillId::Thump:
   case SkillId::ColdSnap:

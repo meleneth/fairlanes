@@ -37,7 +37,7 @@ module FairlanesContent
     VALID_VISUAL_CPP = Set[
       "FlameWave", "Shock", "RocksFall", "PoisonCloud", "HolyNova",
       "BloodBloom", "FrostCrack", "VoidRipple", "HitpointNumber",
-      "Starfire"
+      "Starfire", "Observe"
     ].freeze
     VALID_DECLARATIVE_SHAPES = Set[
       :handwritten_behavior,

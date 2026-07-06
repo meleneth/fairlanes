@@ -12,6 +12,7 @@ visual :blood_bloom
 visual :frost_crack
 visual :void_ripple
 visual :starfire
+visual :observe
 
 status :poison,
        display: "Poison",
@@ -33,6 +34,7 @@ skill :observe,
       learn_chance_percent: 0,
       random_combat: false,
       execution: :observe,
+      visual: :observe,
       tags: %i[observe utility],
       declarative_shape: :handwritten_behavior
 
