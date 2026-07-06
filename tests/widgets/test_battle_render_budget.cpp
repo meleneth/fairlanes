@@ -85,6 +85,54 @@ TEST_CASE("Battle render budget has deterministic boundary behavior",
         BattleLayoutProfile::Showcase);
 }
 
+TEST_CASE("Battle render budget exposes supported render targets by name",
+          "[widgets][battle-budget]") {
+  const auto targets = fl::widgets::supported_battle_render_targets();
+  REQUIRE(targets.size() == 5);
+
+  CHECK(targets[0].profile == BattleLayoutProfile::Tiny);
+  CHECK(targets[0].width == 80);
+  CHECK(targets[0].height == 24);
+  CHECK(targets[0].name == "Tiny");
+
+  CHECK(fl::widgets::battle_render_profile_from_name("tiny") ==
+        BattleLayoutProfile::Tiny);
+  CHECK(fl::widgets::battle_render_profile_from_name("Compact") ==
+        BattleLayoutProfile::Compact);
+  CHECK(fl::widgets::battle_render_profile_from_name("standard") ==
+        BattleLayoutProfile::Standard);
+  CHECK(fl::widgets::battle_render_profile_from_name("wide") ==
+        BattleLayoutProfile::Wide);
+  CHECK(fl::widgets::battle_render_profile_from_name("showcase") ==
+        BattleLayoutProfile::Showcase);
+  CHECK(fl::widgets::battle_render_profile_from_name("show-case") ==
+        BattleLayoutProfile::Showcase);
+  CHECK_FALSE(fl::widgets::battle_render_profile_from_name("enormous"));
+}
+
+TEST_CASE("Battle render budget can force the current render target",
+          "[widgets][battle-budget]") {
+  fl::widgets::clear_forced_battle_render_target();
+
+  fl::widgets::force_battle_render_target(BattleLayoutProfile::Standard);
+  REQUIRE(fl::widgets::forced_battle_render_target() ==
+          BattleLayoutProfile::Standard);
+
+  const auto forced = fl::widgets::current_battle_render_budget();
+  CHECK(forced.profile == BattleLayoutProfile::Standard);
+  CHECK(forced.requested_width == 140);
+  CHECK(forced.requested_height == 40);
+
+  fl::widgets::force_battle_render_target(BattleLayoutProfile::Showcase);
+  const auto showcase = fl::widgets::current_battle_render_budget();
+  CHECK(showcase.profile == BattleLayoutProfile::Showcase);
+  CHECK(showcase.requested_width == 220);
+  CHECK(showcase.requested_height == 60);
+
+  fl::widgets::clear_forced_battle_render_target();
+  CHECK_FALSE(fl::widgets::forced_battle_render_target());
+}
+
 TEST_CASE("Battle render budget feature flags enrich monotonically",
           "[widgets][battle-budget]") {
   const std::array budgets{
@@ -113,12 +161,16 @@ TEST_CASE("Battle render budget exposes expected target capabilities",
   CHECK(tiny.show_party_strips);
   CHECK_FALSE(tiny.show_underlays);
   CHECK_FALSE(tiny.show_skill_decals);
+  CHECK(tiny.stage_side_padding_width == 0);
+  CHECK_FALSE(tiny.show_auxiliary_battle_panel);
 
   const auto compact = select_battle_render_budget(100, 30);
   CHECK(compact.combatant_detail_level == CombatantDetailLevel::Compact);
   CHECK(compact.party_rendering_mode == PartyRenderingMode::PartyStrips);
   CHECK(compact.show_party_strips);
   CHECK_FALSE(compact.show_full_status_labels);
+  CHECK(compact.stage_side_padding_width == 0);
+  CHECK_FALSE(compact.show_auxiliary_battle_panel);
 
   const auto standard = select_battle_render_budget(140, 40);
   CHECK(standard.combatant_detail_level == CombatantDetailLevel::Full);
@@ -127,6 +179,7 @@ TEST_CASE("Battle render budget exposes expected target capabilities",
   CHECK(standard.show_underlays);
   CHECK(standard.show_skill_decals);
   CHECK_FALSE(standard.show_field_ambience);
+  CHECK_FALSE(standard.show_auxiliary_battle_panel);
 
   const auto showcase = select_battle_render_budget(220, 60);
   CHECK(showcase.combatant_detail_level == CombatantDetailLevel::Showcase);
@@ -136,6 +189,22 @@ TEST_CASE("Battle render budget exposes expected target capabilities",
   CHECK(showcase.show_field_ambience);
   CHECK(showcase.show_skill_decals);
   CHECK(showcase.show_full_status_labels);
+  CHECK(showcase.show_auxiliary_battle_panel);
+}
+
+TEST_CASE("Battle render budget centralizes party battle chrome thresholds",
+          "[widgets][battle-budget]") {
+  const auto no_padding = select_battle_render_budget(149, 50);
+  CHECK(no_padding.stage_side_padding_width == 0);
+
+  const auto padded = select_battle_render_budget(150, 50);
+  CHECK(padded.stage_side_padding_width == 7);
+
+  const auto two_panel_logs = select_battle_render_budget(179, 60);
+  CHECK_FALSE(two_panel_logs.show_auxiliary_battle_panel);
+
+  const auto three_panel_logs = select_battle_render_budget(180, 49);
+  CHECK(three_panel_logs.show_auxiliary_battle_panel);
 }
 
 TEST_CASE("Battle render budget preserves requested dimensions defensively",
