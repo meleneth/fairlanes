@@ -24,7 +24,11 @@ module FairlanesContent
       Validator.new(declarations).validate!
       artifacts = Artifacts.new(declarations)
 
-      if options[:check]
+      if options[:list_generated]
+        puts artifacts.generated_files
+      elsif options[:list_fl_sources]
+        puts artifacts.fl_source_files
+      elsif options[:check]
         artifacts.check!(options.fetch(:out_dir))
       else
         artifacts.write!(options.fetch(:out_dir))
@@ -58,7 +62,15 @@ module FairlanesContent
         parser.on("--check", "Fail if generated artifacts are missing or stale") do
           options[:check] = true
         end
+        parser.on("--list-generated", "Print generated artifact paths") do
+          options[:list_generated] = true
+        end
+        parser.on("--list-fl-sources", "Print generated C++ sources for the fl target") do
+          options[:list_fl_sources] = true
+        end
       end.parse!(argv)
+
+      return if options[:list_generated] || options[:list_fl_sources]
 
       raise OptionParser::MissingArgument, "--out-dir" unless options[:out_dir]
     rescue OptionParser::ParseError => e

@@ -33,7 +33,7 @@ module FairlanesContent
       manifest_json = renderer.manifest
       validate_manifest_shape!(manifest_json)
 
-      {
+      files = {
         "generated_decal_content_tests.cpp" => renderer.test_cpp,
         "fl/generated/skill_ids.hpp" => renderer.skill_ids_hpp,
         "fl/generated/skill_content.hpp" => renderer.skill_content_hpp,
@@ -50,6 +50,30 @@ module FairlanesContent
         "content_manifest.json" => manifest_json,
         "content_manifest.schema.json" => renderer.manifest_schema
       }
+
+      renderer.skills.each do |skill|
+        files["fl/generated/skills/#{skill.id}.hpp"] = renderer.skill_entry_hpp(skill)
+        files["fl/generated/skills/#{skill.id}.cpp"] = renderer.skill_entry_cpp(skill)
+      end
+
+      renderer.monsters.each do |monster|
+        files["fl/generated/monsters/#{monster.id}.hpp"] =
+          renderer.monster_entry_hpp(monster)
+        files["fl/generated/monsters/#{monster.id}.cpp"] =
+          renderer.monster_entry_cpp(monster)
+      end
+      files
+    end
+
+    def generated_files
+      generated.keys
+    end
+
+    def fl_source_files
+      generated_files.select do |filename|
+        filename.end_with?(".cpp") &&
+          filename != "generated_decal_content_tests.cpp"
+      end
     end
 
     def write!(out_dir)

@@ -46,13 +46,13 @@ skill :flee,
 skill :thump,
       learn_chance_percent: 20,
       execution: :thump_like,
-      tags: %i[physical blunt melee],
+      tags: %i[physical blunt melee enemy damage],
       declarative_shape: :handwritten_behavior
 
 skill :eviscerate,
       learn_chance_percent: 2,
       execution: :eviscerate,
-      tags: %i[physical slashing bleed melee],
+      tags: %i[physical slashing bleed melee enemy damage],
       declarative_shape: :handwritten_behavior
 
 skill :poison,
@@ -83,48 +83,48 @@ skill :flame_wave,
 
 decal_skill :joltspasm,
             visual: :shock,
-            tags: %i[lightning control]
+            tags: %i[lightning control enemy damage]
 
 decal_skill :rocks_fall,
             visual: :rocks_fall,
-            tags: %i[physical earth blunt area]
+            tags: %i[physical earth blunt area group damage]
 
 decal_skill :sour_breath,
             visual: :poison_cloud,
-            tags: %i[acid disease area]
+            tags: %i[acid disease area group damage]
 
 decal_skill :mercyburst,
             visual: :holy_nova,
-            tags: %i[holy spell ally healing]
+            tags: %i[holy spell ally healing heal]
 
 decal_skill :blood_bloom,
             visual: :blood_bloom,
-            tags: %i[bleed healing area]
+            tags: %i[bleed healing area group damage]
 
 decal_skill :ice_splitter,
             visual: :frost_crack,
-            tags: %i[cold piercing projectile]
+            tags: %i[cold piercing projectile enemy damage]
 
 decal_skill :gravity_sigh,
             visual: :void_ripple,
-            tags: %i[gravity control area]
+            tags: %i[gravity control area group damage]
 
 skill :bump,
       learn_chance_percent: 20,
       execution: :thump_like,
-      tags: %i[physical blunt melee],
+      tags: %i[physical blunt melee enemy damage],
       declarative_shape: :handwritten_behavior
 
 skill :squish,
       learn_chance_percent: 20,
       execution: :thump_like,
-      tags: %i[physical blunt control melee],
+      tags: %i[physical blunt control melee enemy damage],
       declarative_shape: :handwritten_behavior
 
 skill :smack,
       learn_chance_percent: 20,
       execution: :thump_like,
-      tags: %i[physical blunt melee],
+      tags: %i[physical blunt melee enemy damage],
       declarative_shape: :handwritten_behavior
 
 [
@@ -140,7 +140,7 @@ skill :smack,
   [:forked_jolt, :damage_strike, %i[lightning spell random_enemy damage]],
   [:static_field, :group_damage, %i[lightning field group damage slow_status]],
   [:overcharge, :placeholder_effect, %i[lightning self buff]],
-  [:mercywave, :group_heal, %i[holy spell all_allies healing]],
+  [:mercywave, :group_heal, %i[holy spell all_allies healing heal]],
   [:clearbell, :placeholder_effect, %i[holy spell ally cleanse]],
   [:hush_hex, :placeholder_effect, %i[holy spell enemy debuff silence_status]],
   [:choirguard, :placeholder_effect, %i[holy song all_allies buff shield_status]],
@@ -154,12 +154,12 @@ skill :smack,
   [:burst_fire, :group_damage, %i[ballistic ranged group damage industrial]],
   [:suppressing_fire, :group_damage, %i[ballistic ranged group damage debuff slow_status industrial]],
   [:smoke_screen, :placeholder_effect, %i[industrial field group debuff blind_status]],
-  [:field_dressing, :single_heal, %i[martial ally healing]],
+  [:field_dressing, :single_heal, %i[martial ally healing heal]],
   [:laser_stitch, :damage_strike, %i[laser ranged enemy damage cybernetic]],
   [:laser_sweep, :group_damage, %i[laser ranged group damage cybernetic]],
   [:packet_storm, :damage_strike, %i[data ranged random_enemy damage cybernetic]],
   [:signal_jam, :placeholder_effect, %i[data enemy debuff silence_status]],
-  [:reboot_pulse, :group_heal, %i[data all_allies cleanse healing]],
+  [:reboot_pulse, :group_heal, %i[data all_allies cleanse healing heal]],
   [:clock_up, :placeholder_effect, %i[data ally buff haste_status]],
   [:blue_screen, :placeholder_effect, %i[data group debuff stun_status silence_status]],
   [:null_pointer, :damage_strike, %i[void data enemy damage execute]],
