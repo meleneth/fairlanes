@@ -1,9 +1,14 @@
 // tests/encounter_builder_tests.cpp
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
+#include <unordered_map>
+#include <vector>
+
 #include <entt/entt.hpp>
 
 #include "fl/ecs/components/combat_status.hpp"
+#include "fl/ecs/components/monster_identity.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
@@ -12,13 +17,49 @@
 #include "fl/events/party_bus.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/lospec500.hpp"
+#include "fl/monsters/monster_registry.hpp"
 #include "fl/primitives/encounter_builder.hpp"
+#include "fl/primitives/entity_builder.hpp"
 #include "fl/skills/skill_sequence.hpp"
 #include "fl/skills/thump.hpp"
 #include "sr/atb_events.hpp"
 #include "sr/timed_scheduler.hpp"
 
 namespace {
+
+bool contains_monster(const auto &pool, fl::monster::MonsterKind kind) {
+  return std::find(pool.begin(), pool.end(), kind) != pool.end();
+}
+
+class ScopedMonsterRegistry {
+public:
+  ScopedMonsterRegistry() : saved_{fl::monster::monster_registry()} {
+    fl::monster::monster_registry().clear();
+  }
+
+  ~ScopedMonsterRegistry() {
+    fl::monster::monster_registry() = std::move(saved_);
+  }
+
+private:
+  std::unordered_map<fl::monster::MonsterKind, fl::monster::MonsterDefinition>
+      saved_;
+};
+
+void register_test_monster(fl::monster::MonsterKind kind) {
+  fl::monster::register_monster(kind, [](fl::primitives::EntityBuilder &) {});
+}
+
+std::vector<fl::monster::MonsterKind>
+monster_kinds_for(const std::vector<entt::entity> &entities,
+                  entt::registry &reg) {
+  std::vector<fl::monster::MonsterKind> kinds;
+  kinds.reserve(entities.size());
+  for (const auto entity : entities) {
+    kinds.push_back(reg.get<fl::ecs::components::MonsterIdentity>(entity).kind);
+  }
+  return kinds;
+}
 
 TEST_CASE("EncounterBuilder::thump_it_out returns the created EncounterData",
           "[encounter_builder][encounter][combat]") {
@@ -31,6 +72,62 @@ TEST_CASE("EncounterBuilder::thump_it_out returns the created EncounterData",
   auto &encounter = builder.thump_it_out();
 
   REQUIRE(&encounter == &party_ctx.party_data().encounter_data());
+}
+
+TEST_CASE("ChaosAttractor encounter mode uses the registered monster catalog",
+          "[encounter_builder][encounter][mode]") {
+  fl::GrandCentral gc{1, 1, 3};
+  ScopedMonsterRegistry registry;
+  register_test_monster(fl::monster::MonsterKind::FieldMouse);
+  register_test_monster(fl::monster::MonsterKind::HoneyBadger);
+  register_test_monster(fl::monster::MonsterKind::FireDrake);
+
+  const auto pool =
+      fl::primitives::EncounterBuilder::chaos_attractor_monster_pool();
+  REQUIRE(pool.size() == 3);
+  REQUIRE(contains_monster(pool, fl::monster::MonsterKind::FieldMouse));
+  REQUIRE(contains_monster(pool, fl::monster::MonsterKind::HoneyBadger));
+  REQUIRE(contains_monster(pool, fl::monster::MonsterKind::FireDrake));
+}
+
+TEST_CASE("EncounterBuilder defaults to ChaosAttractor spawns",
+          "[encounter_builder][encounter][mode]") {
+  fl::GrandCentral gc{1, 1, 3};
+  ScopedMonsterRegistry registry;
+  register_test_monster(fl::monster::MonsterKind::HoneyBadger);
+
+  auto party_ctx = gc.account_context(0).party_context(0);
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  auto &encounter = builder.thump_it_out();
+
+  const auto kinds =
+      monster_kinds_for(encounter.attackers().members(), party_ctx.reg());
+  REQUIRE(kinds.size() ==
+          fl::primitives::EncounterBuilder::kEnemyPartySize);
+  for (const auto kind : kinds) {
+    REQUIRE(kind == fl::monster::MonsterKind::HoneyBadger);
+  }
+}
+
+TEST_CASE("HeroesJourney encounter mode keeps the woodland spawn pools",
+          "[encounter_builder][encounter][mode]") {
+  fl::GrandCentral gc{1, 1, 3};
+
+  auto party_ctx = gc.account_context(0).party_context(0);
+  fl::primitives::EncounterBuilder builder(
+      party_ctx, fl::primitives::EncounterMode::HeroesJourney);
+  auto &encounter = builder.thump_it_out();
+
+  const auto kinds =
+      monster_kinds_for(encounter.attackers().members(), party_ctx.reg());
+  REQUIRE(kinds.size() ==
+          fl::primitives::EncounterBuilder::kEnemyPartySize);
+  for (const auto kind : kinds) {
+    REQUIRE((contains_monster(fl::primitives::EncounterBuilder::common_woodland(),
+                              kind) ||
+             contains_monster(fl::primitives::EncounterBuilder::rare_woodland(),
+                              kind)));
+  }
 }
 
 TEST_CASE("EncounterBuilder::thump_it_out wires encounter teams and members",

@@ -1,9 +1,14 @@
 #include "encounter_builder.hpp"
 
+#include <algorithm>
+#include <type_traits>
+#include <vector>
+
 #include "fl/context.hpp"
 #include "fl/ecs/components/encounter.hpp"
 #include "fl/generated/monster_content.hpp"
 #include "fl/monsters/monster_kind.hpp"
+#include "fl/monsters/monster_registry.hpp"
 #include "fl/primitives/encounter_data.hpp"
 #include "fl/primitives/entity_builder.hpp"
 #include "fl/primitives/party_data.hpp"
@@ -11,6 +16,24 @@
 #include "sr/atb_events.hpp"
 
 namespace fl::primitives {
+
+std::vector<fl::monster::MonsterKind>
+EncounterBuilder::chaos_attractor_monster_pool() {
+  std::vector<fl::monster::MonsterKind> pool;
+  const auto &registry = fl::monster::monster_registry();
+  pool.reserve(registry.size());
+
+  for (const auto &[kind, definition] : registry) {
+    (void)definition;
+    pool.push_back(kind);
+  }
+
+  std::ranges::sort(pool, [](const auto lhs, const auto rhs) {
+    using Value = std::underlying_type_t<fl::monster::MonsterKind>;
+    return static_cast<Value>(lhs) < static_cast<Value>(rhs);
+  });
+  return pool;
+}
 
 std::span<const fl::monster::MonsterKind>
 EncounterBuilder::common_woodland() noexcept {
@@ -47,8 +70,22 @@ void EncounterBuilder::add_random_enemy() {
         rs.random_index(static_cast<int>(pool.size())))];
   };
 
-  const auto kind = rs.random_index(20) == 0 ? pick_from(rare_woodland())
-                                             : pick_from(common_woodland());
+  auto chaos_pool = std::vector<fl::monster::MonsterKind>{};
+  const auto kind = [&]() {
+    switch (mode_) {
+    case EncounterMode::ChaosAttractor:
+      chaos_pool = chaos_attractor_monster_pool();
+      if (!chaos_pool.empty()) {
+        return pick_from(chaos_pool);
+      }
+      return fl::monster::MonsterKind::FieldMouse;
+    case EncounterMode::HeroesJourney:
+      return rs.random_index(20) == 0 ? pick_from(rare_woodland())
+                                      : pick_from(common_woodland());
+    }
+
+    return fl::monster::MonsterKind::FieldMouse;
+  }();
 
   auto context = ctx_.build_context();
   entt::entity ent = EntityBuilder(context).monster(kind).build();
