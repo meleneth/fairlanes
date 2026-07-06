@@ -17,6 +17,7 @@ public:
   using ShowAccountView = std::function<void(std::size_t account_index)>;
   using ShowPartyView =
       std::function<void(std::size_t account_index, std::size_t party_index)>;
+  using ShowEffectGallery = std::function<void()>;
 
   explicit UiCommandController(
       std::deque<fl::primitives::AccountData> &accounts, FancyLog &output_log,
@@ -24,6 +25,7 @@ public:
 
   void set_show_account_view(ShowAccountView callback);
   void set_show_party_view(ShowPartyView callback);
+  void set_show_effect_gallery(ShowEffectGallery callback);
 
   void handle(std::string_view command);
 
@@ -38,6 +40,7 @@ private:
   void show_help(std::string_view topic = {});
   void show_account_view();
   void show_party_view();
+  void show_effect_gallery();
   void list_accounts();
   void list_parties();
   void debug_party();
@@ -54,6 +57,7 @@ private:
 
   ShowAccountView show_account_view_;
   ShowPartyView show_party_view_;
+  ShowEffectGallery show_effect_gallery_;
 };
 
 } // namespace fl::widgets

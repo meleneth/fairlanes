@@ -256,6 +256,10 @@ void UiCommandController::set_show_party_view(ShowPartyView callback) {
   show_party_view_ = std::move(callback);
 }
 
+void UiCommandController::set_show_effect_gallery(ShowEffectGallery callback) {
+  show_effect_gallery_ = std::move(callback);
+}
+
 void UiCommandController::handle(std::string_view command) {
   const auto owned = trim_copy(command);
   const auto words = split_words(owned);
@@ -272,7 +276,7 @@ void UiCommandController::handle(std::string_view command) {
 
   if (verb == "screen" || verb == "view") {
     if (words.size() < 2) {
-      write("usage: screen account|party");
+      write("usage: screen account|party|effects");
       write("try: help screen");
       return;
     }
@@ -284,6 +288,12 @@ void UiCommandController::handle(std::string_view command) {
 
     if (words[1] == "party" || words[1] == "parties") {
       show_party_view();
+      return;
+    }
+
+    if (words[1] == "effects" || words[1] == "effect" ||
+        words[1] == "gallery" || words[1] == "effect-gallery") {
+      show_effect_gallery();
       return;
     }
 
@@ -464,6 +474,7 @@ void UiCommandController::show_help(std::string_view topic) {
     write("current party: " + std::to_string(party_index_));
     write("commands: screen, list, debug, account, party, render, overdrive, "
           "help");
+    write("try: screen effects for the visual effect gallery");
     write("try: help <command>");
     return;
   }
@@ -471,6 +482,8 @@ void UiCommandController::show_help(std::string_view topic) {
   if (topic == "screen" || topic == "view") {
     write("screen account: show all parties for the selected account");
     write("screen party: show the selected party and inventory");
+    write("screen effects: show the visual effect gallery; Esc returns to "
+          "battle");
     return;
   }
 
@@ -536,6 +549,13 @@ void UiCommandController::show_party_view() {
     show_party_view_(account_index_, party_index_);
   }
   write("showing party view");
+}
+
+void UiCommandController::show_effect_gallery() {
+  if (show_effect_gallery_) {
+    show_effect_gallery_();
+  }
+  write("showing effect gallery; Esc returns to the normal battle screen");
 }
 
 void UiCommandController::list_accounts() {

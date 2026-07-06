@@ -32,12 +32,14 @@ public:
   void show_account_battle(std::size_t account_index);
   void show_party_battle(std::size_t account_index, std::size_t party_index);
   void show_party(std::size_t account_index, std::size_t party_index);
+  void show_effect_gallery();
 
 private:
   enum class ActiveScreen {
     party,
     account_battle,
     party_battle,
+    effect_gallery,
   };
 
   ConsoleOverlay *console_overlay();

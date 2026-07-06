@@ -11,6 +11,7 @@
 
 #include "account_battle_view.hpp"
 #include "console_overlay.hpp"
+#include "effect_gallery_view.hpp"
 #include "fl/lospec500.hpp"
 #include "moon_calendar_view.hpp"
 #include "party_battle_screen.hpp"
@@ -33,6 +34,7 @@ RootComponent::RootComponent(fl::context::AccountCtx ctx,
       [this](std::size_t account_index, std::size_t party_index) {
         show_party(account_index, party_index);
       });
+  commands_.set_show_effect_gallery([this]() { show_effect_gallery(); });
   console_overlay()->set_on_command(
       [this](std::string_view command) { commands_.handle(command); });
   Add(console_overlay_);
@@ -62,7 +64,20 @@ bool RootComponent::OnEvent(ftxui::Event event) {
     return console_overlay_->OnEvent(event);
   }
 
-  if (event == ftxui::Event::Character("h")) {
+  if (active_screen_kind_ == ActiveScreen::effect_gallery &&
+      (event == ftxui::Event::Escape ||
+       event == ftxui::Event::Character("q"))) {
+    show_party_battle(commands_.account_index(), commands_.party_index());
+    return true;
+  }
+
+  if (active_screen_kind_ == ActiveScreen::effect_gallery && active_screen_ &&
+      active_screen_->OnEvent(event)) {
+    return true;
+  }
+
+  if (event == ftxui::Event::Character("h") &&
+      active_screen_kind_ != ActiveScreen::effect_gallery) {
     keybind_help_open_ = true;
     return true;
   }
@@ -220,6 +235,12 @@ void RootComponent::show_party(std::size_t account_index,
   Add(active_screen_);
 }
 
+void RootComponent::show_effect_gallery() {
+  active_screen_kind_ = ActiveScreen::effect_gallery;
+  active_screen_ = ftxui::Make<EffectGalleryView>();
+  Add(active_screen_);
+}
+
 void RootComponent::toggle_active_screen() {
   switch (active_screen_kind_) {
   case ActiveScreen::party:
@@ -228,6 +249,9 @@ void RootComponent::toggle_active_screen() {
   case ActiveScreen::account_battle:
   case ActiveScreen::party_battle:
     show_party(commands_.account_index(), commands_.party_index());
+    return;
+  case ActiveScreen::effect_gallery:
+    show_party_battle(commands_.account_index(), commands_.party_index());
     return;
   }
 }
@@ -241,6 +265,9 @@ void RootComponent::toggle_party_battle_screen() {
     show_account_battle(commands_.account_index());
     return;
   case ActiveScreen::party:
+    return;
+  case ActiveScreen::effect_gallery:
+    show_party_battle(commands_.account_index(), commands_.party_index());
     return;
   }
 }
@@ -367,7 +394,14 @@ ftxui::Element RootComponent::render_keybind_help() const {
   lines.push_back(text("`        open command console") | chrome);
   lines.push_back(text("q / Esc  quit") | chrome);
 
-  if (active_screen_kind_ == ActiveScreen::party) {
+  if (active_screen_kind_ == ActiveScreen::effect_gallery) {
+    lines.push_back(separator() | chrome);
+    lines.push_back(text("Effect Gallery") | bold | accent);
+    lines.push_back(text("Left/Right or h/l/[ / ] cycle effects") | chrome);
+    lines.push_back(text("Up/Down or k/j cycle backgrounds") | chrome);
+    lines.push_back(text("1-6      set rendered combatant count") | chrome);
+    lines.push_back(text("q / Esc  return to normal battle screen") | chrome);
+  } else if (active_screen_kind_ == ActiveScreen::party) {
     lines.push_back(separator() | chrome);
     lines.push_back(text("Party") | bold | accent);
     lines.push_back(text("/        toggle account / party screen") | chrome);
