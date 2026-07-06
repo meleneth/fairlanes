@@ -86,6 +86,73 @@ find_prompt_pixel(fl::widgets::ChaosAttractRoot &root) {
   return std::nullopt;
 }
 
+std::optional<std::size_t> find_line_containing(const std::string &rendered,
+                                                std::string_view needle) {
+  std::size_t line_index = 0;
+  std::size_t start = 0;
+  while (start <= rendered.size()) {
+    const auto end = rendered.find('\n', start);
+    const auto line =
+        rendered.substr(start, end == std::string::npos ? std::string::npos
+                                                        : end - start);
+    if (line.find(needle) != std::string::npos) {
+      return line_index;
+    }
+    if (end == std::string::npos) {
+      break;
+    }
+    start = end + 1;
+    ++line_index;
+  }
+
+  return std::nullopt;
+}
+
+std::optional<std::size_t>
+find_line_containing(const std::string &rendered, std::string_view first,
+                     std::string_view second) {
+  std::size_t line_index = 0;
+  std::size_t start = 0;
+  while (start <= rendered.size()) {
+    const auto end = rendered.find('\n', start);
+    const auto line =
+        rendered.substr(start, end == std::string::npos ? std::string::npos
+                                                        : end - start);
+    if (line.find(first) != std::string::npos &&
+        line.find(second) != std::string::npos) {
+      return line_index;
+    }
+    if (end == std::string::npos) {
+      break;
+    }
+    start = end + 1;
+    ++line_index;
+  }
+
+  return std::nullopt;
+}
+
+std::optional<std::string> line_at(const std::string &rendered,
+                                   std::size_t target_line) {
+  std::size_t line_index = 0;
+  std::size_t start = 0;
+  while (start <= rendered.size()) {
+    const auto end = rendered.find('\n', start);
+    if (line_index == target_line) {
+      return rendered.substr(start, end == std::string::npos
+                                        ? std::string::npos
+                                        : end - start);
+    }
+    if (end == std::string::npos) {
+      break;
+    }
+    start = end + 1;
+    ++line_index;
+  }
+
+  return std::nullopt;
+}
+
 fl::widgets::RootComponent make_gameplay_root(fl::GrandCentral &gc) {
   return fl::widgets::RootComponent{gc.account_context(0), gc.accounts(),
                                     gc.game_log(), gc.world_clock()};
@@ -155,6 +222,48 @@ TEST_CASE("Chaos Attract selected battle summarizes rosters",
   REQUIRE(rendered.find("Bramblethorn(L1)") != std::string::npos);
   REQUIRE(rendered.find("Enemies") != std::string::npos);
   REQUIRE(rendered.find("No encounter") == std::string::npos);
+}
+
+TEST_CASE("Chaos Attract renders selector rows in two-line mode",
+          "[widgets][root][presentation]") {
+  fl::GrandCentral attract_gc{8, 5, 5};
+  fl::widgets::ChaosAttractRoot root{make_all_account_surface(attract_gc)};
+
+  const auto rendered = render_to_string(root, attract_gc.world_clock());
+  const auto identity_line = find_line_containing(rendered, "*", "A1 P1");
+
+  REQUIRE(identity_line.has_value());
+  const auto matchup_line = line_at(rendered, *identity_line + 1);
+  REQUIRE(matchup_line.has_value());
+  REQUIRE(matchup_line->find(" -> ") != std::string::npos);
+}
+
+TEST_CASE("Chaos Attract keeps the selected party log above the battle area",
+          "[widgets][root][presentation]") {
+  fl::GrandCentral attract_gc{8, 5, 5};
+  fl::widgets::ChaosAttractRoot root{make_all_account_surface(attract_gc)};
+
+  const auto rendered = render_to_string(root, attract_gc.world_clock());
+  const auto log_line = find_line_containing(rendered, " log");
+  const auto battle_line = find_line_containing(rendered, "Selected battle");
+
+  REQUIRE(log_line.has_value());
+  REQUIRE(battle_line.has_value());
+  REQUIRE(*log_line < *battle_line);
+}
+
+TEST_CASE("Chaos Attract overview spends wide rows on player names",
+          "[widgets][root][presentation]") {
+  fl::GrandCentral attract_gc{8, 5, 5};
+  fl::widgets::ChaosAttractRoot root{make_all_account_surface(attract_gc)};
+
+  fl::widgets::force_battle_render_target(fl::widgets::BattleLayoutProfile::Wide);
+  const auto rendered =
+      render_to_string(root, attract_gc.world_clock(), 180, 50);
+  fl::widgets::clear_forced_battle_render_target();
+
+  REQUIRE(rendered.find("Alderion(10)") != std::string::npos);
+  REQUIRE(rendered.find("Bramblethorn(10)") != std::string::npos);
 }
 
 TEST_CASE("Chaos Attract prompt color changes across frames",

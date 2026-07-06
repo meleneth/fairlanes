@@ -93,7 +93,7 @@ ftxui::Element AllAccountBattleScreen::Render() {
   const auto budget = current_battle_render_budget();
   const int width = std::max(40, budget.requested_width);
   const int height = std::max(12, budget.requested_height - 3);
-  const int overview_height = std::max(3, height / 2);
+  const int overview_height = std::max(6, height / 2);
   const int detail_height = std::max(3, height - overview_height);
   const int log_width = std::max(24, width / 3);
   const int overview_width = std::max(16, width - log_width);
@@ -182,6 +182,8 @@ ftxui::Element AllAccountBattleScreen::render_party_overview(int width,
                                                              int height) {
   using namespace ftxui;
 
+  constexpr int row_height = 2;
+
   std::vector<Element> rows;
   rows.reserve(accounts_ ? accounts_->size() * 5 : 1);
 
@@ -206,7 +208,7 @@ ftxui::Element AllAccountBattleScreen::render_party_overview(int width,
     rows.push_back(text("No parties."));
   }
 
-  const int visible_rows = std::max(1, height - 2);
+  const int visible_rows = std::max(1, (height - 2) / row_height);
   const auto selected = selected_flat_index();
   const auto total = rows.size();
   const auto half_window = static_cast<std::size_t>(visible_rows / 2);
@@ -221,7 +223,9 @@ ftxui::Element AllAccountBattleScreen::render_party_overview(int width,
   visible.reserve(static_cast<std::size_t>(visible_rows));
   for (std::size_t i = 0; i < static_cast<std::size_t>(visible_rows); ++i) {
     const auto row_index = start + i;
-    visible.push_back(row_index < rows.size() ? rows[row_index] : text(""));
+    visible.push_back(row_index < rows.size()
+                          ? rows[row_index]
+                          : filler() | size(HEIGHT, EQUAL, row_height));
   }
 
   return window(text("Chaos Attract: all accounts") | bold,
@@ -263,8 +267,7 @@ ftxui::Element AllAccountBattleScreen::render_party_row(
   const int left_width = std::clamp(width / 5, 18, 30);
   const int state_width = 7;
   const int arrow_width = 4;
-  const int roster_space =
-      std::max(8, width - marker_width - left_width - state_width - arrow_width);
+  const int roster_space = std::max(8, width - marker_width - arrow_width);
   int enemies_width = std::max(8, roster_space / 2);
   int heroes_width = std::max(8, roster_space - enemies_width);
 
@@ -287,23 +290,33 @@ ftxui::Element AllAccountBattleScreen::render_party_row(
     heroes = render_member_roster(party.members(), heroes_width);
   }
 
-  auto row = hbox({
+  auto header = hbox({
       text(selected ? "* " : "  ") | color(fl::lospec500::color_at(8)) |
           bold | size(WIDTH, EQUAL, marker_width),
       text(shorten(label, static_cast<std::size_t>(left_width))) |
           color(fl::lospec500::color_at(15)) | size(WIDTH, EQUAL, left_width),
       text(state_label(party)) | state_color(party) |
           size(WIDTH, EQUAL, state_width),
+      filler(),
+  });
+
+  auto matchup = hbox({
+      text("  ") | size(WIDTH, EQUAL, marker_width),
       enemies | size(WIDTH, EQUAL, enemies_width),
       text(" -> ") | color(fl::lospec500::color_at(24)),
       heroes | size(WIDTH, EQUAL, heroes_width) | flex,
+  });
+
+  auto row = vbox({
+      std::move(header) | size(HEIGHT, EQUAL, 1),
+      std::move(matchup) | size(HEIGHT, EQUAL, 1),
   });
 
   if (selected) {
     row = row | bgcolor(fl::lospec500::color_at(1));
   }
 
-  return row | size(HEIGHT, EQUAL, 1) | clear_under;
+  return row | size(HEIGHT, EQUAL, 2) | clear_under;
 }
 
 ftxui::Element AllAccountBattleScreen::render_selected_party_detail(int width,
@@ -312,14 +325,14 @@ ftxui::Element AllAccountBattleScreen::render_selected_party_detail(int width,
 
   if (accounts_ == nullptr || accounts_->empty() ||
       selected_account_index_ >= accounts_->size()) {
-    return window(text("Selected party") | bold, text("No selected party.")) |
+    return window(text("Selected battle") | bold, text("No selected party.")) |
            size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height);
   }
 
   auto &account = accounts_->at(selected_account_index_);
   auto &parties = account.parties();
   if (parties.empty()) {
-    return window(text("Selected party") | bold, text("No parties.")) |
+    return window(text("Selected battle") | bold, text("No parties.")) |
            size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height);
   }
 
