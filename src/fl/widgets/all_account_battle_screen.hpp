@@ -45,7 +45,8 @@ private:
   ftxui::Element render_selected_party_battle(
       fl::primitives::PartyData &party, int width, int height) const;
   ftxui::Element render_combatant_row(std::span<const entt::entity> entities,
-                                      int width, int height) const;
+                                      int width, int height,
+                                      entt::entity active = entt::null) const;
   ftxui::Element render_roster(std::span<const entt::entity> entities,
                                int width, bool show_levels = false) const;
   ftxui::Element render_member_roster(

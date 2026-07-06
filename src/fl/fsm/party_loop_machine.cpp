@@ -2,6 +2,7 @@
 #include "fl/context.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/fsm/party_loop.hpp"
+#include "fl/primitives/party_data.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "sr/atb_events.hpp"
 #include <boost/sml.hpp>
@@ -23,6 +24,9 @@ struct PartyLoopMachine::Impl {
 
   void on_party_wiped() {
     if (processing_beat_) {
+      if (ctx != nullptr && ctx->party_data().has_encounter()) {
+        ctx->party_data().encounter_data().clear_pending_events();
+      }
       party_wipe_pending_ = true;
       return;
     }

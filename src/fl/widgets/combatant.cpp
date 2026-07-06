@@ -471,8 +471,8 @@ underlay_decal(ftxui::Element child,
 } // namespace
 
 Combatant::Combatant(entt::registry &reg_, entt::entity entity_,
-                     bool render_uwu)
-    : reg(reg_), entity(entity_), render_uwu_(render_uwu) {}
+                     bool render_uwu, bool active)
+    : reg(reg_), entity(entity_), render_uwu_(render_uwu), active_(active) {}
 
 ftxui::Element Combatant::Render() {
   using namespace fl::ecs::components;
@@ -543,6 +543,10 @@ ftxui::Element Combatant::Render() {
 
   if (auto *bg = reg.try_get<ResolvedBackgroundColorOverride>(entity)) {
     border = border | ftxui::bgcolor(bg->color);
+  }
+
+  if (active_) {
+    border = border | ftxui::color(fl::lospec500::color_at(28)) | ftxui::bold;
   }
 
   border = skill_rows(std::move(border), skill_rows_for(reg, entity));

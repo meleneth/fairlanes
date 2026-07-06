@@ -396,17 +396,19 @@ ftxui::Element AllAccountBattleScreen::render_selected_party_battle(
   const int inner_height = std::max(1, height - 2);
   const int summary_height = 2;
   const int separator_height = 1;
-  const int row_height =
-      std::max(1, (inner_height - summary_height - separator_height) / 2);
+  const int row_height = std::max(
+      1, (inner_height - summary_height - separator_height) / 2);
   const int remainder = std::max(
       0, inner_height - summary_height - separator_height - (row_height * 2));
 
   std::vector<entt::entity> attackers;
   std::vector<entt::entity> defenders;
+  entt::entity active = entt::null;
   if (party.has_encounter()) {
     auto &encounter = party.encounter_data();
     attackers = encounter.attackers().members();
     defenders = encounter.defenders().members();
+    active = encounter.atb_engine().active_combatant();
   } else {
     for (const auto &member : party.members()) {
       defenders.push_back(member.member_id());
@@ -418,7 +420,7 @@ ftxui::Element AllAccountBattleScreen::render_selected_party_battle(
           ? (text("field / town") | center |
              color(fl::lospec500::color_at(24)) | size(WIDTH, EQUAL, width) |
              size(HEIGHT, EQUAL, row_height))
-          : render_combatant_row(attackers, width, row_height);
+          : render_combatant_row(attackers, width, row_height, active);
 
   return window(
              text("Selected battle") | bold,
@@ -428,13 +430,15 @@ ftxui::Element AllAccountBattleScreen::render_selected_party_battle(
                  separator() |
                      fl::lospec500::on_not_black(fl::lospec500::color_at(32)) |
                      size(HEIGHT, EQUAL, separator_height),
-                 render_combatant_row(defenders, width, row_height + remainder),
+                 render_combatant_row(defenders, width, row_height + remainder,
+                                      active),
              })) |
          size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height);
 }
 
 ftxui::Element AllAccountBattleScreen::render_combatant_row(
-    std::span<const entt::entity> entities, int width, int height) const {
+    std::span<const entt::entity> entities, int width, int height,
+    entt::entity active) const {
   using namespace ftxui;
 
   constexpr int kColumns = 5;
@@ -448,8 +452,8 @@ ftxui::Element AllAccountBattleScreen::render_combatant_row(
     Element content = filler();
     if (i < static_cast<int>(entities.size()) && registry_ != nullptr &&
         registry_->valid(entities[static_cast<std::size_t>(i)])) {
-      content = Combatant{*registry_, entities[static_cast<std::size_t>(i)],
-                          true}
+      const auto entity = entities[static_cast<std::size_t>(i)];
+      content = Combatant{*registry_, entity, true, entity == active}
                     .Render() |
                 bgcolor(fl::lospec500::color_at(0)) | clear_under;
     }
