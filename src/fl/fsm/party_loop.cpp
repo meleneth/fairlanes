@@ -11,6 +11,7 @@
 #include "fl/primitives/party_data.hpp"
 #include "fl/skills/thump.hpp"
 #include "fl/widgets/fancy_log.hpp"
+#include <fmt/format.h>
 #include <spdlog/spdlog.h>
 #include "fl/tracy_shim.hpp"
 
@@ -28,14 +29,22 @@ void PartyLoop::Ops::enter_farming(fl::context::PartyCtx &ctx) {
   // ctx.log().append_markup("[cyan](PartyLoop) Entering farming state.");
 
   if (ctx.party_data().needs_farm_focus_choice()) {
-    ctx.log().append_markup(
-        "Choose where this party is farming: [ability](Brawn), "
-        "[ability](Cunning), [ability](Wisdom), [xp](Wealth & Materials), or "
-        "[level](Gear).");
-    return;
+    if (ctx.party_data().progression_control_mode() ==
+        fl::primitives::ProgressionControlMode::Auto) {
+      ctx.party_data().apply_recommended_farming_plan();
+    } else {
+      const auto advice = ctx.party_data().farming_choice_advice();
+      ctx.log().append_markup(fmt::format(
+          "Choose where this party is farming: [ability](Brawn), "
+          "[ability](Cunning), [ability](Wisdom), [xp](Wealth & Materials), "
+          "or [level](Gear). Autotree recommends [ability]({}).",
+          fl::primitives::display_name(advice.recommended_focus)));
+      return;
+    }
   }
 
-  fl::primitives::EncounterBuilder{ctx}.thump_it_out();
+  fl::primitives::EncounterBuilder{ctx, ctx.party_data().encounter_mode()}
+      .thump_it_out();
 };
 
 void PartyLoop::Ops::exit_farming(fl::context::PartyCtx &ctx) {

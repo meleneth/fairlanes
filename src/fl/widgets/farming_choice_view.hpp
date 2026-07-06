@@ -24,6 +24,7 @@ public:
   void next() noexcept;
   void previous() noexcept;
   bool set_from_digit(char digit) noexcept;
+  void set_focus(fl::primitives::FarmFocus focus) noexcept;
 
 private:
   std::size_t selected_index_{0};
@@ -42,10 +43,12 @@ public:
   }
 
 private:
+  void initialize_selection_from_mode();
   void apply_selected_focus();
 
   fl::primitives::PartyData *party_{nullptr};
   fl::primitives::GrimoireDiscipline discipline_;
+  fl::primitives::FarmingChoiceAdvice advice_;
   FarmingChoiceState state_;
 };
 

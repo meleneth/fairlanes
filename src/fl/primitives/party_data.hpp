@@ -5,6 +5,7 @@
 #include <functional> // std::invoke
 #include <list>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -18,6 +19,7 @@
 #include "fl/fsm/party_loop_machine.hpp"
 #include "fl/fwd.hpp"
 #include "fl/primitives/encounter_data.hpp"
+#include "fl/primitives/encounter_mode.hpp"
 #include "fl/primitives/farming_plan.hpp"
 #include "fl/primitives/world_clock.hpp"
 #include "fl/skills/skill.hpp"
@@ -96,10 +98,26 @@ public:
   }
   void select_grimoire_discipline(GrimoireDiscipline discipline);
   const FarmingPlan &farming_plan() const noexcept { return farming_plan_; }
+  ProgressionControlMode progression_control_mode() const noexcept {
+    return progression_control_mode_;
+  }
+  void set_progression_control_mode(ProgressionControlMode mode) noexcept {
+    progression_control_mode_ = mode;
+  }
+  std::optional<FarmFocus> previous_farm_focus() const noexcept {
+    return previous_farm_focus_;
+  }
+  FarmingChoiceAdvice farming_choice_advice() const noexcept;
   bool farm_focus_selected() const noexcept { return farm_focus_selected_; }
   bool needs_farm_focus_choice() const noexcept {
-    return !farm_focus_selected_;
+    return encounter_mode_ == EncounterMode::HeroesJourney &&
+           !farm_focus_selected_;
   }
+  EncounterMode encounter_mode() const noexcept { return encounter_mode_; }
+  void set_encounter_mode(EncounterMode mode) noexcept {
+    encounter_mode_ = mode;
+  }
+  void apply_recommended_farming_plan();
   void select_farming_plan(GrimoireDiscipline discipline, FarmFocus focus);
 
   bool town_penalty_active() const noexcept {
@@ -139,7 +157,11 @@ private:
   GrimoireDiscipline grimoire_discipline_{GrimoireDiscipline::Brawn};
   FarmingPlan farming_plan_{
       make_farming_plan(GrimoireDiscipline::Brawn, FarmFocus::Brawn)};
+  ProgressionControlMode progression_control_mode_{
+      ProgressionControlMode::Manual};
+  std::optional<FarmFocus> previous_farm_focus_;
   bool farm_focus_selected_{false};
+  EncounterMode encounter_mode_{EncounterMode::ChaosAttractor};
 
   seerin::BeatBus party_beat_bus_{};
   seerin::BeatSub gc_forward_sub_{};

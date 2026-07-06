@@ -164,15 +164,28 @@ void PartyData::resolve_pending_learned_skill(
 void PartyData::select_grimoire_discipline(GrimoireDiscipline discipline) {
   grimoire_discipline_ = discipline;
   if (!farm_focus_selected_) {
-    farming_plan_ = make_farming_plan(grimoire_discipline_, FarmFocus::Brawn);
+    farming_plan_ = make_farming_plan(
+        grimoire_discipline_, farming_choice_advice().recommended_focus);
   }
   log_->append_markup(
       fmt::format("Starting grimoire discipline set: [ability]({}).",
                   display_name(grimoire_discipline_)));
 }
 
+FarmingChoiceAdvice PartyData::farming_choice_advice() const noexcept {
+  return make_farming_choice_advice(grimoire_discipline_, previous_farm_focus_);
+}
+
+void PartyData::apply_recommended_farming_plan() {
+  const auto advice = farming_choice_advice();
+  select_farming_plan(advice.discipline, advice.recommended_focus);
+}
+
 void PartyData::select_farming_plan(GrimoireDiscipline discipline,
                                     FarmFocus focus) {
+  if (farm_focus_selected_) {
+    previous_farm_focus_ = farming_plan_.focus;
+  }
   grimoire_discipline_ = discipline;
   farming_plan_ = make_farming_plan(discipline, focus);
   farm_focus_selected_ = true;

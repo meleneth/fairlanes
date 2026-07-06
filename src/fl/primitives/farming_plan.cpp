@@ -53,6 +53,18 @@ std::string_view display_name(FarmRewardClass reward_class) noexcept {
   return "Unknown Farm Reward";
 }
 
+std::string_view display_name(ProgressionControlMode mode) noexcept {
+  switch (mode) {
+  case ProgressionControlMode::Auto:
+    return "Auto";
+  case ProgressionControlMode::Guided:
+    return "Guided";
+  case ProgressionControlMode::Manual:
+    return "Manual";
+  }
+  return "Unknown Progression Control";
+}
+
 bool is_discipline_focus(FarmFocus focus) noexcept {
   switch (focus) {
   case FarmFocus::Brawn:
@@ -124,6 +136,30 @@ FarmingPlan make_farming_plan(GrimoireDiscipline discipline,
   }
 
   return plan;
+}
+
+FarmFocus recommended_farm_focus(GrimoireDiscipline discipline) noexcept {
+  switch (discipline) {
+  case GrimoireDiscipline::Brawn:
+    return FarmFocus::Brawn;
+  case GrimoireDiscipline::Cunning:
+    return FarmFocus::Cunning;
+  case GrimoireDiscipline::Wisdom:
+    return FarmFocus::Wisdom;
+  }
+  return FarmFocus::Brawn;
+}
+
+FarmingChoiceAdvice
+make_farming_choice_advice(GrimoireDiscipline discipline,
+                           std::optional<FarmFocus> previous_focus) noexcept {
+  FarmingChoiceAdvice advice;
+  advice.discipline = discipline;
+  advice.recommended_focus = recommended_farm_focus(discipline);
+  advice.previous_focus = previous_focus;
+  advice.recommendation_reason = "Autotree recommends the aligned discipline "
+                                 "farm for efficient grimoire growth.";
+  return advice;
 }
 
 bool plan_is_aligned(const FarmingPlan &plan) noexcept {

@@ -30,6 +30,7 @@ RUN apt-get update \
     git-delta \
     pkg-config \
     gcovr \
+    lcov \
     sudo \
  && rm -rf /var/lib/apt/lists/*
 

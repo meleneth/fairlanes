@@ -49,11 +49,13 @@ EncounterBuilder::rare_woodland() noexcept {
 }
 
 EncounterData &EncounterBuilder::thump_it_out() {
-  const auto &plan = ctx_.party_data().farming_plan();
-  ctx_.log().append_markup(fmt::format(
-      "Farming [ability]({}) as [ability]({}); progression path: [xp]({}).",
-      display_name(plan.focus), display_name(plan.discipline),
-      display_name(plan.reward_class)));
+  if (mode_ == EncounterMode::HeroesJourney) {
+    const auto &plan = ctx_.party_data().farming_plan();
+    ctx_.log().append_markup(fmt::format(
+        "Farming [ability]({}) as [ability]({}); progression path: [xp]({}).",
+        display_name(plan.focus), display_name(plan.discipline),
+        display_name(plan.reward_class)));
+  }
 
   auto &encounter_data = ctx_.party_data().create_encounter();
 

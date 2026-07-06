@@ -5,6 +5,7 @@
 
 #include "fl/fsm/party_loop.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/primitives/encounter_mode.hpp"
 #include "fl/primitives/farming_plan.hpp"
 #include "fl/widgets/farming_choice_view.hpp"
 
@@ -93,6 +94,7 @@ TEST_CASE("Farming choice is applied once after grimoire discipline selection",
   auto party_ctx = account_ctx.party_context(0);
   auto &party = party_ctx.party_data();
 
+  party.set_encounter_mode(fl::primitives::EncounterMode::HeroesJourney);
   party.select_grimoire_discipline(fl::primitives::GrimoireDiscipline::Wisdom);
   REQUIRE(party.needs_farm_focus_choice());
 
@@ -114,4 +116,126 @@ TEST_CASE("Farming choice is applied once after grimoire discipline selection",
 
   fl::fsm::PartyLoop::Ops::enter_farming(party_ctx);
   REQUIRE(party.has_encounter());
+}
+
+TEST_CASE("Chaos Attractor starts farming without location choice",
+          "[farming][start-flow][chaos]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto party_ctx = gc.account_context(0).party_context(0);
+  auto &party = party_ctx.party_data();
+
+  party.select_grimoire_discipline(fl::primitives::GrimoireDiscipline::Wisdom);
+
+  REQUIRE(party.encounter_mode() ==
+          fl::primitives::EncounterMode::ChaosAttractor);
+  REQUIRE_FALSE(party.needs_farm_focus_choice());
+
+  fl::fsm::PartyLoop::Ops::enter_farming(party_ctx);
+
+  REQUIRE(party.has_encounter());
+  REQUIRE_FALSE(party.farm_focus_selected());
+}
+
+TEST_CASE("Progression control modes always compute farm advice",
+          "[farming][control]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto party_ctx = gc.account_context(0).party_context(0);
+  auto &party = party_ctx.party_data();
+  party.select_grimoire_discipline(fl::primitives::GrimoireDiscipline::Cunning);
+
+  for (const auto mode : {fl::primitives::ProgressionControlMode::Auto,
+                          fl::primitives::ProgressionControlMode::Guided,
+                          fl::primitives::ProgressionControlMode::Manual}) {
+    party.set_progression_control_mode(mode);
+    const auto advice = party.farming_choice_advice();
+    REQUIRE(advice.discipline == fl::primitives::GrimoireDiscipline::Cunning);
+    REQUIRE(advice.recommended_focus == fl::primitives::FarmFocus::Cunning);
+    REQUIRE_FALSE(advice.recommendation_reason.empty());
+  }
+}
+
+TEST_CASE("Auto progression control applies the recommendation",
+          "[farming][control][start-flow]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto party_ctx = gc.account_context(0).party_context(0);
+  auto &party = party_ctx.party_data();
+
+  party.set_encounter_mode(fl::primitives::EncounterMode::HeroesJourney);
+  party.select_grimoire_discipline(fl::primitives::GrimoireDiscipline::Wisdom);
+  party.set_progression_control_mode(
+      fl::primitives::ProgressionControlMode::Auto);
+
+  fl::fsm::PartyLoop::Ops::enter_farming(party_ctx);
+
+  REQUIRE_FALSE(party.needs_farm_focus_choice());
+  REQUIRE(party.farming_plan().focus == fl::primitives::FarmFocus::Wisdom);
+  REQUIRE(party.farming_plan().reward_class ==
+          fl::primitives::FarmRewardClass::AlignedDiscipline);
+  REQUIRE(party.has_encounter());
+}
+
+TEST_CASE("Guided progression control preselects the recommendation",
+          "[farming][control][widget]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto party_ctx = gc.account_context(0).party_context(0);
+  auto &party = party_ctx.party_data();
+
+  party.set_encounter_mode(fl::primitives::EncounterMode::HeroesJourney);
+  party.select_grimoire_discipline(fl::primitives::GrimoireDiscipline::Wisdom);
+  party.set_progression_control_mode(
+      fl::primitives::ProgressionControlMode::Guided);
+
+  fl::widgets::FarmingChoiceView choice{
+      party, fl::primitives::GrimoireDiscipline::Wisdom};
+
+  REQUIRE(choice.state().selected_focus() == fl::primitives::FarmFocus::Wisdom);
+  REQUIRE(choice.OnEvent(ftxui::Event::Character("2")));
+  REQUIRE(party.farming_plan().focus == fl::primitives::FarmFocus::Cunning);
+  REQUIRE(party.farming_plan().reward_class ==
+          fl::primitives::FarmRewardClass::CrossDiscipline);
+}
+
+TEST_CASE("Manual progression control waits while showing autotree advice",
+          "[farming][control][start-flow]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto party_ctx = gc.account_context(0).party_context(0);
+  auto &party = party_ctx.party_data();
+
+  party.set_encounter_mode(fl::primitives::EncounterMode::HeroesJourney);
+  party.select_grimoire_discipline(fl::primitives::GrimoireDiscipline::Brawn);
+  party.set_progression_control_mode(
+      fl::primitives::ProgressionControlMode::Manual);
+
+  const auto advice = party.farming_choice_advice();
+  REQUIRE(advice.recommended_focus == fl::primitives::FarmFocus::Brawn);
+
+  fl::fsm::PartyLoop::Ops::enter_farming(party_ctx);
+
+  REQUIRE(party.needs_farm_focus_choice());
+  REQUIRE_FALSE(party.has_encounter());
+}
+
+TEST_CASE("Previous farm focus is exposed for full-control display",
+          "[farming][control]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto party_ctx = gc.account_context(0).party_context(0);
+  auto &party = party_ctx.party_data();
+
+  party.set_encounter_mode(fl::primitives::EncounterMode::HeroesJourney);
+  party.select_grimoire_discipline(fl::primitives::GrimoireDiscipline::Brawn);
+  party.select_farming_plan(fl::primitives::GrimoireDiscipline::Brawn,
+                            fl::primitives::FarmFocus::Gear);
+  party.select_farming_plan(fl::primitives::GrimoireDiscipline::Brawn,
+                            fl::primitives::FarmFocus::Cunning);
+
+  const auto advice = party.farming_choice_advice();
+  REQUIRE(advice.recommended_focus == fl::primitives::FarmFocus::Brawn);
+  REQUIRE(advice.previous_focus.has_value());
+  REQUIRE(*advice.previous_focus == fl::primitives::FarmFocus::Gear);
+
+  party.set_progression_control_mode(
+      fl::primitives::ProgressionControlMode::Manual);
+  fl::widgets::FarmingChoiceView choice{
+      party, fl::primitives::GrimoireDiscipline::Brawn};
+  REQUIRE(choice.state().selected_focus() == fl::primitives::FarmFocus::Gear);
 }
