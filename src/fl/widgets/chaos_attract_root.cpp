@@ -19,6 +19,21 @@ ChaosAttractRoot::ChaosAttractRoot(ftxui::Component battle_surface)
 }
 
 bool ChaosAttractRoot::OnEvent(ftxui::Event event) {
+  if (help_open_) {
+    if (event == ftxui::Event::Character("h") ||
+        event == ftxui::Event::Escape) {
+      help_open_ = false;
+      return true;
+    }
+
+    return true;
+  }
+
+  if (event == ftxui::Event::Character("h")) {
+    help_open_ = true;
+    return true;
+  }
+
   if (event == ftxui::Event::Return) {
     begin_requested_ = true;
     return true;
@@ -44,6 +59,7 @@ ftxui::Element ChaosAttractRoot::Render() {
           render_begin_prompt(),
           ftxui::text(""),
       }),
+      help_open_ ? render_help_panel() : ftxui::filler(),
   });
 }
 
@@ -60,8 +76,41 @@ ftxui::Element ChaosAttractRoot::render_begin_prompt() const {
 
   return hbox({
       filler(),
-      text("ENTER TO BEGIN") | bold | color(prompt_color(render_frames_)) |
+      text("UP/DOWN SELECT  h HELP  ENTER TO BEGIN") | bold |
+          color(prompt_color(render_frames_)) |
           bgcolor(fl::lospec500::color_at(0)),
+      filler(),
+  });
+}
+
+ftxui::Element ChaosAttractRoot::render_help_panel() const {
+  using namespace ftxui;
+
+  const auto chrome = fl::lospec500::on_not_black(fl::lospec500::color_at(32));
+  const auto accent = fl::lospec500::on_not_black(fl::lospec500::color_at(15));
+  const auto bg = bgcolor(fl::lospec500::color_at(0));
+
+  auto lines = vbox({
+      text("Chaos Attract") | bold | accent,
+      separator() | chrome,
+      text("h         close this help") | chrome,
+      text("Up / Down select party") | chrome,
+      text("k / j     select party") | chrome,
+      text("[ / ]     select party") | chrome,
+      text("Enter     begin normal game") | chrome,
+      text("q / Esc   quit") | chrome,
+  });
+
+  auto panel = window(text("Help") | accent, lines | bg) | chrome | bg |
+               clear_under | size(WIDTH, GREATER_THAN, 36);
+
+  return vbox({
+      filler(),
+      hbox({
+          filler(),
+          panel,
+          filler(),
+      }),
       filler(),
   });
 }

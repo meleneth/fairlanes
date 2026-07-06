@@ -81,7 +81,7 @@ ChaosAttractGrandCentral::main_loop(ChaosAttractRunOptions opts) {
       return true;
     }
 
-    return true;
+    return root->OnEvent(event);
   });
 
   std::jthread render_ticker([&](std::stop_token st) {
