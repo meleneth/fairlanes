@@ -204,7 +204,7 @@ TEST_CASE("Chaos Attract renders the begin prompt",
   REQUIRE(rendered.find("log") < rendered.find("Selected battle"));
 }
 
-TEST_CASE("Chaos Attract selected battle summarizes rosters",
+TEST_CASE("Chaos Attract selected battle omits roster introduction lines",
           "[widgets][root][presentation]") {
   fl::GrandCentral attract_gc{8, 5, 5};
   auto party_ctx = attract_gc.account_context(0).party_context(0);
@@ -217,10 +217,10 @@ TEST_CASE("Chaos Attract selected battle summarizes rosters",
       render_to_string(root, attract_gc.world_clock(), 180, 50);
   fl::widgets::clear_forced_battle_render_target();
 
-  REQUIRE(rendered.find("Party: A1 P1") != std::string::npos);
-  REQUIRE(rendered.find("Alderion(L1)") != std::string::npos);
-  REQUIRE(rendered.find("Bramblethorn(L1)") != std::string::npos);
-  REQUIRE(rendered.find("Enemies") != std::string::npos);
+  REQUIRE(rendered.find("Party: A1 P1") == std::string::npos);
+  REQUIRE(rendered.find("Alderion(L1)") == std::string::npos);
+  REQUIRE(rendered.find("Bramblethorn(L1)") == std::string::npos);
+  REQUIRE(rendered.find("Enemies") == std::string::npos);
   REQUIRE(rendered.find("No encounter") == std::string::npos);
 }
 
