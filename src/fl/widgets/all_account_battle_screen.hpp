@@ -39,6 +39,10 @@ private:
                                   int width, bool selected) const;
   ftxui::Element render_party_overview(int width, int height);
   ftxui::Element render_selected_party_detail(int width, int height);
+  ftxui::Element render_selected_party_battle(
+      fl::primitives::PartyData &party, int width, int height) const;
+  ftxui::Element render_combatant_row(std::span<const entt::entity> entities,
+                                      int width, int height) const;
   ftxui::Element render_roster(std::span<const entt::entity> entities,
                                int width) const;
   ftxui::Element render_member_roster(

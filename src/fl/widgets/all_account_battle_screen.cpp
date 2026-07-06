@@ -16,6 +16,7 @@
 #include "fl/primitives/member_data.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/widgets/battle_render_budget.hpp"
+#include "fl/widgets/combatant.hpp"
 #include "fl/widgets/fancy_log.hpp"
 
 namespace fl::widgets {
@@ -89,8 +90,8 @@ ftxui::Element AllAccountBattleScreen::Render() {
   const auto budget = current_battle_render_budget();
   const int width = std::max(40, budget.requested_width);
   const int height = std::max(12, budget.requested_height - 3);
-  const int detail_height = std::clamp(height / 3, 6, 14);
-  const int overview_height = std::max(3, height - detail_height);
+  const int overview_height = std::max(3, height / 2);
+  const int detail_height = std::max(3, height - overview_height);
 
   return vbox({
              render_party_overview(width, overview_height),
@@ -285,45 +286,106 @@ ftxui::Element AllAccountBattleScreen::render_selected_party_detail(int width,
 
   selected_party_index_ = std::min(selected_party_index_, parties.size() - 1);
   auto &party = parties[selected_party_index_];
-  const int summary_width = std::max(24, width / 2);
-  const int log_width = std::max(1, width - summary_width);
-
-  std::vector<Element> summary_lines;
-  summary_lines.reserve(4);
-  summary_lines.push_back(
-      text("A" + std::to_string(selected_account_index_ + 1) + " P" +
-           std::to_string(selected_party_index_ + 1) + " " +
-           std::string{party.name()}) |
-      bold | color(fl::lospec500::color_at(15)));
-  summary_lines.push_back(text(state_label(party)) | state_color(party));
-  if (party.has_encounter()) {
-    auto &encounter = party.encounter_data();
-    summary_lines.push_back(hbox({
-        text("Enemy ") | color(fl::lospec500::color_at(24)),
-        render_roster(encounter.attackers().members(), summary_width - 8),
-    }));
-    summary_lines.push_back(hbox({
-        text("Party ") | color(fl::lospec500::color_at(24)),
-        render_roster(encounter.defenders().members(), summary_width - 8),
-    }));
-  } else {
-    summary_lines.push_back(hbox({
-        text("Party ") | color(fl::lospec500::color_at(24)),
-        render_member_roster(party.members(), summary_width - 8),
-    }));
-    summary_lines.push_back(text("Waiting for the next fight") |
-                            color(fl::lospec500::color_at(24)));
-  }
+  const int battle_width = std::max(28, (width * 2) / 3);
+  const int log_width = std::max(1, width - battle_width);
 
   party.log().set_focused(false);
   return hbox({
-             window(text("Selected battle") | bold,
-                    vbox(std::move(summary_lines))),
+             render_selected_party_battle(party, battle_width, height),
              window(text(std::string{party.name()} + " log") | bold,
                     party.log().Render() | yframe | vscroll_indicator) |
                  size(WIDTH, EQUAL, log_width),
          }) |
          size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height);
+}
+
+ftxui::Element AllAccountBattleScreen::render_selected_party_battle(
+    fl::primitives::PartyData &party, int width, int height) const {
+  using namespace ftxui;
+
+  const int inner_height = std::max(1, height - 2);
+  const int title_height = 1;
+  const int separator_height = 1;
+  const int row_height =
+      std::max(1, (inner_height - title_height - separator_height) / 2);
+  const int remainder = std::max(
+      0, inner_height - title_height - separator_height - (row_height * 2));
+
+  std::vector<entt::entity> attackers;
+  std::vector<entt::entity> defenders;
+  if (party.has_encounter()) {
+    auto &encounter = party.encounter_data();
+    attackers = encounter.attackers().members();
+    defenders = encounter.defenders().members();
+  } else {
+    for (const auto &member : party.members()) {
+      defenders.push_back(member.member_id());
+    }
+  }
+
+  auto title =
+      hbox({
+          text("A" + std::to_string(selected_account_index_ + 1) + " P" +
+               std::to_string(selected_party_index_ + 1) + " " +
+               std::string{party.name()}) |
+              bold | color(fl::lospec500::color_at(15)),
+          filler(),
+          text(state_label(party)) | state_color(party),
+      }) |
+      size(HEIGHT, EQUAL, title_height);
+
+  auto enemy_row =
+      attackers.empty()
+          ? (text("field / town") | center |
+             color(fl::lospec500::color_at(24)) | size(WIDTH, EQUAL, width) |
+             size(HEIGHT, EQUAL, row_height))
+          : render_combatant_row(attackers, width, row_height);
+
+  return window(
+             text("Selected battle") | bold,
+             vbox({
+                 title,
+                 enemy_row,
+                 separator() |
+                     fl::lospec500::on_not_black(fl::lospec500::color_at(32)) |
+                     size(HEIGHT, EQUAL, separator_height),
+                 render_combatant_row(defenders, width, row_height + remainder),
+             })) |
+         size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height);
+}
+
+ftxui::Element AllAccountBattleScreen::render_combatant_row(
+    std::span<const entt::entity> entities, int width, int height) const {
+  using namespace ftxui;
+
+  constexpr int kColumns = 5;
+  const int cell_width = std::max(1, width / kColumns);
+  const int used_width = cell_width * kColumns;
+  const int remainder = std::max(0, width - used_width);
+
+  std::vector<Element> cells;
+  cells.reserve(kColumns + 1);
+  for (int i = 0; i < kColumns; ++i) {
+    Element content = filler();
+    if (i < static_cast<int>(entities.size()) && registry_ != nullptr &&
+        registry_->valid(entities[static_cast<std::size_t>(i)])) {
+      content = Combatant{*registry_, entities[static_cast<std::size_t>(i)],
+                          true}
+                    .Render() |
+                bgcolor(fl::lospec500::color_at(0)) | clear_under;
+    }
+
+    cells.push_back(std::move(content) | size(WIDTH, EQUAL, cell_width) |
+                    size(HEIGHT, EQUAL, height));
+  }
+
+  if (remainder > 0) {
+    cells.push_back(filler() | size(WIDTH, EQUAL, remainder) |
+                    size(HEIGHT, EQUAL, height));
+  }
+
+  return hbox(std::move(cells)) | size(WIDTH, EQUAL, width) |
+         size(HEIGHT, EQUAL, height);
 }
 
 ftxui::Element AllAccountBattleScreen::render_roster(

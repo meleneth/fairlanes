@@ -12,6 +12,7 @@
 #include "fl/grand_central.hpp"
 #include "fl/widgets/all_account_battle_screen.hpp"
 #include "fl/widgets/chaos_attract_root.hpp"
+#include "fl/widgets/root_chrome.hpp"
 #include "fl/widgets/root_component.hpp"
 
 namespace {
@@ -32,6 +33,17 @@ std::string render_to_string(fl::widgets::RootComponent &root) {
 std::string render_to_string(fl::widgets::ChaosAttractRoot &root) {
   auto element = root.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
                                              kRenderWidth) |
+                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, kRenderHeight);
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(kRenderWidth),
+                                      ftxui::Dimension::Fixed(kRenderHeight));
+  ftxui::Render(screen, element);
+  return screen.ToString();
+}
+
+std::string render_to_string(fl::widgets::ChaosAttractRoot &root,
+                             const fl::primitives::WorldClock &world_clock) {
+  auto element = fl::widgets::render_root_chrome(world_clock, root.Render()) |
+                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, kRenderWidth) |
                  ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, kRenderHeight);
   auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(kRenderWidth),
                                       ftxui::Dimension::Fixed(kRenderHeight));
@@ -96,10 +108,9 @@ TEST_CASE("Normal gameplay renders the normal key manifest",
 TEST_CASE("Chaos Attract hides the normal key manifest",
           "[widgets][root][presentation]") {
   fl::GrandCentral attract_gc{8, 5, 5};
-  fl::widgets::ChaosAttractRoot root{&attract_gc.world_clock(),
-                                     make_all_account_surface(attract_gc)};
+  fl::widgets::ChaosAttractRoot root{make_all_account_surface(attract_gc)};
 
-  const auto rendered = render_to_string(root);
+  const auto rendered = render_to_string(root, attract_gc.world_clock());
   REQUIRE(rendered.find("+/-") == std::string::npos);
   REQUIRE(rendered.find("overdrive") == std::string::npos);
   REQUIRE(rendered.find("help") == std::string::npos);
@@ -111,21 +122,20 @@ TEST_CASE("Chaos Attract hides the normal key manifest",
 TEST_CASE("Chaos Attract renders the begin prompt",
           "[widgets][root][presentation]") {
   fl::GrandCentral attract_gc{8, 5, 5};
-  fl::widgets::ChaosAttractRoot root{&attract_gc.world_clock(),
-                                     make_all_account_surface(attract_gc)};
+  fl::widgets::ChaosAttractRoot root{make_all_account_surface(attract_gc)};
 
-  const auto rendered = render_to_string(root);
+  const auto rendered = render_to_string(root, attract_gc.world_clock());
   REQUIRE(rendered.find("ENTER TO BEGIN") != std::string::npos);
   REQUIRE(rendered.find("A1 P1") != std::string::npos);
   REQUIRE(rendered.find("Selected battle") != std::string::npos);
   REQUIRE(rendered.find("log") != std::string::npos);
+  REQUIRE(rendered.find("HP: [") != std::string::npos);
 }
 
 TEST_CASE("Chaos Attract prompt color changes across frames",
           "[widgets][root][presentation]") {
   fl::GrandCentral attract_gc{8, 5, 5};
-  fl::widgets::ChaosAttractRoot root{&attract_gc.world_clock(),
-                                     make_all_account_surface(attract_gc)};
+  fl::widgets::ChaosAttractRoot root{make_all_account_surface(attract_gc)};
 
   const auto first = find_prompt_pixel(root);
   REQUIRE(first.has_value());
@@ -147,8 +157,7 @@ TEST_CASE("Chaos Attract selection moves through party rows",
       attract_gc.reg(), attract_gc.accounts());
   auto *all_accounts =
       dynamic_cast<fl::widgets::AllAccountBattleScreen *>(surface.get());
-  fl::widgets::ChaosAttractRoot root{&attract_gc.world_clock(),
-                                     std::move(surface)};
+  fl::widgets::ChaosAttractRoot root{std::move(surface)};
 
   REQUIRE(render_to_string(root).find("A1 P1") != std::string::npos);
   REQUIRE(all_accounts->selected_account_index() == 0);

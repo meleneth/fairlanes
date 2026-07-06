@@ -13,9 +13,9 @@
 #include "console_overlay.hpp"
 #include "effect_gallery_view.hpp"
 #include "fl/lospec500.hpp"
-#include "moon_calendar_view.hpp"
 #include "party_battle_screen.hpp"
 #include "party_view.hpp"
+#include "root_chrome.hpp"
 
 namespace fl::widgets {
 
@@ -159,11 +159,7 @@ ftxui::Element RootComponent::Render() {
   update_fps_counter();
 
   Element content = active_screen_ ? active_screen_->Render() : text("");
-  content = vbox({
-      render_moon_calendar(*world_clock_),
-      separator() | fl::lospec500::on_not_black(fl::lospec500::color_at(32)),
-      content | flex,
-  });
+  content = render_root_chrome(*world_clock_, std::move(content));
 
   content = dbox({
       content,

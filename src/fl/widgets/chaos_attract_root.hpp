@@ -5,15 +5,11 @@
 #include <ftxui/component/component.hpp>
 #include <ftxui/screen/color.hpp>
 
-#include "fl/primitives/world_clock.hpp"
-
 namespace fl::widgets {
 
 class ChaosAttractRoot : public ftxui::ComponentBase {
 public:
-  ChaosAttractRoot(
-      const fl::primitives::WorldClock *world_clock = nullptr,
-      ftxui::Component battle_surface = nullptr);
+  explicit ChaosAttractRoot(ftxui::Component battle_surface = nullptr);
 
   bool OnEvent(ftxui::Event event) override;
   ftxui::Element Render() override;
@@ -27,7 +23,6 @@ public:
 private:
   ftxui::Element render_begin_prompt() const;
 
-  const fl::primitives::WorldClock *world_clock_{nullptr};
   bool begin_requested_{false};
   std::uint64_t render_frames_{0};
   ftxui::Component battle_surface_;

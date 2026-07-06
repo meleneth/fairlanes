@@ -8,14 +8,11 @@
 #include <ftxui/dom/elements.hpp>
 
 #include "fl/lospec500.hpp"
-#include "fl/widgets/moon_calendar_view.hpp"
 
 namespace fl::widgets {
 
-ChaosAttractRoot::ChaosAttractRoot(
-    const fl::primitives::WorldClock *world_clock,
-    ftxui::Component battle_surface)
-    : world_clock_(world_clock), battle_surface_(std::move(battle_surface)) {
+ChaosAttractRoot::ChaosAttractRoot(ftxui::Component battle_surface)
+    : battle_surface_(std::move(battle_surface)) {
   if (battle_surface_) {
     Add(battle_surface_);
   }
@@ -39,14 +36,6 @@ ftxui::Element ChaosAttractRoot::Render() {
 
   ftxui::Element surface =
       battle_surface_ ? battle_surface_->Render() : ftxui::filler();
-  if (world_clock_ != nullptr) {
-    surface = ftxui::vbox({
-        render_moon_calendar(*world_clock_),
-        ftxui::separator() |
-            fl::lospec500::on_not_black(fl::lospec500::color_at(32)),
-        std::move(surface) | ftxui::flex,
-    });
-  }
 
   return ftxui::dbox({
       std::move(surface),

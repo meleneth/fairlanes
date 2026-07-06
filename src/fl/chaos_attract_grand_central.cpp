@@ -13,6 +13,7 @@
 #include "fl/web_screen_bridge.hpp"
 #include "fl/widgets/all_account_battle_screen.hpp"
 #include "fl/widgets/chaos_attract_root.hpp"
+#include "fl/widgets/root_chrome.hpp"
 
 namespace fl {
 
@@ -21,8 +22,8 @@ ChaosAttractGrandCentral::ChaosAttractGrandCentral()
   attract_game_->innervate_event_system();
   auto battle_surface = ftxui::Make<fl::widgets::AllAccountBattleScreen>(
       attract_game_->reg(), attract_game_->accounts());
-  root_component_ = ftxui::Make<fl::widgets::ChaosAttractRoot>(
-      &attract_game_->world_clock(), std::move(battle_surface));
+  root_component_ =
+      ftxui::Make<fl::widgets::ChaosAttractRoot>(std::move(battle_surface));
 }
 
 ChaosAttractGrandCentral::~ChaosAttractGrandCentral() = default;
@@ -62,7 +63,8 @@ ChaosAttractGrandCentral::main_loop(ChaosAttractRunOptions opts) {
 
     std::scoped_lock lock(attract_game_->frame_mutex());
     attract_game_->resolve_visuals_for_render();
-    return root_component_->Render();
+    return fl::widgets::render_root_chrome(attract_game_->world_clock(),
+                                           root_component_->Render());
   });
 
   ui = CatchEvent(ui, [&](Event event) {
