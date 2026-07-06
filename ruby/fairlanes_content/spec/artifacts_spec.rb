@@ -72,4 +72,43 @@ RSpec.describe FairlanesContent::Artifacts do
         }
     end
   end
+
+  it "writes generated source docs" do
+    declarations = build(:declaration_set)
+
+    Dir.mktmpdir do |dir|
+      artifacts = described_class.new(declarations)
+      artifacts.write_docs!(dir)
+
+      artifacts.generated_docs.each_key do |filename|
+        expect(File).to exist(File.join(dir, filename))
+      end
+    end
+  end
+
+  it "checks current generated source docs without rewriting them" do
+    declarations = build(:declaration_set)
+
+    Dir.mktmpdir do |dir|
+      artifacts = described_class.new(declarations)
+      artifacts.write_docs!(dir)
+
+      expect(artifacts.check_docs!(dir)).to be(true)
+    end
+  end
+
+  it "reports stale generated source docs" do
+    declarations = build(:declaration_set)
+
+    Dir.mktmpdir do |dir|
+      artifacts = described_class.new(declarations)
+      artifacts.write_docs!(dir)
+      File.write(File.join(dir, "generated/content-balance.md"), "stale\n")
+
+      expect { artifacts.check_docs!(dir) }
+        .to raise_error(FairlanesContent::StaleArtifactsError) { |error|
+          expect(error.errors).to include("generated/content-balance.md is stale")
+        }
+    end
+  end
 end

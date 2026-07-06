@@ -46,6 +46,13 @@ export default withMermaid(
           ]
         },
         {
+          text: 'Generated Content',
+          items: [
+            { text: 'Content Balance', link: '/generated/content-balance' },
+            { text: 'Effect Gallery', link: '/generated/effect-gallery' }
+          ]
+        },
+        {
           text: 'Foundations',
           items: [
             { text: 'Foundations Index', link: '/foundations/' },

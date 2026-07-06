@@ -156,6 +156,19 @@ To verify an existing generated output directory without rewriting files:
 ruby scripts/fairlanes_content_codegen.rb --out-dir build/generated/fairlanes_content --check
 ```
 
+Generated content review docs are checked into the tour under
+`docs/tour/generated`. Refresh them after declaration changes with:
+
+```sh
+cmake --build build --target fairlanes_content_docs
+```
+
+To verify the checked-in generated docs without rewriting files:
+
+```sh
+cmake --build build --target fairlanes_content_docs_check
+```
+
 Run the Ruby generator specs with:
 
 ```sh

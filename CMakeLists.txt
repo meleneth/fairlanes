@@ -337,6 +337,8 @@ file(GLOB_RECURSE FAIRLANES_CONTENT_RUBY_SOURCES CONFIGURE_DEPENDS
 
 set(FAIRLANES_CONTENT_GENERATED_DIR
   "${CMAKE_BINARY_DIR}/generated/fairlanes_content")
+set(FAIRLANES_CONTENT_DOCS_DIR
+  "${CMAKE_SOURCE_DIR}/docs/tour")
 set(FAIRLANES_CONTENT_GENERATED_TEST
   "${FAIRLANES_CONTENT_GENERATED_DIR}/generated_decal_content_tests.cpp")
 set(FAIRLANES_CONTENT_GENERATED_SKILL_IDS_HPP
@@ -432,6 +434,31 @@ add_custom_command(
 add_custom_target(fairlanes_content_check
   DEPENDS
     ${FAIRLANES_CONTENT_GENERATED_FILES}
+)
+
+add_custom_target(fairlanes_content_docs
+  COMMAND "${RUBY_EXECUTABLE}"
+          "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+          --docs-dir "${FAIRLANES_CONTENT_DOCS_DIR}"
+  DEPENDS
+    "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+    "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
+    ${FAIRLANES_CONTENT_RUBY_SOURCES}
+  COMMENT "Generating Fairlanes content docs"
+  VERBATIM
+)
+
+add_custom_target(fairlanes_content_docs_check
+  COMMAND "${RUBY_EXECUTABLE}"
+          "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+          --docs-dir "${FAIRLANES_CONTENT_DOCS_DIR}"
+          --check-docs
+  DEPENDS
+    "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+    "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
+    ${FAIRLANES_CONTENT_RUBY_SOURCES}
+  COMMENT "Checking Fairlanes generated content docs"
+  VERBATIM
 )
 
 if(GCOVR_EXECUTABLE)

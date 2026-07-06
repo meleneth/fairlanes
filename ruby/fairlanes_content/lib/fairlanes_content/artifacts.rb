@@ -69,6 +69,17 @@ module FairlanesContent
       generated.keys
     end
 
+    def generated_docs
+      {
+        "generated/content-balance.md" => renderer.balance_report,
+        "generated/effect-gallery.md" => renderer.effect_gallery
+      }
+    end
+
+    def generated_doc_files
+      generated_docs.keys
+    end
+
     def fl_source_files
       generated_files.select do |filename|
         filename.end_with?(".cpp") &&
@@ -87,10 +98,39 @@ module FairlanesContent
       end
     end
 
+    def write_docs!(docs_dir)
+      FileUtils.mkdir_p(docs_dir)
+      generated_docs.each do |filename, contents|
+        path = File.join(docs_dir, filename)
+        next if File.exist?(path) && File.binread(path) == contents
+
+        FileUtils.mkdir_p(File.dirname(path))
+        File.binwrite(path, contents)
+      end
+    end
+
     def check!(out_dir)
       errors = []
       generated.each do |filename, expected|
         path = File.join(out_dir, filename)
+        unless File.exist?(path)
+          errors << "#{filename} is missing"
+          next
+        end
+
+        actual = File.read(path)
+        errors << "#{filename} is stale" unless actual == expected
+      end
+
+      raise StaleArtifactsError, errors unless errors.empty?
+
+      true
+    end
+
+    def check_docs!(docs_dir)
+      errors = []
+      generated_docs.each do |filename, expected|
+        path = File.join(docs_dir, filename)
         unless File.exist?(path)
           errors << "#{filename} is missing"
           next

@@ -28,6 +28,10 @@ module FairlanesContent
         puts artifacts.generated_files
       elsif options[:list_fl_sources]
         puts artifacts.fl_source_files
+      elsif options[:check_docs]
+        artifacts.check_docs!(options.fetch(:docs_dir))
+      elsif options[:docs_dir]
+        artifacts.write_docs!(options.fetch(:docs_dir))
       elsif options[:check]
         artifacts.check!(options.fetch(:out_dir))
       else
@@ -62,6 +66,12 @@ module FairlanesContent
         parser.on("--check", "Fail if generated artifacts are missing or stale") do
           options[:check] = true
         end
+        parser.on("--docs-dir DIR", "Directory for generated source docs") do |dir|
+          options[:docs_dir] = dir
+        end
+        parser.on("--check-docs", "Fail if generated source docs are missing or stale") do
+          options[:check_docs] = true
+        end
         parser.on("--list-generated", "Print generated artifact paths") do
           options[:list_generated] = true
         end
@@ -71,6 +81,12 @@ module FairlanesContent
       end.parse!(argv)
 
       return if options[:list_generated] || options[:list_fl_sources]
+      if options[:check_docs]
+        raise OptionParser::MissingArgument, "--docs-dir" unless options[:docs_dir]
+
+        return
+      end
+      return if options[:docs_dir]
 
       raise OptionParser::MissingArgument, "--out-dir" unless options[:out_dir]
     rescue OptionParser::ParseError => e
