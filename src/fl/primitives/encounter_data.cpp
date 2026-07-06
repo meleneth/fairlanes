@@ -2,9 +2,16 @@
 
 #include <fmt/format.h>
 
+#include <optional>
+#include <ranges>
+
 #include "fl/assert.hpp"
 #include "fl/context.hpp"
+#include "fl/ecs/components/combat_status.hpp"
+#include "fl/ecs/components/dire_bleed.hpp"
+#include "fl/ecs/components/freeze.hpp"
 #include "fl/ecs/components/party_member.hpp"
+#include "fl/ecs/components/poison.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/systems/combat_status_system.hpp"
 #include "fl/ecs/systems/freeze_system.hpp"
@@ -18,6 +25,38 @@
 #include "sr/atb_events.hpp"
 
 namespace fl::primitives {
+namespace {
+
+bool has_cleansable_debuff(entt::registry &reg, entt::entity target) {
+  using fl::ecs::components::CombatStatuses;
+  using fl::ecs::components::DireBleed;
+  using fl::ecs::components::Freeze;
+  using fl::ecs::components::Poison;
+
+  if (auto *statuses = reg.try_get<CombatStatuses>(target)) {
+    const auto has_removable_negative = [](const auto &effect) {
+      return effect.negative && effect.removable;
+    };
+    if (std::ranges::any_of(statuses->effects, has_removable_negative)) {
+      return true;
+    }
+  }
+
+  return reg.any_of<Poison, Freeze, DireBleed>(target);
+}
+
+std::optional<entt::entity> cleansable_member(const Team &team,
+                                              fl::context::PartyCtx &ctx) {
+  std::optional<entt::entity> selected;
+  team.for_each_alive_member(ctx, [&](entt::entity candidate) {
+    if (!selected.has_value() && has_cleansable_debuff(ctx.reg(), candidate)) {
+      selected = candidate;
+    }
+  });
+  return selected;
+}
+
+} // namespace
 
 void EncounterData::innervate_event_system() {
   ZoneScopedN("EncounterData::innervate_event_system");
@@ -75,6 +114,40 @@ entt::entity EncounterData::target_for_skill(entt::entity attacker,
     }
 
     return entt::null;
+  }
+
+  const bool is_cleanse =
+      fl::skills::has_tag(skill, fl::skills::SkillTag::Cleanse);
+  if (is_cleanse) {
+    if (topo_.attackers_.contains(attacker)) {
+      if (auto target = cleansable_member(topo_.attackers_, *party_ctx_)) {
+        return *target;
+      }
+    }
+
+    if (topo_.defenders_.contains(attacker)) {
+      if (auto target = cleansable_member(topo_.defenders_, *party_ctx_)) {
+        return *target;
+      }
+    }
+  }
+
+  const bool targets_ally =
+      fl::skills::has_tag(skill, fl::skills::SkillTag::Heal) ||
+      fl::skills::has_tag(skill, fl::skills::SkillTag::Ally) ||
+      fl::skills::has_tag(skill, fl::skills::SkillTag::AllAllies) ||
+      is_cleanse || fl::skills::has_tag(skill, fl::skills::SkillTag::Buff);
+
+  if (targets_ally) {
+    if (topo_.attackers_.contains(attacker)) {
+      return topo_.attackers_.random_alive_member(*party_ctx_)
+          .value_or(entt::null);
+    }
+
+    if (topo_.defenders_.contains(attacker)) {
+      return topo_.defenders_.random_alive_member(*party_ctx_)
+          .value_or(entt::null);
+    }
   }
 
   return target_random_alive_opposition(attacker);

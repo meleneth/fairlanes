@@ -136,7 +136,13 @@ void AtbEngine::on_beat(const Beat &) {
   }
 
   if (active_combatant_ != entt::entity{}) {
-    return;
+    if (!reg_->valid(active_combatant_) ||
+        !reg_->all_of<fl::ecs::components::AtbCharge>(active_combatant_) ||
+        !can_charge(active_combatant_)) {
+      force_out_of_turn(active_combatant_);
+    } else {
+      return;
+    }
   }
 
   // Tick all combatants that are allowed to charge.

@@ -93,6 +93,36 @@ TEST_CASE("ATB: active combatant pauses charge accrual but not scheduler work",
   REQUIRE(reg.get<fl::ecs::components::AtbCharge>(active).max_charge == 1234);
 }
 
+TEST_CASE("ATB: unchargeable active combatant does not stall scheduler-only "
+          "combat",
+          "[atb][timing][active]") {
+  entt::registry reg;
+  seerin::AtbEngine atb{reg};
+
+  auto active = reg.create();
+  auto waiting = reg.create();
+  bool active_alive = true;
+
+  atb.set_can_charge_fn([&](entt::entity entity) {
+    return entity != active || active_alive;
+  });
+
+  atb.in().emit(seerin::AtbInEvent{seerin::AddCombatant{active}});
+  atb.in().emit(seerin::AtbInEvent{seerin::AddCombatant{waiting}});
+  atb.active_combatant() = active;
+  atb.ready_queue().push_back(waiting);
+
+  atb.scheduler().schedule_smelly_in_beats(
+      2, "test: active becomes unable to charge", [&] {
+        active_alive = false;
+      });
+
+  emit_beats(atb.in(), 2);
+
+  REQUIRE(atb.active_combatant() == waiting);
+  REQUIRE(atb.ready_queue().empty());
+}
+
 TEST_CASE(
     "ATB: dead combatants reset charge and do not accumulate until alive") {
   entt::registry reg;

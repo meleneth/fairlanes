@@ -3,9 +3,11 @@
 
 #include <entt/entt.hpp>
 
+#include "fl/ecs/components/combat_status.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
+#include "fl/ecs/systems/combat_status_system.hpp"
 #include "fl/ecs/systems/visual_resolver.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/grand_central.hpp"
@@ -406,8 +408,8 @@ TEST_CASE("SkillSequencer Flame Wave staggers all alive opponents",
   REQUIRE(finished);
 }
 
-TEST_CASE("Mercyburst targets the lowest-health teammate",
-          "[encounter][skills][mercyburst]") {
+TEST_CASE("Healing skills target the lowest-health teammate",
+          "[encounter][skills][healing][targeting]") {
   fl::GrandCentral gc{1, 1, 3};
 
   auto account_ctx = gc.account_context(0);
@@ -424,9 +426,11 @@ TEST_CASE("Mercyburst targets the lowest-health teammate",
   reg.get<fl::ecs::components::Stats>(enemy_attacker).hp_ = 8;
   reg.get<fl::ecs::components::Stats>(wounded_enemy).hp_ = 2;
 
-  REQUIRE(encounter.target_for_skill(enemy_attacker,
-                                     fl::skills::SkillId::Mercyburst) ==
-          wounded_enemy);
+  for (const auto skill :
+       {fl::skills::SkillId::Mercyburst, fl::skills::SkillId::Mercywave}) {
+    CAPTURE(fl::skills::display_name(skill));
+    REQUIRE(encounter.target_for_skill(enemy_attacker, skill) == wounded_enemy);
+  }
 
   const auto defenders = encounter.defenders().members();
   REQUIRE(defenders.size() >= 2);
@@ -435,9 +439,49 @@ TEST_CASE("Mercyburst targets the lowest-health teammate",
   reg.get<fl::ecs::components::Stats>(defender_attacker).hp_ = 7;
   reg.get<fl::ecs::components::Stats>(wounded_defender).hp_ = 1;
 
-  REQUIRE(encounter.target_for_skill(defender_attacker,
-                                     fl::skills::SkillId::Mercyburst) ==
-          wounded_defender);
+  for (const auto skill :
+       {fl::skills::SkillId::Mercyburst, fl::skills::SkillId::Mercywave}) {
+    CAPTURE(fl::skills::display_name(skill));
+    REQUIRE(encounter.target_for_skill(defender_attacker, skill) ==
+            wounded_defender);
+  }
+}
+
+TEST_CASE("Cleanse skills target a friendly combatant with a removable debuff",
+          "[encounter][skills][cleanse][targeting]") {
+  fl::GrandCentral gc{1, 1, 3};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  auto &encounter = builder.thump_it_out();
+
+  auto &reg = party_ctx.reg();
+  const auto defenders = encounter.defenders().members();
+  REQUIRE(defenders.size() >= 3);
+  const entt::entity cleaner = defenders[0];
+  const entt::entity wounded_friend = defenders[1];
+  const entt::entity debuffed_friend = defenders[2];
+
+  reg.get<fl::ecs::components::Stats>(wounded_friend).hp_ = 1;
+  reg.get<fl::ecs::components::Stats>(debuffed_friend).hp_ =
+      reg.get<fl::ecs::components::Stats>(debuffed_friend).max_hp_;
+
+  REQUIRE(fl::ecs::systems::CombatStatusSystem::apply_status(
+      party_ctx, encounter.atb_engine().scheduler(),
+      fl::ecs::systems::CombatStatusSystem::ApplyStatusRequest{
+          .kind = fl::ecs::components::CombatStatusKind::Blind,
+          .name = "Test Blind",
+          .source = cleaner,
+          .target = debuffed_friend,
+          .value = 20,
+          .turns = 2,
+          .negative = true,
+          .removable = true}));
+
+  REQUIRE(encounter.target_for_skill(cleaner, fl::skills::SkillId::Clearbell) ==
+          debuffed_friend);
 }
 
 TEST_CASE("SkillSequencer Mercyburst heals and clamps at max HP",

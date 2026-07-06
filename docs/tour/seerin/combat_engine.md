@@ -1,65 +1,150 @@
-# Seerin
+# Seerin Combat Engine
 
-[Seerin](https://github.com/meleneth/fairlanes/blob/89571fb5f3e6396d5e191a557602c2b25c79a31c/tests/seerin/test_atb_full_loop.cpp#L47) is the abstraction for the **ATB (Active Time Battle) system** in Fairlanes.
+Back to [Tour Home](../index.md)
 
-## What it is
+Seerin is Fairlanes' ATB engine: it owns combat timing, readiness,
+active-turn selection, freeze/thaw handling, and scheduled combat work.
 
-Seerin is the system responsible for:
+The short version:
 
-- time progression
-- turn readiness
-- action scheduling
-- driving combat flow
+```text
+seerin::Beat -> BeatTick -> BecameReady -> BecameActive -> FinishedTurn
+```
 
-It is the thing that answers:
+Only one combatant may be active at a time.
 
-> “who gets to act next, and when?”
+## Where To Look
 
-Only one combatatant can be 'active' at a time, and when they signal they are finished with a ```seerin::FinishedTurn{entity_id}``` the next ready combatant (if there is one) will become active
+- `src/sr/atb_events.hpp`: public ATB input/output events and internal
+  `BeatTick`.
+- `src/sr/atb_engine.cpp`: event wiring, scheduler advancement, ready queue,
+  active combatant handling.
+- `src/sr/atb_fsm.hpp`: per-combatant charge/ready/frozen state machine.
+- `tests/seerin/test_atb_full_loop.cpp`: current behavioral invariants.
 
-## Where to look
-- `entt::entity{}` is **not a real entity**. It’s the null sentinel (`entt::null`).
+`entt::entity{}` is the null sentinel (`entt::null`), not a real combatant.
 
-  If you see it in the test, read it as “no entity,” not “mystery entity.”
-- [Full loop example](https://github.com/meleneth/fairlanes/blob/89571fb5f3e6396d5e191a557602c2b25c79a31c/tests/seerin/test_atb_full_loop.cpp#L47)
+## Event Vocabulary
 
-This test is the best entry point. It shows the system actually running instead of describing it abstractly.
+ATB input events:
 
-## What to notice
+| Event | Meaning |
+|-------|---------|
+| `Beat` | Advance scheduler time and, if no combatant is active, advance combatant charge. |
+| `AddCombatant` | Register an entity for ATB and add/replace its `AtbCharge` component. |
+| `FinishedTurn` | The active combatant spent its turn; clear active state and reset its charge. |
+| `Frozen` | Remove the entity from ready/active state and move its ATB machine to frozen. |
+| `Thawed` | Move the entity out of frozen; if it is already full, emit ready again. |
 
-- Seerin is exercised through a **full loop test**, not piecemeal unit calls
-- Time and readiness are treated as **data flowing through the system**, not hidden state
-- Combat progression is **driven**, not polled ad hoc
-- The system integrates with event flow instead of directly mutating everything
+ATB output events:
 
-## Why it’s called Seerin
+| Event | Meaning |
+|-------|---------|
+| `BecameReady` | A combatant's charge reached full. |
+| `BecameActive` | The engine selected a ready combatant to act now. |
 
-Because naming things “ATBSystem” is how you end up with five of them and no idea which one matters.
+Internal FSM event:
 
-Seerin is a single, specific abstraction with a clear responsibility.
+| Event | Meaning |
+|-------|---------|
+| `BeatTick` | Sent by `AtbEngine` into each combatant's `AtbMachine` when charge is allowed to advance. |
 
-## Why it matters here
+## Beat Order
 
-Combat is one of the most complex flows in the codebase.
+When `AtbEngine` receives `seerin::Beat`, the order is:
 
-Seerin centralizes:
-- timing
-- ordering
-- readiness
+1. Run `scheduler_.on_beat()`.
+2. If there is an active combatant, stop. Scheduled work still advanced, but no
+   combatant accrues charge this beat.
+3. For each registered combatant:
+   - remove it if the entity/`AtbCharge` is gone
+   - reset and force it out of turn if `can_charge(entity)` is false
+   - otherwise send `BeatTick` to that combatant's `AtbMachine`
+4. `BeatTick` increments charge by `80` uWu.
+5. If the charge reaches `max_charge`, the combatant emits `BecameReady` and
+   enters `Ready`.
+6. `AtbEngine` hears `BecameReady`, removes any duplicate ready entry, and
+   pushes the entity onto `ready_queue_`.
+7. After all combatants tick, `pump_ready_queue()` selects the first
+   charge-allowed ready entity, sets it active, and emits `BecameActive`.
 
-Without it, those concerns would leak across:
-- entities
-- systems
-- event handlers
+The observable order for a newly full combatant is therefore:
 
-…and you’d get inconsistent behavior almost immediately.
+```text
+Beat -> BeatTick -> BecameReady -> BecameActive
+```
 
-## Fairlanes take
+## Turn Completion Order
 
-Combat flow should be owned by a **single coherent abstraction**, not smeared across the codebase.
+Skill code or `EncounterData` emits `FinishedTurn{id}` when the active entity is
+done.
 
-## Implication for contributors
+`AtbEngine::on_finished_turn(...)` only applies the turn reset if `id` is
+currently active:
 
-If you are adding or modifying combat timing or turn logic:
+1. clear `active_combatant_`
+2. send `FinishedTurn` into that entity's `AtbMachine`
+3. reset its `AtbCharge::charge` to `0`
+4. return it to `Charging`
 
-> you are probably working in Seerin, whether you realize it or not
+The next ready combatant is not activated by `FinishedTurn` itself. Activation
+happens on the next `Beat`, after scheduled work and charge processing.
+
+## Freeze And Thaw Order
+
+`Frozen{id}`:
+
+1. removes `id` from the ready queue
+2. clears active state if `id` was active
+3. sends `Frozen` to that combatant's `AtbMachine`
+4. frozen combatants ignore `BeatTick`
+
+`Thawed{id}`:
+
+1. sends `Thawed` to that combatant's `AtbMachine`
+2. if the combatant's charge is already full, the machine emits `BecameReady`
+3. `AtbEngine` enqueues the entity again
+
+This matters for Cold Snap/Freeze: a ready frozen combatant leaves the queue,
+but if it thaws while still full it re-enters the queue.
+
+## Current Invariants
+
+These are protected by tests and should be treated as design constraints:
+
+- Only one combatant can be active at a time.
+- Scheduler work advances on every beat, even while a combatant is active.
+- No combatant accrues ATB charge while any combatant is active.
+- `BecameReady` is observed before `BecameActive` for the same readiness cycle.
+- `FinishedTurn` resets the active combatant's charge to `0` and clears active
+  state.
+- Dead or otherwise non-chargeable combatants reset charge and do not accumulate
+  until `can_charge(...)` permits it again.
+- Frozen combatants do not accrue charge.
+- Freezing a ready combatant removes it from the ready queue.
+- Thawing a full combatant emits `BecameReady` again.
+- `clear_active_turn_for(owner)` removes scheduled callbacks owned by that
+  active turn without clearing unrelated effect-owned callbacks.
+
+## How EncounterData Uses It
+
+`EncounterData` listens for `BecameActive`. When ATB selects an active
+combatant, `EncounterData` chooses a target and skill, then uses
+`SkillSequencer` to schedule the action. The skill sequence eventually emits
+`FinishedTurn` for that combatant.
+
+Freeze status events are bridged in `EncounterData` too: `FreezeStarted`
+becomes ATB `Frozen`, and `FreezeEnded` becomes ATB `Thawed`.
+
+## Contributor Guidance
+
+If a change touches turn readiness, active-combatant ownership, freeze/thaw
+behavior, or time progression, it belongs in or near Seerin.
+
+When adding tests, prefer event-order claims over implementation trivia:
+
+```text
+given this charge/state
+when this ATB event arrives
+then these output events and charge/active states result
+```
