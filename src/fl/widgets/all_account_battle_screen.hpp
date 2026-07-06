@@ -38,15 +38,20 @@ private:
                                   fl::primitives::PartyData &party,
                                   int width, bool selected) const;
   ftxui::Element render_party_overview(int width, int height);
+  ftxui::Element render_selected_party_log(int width, int height);
   ftxui::Element render_selected_party_detail(int width, int height);
+  ftxui::Element render_battle_summary(fl::primitives::PartyData &party,
+                                       int width) const;
   ftxui::Element render_selected_party_battle(
       fl::primitives::PartyData &party, int width, int height) const;
   ftxui::Element render_combatant_row(std::span<const entt::entity> entities,
                                       int width, int height) const;
   ftxui::Element render_roster(std::span<const entt::entity> entities,
-                               int width) const;
+                               int width, bool show_levels = false) const;
   ftxui::Element render_member_roster(
       const std::deque<fl::primitives::MemberData> &members, int width) const;
+  std::string entity_level_chip(entt::entity entity,
+                                std::size_t max_name_width) const;
   std::string entity_chip(entt::entity entity,
                           std::size_t max_name_width) const;
 

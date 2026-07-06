@@ -10,6 +10,7 @@
 #include <ftxui/screen/screen.hpp>
 
 #include "fl/grand_central.hpp"
+#include "fl/primitives/encounter_builder.hpp"
 #include "fl/widgets/all_account_battle_screen.hpp"
 #include "fl/widgets/battle_render_budget.hpp"
 #include "fl/widgets/chaos_attract_root.hpp"
@@ -133,11 +134,15 @@ TEST_CASE("Chaos Attract renders the begin prompt",
   REQUIRE(rendered.find("Selected battle") != std::string::npos);
   REQUIRE(rendered.find("log") != std::string::npos);
   REQUIRE(rendered.find("HP: [") != std::string::npos);
+  REQUIRE(rendered.find("log") < rendered.find("Selected battle"));
 }
 
-TEST_CASE("Chaos Attract overview spends wide rows on player names",
+TEST_CASE("Chaos Attract selected battle summarizes rosters",
           "[widgets][root][presentation]") {
   fl::GrandCentral attract_gc{8, 5, 5};
+  auto party_ctx = attract_gc.account_context(0).party_context(0);
+  fl::primitives::EncounterBuilder{party_ctx}.thump_it_out();
+
   fl::widgets::ChaosAttractRoot root{make_all_account_surface(attract_gc)};
 
   fl::widgets::force_battle_render_target(fl::widgets::BattleLayoutProfile::Wide);
@@ -145,8 +150,11 @@ TEST_CASE("Chaos Attract overview spends wide rows on player names",
       render_to_string(root, attract_gc.world_clock(), 180, 50);
   fl::widgets::clear_forced_battle_render_target();
 
-  REQUIRE(rendered.find("Alderion(10)") != std::string::npos);
-  REQUIRE(rendered.find("Bramblethorn(10)") != std::string::npos);
+  REQUIRE(rendered.find("Party: A1 P1") != std::string::npos);
+  REQUIRE(rendered.find("Alderion(L1)") != std::string::npos);
+  REQUIRE(rendered.find("Bramblethorn(L1)") != std::string::npos);
+  REQUIRE(rendered.find("Enemies") != std::string::npos);
+  REQUIRE(rendered.find("No encounter") == std::string::npos);
 }
 
 TEST_CASE("Chaos Attract prompt color changes across frames",
