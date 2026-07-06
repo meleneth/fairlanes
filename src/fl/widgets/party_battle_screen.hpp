@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 #include <entt/entity/fwd.hpp>
@@ -16,6 +17,8 @@ struct EncounterData;
 
 namespace fl::widgets {
 using fl::context::AccountCtx;
+
+class FarmingChoiceView;
 
 class PartyBattleScreen : public ftxui::ComponentBase {
 public:
@@ -43,6 +46,8 @@ private:
   AccountCtx ctx_;
   std::size_t party_index_{0};
   int focused_log_{0};
+  std::shared_ptr<FarmingChoiceView> farming_choice_;
+  std::size_t farming_choice_party_index_{static_cast<std::size_t>(-1)};
   const fl::primitives::EncounterData *last_encounter_{nullptr};
   std::size_t next_background_index_{0};
   std::size_t stage_background_index_{0};

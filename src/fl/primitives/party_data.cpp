@@ -161,6 +161,28 @@ void PartyData::resolve_pending_learned_skill(
   }
 }
 
+void PartyData::select_grimoire_discipline(GrimoireDiscipline discipline) {
+  grimoire_discipline_ = discipline;
+  if (!farm_focus_selected_) {
+    farming_plan_ = make_farming_plan(grimoire_discipline_, FarmFocus::Brawn);
+  }
+  log_->append_markup(
+      fmt::format("Starting grimoire discipline set: [ability]({}).",
+                  display_name(grimoire_discipline_)));
+}
+
+void PartyData::select_farming_plan(GrimoireDiscipline discipline,
+                                    FarmFocus focus) {
+  grimoire_discipline_ = discipline;
+  farming_plan_ = make_farming_plan(discipline, focus);
+  farm_focus_selected_ = true;
+  log_->append_markup(fmt::format(
+      "Farming focus set: [ability]({}) discipline, [ability]({}) focus; "
+      "reward path is [xp]({}).",
+      display_name(farming_plan_.discipline), display_name(farming_plan_.focus),
+      display_name(farming_plan_.reward_class)));
+}
+
 void PartyData::tick_town_penalty() {
   if (town_penalty_beats_remaining_ > 0) {
     --town_penalty_beats_remaining_;

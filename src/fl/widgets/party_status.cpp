@@ -2,6 +2,7 @@
 
 #include "fl/ecs/components/stats.hpp"
 #include "fl/lospec500.hpp"
+#include "fl/primitives/farming_plan.hpp"
 
 namespace fl::widgets {
 
@@ -55,6 +56,15 @@ ftxui::Element PartyStatus::Render() {
     status_text = "IDLE";
     status_color = fl::lospec500::color_at(20); // Bright green
     detail_text = "";
+  }
+
+  if (party_data_.needs_farm_focus_choice()) {
+    detail_text = "Farm: choose focus";
+  } else if (detail_text.empty()) {
+    const auto &plan = party_data_.farming_plan();
+    detail_text =
+        "Farm: " + std::string{fl::primitives::display_name(plan.focus)} +
+        " / " + std::string{fl::primitives::display_name(plan.reward_class)};
   }
 
   // Build the display element with outline matching Combatant widget

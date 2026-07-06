@@ -440,6 +440,8 @@ TEST_CASE("Applied Slow affects ATB readiness timing",
 
   REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), actor,
                                          CombatStatusKind::Slow));
+  REQUIRE(CombatStatusSystem::turn_tempo_modifier_percent(h.party_ctx.reg(),
+                                                          actor) == -25);
   REQUIRE(beats_until_active(h.party_ctx, actor) == 80);
 }
 

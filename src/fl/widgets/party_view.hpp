@@ -11,6 +11,7 @@
 
 namespace fl::widgets {
 
+class FarmingChoiceView;
 class InventoryList;
 class PlayerDetailsPane;
 struct BattleRenderBudget;
@@ -32,6 +33,7 @@ private:
 
   fl::context::AccountCtx ctx_;
   std::size_t party_index_{0};
+  std::shared_ptr<FarmingChoiceView> farming_choice_;
   std::shared_ptr<InventoryList> inventory_list_;
   std::shared_ptr<PlayerDetailsPane> player_details_;
   FocusPane focus_{FocusPane::inventory};

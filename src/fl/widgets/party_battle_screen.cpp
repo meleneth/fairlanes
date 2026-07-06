@@ -16,6 +16,7 @@
 #include "fl/primitives/party_data.hpp"
 #include "fl/widgets/battle_render_budget.hpp"
 #include "fl/widgets/combatant.hpp"
+#include "fl/widgets/farming_choice_view.hpp"
 #include "fl/widgets/party_status.hpp"
 #include "fl/widgets/textures/bog_background.hpp"
 #include "fl/widgets/textures/forest_background.hpp"
@@ -159,11 +160,27 @@ bool PartyBattleScreen::OnEvent(ftxui::Event event) {
     return true;
   }
 
+  auto &parties = account.parties();
+  if (!parties.empty()) {
+    const auto selected = std::min(party_index_, parties.size() - 1);
+    auto &party = parties[selected];
+    if (party.needs_farm_focus_choice()) {
+      if (!farming_choice_ || farming_choice_party_index_ != selected) {
+        farming_choice_ =
+            ftxui::Make<FarmingChoiceView>(party, party.grimoire_discipline());
+        farming_choice_party_index_ = selected;
+        Add(farming_choice_);
+      }
+      if (farming_choice_->OnEvent(event)) {
+        return true;
+      }
+    }
+  }
+
   if (focused_log_ == 0) {
     return account.log().OnEvent(event);
   }
 
-  auto &parties = account.parties();
   if (parties.empty()) {
     return false;
   }
@@ -214,8 +231,19 @@ ftxui::Element PartyBattleScreen::Render() {
   std::string party_name = "Party";
   if (primary_party != nullptr) {
     party_name = std::string(primary_party->name());
-    if (show_status) {
-      status = PartyStatus{*primary_party}.Render();
+    if (primary_party->needs_farm_focus_choice()) {
+      const auto selected = std::min(party_index_, parties.size() - 1);
+      if (!farming_choice_ || farming_choice_party_index_ != selected) {
+        farming_choice_ = ftxui::Make<FarmingChoiceView>(
+            *primary_party, primary_party->grimoire_discipline());
+        farming_choice_party_index_ = selected;
+        Add(farming_choice_);
+      }
+      status = farming_choice_->Render();
+    } else if (show_status) {
+      status = vbox(
+          {PartyStatus{*primary_party}.Render(),
+           render_farming_plan_summary(primary_party->farming_plan(), 80)});
     }
   }
 

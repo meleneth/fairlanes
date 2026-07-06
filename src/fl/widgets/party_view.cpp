@@ -19,6 +19,7 @@
 #include "fl/primitives/party_data.hpp"
 #include "fl/widgets/battle_render_budget.hpp"
 #include "fl/widgets/combatant.hpp"
+#include "fl/widgets/farming_choice_view.hpp"
 #include "fl/widgets/inventory_list.hpp"
 #include "fl/widgets/party_status.hpp"
 #include "fl/widgets/player_details_pane.hpp"
@@ -143,8 +144,11 @@ PartyView::PartyView(fl::context::AccountCtx context, std::size_t party_index)
   }
 
   auto &party = ctx_.account_data().party(party_index_);
+  farming_choice_ =
+      ftxui::Make<FarmingChoiceView>(party, party.grimoire_discipline());
   inventory_list_ = ftxui::Make<InventoryList>(ctx_.reg(), party);
   player_details_ = ftxui::Make<PlayerDetailsPane>(ctx_.reg(), party);
+  Add(farming_choice_);
   Add(inventory_list_);
   Add(player_details_);
   set_focus(FocusPane::inventory);
@@ -154,6 +158,11 @@ bool PartyView::OnEvent(ftxui::Event event) {
   auto &parties = ctx_.account_data().parties();
   if (party_index_ >= parties.size()) {
     return false;
+  }
+
+  if (parties[party_index_].needs_farm_focus_choice() && farming_choice_ &&
+      farming_choice_->OnEvent(event)) {
+    return true;
   }
 
   if (event == ftxui::Event::Tab) {
@@ -322,7 +331,11 @@ ftxui::Element PartyView::render_party(const PartyViewLayout &layout,
       bold | size(WIDTH, EQUAL, layout.battle_width) |
       size(HEIGHT, EQUAL, layout.title_height));
 
-  if (party.has_encounter()) {
+  if (party.needs_farm_focus_choice() && farming_choice_) {
+    rows.push_back(farming_choice_->Render() |
+                   size(WIDTH, EQUAL, layout.battle_width) |
+                   size(HEIGHT, EQUAL, layout.combatant_row_height * 2));
+  } else if (party.has_encounter()) {
     auto &encounter = party.encounter_data();
     rows.push_back(
         render_entity_row(encounter.attackers().members(), 0xA77A0011u));
@@ -330,7 +343,10 @@ ftxui::Element PartyView::render_party(const PartyViewLayout &layout,
         render_entity_row(encounter.defenders().members(), 0xDEFED123u));
   } else {
     rows.push_back(textured_stage_panel(
-        PartyStatus{party}.Render() | size(WIDTH, EQUAL, layout.battle_width) |
+        vbox({PartyStatus{party}.Render(),
+              render_farming_plan_summary(party.farming_plan(),
+                                          layout.battle_width)}) |
+            size(WIDTH, EQUAL, layout.battle_width) |
             size(HEIGHT, EQUAL, layout.combatant_row_height),
         layout.battle_width, layout.combatant_row_height,
         texture_seed_for_party(party.name(), party_index_, 0x57A70500u),

@@ -18,6 +18,7 @@
 #include "fl/fsm/party_loop_machine.hpp"
 #include "fl/fwd.hpp"
 #include "fl/primitives/encounter_data.hpp"
+#include "fl/primitives/farming_plan.hpp"
 #include "fl/primitives/world_clock.hpp"
 #include "fl/skills/skill.hpp"
 #include "fl/widgets/fancy_log.hpp"
@@ -90,6 +91,17 @@ public:
   void watch_skill_learned_this_combat(entt::entity member,
                                        fl::skills::SkillKey skill);
 
+  GrimoireDiscipline grimoire_discipline() const noexcept {
+    return grimoire_discipline_;
+  }
+  void select_grimoire_discipline(GrimoireDiscipline discipline);
+  const FarmingPlan &farming_plan() const noexcept { return farming_plan_; }
+  bool farm_focus_selected() const noexcept { return farm_focus_selected_; }
+  bool needs_farm_focus_choice() const noexcept {
+    return !farm_focus_selected_;
+  }
+  void select_farming_plan(GrimoireDiscipline discipline, FarmFocus focus);
+
   bool town_penalty_active() const noexcept {
     return town_penalty_beats_remaining_ > 0;
   }
@@ -124,6 +136,10 @@ private:
   std::deque<fl::primitives::MemberData> members_;
   seerin::AtbEngine atb_;
   std::vector<entt::entity> inventory_;
+  GrimoireDiscipline grimoire_discipline_{GrimoireDiscipline::Brawn};
+  FarmingPlan farming_plan_{
+      make_farming_plan(GrimoireDiscipline::Brawn, FarmFocus::Brawn)};
+  bool farm_focus_selected_{false};
 
   seerin::BeatBus party_beat_bus_{};
   seerin::BeatSub gc_forward_sub_{};

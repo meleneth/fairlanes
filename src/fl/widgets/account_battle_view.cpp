@@ -15,6 +15,7 @@
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/team.hpp"
 #include "fl/widgets/combatant.hpp"
+#include "fl/widgets/farming_choice_view.hpp"
 #include "fl/widgets/party_status.hpp"
 
 namespace fl::widgets {
@@ -32,6 +33,7 @@ bool AccountBattleView::OnEvent(ftxui::Event event) {
   auto &account = check_is_account->account_data();
   const int log_count = static_cast<int>(account.parties().size()) + 1;
   focused_log_ = std::clamp(focused_log_, 0, std::max(0, log_count - 1));
+  const auto visible_party_count = account.parties().size();
 
   if (event == ftxui::Event::Tab) {
     focused_log_ = (focused_log_ + 1) % log_count;
@@ -41,6 +43,36 @@ bool AccountBattleView::OnEvent(ftxui::Event event) {
   if (event == ftxui::Event::TabReverse) {
     focused_log_ = (focused_log_ + log_count - 1) % log_count;
     return true;
+  }
+
+  auto farm_choice_index = [&]() -> std::size_t {
+    if (focused_log_ > 0) {
+      const auto focused_party = static_cast<std::size_t>(focused_log_ - 1);
+      if (focused_party < visible_party_count &&
+          account.parties()[focused_party].needs_farm_focus_choice()) {
+        return focused_party;
+      }
+    }
+
+    for (std::size_t i = 0; i < visible_party_count; ++i) {
+      if (account.parties()[i].needs_farm_focus_choice()) {
+        return i;
+      }
+    }
+    return static_cast<std::size_t>(-1);
+  }();
+
+  if (farm_choice_index != static_cast<std::size_t>(-1)) {
+    auto &party = account.parties()[farm_choice_index];
+    if (!farming_choice_ || farming_choice_party_index_ != farm_choice_index) {
+      farming_choice_ =
+          ftxui::Make<FarmingChoiceView>(party, party.grimoire_discipline());
+      farming_choice_party_index_ = farm_choice_index;
+      Add(farming_choice_);
+    }
+    if (farming_choice_->OnEvent(event)) {
+      return true;
+    }
   }
 
   if (focused_log_ == 0) {

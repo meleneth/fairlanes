@@ -4,6 +4,8 @@
 #include <type_traits>
 #include <vector>
 
+#include <fmt/format.h>
+
 #include "fl/context.hpp"
 #include "fl/ecs/components/encounter.hpp"
 #include "fl/generated/monster_content.hpp"
@@ -11,6 +13,7 @@
 #include "fl/monsters/monster_registry.hpp"
 #include "fl/primitives/encounter_data.hpp"
 #include "fl/primitives/entity_builder.hpp"
+#include "fl/primitives/farming_plan.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/team.hpp"
 #include "sr/atb_events.hpp"
@@ -46,6 +49,12 @@ EncounterBuilder::rare_woodland() noexcept {
 }
 
 EncounterData &EncounterBuilder::thump_it_out() {
+  const auto &plan = ctx_.party_data().farming_plan();
+  ctx_.log().append_markup(fmt::format(
+      "Farming [ability]({}) as [ability]({}); progression path: [xp]({}).",
+      display_name(plan.focus), display_name(plan.discipline),
+      display_name(plan.reward_class)));
+
   auto &encounter_data = ctx_.party_data().create_encounter();
 
   for (int i = 0; i < kEnemyPartySize; ++i) {

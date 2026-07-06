@@ -24,9 +24,16 @@ void PartyLoop::Ops::enter_idle(fl::context::PartyCtx &ctx) {
 
 void PartyLoop::Ops::enter_farming(fl::context::PartyCtx &ctx) {
   ZoneScopedN("PartyLoop::enter_farming");
-  (void)ctx;
   // Also set the label for the party tied to this FSM (nice for local UI)
   // ctx.log().append_markup("[cyan](PartyLoop) Entering farming state.");
+
+  if (ctx.party_data().needs_farm_focus_choice()) {
+    ctx.log().append_markup(
+        "Choose where this party is farming: [ability](Brawn), "
+        "[ability](Cunning), [ability](Wisdom), [xp](Wealth & Materials), or "
+        "[level](Gear).");
+    return;
+  }
 
   fl::primitives::EncounterBuilder{ctx}.thump_it_out();
 };
