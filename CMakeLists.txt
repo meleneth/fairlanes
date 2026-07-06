@@ -9,6 +9,8 @@ option(FL_ENABLE_ASSERTS "Enable runtime asserts" ON)
 option(ENABLE_COVERAGE "Build with coverage instrumentation" OFF)
 set(FAIRLANES_CONTENT_PREGENERATED_DIR "" CACHE PATH
     "Use an existing generated Fairlanes content tree instead of running Ruby code generation")
+set(FAIRLANES_RUBY_CONTAINER_IMAGE "ruby:4.0-alpine" CACHE STRING
+    "Container image used for Fairlanes Ruby content generation when native Ruby is unavailable")
 
 if(EMSCRIPTEN)
   set(FL_BUILD_TESTS OFF CACHE BOOL "Build tests" FORCE)
@@ -328,7 +330,54 @@ endif()
 
 find_program(GCOVR_EXECUTABLE gcovr)
 
-find_program(RUBY_EXECUTABLE ruby)
+set(FAIRLANES_HOST_TOOL_PATHS
+  "$ENV{HOME}/.rbenv/shims"
+  "$ENV{HOME}/.asdf/shims"
+  "$ENV{HOME}/.local/bin"
+  /usr/bin
+  /usr/local/bin
+  /opt/homebrew/bin
+  /snap/bin)
+
+find_program(RUBY_EXECUTABLE ruby
+  HINTS ENV PATH
+  PATHS ${FAIRLANES_HOST_TOOL_PATHS}
+  NO_CMAKE_FIND_ROOT_PATH)
+find_program(DOCKER_EXECUTABLE docker
+  HINTS ENV PATH
+  PATHS ${FAIRLANES_HOST_TOOL_PATHS}
+  NO_CMAKE_FIND_ROOT_PATH)
+find_program(PODMAN_EXECUTABLE podman
+  HINTS ENV PATH
+  PATHS ${FAIRLANES_HOST_TOOL_PATHS}
+  NO_CMAKE_FIND_ROOT_PATH)
+
+set(FAIRLANES_RUBY_COMMAND)
+set(FAIRLANES_RUBY_RUNNER_DESCRIPTION)
+if(RUBY_EXECUTABLE)
+  set(FAIRLANES_RUBY_COMMAND "${RUBY_EXECUTABLE}")
+  set(FAIRLANES_RUBY_RUNNER_DESCRIPTION "${RUBY_EXECUTABLE}")
+elseif(DOCKER_EXECUTABLE OR PODMAN_EXECUTABLE)
+  if(DOCKER_EXECUTABLE)
+    set(FAIRLANES_CONTAINER_EXECUTABLE "${DOCKER_EXECUTABLE}")
+  else()
+    set(FAIRLANES_CONTAINER_EXECUTABLE "${PODMAN_EXECUTABLE}")
+  endif()
+
+  set(FAIRLANES_RUBY_COMMAND
+    "${FAIRLANES_CONTAINER_EXECUTABLE}" run --rm
+    -v "${CMAKE_SOURCE_DIR}:${CMAKE_SOURCE_DIR}"
+    -v "${CMAKE_BINARY_DIR}:${CMAKE_BINARY_DIR}"
+    -w "${CMAKE_SOURCE_DIR}"
+    "${FAIRLANES_RUBY_CONTAINER_IMAGE}"
+    ruby)
+  set(FAIRLANES_RUBY_RUNNER_DESCRIPTION
+    "${FAIRLANES_CONTAINER_EXECUTABLE} run ${FAIRLANES_RUBY_CONTAINER_IMAGE}")
+endif()
+
+if(FAIRLANES_RUBY_COMMAND)
+  message(STATUS "Fairlanes Ruby content runner: ${FAIRLANES_RUBY_RUNNER_DESCRIPTION}")
+endif()
 
 file(GLOB_RECURSE FAIRLANES_CONTENT_RUBY_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_SOURCE_DIR}/ruby/fairlanes_content/lib/*.rb"
@@ -390,9 +439,9 @@ if(FAIRLANES_CONTENT_PREGENERATED_DIR)
       ${FAIRLANES_CONTENT_GENERATED_FILES}
   )
 
-  if(RUBY_EXECUTABLE)
+  if(FAIRLANES_RUBY_COMMAND)
     add_custom_target(fairlanes_content_docs
-      COMMAND "${RUBY_EXECUTABLE}"
+      COMMAND ${FAIRLANES_RUBY_COMMAND}
               "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
               --docs-dir "${FAIRLANES_CONTENT_DOCS_DIR}"
       DEPENDS
@@ -403,7 +452,7 @@ if(FAIRLANES_CONTENT_PREGENERATED_DIR)
       VERBATIM
     )
     add_custom_target(fairlanes_content_docs_check
-      COMMAND "${RUBY_EXECUTABLE}"
+      COMMAND ${FAIRLANES_RUBY_COMMAND}
               "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
               --docs-dir "${FAIRLANES_CONTENT_DOCS_DIR}"
               --check-docs
@@ -417,22 +466,23 @@ if(FAIRLANES_CONTENT_PREGENERATED_DIR)
   else()
     add_custom_target(fairlanes_content_docs
       COMMAND "${CMAKE_COMMAND}" -E echo
-              "ruby not found; fairlanes_content_docs requires Ruby"
+              "ruby not found and no Docker/Podman runtime found; fairlanes_content_docs requires a Ruby runner"
       COMMAND "${CMAKE_COMMAND}" -E false
     )
     add_custom_target(fairlanes_content_docs_check
       COMMAND "${CMAKE_COMMAND}" -E echo
-              "ruby not found; fairlanes_content_docs_check requires Ruby"
+              "ruby not found and no Docker/Podman runtime found; fairlanes_content_docs_check requires a Ruby runner"
       COMMAND "${CMAKE_COMMAND}" -E false
     )
   endif()
 else()
-  if(NOT RUBY_EXECUTABLE)
-    message(FATAL_ERROR "ruby not found; required for Fairlanes content generation")
+  if(NOT FAIRLANES_RUBY_COMMAND)
+    message(FATAL_ERROR
+      "ruby not found and no Docker/Podman runtime found; required for Fairlanes content generation")
   endif()
 
   execute_process(
-    COMMAND "${RUBY_EXECUTABLE}"
+    COMMAND ${FAIRLANES_RUBY_COMMAND}
             "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
             --list-generated
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
@@ -447,7 +497,7 @@ else()
   endif()
 
   execute_process(
-    COMMAND "${RUBY_EXECUTABLE}"
+    COMMAND ${FAIRLANES_RUBY_COMMAND}
             "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
             --list-fl-sources
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
@@ -481,7 +531,7 @@ else()
     OUTPUT
       ${FAIRLANES_CONTENT_GENERATED_FILES}
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${FAIRLANES_CONTENT_GENERATED_DIR}"
-    COMMAND "${RUBY_EXECUTABLE}"
+    COMMAND ${FAIRLANES_RUBY_COMMAND}
             "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
             --out-dir "${FAIRLANES_CONTENT_GENERATED_DIR}"
     DEPENDS
@@ -498,7 +548,7 @@ else()
   )
 
   add_custom_target(fairlanes_content_docs
-    COMMAND "${RUBY_EXECUTABLE}"
+    COMMAND ${FAIRLANES_RUBY_COMMAND}
             "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
             --docs-dir "${FAIRLANES_CONTENT_DOCS_DIR}"
     DEPENDS
@@ -510,7 +560,7 @@ else()
   )
 
   add_custom_target(fairlanes_content_docs_check
-    COMMAND "${RUBY_EXECUTABLE}"
+    COMMAND ${FAIRLANES_RUBY_COMMAND}
             "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
             --docs-dir "${FAIRLANES_CONTENT_DOCS_DIR}"
             --check-docs

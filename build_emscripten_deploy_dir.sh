@@ -4,6 +4,7 @@ set -euo pipefail
 BUILD_DIR="${BUILD_DIR:-build-wasm}"
 DIST_DIR="${DIST_DIR:-dist/fairlanes}"
 CONTENT_GENERATED_DIR="${CONTENT_GENERATED_DIR:-}"
+HOST_GENERATED_CONTENT_DIR="${HOST_GENERATED_CONTENT_DIR:-$BUILD_DIR/host_generated/fairlanes_content}"
 
 if [[ -z "$CONTENT_GENERATED_DIR" ]]; then
   for candidate in \
@@ -21,6 +22,18 @@ if [[ -n "$CONTENT_GENERATED_DIR" && ! -d "$CONTENT_GENERATED_DIR/fl/generated" 
   echo "CONTENT_GENERATED_DIR must point at a generated Fairlanes content tree." >&2
   echo "Got: $CONTENT_GENERATED_DIR" >&2
   exit 1
+fi
+
+if [[ -z "$CONTENT_GENERATED_DIR" ]]; then
+  if ! command -v ruby >/dev/null 2>&1; then
+    echo "No generated Fairlanes content tree found and ruby is not available on the host PATH." >&2
+    echo "Set CONTENT_GENERATED_DIR to an existing generated content tree or install ruby." >&2
+    exit 1
+  fi
+
+  CONTENT_GENERATED_DIR="$HOST_GENERATED_CONTENT_DIR"
+  echo "Generating Fairlanes content with host ruby: $(command -v ruby)"
+  ruby scripts/fairlanes_content_codegen.rb --out-dir "$CONTENT_GENERATED_DIR"
 fi
 
 # rm -rf "$BUILD_DIR"

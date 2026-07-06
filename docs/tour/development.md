@@ -144,6 +144,12 @@ under:
 <build-dir>/generated/fairlanes_content
 ```
 
+Native Ruby is optional for normal CMake builds. If `ruby` is unavailable but
+Docker or Podman is available, CMake runs the generator through the
+`FAIRLANES_RUBY_CONTAINER_IMAGE` image, which defaults to `ruby:4.0-alpine`.
+CMake searches the host `PATH`, common rbenv/asdf shim directories, and standard
+host install paths for these runner tools.
+
 Run the content check target after changing decal skill or monster metadata:
 
 ```sh
