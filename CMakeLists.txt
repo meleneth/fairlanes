@@ -626,11 +626,55 @@ file(GLOB_RECURSE FAIRLANES_SOURCES CONFIGURE_DEPENDS
   ${CMAKE_SOURCE_DIR}/src/fl/*.cpp
 )
 
-add_library(fl STATIC ${FAIRLANES_SOURCES})
-target_sources(fl PRIVATE ${FAIRLANES_CONTENT_GENERATED_FL_SOURCES})
-add_dependencies(fl fairlanes_content_check)
+set(FAIRLANES_WIDGET_SOURCES ${FAIRLANES_SOURCES})
+list(FILTER FAIRLANES_WIDGET_SOURCES INCLUDE REGEX "/src/fl/widgets/")
 
-target_include_directories(fl
+set(FAIRLANES_SKILL_SOURCES ${FAIRLANES_SOURCES})
+list(FILTER FAIRLANES_SKILL_SOURCES INCLUDE REGEX "/src/fl/skills/")
+
+set(FAIRLANES_MONSTER_SOURCES ${FAIRLANES_SOURCES})
+list(FILTER FAIRLANES_MONSTER_SOURCES INCLUDE REGEX "/src/fl/monsters/")
+
+set(FAIRLANES_APP_SOURCES ${FAIRLANES_SOURCES})
+list(FILTER FAIRLANES_APP_SOURCES INCLUDE REGEX "/src/fl/(grand_central|chaos_attract_grand_central|web_screen_bridge)\\.cpp$")
+
+set(FAIRLANES_CORE_SOURCES ${FAIRLANES_SOURCES})
+list(FILTER FAIRLANES_CORE_SOURCES EXCLUDE REGEX "/src/fl/widgets/")
+list(FILTER FAIRLANES_CORE_SOURCES EXCLUDE REGEX "/src/fl/skills/")
+list(FILTER FAIRLANES_CORE_SOURCES EXCLUDE REGEX "/src/fl/monsters/")
+list(FILTER FAIRLANES_CORE_SOURCES EXCLUDE REGEX "/src/fl/(grand_central|chaos_attract_grand_central|web_screen_bridge)\\.cpp$")
+
+set(FAIRLANES_GENERATED_SKILL_SOURCES ${FAIRLANES_CONTENT_GENERATED_FL_SOURCES})
+list(FILTER FAIRLANES_GENERATED_SKILL_SOURCES INCLUDE REGEX "/fl/generated/(skills/|skill_content\\.cpp$)")
+
+set(FAIRLANES_GENERATED_MONSTER_SOURCES ${FAIRLANES_CONTENT_GENERATED_FL_SOURCES})
+list(FILTER FAIRLANES_GENERATED_MONSTER_SOURCES INCLUDE REGEX "/fl/generated/(monsters/|monster_content\\.cpp$|monster_registration\\.cpp$)")
+
+set(FAIRLANES_GENERATED_CORE_SOURCES ${FAIRLANES_CONTENT_GENERATED_FL_SOURCES})
+list(REMOVE_ITEM FAIRLANES_GENERATED_CORE_SOURCES
+  ${FAIRLANES_GENERATED_SKILL_SOURCES}
+  ${FAIRLANES_GENERATED_MONSTER_SOURCES}
+)
+
+add_library(fl_core STATIC ${FAIRLANES_CORE_SOURCES})
+target_sources(fl_core PRIVATE ${FAIRLANES_GENERATED_CORE_SOURCES})
+add_dependencies(fl_core fairlanes_content_check)
+
+add_library(fl_skills STATIC ${FAIRLANES_SKILL_SOURCES})
+target_sources(fl_skills PRIVATE ${FAIRLANES_GENERATED_SKILL_SOURCES})
+add_dependencies(fl_skills fairlanes_content_check)
+
+add_library(fl_monsters STATIC ${FAIRLANES_MONSTER_SOURCES})
+target_sources(fl_monsters PRIVATE ${FAIRLANES_GENERATED_MONSTER_SOURCES})
+add_dependencies(fl_monsters fairlanes_content_check)
+
+add_library(fl_widgets STATIC ${FAIRLANES_WIDGET_SOURCES})
+
+add_library(fl STATIC ${FAIRLANES_APP_SOURCES})
+target_link_libraries(fl PUBLIC fl_core fl_skills fl_monsters fl_widgets)
+
+foreach(fairlanes_lib IN ITEMS fl_core fl_skills fl_monsters fl_widgets fl)
+target_include_directories(${fairlanes_lib}
   PUBLIC
     ${PROJECT_SOURCE_DIR}/src
     ${FAIRLANES_CONTENT_GENERATED_DIR}
@@ -638,12 +682,12 @@ target_include_directories(fl
     ${entt_SOURCE_DIR}/single_include
 )
 
-target_compile_definitions(fl
+target_compile_definitions(${fairlanes_lib}
   PUBLIC
     FL_ENABLE_ASSERTS=$<BOOL:${FL_ENABLE_ASSERTS}>
 )
 
-target_link_libraries(fl
+target_link_libraries(${fairlanes_lib}
   PUBLIC
     pcg-cpp
     EnTT::EnTT
@@ -659,14 +703,15 @@ target_link_libraries(fl
     Fairlanes::Tracy
 )
 
-target_compile_options(fl PRIVATE
+target_compile_options(${fairlanes_lib} PRIVATE
   -Wall -Wextra -Wpedantic -Werror
   -O0 -g ${BIGOBJ_FLAG}
 )
 
 if(EMSCRIPTEN)
-  target_compile_options(fl PRIVATE -pthread)
+  target_compile_options(${fairlanes_lib} PRIVATE -pthread)
 endif()
+endforeach()
 
 file(GLOB_RECURSE SEERIN_SOURCES CONFIGURE_DEPENDS
   ${CMAKE_SOURCE_DIR}/src/sr/*.cpp
@@ -724,8 +769,7 @@ target_compile_definitions(fairlanes
 
 target_link_libraries(fairlanes
   PRIVATE
-    fl
-    sr
+    "$<LINK_GROUP:RESCAN,fl,fl_widgets,fl_monsters,fl_skills,fl_core,sr>"
     pcg-cpp
     ftxui::screen
     ftxui::dom
@@ -790,8 +834,7 @@ if(FL_BUILD_TESTS)
 
   target_link_libraries(fairlanes_tests
     PRIVATE
-      fl
-      sr
+      "$<LINK_GROUP:RESCAN,fl,fl_widgets,fl_monsters,fl_skills,fl_core,sr>"
       Catch2::Catch2WithMain
       ExprTk::exprtk
       eventpp::eventpp
