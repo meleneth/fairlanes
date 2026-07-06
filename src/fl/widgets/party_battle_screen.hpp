@@ -31,7 +31,8 @@ private:
   render_combatant_grid(const std::vector<entt::entity> &entities,
                         int cell_width, int cell_height, int grid_width,
                         int grid_height);
-  ftxui::Element render_bottom_panel(int screen_width, int height);
+  ftxui::Element render_bottom_panel(int screen_width, int height,
+                                     bool show_auxiliary_battle_panel);
   ftxui::Element render_account_log_panel(int width, int height);
   ftxui::Element render_party_log_panel(int width, int height);
   ftxui::Element render_question_panel(int width, int height) const;

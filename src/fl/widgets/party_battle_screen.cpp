@@ -14,6 +14,7 @@
 #include "fl/lospec500.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/party_data.hpp"
+#include "fl/widgets/battle_render_budget.hpp"
 #include "fl/widgets/combatant.hpp"
 #include "fl/widgets/party_status.hpp"
 #include "fl/widgets/textures/bog_background.hpp"
@@ -47,13 +48,14 @@ struct Layout {
   int stage_padding_width{0};
 };
 
-Layout current_layout(const bool show_status) {
-  const auto terminal = ftxui::Terminal::Size();
+Layout current_layout(const bool show_status,
+                      const BattleRenderBudget &budget) {
   Layout layout;
   layout.status_height = show_status ? kStatusHeight : 0;
 
-  layout.screen_width = std::max(1, terminal.dimx);
-  const int active_height = std::max(1, terminal.dimy - kRootChromeHeight);
+  layout.screen_width = budget.requested_width;
+  const int active_height =
+      std::max(1, budget.requested_height - kRootChromeHeight);
 
   const int fixed_height = layout.status_height + (layout.separator_height * 2);
   const int variable_height = std::max(1, active_height - fixed_height);
@@ -72,8 +74,7 @@ Layout current_layout(const bool show_status) {
   layout.bottom_height = std::max(1, active_height - fixed_height -
                                          (layout.combatant_grid_height * 2));
 
-  const int preferred_padding =
-      layout.screen_width >= 150 ? std::max(2, layout.screen_width / 20) : 0;
+  const int preferred_padding = budget.stage_side_padding_width;
   const int available_stage_width =
       std::max(kMinCellWidth * static_cast<int>(kColumns),
                layout.screen_width - (preferred_padding * 2));
@@ -218,7 +219,8 @@ ftxui::Element PartyBattleScreen::Render() {
     }
   }
 
-  const auto layout = current_layout(show_status);
+  const auto budget = current_battle_render_budget();
+  const auto layout = current_layout(show_status, budget);
   const auto forest_seed = forest_seed_for_party(party_name, party_index_);
 
   auto attacker_stage =
@@ -262,8 +264,8 @@ ftxui::Element PartyBattleScreen::Render() {
   rows.push_back(separator() | size(WIDTH, EQUAL, layout.screen_width) |
                  size(HEIGHT, EQUAL, layout.separator_height) |
                  fl::lospec500::on_not_black(fl::lospec500::color_at(32)));
-  rows.push_back(
-      render_bottom_panel(layout.screen_width, layout.bottom_height));
+  rows.push_back(render_bottom_panel(layout.screen_width, layout.bottom_height,
+                                     budget.show_auxiliary_battle_panel));
 
   return vbox(std::move(rows)) | size(WIDTH, EQUAL, layout.screen_width) |
          size(HEIGHT, EQUAL, layout.screen_height) |
@@ -366,12 +368,23 @@ ftxui::Element PartyBattleScreen::render_combatant_grid(
          size(HEIGHT, EQUAL, grid_height);
 }
 
-ftxui::Element PartyBattleScreen::render_bottom_panel(int screen_width,
-                                                      int height) {
+ftxui::Element PartyBattleScreen::render_bottom_panel(
+    int screen_width, int height, bool show_auxiliary_battle_panel) {
   using namespace ftxui;
 
-  const int account_width = std::max(1, screen_width / 3);
-  const int party_width = std::max(1, screen_width / 3);
+  const int panel_unit_width = std::max(1, screen_width / 3);
+  const int account_width = panel_unit_width;
+
+  if (!show_auxiliary_battle_panel) {
+    const int party_width = std::max(1, screen_width - account_width);
+    return hbox({
+               render_account_log_panel(account_width, height),
+               render_party_log_panel(party_width, height),
+           }) |
+           size(WIDTH, EQUAL, screen_width) | size(HEIGHT, EQUAL, height);
+  }
+
+  const int party_width = panel_unit_width;
   const int question_width =
       std::max(1, screen_width - account_width - party_width);
 
