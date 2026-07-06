@@ -673,6 +673,18 @@ add_library(fl_widgets STATIC ${FAIRLANES_WIDGET_SOURCES})
 add_library(fl STATIC ${FAIRLANES_APP_SOURCES})
 target_link_libraries(fl PUBLIC fl_core fl_skills fl_monsters fl_widgets)
 
+set(FAIRLANES_STATIC_LINK_LIBRARIES fl fl_widgets fl_monsters fl_skills fl_core sr)
+if(CMAKE_CXX_LINK_GROUP_USING_RESCAN_SUPPORTED)
+  list(JOIN FAIRLANES_STATIC_LINK_LIBRARIES "," FAIRLANES_STATIC_LINK_GROUP_MEMBERS)
+  set(FAIRLANES_STATIC_LINK_LIBRARIES
+    "$<LINK_GROUP:RESCAN,${FAIRLANES_STATIC_LINK_GROUP_MEMBERS}>"
+  )
+else()
+  list(APPEND FAIRLANES_STATIC_LINK_LIBRARIES
+    fl fl_widgets fl_monsters fl_skills fl_core sr
+  )
+endif()
+
 foreach(fairlanes_lib IN ITEMS fl_core fl_skills fl_monsters fl_widgets fl)
 target_include_directories(${fairlanes_lib}
   PUBLIC
@@ -769,7 +781,7 @@ target_compile_definitions(fairlanes
 
 target_link_libraries(fairlanes
   PRIVATE
-    "$<LINK_GROUP:RESCAN,fl,fl_widgets,fl_monsters,fl_skills,fl_core,sr>"
+    ${FAIRLANES_STATIC_LINK_LIBRARIES}
     pcg-cpp
     ftxui::screen
     ftxui::dom
@@ -834,7 +846,7 @@ if(FL_BUILD_TESTS)
 
   target_link_libraries(fairlanes_tests
     PRIVATE
-      "$<LINK_GROUP:RESCAN,fl,fl_widgets,fl_monsters,fl_skills,fl_core,sr>"
+      ${FAIRLANES_STATIC_LINK_LIBRARIES}
       Catch2::Catch2WithMain
       ExprTk::exprtk
       eventpp::eventpp
