@@ -19,6 +19,7 @@
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/generated/status_content.hpp"
 #include "fl/primitives/party_data.hpp"
+#include "fl/widgets/battle_render_budget.hpp"
 #include "fl/widgets/fancy_log.hpp"
 
 namespace fl::widgets {
@@ -110,6 +111,33 @@ std::string join_strings(const std::vector<std::string> &parts,
     out += parts[i];
   }
   return out;
+}
+
+std::string render_targets_help() {
+  std::vector<std::string> names;
+  for (const auto &target : fl::widgets::supported_battle_render_targets()) {
+    names.emplace_back(target.name);
+  }
+  names.emplace_back("auto");
+  return join_strings(names, "|");
+}
+
+std::string render_target_description(const BattleRenderTargetSpec &target) {
+  return std::string(target.name) + " " + std::to_string(target.width) + "x" +
+         std::to_string(target.height);
+}
+
+std::string current_render_target_line() {
+  if (const auto forced = forced_battle_render_target()) {
+    const auto target = battle_render_target_spec(*forced);
+    return "render target forced to " + render_target_description(target);
+  }
+
+  const auto budget = current_battle_render_budget();
+  return "render target auto (currently " +
+         std::string(profile_name(budget.profile)) + " " +
+         std::to_string(budget.requested_width) + "x" +
+         std::to_string(budget.requested_height) + ")";
 }
 
 std::string ready_names(entt::registry &reg,
@@ -296,6 +324,31 @@ void UiCommandController::handle(std::string_view command) {
     return;
   }
 
+  if (verb == "render" || verb == "terminal" || verb == "termsize") {
+    if (words.size() < 2) {
+      write(current_render_target_line());
+      write("usage: render <" + render_targets_help() + ">");
+      return;
+    }
+
+    if (words[1] == "auto" || words[1] == "reset" || words[1] == "clear") {
+      clear_forced_battle_render_target();
+      write(current_render_target_line());
+      return;
+    }
+
+    const auto profile = battle_render_profile_from_name(words[1]);
+    if (!profile) {
+      write("unknown render target: " + std::string(words[1]));
+      write("usage: render <" + render_targets_help() + ">");
+      return;
+    }
+
+    force_battle_render_target(*profile);
+    write(current_render_target_line());
+    return;
+  }
+
   if (verb == "overdrive" || verb == "speed") {
     if (words.size() < 2) {
       write("overdrive is x" +
@@ -409,7 +462,8 @@ void UiCommandController::show_help(std::string_view topic) {
   if (topic.empty()) {
     write("current account: " + std::to_string(account_index_));
     write("current party: " + std::to_string(party_index_));
-    write("commands: screen, list, debug, account, party, overdrive, help");
+    write("commands: screen, list, debug, account, party, render, overdrive, "
+          "help");
     write("try: help <command>");
     return;
   }
@@ -447,6 +501,16 @@ void UiCommandController::show_help(std::string_view topic) {
   if (topic == "overdrive" || topic == "speed") {
     write("overdrive <multiplier>: run world beats faster in wall time");
     write("overdrive 1: return to normal time");
+    return;
+  }
+
+  if (topic == "render" || topic == "terminal" || topic == "termsize") {
+    write("render <target>: force the battle UI to an explicit render target");
+    write("render auto: use the real terminal size again");
+    for (const auto &target : supported_battle_render_targets()) {
+      write("render " + std::string(target.name) + ": " +
+            std::to_string(target.width) + "x" + std::to_string(target.height));
+    }
     return;
   }
 
