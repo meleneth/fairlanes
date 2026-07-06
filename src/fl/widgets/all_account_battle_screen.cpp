@@ -70,13 +70,15 @@ AllAccountBattleScreen::AllAccountBattleScreen(
     : registry_(&registry), accounts_(&accounts) {}
 
 bool AllAccountBattleScreen::OnEvent(ftxui::Event event) {
-  if (event == ftxui::Event::ArrowUp || event == ftxui::Event::Character("k")) {
+  if (event == ftxui::Event::ArrowUp || event == ftxui::Event::Character("k") ||
+      event == ftxui::Event::Character("[")) {
     select_relative(-1);
     return true;
   }
 
   if (event == ftxui::Event::ArrowDown ||
-      event == ftxui::Event::Character("j")) {
+      event == ftxui::Event::Character("j") ||
+      event == ftxui::Event::Character("]")) {
     select_relative(1);
     return true;
   }
@@ -229,8 +231,11 @@ ftxui::Element AllAccountBattleScreen::render_party_row(
   const int marker_width = 2;
   const int left_width = std::clamp(width / 5, 18, 30);
   const int state_width = 7;
-  const int roster_width =
-      std::max(8, (width - marker_width - left_width - state_width) / 2);
+  const int arrow_width = 4;
+  const int roster_space =
+      std::max(8, width - marker_width - left_width - state_width - arrow_width);
+  int enemies_width = std::max(8, roster_space / 2);
+  int heroes_width = std::max(8, roster_space - enemies_width);
 
   auto label = "A" + std::to_string(account_index + 1) + " P" +
                std::to_string(party_index + 1) + " " +
@@ -240,12 +245,15 @@ ftxui::Element AllAccountBattleScreen::render_party_row(
   Element heroes = text("");
   if (party.has_encounter()) {
     auto &encounter = party.encounter_data();
-    enemies = render_roster(encounter.attackers().members(), roster_width);
-    heroes = render_roster(encounter.defenders().members(), roster_width);
+    enemies = render_roster(encounter.attackers().members(), enemies_width);
+    heroes = render_roster(encounter.defenders().members(), heroes_width);
   } else {
-    enemies = text(shorten("field / town", static_cast<std::size_t>(roster_width))) |
-              color(fl::lospec500::color_at(24));
-    heroes = render_member_roster(party.members(), roster_width);
+    enemies_width = std::min(enemies_width, 12);
+    heroes_width = std::max(8, roster_space - enemies_width);
+    enemies =
+        text(shorten("field / town", static_cast<std::size_t>(enemies_width))) |
+        color(fl::lospec500::color_at(24));
+    heroes = render_member_roster(party.members(), heroes_width);
   }
 
   auto row = hbox({
@@ -255,9 +263,9 @@ ftxui::Element AllAccountBattleScreen::render_party_row(
           color(fl::lospec500::color_at(15)) | size(WIDTH, EQUAL, left_width),
       text(state_label(party)) | state_color(party) |
           size(WIDTH, EQUAL, state_width),
-      enemies | size(WIDTH, EQUAL, roster_width),
+      enemies | size(WIDTH, EQUAL, enemies_width),
       text(" -> ") | color(fl::lospec500::color_at(24)),
-      heroes | flex,
+      heroes | size(WIDTH, EQUAL, heroes_width) | flex,
   });
 
   if (selected) {
@@ -286,7 +294,8 @@ ftxui::Element AllAccountBattleScreen::render_selected_party_detail(int width,
 
   selected_party_index_ = std::min(selected_party_index_, parties.size() - 1);
   auto &party = parties[selected_party_index_];
-  const int battle_width = std::max(28, (width * 2) / 3);
+  constexpr int min_log_width = 28;
+  const int battle_width = std::max(28, width - min_log_width);
   const int log_width = std::max(1, width - battle_width);
 
   party.log().set_focused(false);
@@ -392,12 +401,38 @@ ftxui::Element AllAccountBattleScreen::render_roster(
     std::span<const entt::entity> entities, int width) const {
   using namespace ftxui;
 
+  std::size_t fixed_chip_width = entities.empty() ? 0 : entities.size() - 1;
+  for (auto entity : entities) {
+    if (entity == entt::null || registry_ == nullptr) {
+      fixed_chip_width += 1;
+      continue;
+    }
+
+    const auto *stats = registry_->try_get<fl::ecs::components::Stats>(entity);
+    if (stats == nullptr) {
+      fixed_chip_width += 1;
+      continue;
+    }
+
+    fixed_chip_width +=
+        2 + std::to_string(std::max(0, stats->hp_)).size();
+  }
+
+  const auto available_width = static_cast<std::size_t>(std::max(1, width));
+  const auto max_name_width =
+      entities.empty()
+          ? std::size_t{1}
+          : std::max<std::size_t>(
+                1, available_width > fixed_chip_width
+                       ? (available_width - fixed_chip_width) / entities.size()
+                       : 1);
+
   std::string out;
   for (auto entity : entities) {
     if (!out.empty()) {
       out += " ";
     }
-    out += entity_chip(entity);
+    out += entity_chip(entity, max_name_width);
   }
 
   if (out.empty()) {
@@ -418,7 +453,8 @@ ftxui::Element AllAccountBattleScreen::render_member_roster(
   return render_roster(entities, width);
 }
 
-std::string AllAccountBattleScreen::entity_chip(entt::entity entity) const {
+std::string AllAccountBattleScreen::entity_chip(
+    entt::entity entity, std::size_t max_name_width) const {
   namespace c = fl::ecs::components;
 
   if (entity == entt::null || registry_ == nullptr) {
@@ -431,7 +467,7 @@ std::string AllAccountBattleScreen::entity_chip(entt::entity entity) const {
   }
 
   std::string name = stats->name_;
-  name = shorten(name, 6);
+  name = shorten(name, max_name_width);
   return name + "(" + std::to_string(std::max(0, stats->hp_)) + ")";
 }
 

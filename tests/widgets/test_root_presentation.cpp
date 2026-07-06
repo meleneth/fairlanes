@@ -11,6 +11,7 @@
 
 #include "fl/grand_central.hpp"
 #include "fl/widgets/all_account_battle_screen.hpp"
+#include "fl/widgets/battle_render_budget.hpp"
 #include "fl/widgets/chaos_attract_root.hpp"
 #include "fl/widgets/root_chrome.hpp"
 #include "fl/widgets/root_component.hpp"
@@ -41,12 +42,14 @@ std::string render_to_string(fl::widgets::ChaosAttractRoot &root) {
 }
 
 std::string render_to_string(fl::widgets::ChaosAttractRoot &root,
-                             const fl::primitives::WorldClock &world_clock) {
+                             const fl::primitives::WorldClock &world_clock,
+                             int width = kRenderWidth,
+                             int height = kRenderHeight) {
   auto element = fl::widgets::render_root_chrome(world_clock, root.Render()) |
-                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, kRenderWidth) |
-                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, kRenderHeight);
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(kRenderWidth),
-                                      ftxui::Dimension::Fixed(kRenderHeight));
+                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width) |
+                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, height);
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(width),
+                                      ftxui::Dimension::Fixed(height));
   ftxui::Render(screen, element);
   return screen.ToString();
 }
@@ -132,6 +135,20 @@ TEST_CASE("Chaos Attract renders the begin prompt",
   REQUIRE(rendered.find("HP: [") != std::string::npos);
 }
 
+TEST_CASE("Chaos Attract overview spends wide rows on player names",
+          "[widgets][root][presentation]") {
+  fl::GrandCentral attract_gc{8, 5, 5};
+  fl::widgets::ChaosAttractRoot root{make_all_account_surface(attract_gc)};
+
+  fl::widgets::force_battle_render_target(fl::widgets::BattleLayoutProfile::Wide);
+  const auto rendered =
+      render_to_string(root, attract_gc.world_clock(), 180, 50);
+  fl::widgets::clear_forced_battle_render_target();
+
+  REQUIRE(rendered.find("Alderion(10)") != std::string::npos);
+  REQUIRE(rendered.find("Bramblethorn(10)") != std::string::npos);
+}
+
 TEST_CASE("Chaos Attract prompt color changes across frames",
           "[widgets][root][presentation]") {
   fl::GrandCentral attract_gc{8, 5, 5};
@@ -169,6 +186,30 @@ TEST_CASE("Chaos Attract selection moves through party rows",
   REQUIRE(root.OnEvent(ftxui::Event::ArrowUp));
   REQUIRE(all_accounts->selected_account_index() == 0);
   REQUIRE(all_accounts->selected_party_index() == 0);
+  REQUIRE(root.OnEvent(ftxui::Event::Character("]")));
+  REQUIRE(all_accounts->selected_account_index() == 0);
+  REQUIRE(all_accounts->selected_party_index() == 1);
+  REQUIRE(root.OnEvent(ftxui::Event::Character("[")));
+  REQUIRE(all_accounts->selected_account_index() == 0);
+  REQUIRE(all_accounts->selected_party_index() == 0);
+}
+
+TEST_CASE("Chaos Attract toggles keybind help",
+          "[widgets][root][presentation]") {
+  fl::GrandCentral attract_gc{8, 5, 5};
+  fl::widgets::ChaosAttractRoot root{make_all_account_surface(attract_gc)};
+
+  REQUIRE_FALSE(root.help_open());
+  REQUIRE(render_to_string(root).find("Chaos Attract") != std::string::npos);
+  REQUIRE(render_to_string(root).find("close this help") == std::string::npos);
+
+  REQUIRE(root.OnEvent(ftxui::Event::Character("h")));
+  REQUIRE(root.help_open());
+  REQUIRE(render_to_string(root).find("close this help") != std::string::npos);
+  REQUIRE(render_to_string(root).find("[ / ]") != std::string::npos);
+
+  REQUIRE(root.OnEvent(ftxui::Event::Character("h")));
+  REQUIRE_FALSE(root.help_open());
 }
 
 TEST_CASE("Enter requests GrandCentral switchout to normal gameplay",

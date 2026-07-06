@@ -14,8 +14,11 @@ int main(int argc, char **argv) {
   CLI::App app{"fairlanes"};
 
   fl::GrandCentralRunOptions opts;
+  bool skip_chaos_attract = false;
 
   app.add_flag("--no-ui", opts.no_ui, "Run headless (no FTXUI screen)");
+  app.add_flag("--skip-chaos-attract", skip_chaos_attract,
+               "Start normal gameplay without the Chaos Attract screen");
 
   app.add_option(
          "--overdrive", opts.overdrive,
@@ -31,7 +34,7 @@ int main(int argc, char **argv) {
   CLI11_PARSE(app, argc, argv);
 
   try {
-    if (!opts.no_ui) {
+    if (!opts.no_ui && !skip_chaos_attract) {
       fl::ChaosAttractGrandCentral attract;
       const auto attract_exit = attract.main_loop(
           fl::ChaosAttractRunOptions{.cutoff_seconds = opts.cutoff_seconds});

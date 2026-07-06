@@ -47,7 +47,8 @@ private:
                                int width) const;
   ftxui::Element render_member_roster(
       const std::deque<fl::primitives::MemberData> &members, int width) const;
-  std::string entity_chip(entt::entity entity) const;
+  std::string entity_chip(entt::entity entity,
+                          std::size_t max_name_width) const;
 
   entt::registry *registry_{nullptr};
   std::deque<fl::primitives::AccountData> *accounts_{nullptr};
