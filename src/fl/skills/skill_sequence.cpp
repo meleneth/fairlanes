@@ -20,7 +20,6 @@
 #include "fl/lospec500.hpp"
 #include "fl/primitives/damage.hpp"
 #include "fl/primitives/party_data.hpp"
-#include "fl/skills/eviscerate.hpp"
 #include "fl/skills/skill_definition.hpp"
 #include "fl/skills/skill_learning.hpp"
 #include "fl/skills/skill_visuals.hpp"
@@ -587,13 +586,8 @@ void SkillSequencer::schedule_eviscerate(entt::entity attacker,
       24, attacker, "eviscerate: apply dire bleed and finish",
       [&party_ctx = party_ctx_, &scheduler = scheduler_, finish_turn, attacker,
        target] {
-        fl::skills::Eviscerate eviscerate;
-        eviscerate.eviscerate(
-            fl::context::AttackCtx::make_attack(party_ctx, attacker, target));
-        fl::ecs::components::safe_add_hp_bar_color(party_ctx.reg(), target,
-                                                   fl::lospec500::color_at(4));
-        fl::ecs::systems::DireBleedSystem::bind_cleanup_and_schedule(
-            party_ctx, scheduler, target);
+        fl::ecs::systems::DireBleedSystem::apply(party_ctx, scheduler, attacker,
+                                                 target);
         finish_turn(attacker);
       });
 

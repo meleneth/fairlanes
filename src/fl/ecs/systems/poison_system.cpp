@@ -7,6 +7,7 @@
 #include "fl/ecs/components/hp_bar_color_override.hpp"
 #include "fl/ecs/components/poison.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/systems/status_effect_application.hpp"
 #include "fl/ecs/systems/status_effect_lifetime.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
 #include "fl/lospec500.hpp"
@@ -63,15 +64,17 @@ void PoisonSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
     return;
   }
 
-  if (reg.any_of<fl::ecs::components::Poison>(target)) {
-    PoisonSystem::clear(party_ctx, target);
-  }
-
-  auto &poison = reg.emplace<fl::ecs::components::Poison>(target);
-  poison.source = source;
-  poison.damage_per_tick = damage_per_tick;
-  poison.ticks_remaining = ticks_remaining;
-  poison.effect = StatusEffectLifetime::create_instance(party_ctx, target);
+  auto &poison = replace_status_effect<fl::ecs::components::Poison>(
+      party_ctx, target,
+      [](fl::context::PartyCtx &ctx, entt::entity status_target) {
+        PoisonSystem::clear(ctx, status_target);
+      },
+      [source, damage_per_tick,
+       ticks_remaining](fl::ecs::components::Poison &new_poison) {
+        new_poison.source = source;
+        new_poison.damage_per_tick = damage_per_tick;
+        new_poison.ticks_remaining = ticks_remaining;
+      });
 
   StatusEffectLifetime lifetime{party_ctx, scheduler, poison.effect};
   lifetime.on_owner_died([&party_ctx, target](const fl::events::PlayerDied &) {

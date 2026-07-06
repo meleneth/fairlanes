@@ -12,6 +12,9 @@ class DireBleedSystem {
 public:
   using Scheduler = seerin::TimedScheduler<seerin::AtbOutEvent>;
 
+  static void apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
+                    entt::entity source, entt::entity target);
+
   static void bind_cleanup_and_schedule(fl::context::PartyCtx &party_ctx,
                                         Scheduler &scheduler,
                                         entt::entity target);

@@ -1,13 +1,17 @@
 #include "fl/ecs/systems/dire_bleed_system.hpp"
 
+#include <algorithm>
+
 #include <fmt/format.h>
 
 #include "fl/ecs/components/dire_bleed.hpp"
 #include "fl/ecs/components/hp_bar_color_override.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/systems/status_effect_application.hpp"
 #include "fl/ecs/systems/status_effect_lifetime.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
 #include "fl/events/party_bus.hpp"
+#include "fl/lospec500.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/world_clock.hpp"
 #include "fl/widgets/fancy_log.hpp"
@@ -18,6 +22,39 @@ constexpr int kDireBleedTickSeconds = 3;
 constexpr int kDireBleedTickBeats =
     fl::primitives::WorldClock::beats_from_seconds(kDireBleedTickSeconds);
 } // namespace
+
+void DireBleedSystem::apply(fl::context::PartyCtx &party_ctx,
+                            Scheduler &scheduler, entt::entity source,
+                            entt::entity target) {
+  auto &reg = party_ctx.reg();
+  if (!reg.valid(source) || !reg.valid(target)) {
+    return;
+  }
+
+  auto *target_stats = reg.try_get<fl::ecs::components::Stats>(target);
+  if (target_stats == nullptr || !target_stats->is_alive()) {
+    return;
+  }
+
+  const int damage_per_tick = std::max(1, target_stats->max_hp_ / 10);
+  replace_status_effect<fl::ecs::components::DireBleed>(
+      party_ctx, target,
+      [](fl::context::PartyCtx &ctx, entt::entity status_target) {
+        DireBleedSystem::clear(ctx, status_target);
+      },
+      [source, damage_per_tick](fl::ecs::components::DireBleed &bleed) {
+        bleed.source = source;
+        bleed.damage_per_tick = damage_per_tick;
+      });
+
+  party_ctx.log().append_markup(fmt::format(
+      "{} used [ability](Eviscerate) on {}; [error](Dire Bleed) takes hold.",
+      party_ctx.log().name_tag_for(entt::handle{reg, source}),
+      party_ctx.log().name_tag_for(entt::handle{reg, target})));
+  fl::ecs::components::safe_add_hp_bar_color(reg, target,
+                                             fl::lospec500::color_at(4));
+  DireBleedSystem::bind_cleanup_and_schedule(party_ctx, scheduler, target);
+}
 
 void DireBleedSystem::bind_cleanup_and_schedule(
     fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
