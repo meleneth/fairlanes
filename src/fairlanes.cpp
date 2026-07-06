@@ -4,6 +4,7 @@
 #include <exception>
 #include <iostream>
 
+#include "fl/chaos_attract_grand_central.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/primitives/world_clock.hpp"
 
@@ -30,6 +31,15 @@ int main(int argc, char **argv) {
   CLI11_PARSE(app, argc, argv);
 
   try {
+    if (!opts.no_ui) {
+      fl::ChaosAttractGrandCentral attract;
+      const auto attract_exit = attract.main_loop(
+          fl::ChaosAttractRunOptions{.cutoff_seconds = opts.cutoff_seconds});
+      if (attract_exit != fl::ChaosAttractExit::Begin) {
+        return 0;
+      }
+    }
+
     GrandCentral gc{8, 5, 5};
     gc.innervate_event_system();
 

@@ -77,6 +77,8 @@ public:
 
   ftxui::Component root_component();
   void innervate_event_system();
+  void advance_beat();
+  void resolve_visuals_for_render();
   void main_loop(GrandCentralRunOptions opts = {});
 
 private:
@@ -105,7 +107,6 @@ private:
   void _create_initial_accounts();
   void bootstrap_logs();
   void build_ui();
-  void resolve_visuals_for_render();
 };
 
 } // namespace fl
