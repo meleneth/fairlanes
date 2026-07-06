@@ -113,6 +113,10 @@ public:
         continue;
       }
 
+      if (stats->hp_ <= 0) {
+        continue;
+      }
+
       if (!selected.has_value() || stats->hp_ < selected_hp) {
         selected = e;
         selected_hp = stats->hp_;

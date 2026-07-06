@@ -517,11 +517,13 @@ TEST_CASE("Healing skills target the lowest-health teammate",
 
   auto &reg = party_ctx.reg();
   const auto enemies = encounter.attackers().members();
-  REQUIRE(enemies.size() >= 2);
+  REQUIRE(enemies.size() >= 3);
   const entt::entity enemy_attacker = enemies[0];
   const entt::entity wounded_enemy = enemies[1];
+  const entt::entity dead_enemy = enemies[2];
   reg.get<fl::ecs::components::Stats>(enemy_attacker).hp_ = 8;
   reg.get<fl::ecs::components::Stats>(wounded_enemy).hp_ = 2;
+  reg.get<fl::ecs::components::Stats>(dead_enemy).hp_ = 0;
 
   for (const auto skill :
        {fl::skills::SkillId::Mercyburst, fl::skills::SkillId::Mercywave}) {
@@ -530,11 +532,13 @@ TEST_CASE("Healing skills target the lowest-health teammate",
   }
 
   const auto defenders = encounter.defenders().members();
-  REQUIRE(defenders.size() >= 2);
+  REQUIRE(defenders.size() >= 3);
   const entt::entity defender_attacker = defenders[0];
   const entt::entity wounded_defender = defenders[1];
+  const entt::entity dead_defender = defenders[2];
   reg.get<fl::ecs::components::Stats>(defender_attacker).hp_ = 7;
   reg.get<fl::ecs::components::Stats>(wounded_defender).hp_ = 1;
+  reg.get<fl::ecs::components::Stats>(dead_defender).hp_ = 0;
 
   for (const auto skill :
        {fl::skills::SkillId::Mercyburst, fl::skills::SkillId::Mercywave}) {
@@ -619,6 +623,43 @@ TEST_CASE("SkillSequencer Mercyburst heals and clamps at max HP",
   fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
   REQUIRE(finished);
   REQUIRE(reg.any_of<fl::ecs::components::CombatantDecals>(target));
+}
+
+TEST_CASE("SkillSequencer Mercyburst does not heal dead targets",
+          "[encounter][skills][mercyburst]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  auto &encounter = builder.thump_it_out();
+
+  const entt::entity attacker = encounter.attackers().members().front();
+  const entt::entity target = encounter.attackers().members().back();
+  auto &reg = party_ctx.reg();
+  auto &stats = reg.get<fl::ecs::components::Stats>(target);
+  stats.max_hp_ = 10;
+  stats.hp_ = 0;
+
+  seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
+  bool finished = false;
+  fl::skills::SkillSequencer sequencer{
+      party_ctx, scheduler,
+      [&](entt::entity entity) { finished = entity == attacker; }};
+
+  sequencer.schedule(attacker, target, fl::skills::SkillId::Mercyburst);
+
+  for (int i = 0; i < seerin::BEATS_PER_SEC; ++i) {
+    scheduler.on_beat();
+    fl::ecs::systems::VisualResolver::resolve(reg, scheduler.now());
+  }
+
+  REQUIRE(stats.hp_ == 0);
+  REQUIRE_FALSE(finished);
+
+  scheduler.on_beat();
+  REQUIRE(finished);
 }
 
 TEST_CASE("Flee emits combat events and grants no XP on successful flee",

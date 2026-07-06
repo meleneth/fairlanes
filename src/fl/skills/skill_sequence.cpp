@@ -431,7 +431,7 @@ int apply_healing(fl::context::PartyCtx &party_ctx, entt::entity healer,
 
   auto *target_stats =
       party_ctx.reg().try_get<fl::ecs::components::Stats>(target);
-  if (target_stats == nullptr) {
+  if (target_stats == nullptr || target_stats->hp_ <= 0) {
     return 0;
   }
 
@@ -720,29 +720,8 @@ void SkillSequencer::schedule_mercyburst(entt::entity attacker,
   scheduler_.schedule_smelly_in_beats_for(
       kAnimationBeats, target, "Mercyburst: apply healing",
       [&party_ctx = party_ctx_, attacker, target] {
-        if (!party_ctx.reg().valid(target)) {
-          return;
-        }
-
-        auto *target_stats =
-            party_ctx.reg().try_get<fl::ecs::components::Stats>(target);
-        if (target_stats == nullptr) {
-          return;
-        }
-
-        const int before = target_stats->hp_;
-        target_stats->hp_ =
-            std::min(target_stats->max_hp_, target_stats->hp_ + kHealAmount);
-        const int healed = target_stats->hp_ - before;
-        add_hitpoint_number_decal(party_ctx, target,
-                                  fl::lospec500::color_at(15), healed);
-
-        entt::handle attacker_h{party_ctx.reg(), attacker};
-        entt::handle target_h{party_ctx.reg(), target};
-        party_ctx.log().append_markup(fmt::format(
-            "{} used [ability](Mercyburst) on {} for [xp]({}) healing",
-            party_ctx.log().name_tag_for(attacker_h),
-            party_ctx.log().name_tag_for(target_h), healed));
+        apply_healing(party_ctx, attacker, target, SkillId::Mercyburst,
+                      kHealAmount);
       });
 
   auto finish_turn = finish_turn_;
