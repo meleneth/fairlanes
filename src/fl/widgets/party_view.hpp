@@ -13,6 +13,8 @@ namespace fl::widgets {
 
 class InventoryList;
 class PlayerDetailsPane;
+struct BattleRenderBudget;
+struct PartyViewLayout;
 
 class PartyView : public ftxui::ComponentBase {
 public:
@@ -24,7 +26,8 @@ public:
 private:
   enum class FocusPane { inventory, player_details, party_log };
 
-  ftxui::Element render_party();
+  ftxui::Element render_party(const PartyViewLayout &layout,
+                              const BattleRenderBudget &budget);
   void set_focus(FocusPane focus);
 
   fl::context::AccountCtx ctx_;
