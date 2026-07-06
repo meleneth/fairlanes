@@ -3,15 +3,41 @@ set -euo pipefail
 
 BUILD_DIR="${BUILD_DIR:-build-wasm}"
 DIST_DIR="${DIST_DIR:-dist/fairlanes}"
+CONTENT_GENERATED_DIR="${CONTENT_GENERATED_DIR:-}"
+
+if [[ -z "$CONTENT_GENERATED_DIR" ]]; then
+  for candidate in \
+    build-linux-debug/generated/fairlanes_content \
+    build/generated/fairlanes_content \
+    build-reconcile-debug/generated/fairlanes_content; do
+    if [[ -d "$candidate/fl/generated" ]]; then
+      CONTENT_GENERATED_DIR="$candidate"
+      break
+    fi
+  done
+fi
+
+if [[ -n "$CONTENT_GENERATED_DIR" && ! -d "$CONTENT_GENERATED_DIR/fl/generated" ]]; then
+  echo "CONTENT_GENERATED_DIR must point at a generated Fairlanes content tree." >&2
+  echo "Got: $CONTENT_GENERATED_DIR" >&2
+  exit 1
+fi
 
 # rm -rf "$BUILD_DIR"
 rm -rf "$DIST_DIR"
 
 mkdir -p "$DIST_DIR"
 
+content_cmake_arg=()
+if [[ -n "$CONTENT_GENERATED_DIR" ]]; then
+  echo "Using generated Fairlanes content from: $CONTENT_GENERATED_DIR"
+  content_cmake_arg=("-DFAIRLANES_CONTENT_PREGENERATED_DIR=/src/$CONTENT_GENERATED_DIR")
+fi
+
 docker run --rm \
   --user "$(id -u):$(id -g)" \
   -e HOME=/tmp \
+  -e FAIRLANES_CONTENT_PREGENERATED_DIR="${content_cmake_arg[*]}" \
   -v "$PWD":/src \
   -w /src \
   emscripten/emsdk:latest \
@@ -20,7 +46,8 @@ docker run --rm \
     emcmake cmake -S . -B build-wasm \
       -DCMAKE_BUILD_TYPE=Release \
       -DFL_BUILD_TESTS=OFF \
-      -DFAIRLANES_ENABLE_TRACY=OFF
+      -DFAIRLANES_ENABLE_TRACY=OFF \
+      ${FAIRLANES_CONTENT_PREGENERATED_DIR}
     cmake --build build-wasm --target fairlanes -j
   '
 

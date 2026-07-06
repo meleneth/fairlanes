@@ -7,6 +7,8 @@ option(BUILD_SHARED_LIBS "Build shared libs (if any)" OFF)
 option(FL_BUILD_TESTS "Build tests" ON)
 option(FL_ENABLE_ASSERTS "Enable runtime asserts" ON)
 option(ENABLE_COVERAGE "Build with coverage instrumentation" OFF)
+set(FAIRLANES_CONTENT_PREGENERATED_DIR "" CACHE PATH
+    "Use an existing generated Fairlanes content tree instead of running Ruby code generation")
 
 if(EMSCRIPTEN)
   set(FL_BUILD_TESTS OFF CACHE BOOL "Build tests" FORCE)
@@ -327,16 +329,18 @@ endif()
 find_program(GCOVR_EXECUTABLE gcovr)
 
 find_program(RUBY_EXECUTABLE ruby)
-if(NOT RUBY_EXECUTABLE)
-  message(FATAL_ERROR "ruby not found; required for Fairlanes content generation")
-endif()
 
 file(GLOB_RECURSE FAIRLANES_CONTENT_RUBY_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_SOURCE_DIR}/ruby/fairlanes_content/lib/*.rb"
 )
 
-set(FAIRLANES_CONTENT_GENERATED_DIR
-  "${CMAKE_BINARY_DIR}/generated/fairlanes_content")
+if(FAIRLANES_CONTENT_PREGENERATED_DIR)
+  get_filename_component(FAIRLANES_CONTENT_GENERATED_DIR
+    "${FAIRLANES_CONTENT_PREGENERATED_DIR}" ABSOLUTE)
+else()
+  set(FAIRLANES_CONTENT_GENERATED_DIR
+    "${CMAKE_BINARY_DIR}/generated/fairlanes_content")
+endif()
 set(FAIRLANES_CONTENT_DOCS_DIR
   "${CMAKE_SOURCE_DIR}/docs/tour")
 set(FAIRLANES_CONTENT_GENERATED_TEST
@@ -370,96 +374,154 @@ set(FAIRLANES_CONTENT_GENERATED_MANIFEST
 set(FAIRLANES_CONTENT_GENERATED_MANIFEST_SCHEMA
   "${FAIRLANES_CONTENT_GENERATED_DIR}/content_manifest.schema.json")
 
-execute_process(
-  COMMAND "${RUBY_EXECUTABLE}"
-          "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
-          --list-generated
-  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-  RESULT_VARIABLE FAIRLANES_CONTENT_LIST_RESULT
-  OUTPUT_VARIABLE FAIRLANES_CONTENT_GENERATED_FILES_RAW
-  ERROR_VARIABLE FAIRLANES_CONTENT_LIST_ERROR
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-if(NOT FAIRLANES_CONTENT_LIST_RESULT EQUAL 0)
-  message(FATAL_ERROR
-    "Failed to list generated Fairlanes content artifacts:\n${FAIRLANES_CONTENT_LIST_ERROR}")
+if(FAIRLANES_CONTENT_PREGENERATED_DIR)
+  if(NOT EXISTS "${FAIRLANES_CONTENT_GENERATED_DIR}/fl/generated")
+    message(FATAL_ERROR
+      "FAIRLANES_CONTENT_PREGENERATED_DIR must point at a generated Fairlanes content tree")
+  endif()
+
+  file(GLOB_RECURSE FAIRLANES_CONTENT_GENERATED_FILES CONFIGURE_DEPENDS
+    "${FAIRLANES_CONTENT_GENERATED_DIR}/*")
+  file(GLOB_RECURSE FAIRLANES_CONTENT_GENERATED_FL_SOURCES CONFIGURE_DEPENDS
+    "${FAIRLANES_CONTENT_GENERATED_DIR}/fl/generated/*.cpp")
+
+  add_custom_target(fairlanes_content_check
+    DEPENDS
+      ${FAIRLANES_CONTENT_GENERATED_FILES}
+  )
+
+  if(RUBY_EXECUTABLE)
+    add_custom_target(fairlanes_content_docs
+      COMMAND "${RUBY_EXECUTABLE}"
+              "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+              --docs-dir "${FAIRLANES_CONTENT_DOCS_DIR}"
+      DEPENDS
+        "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+        "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
+        ${FAIRLANES_CONTENT_RUBY_SOURCES}
+      COMMENT "Generating Fairlanes content docs"
+      VERBATIM
+    )
+    add_custom_target(fairlanes_content_docs_check
+      COMMAND "${RUBY_EXECUTABLE}"
+              "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+              --docs-dir "${FAIRLANES_CONTENT_DOCS_DIR}"
+              --check-docs
+      DEPENDS
+        "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+        "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
+        ${FAIRLANES_CONTENT_RUBY_SOURCES}
+      COMMENT "Checking Fairlanes generated content docs"
+      VERBATIM
+    )
+  else()
+    add_custom_target(fairlanes_content_docs
+      COMMAND "${CMAKE_COMMAND}" -E echo
+              "ruby not found; fairlanes_content_docs requires Ruby"
+      COMMAND "${CMAKE_COMMAND}" -E false
+    )
+    add_custom_target(fairlanes_content_docs_check
+      COMMAND "${CMAKE_COMMAND}" -E echo
+              "ruby not found; fairlanes_content_docs_check requires Ruby"
+      COMMAND "${CMAKE_COMMAND}" -E false
+    )
+  endif()
+else()
+  if(NOT RUBY_EXECUTABLE)
+    message(FATAL_ERROR "ruby not found; required for Fairlanes content generation")
+  endif()
+
+  execute_process(
+    COMMAND "${RUBY_EXECUTABLE}"
+            "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+            --list-generated
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    RESULT_VARIABLE FAIRLANES_CONTENT_LIST_RESULT
+    OUTPUT_VARIABLE FAIRLANES_CONTENT_GENERATED_FILES_RAW
+    ERROR_VARIABLE FAIRLANES_CONTENT_LIST_ERROR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  if(NOT FAIRLANES_CONTENT_LIST_RESULT EQUAL 0)
+    message(FATAL_ERROR
+      "Failed to list generated Fairlanes content artifacts:\n${FAIRLANES_CONTENT_LIST_ERROR}")
+  endif()
+
+  execute_process(
+    COMMAND "${RUBY_EXECUTABLE}"
+            "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+            --list-fl-sources
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    RESULT_VARIABLE FAIRLANES_CONTENT_SOURCE_LIST_RESULT
+    OUTPUT_VARIABLE FAIRLANES_CONTENT_GENERATED_FL_SOURCES_RAW
+    ERROR_VARIABLE FAIRLANES_CONTENT_SOURCE_LIST_ERROR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  if(NOT FAIRLANES_CONTENT_SOURCE_LIST_RESULT EQUAL 0)
+    message(FATAL_ERROR
+      "Failed to list generated Fairlanes content sources:\n${FAIRLANES_CONTENT_SOURCE_LIST_ERROR}")
+  endif()
+
+  string(REPLACE "\n" ";" FAIRLANES_CONTENT_GENERATED_FILES_REL
+    "${FAIRLANES_CONTENT_GENERATED_FILES_RAW}")
+  set(FAIRLANES_CONTENT_GENERATED_FILES)
+  foreach(relative_path IN LISTS FAIRLANES_CONTENT_GENERATED_FILES_REL)
+    list(APPEND FAIRLANES_CONTENT_GENERATED_FILES
+      "${FAIRLANES_CONTENT_GENERATED_DIR}/${relative_path}")
+  endforeach()
+
+  string(REPLACE "\n" ";" FAIRLANES_CONTENT_GENERATED_FL_SOURCES_REL
+    "${FAIRLANES_CONTENT_GENERATED_FL_SOURCES_RAW}")
+  set(FAIRLANES_CONTENT_GENERATED_FL_SOURCES)
+  foreach(relative_path IN LISTS FAIRLANES_CONTENT_GENERATED_FL_SOURCES_REL)
+    list(APPEND FAIRLANES_CONTENT_GENERATED_FL_SOURCES
+      "${FAIRLANES_CONTENT_GENERATED_DIR}/${relative_path}")
+  endforeach()
+
+  add_custom_command(
+    OUTPUT
+      ${FAIRLANES_CONTENT_GENERATED_FILES}
+    COMMAND "${CMAKE_COMMAND}" -E make_directory "${FAIRLANES_CONTENT_GENERATED_DIR}"
+    COMMAND "${RUBY_EXECUTABLE}"
+            "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+            --out-dir "${FAIRLANES_CONTENT_GENERATED_DIR}"
+    DEPENDS
+      "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+      "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
+      ${FAIRLANES_CONTENT_RUBY_SOURCES}
+    COMMENT "Generating Fairlanes content artifacts"
+    VERBATIM
+  )
+
+  add_custom_target(fairlanes_content_check
+    DEPENDS
+      ${FAIRLANES_CONTENT_GENERATED_FILES}
+  )
+
+  add_custom_target(fairlanes_content_docs
+    COMMAND "${RUBY_EXECUTABLE}"
+            "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+            --docs-dir "${FAIRLANES_CONTENT_DOCS_DIR}"
+    DEPENDS
+      "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+      "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
+      ${FAIRLANES_CONTENT_RUBY_SOURCES}
+    COMMENT "Generating Fairlanes content docs"
+    VERBATIM
+  )
+
+  add_custom_target(fairlanes_content_docs_check
+    COMMAND "${RUBY_EXECUTABLE}"
+            "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+            --docs-dir "${FAIRLANES_CONTENT_DOCS_DIR}"
+            --check-docs
+    DEPENDS
+      "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+      "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
+      ${FAIRLANES_CONTENT_RUBY_SOURCES}
+    COMMENT "Checking Fairlanes generated content docs"
+    VERBATIM
+  )
 endif()
-
-execute_process(
-  COMMAND "${RUBY_EXECUTABLE}"
-          "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
-          --list-fl-sources
-  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-  RESULT_VARIABLE FAIRLANES_CONTENT_SOURCE_LIST_RESULT
-  OUTPUT_VARIABLE FAIRLANES_CONTENT_GENERATED_FL_SOURCES_RAW
-  ERROR_VARIABLE FAIRLANES_CONTENT_SOURCE_LIST_ERROR
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-if(NOT FAIRLANES_CONTENT_SOURCE_LIST_RESULT EQUAL 0)
-  message(FATAL_ERROR
-    "Failed to list generated Fairlanes content sources:\n${FAIRLANES_CONTENT_SOURCE_LIST_ERROR}")
-endif()
-
-string(REPLACE "\n" ";" FAIRLANES_CONTENT_GENERATED_FILES_REL
-  "${FAIRLANES_CONTENT_GENERATED_FILES_RAW}")
-set(FAIRLANES_CONTENT_GENERATED_FILES)
-foreach(relative_path IN LISTS FAIRLANES_CONTENT_GENERATED_FILES_REL)
-  list(APPEND FAIRLANES_CONTENT_GENERATED_FILES
-    "${FAIRLANES_CONTENT_GENERATED_DIR}/${relative_path}")
-endforeach()
-
-string(REPLACE "\n" ";" FAIRLANES_CONTENT_GENERATED_FL_SOURCES_REL
-  "${FAIRLANES_CONTENT_GENERATED_FL_SOURCES_RAW}")
-set(FAIRLANES_CONTENT_GENERATED_FL_SOURCES)
-foreach(relative_path IN LISTS FAIRLANES_CONTENT_GENERATED_FL_SOURCES_REL)
-  list(APPEND FAIRLANES_CONTENT_GENERATED_FL_SOURCES
-    "${FAIRLANES_CONTENT_GENERATED_DIR}/${relative_path}")
-endforeach()
-
-add_custom_command(
-  OUTPUT
-    ${FAIRLANES_CONTENT_GENERATED_FILES}
-  COMMAND "${CMAKE_COMMAND}" -E make_directory "${FAIRLANES_CONTENT_GENERATED_DIR}"
-  COMMAND "${RUBY_EXECUTABLE}"
-          "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
-          --out-dir "${FAIRLANES_CONTENT_GENERATED_DIR}"
-  DEPENDS
-    "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
-    "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
-    ${FAIRLANES_CONTENT_RUBY_SOURCES}
-  COMMENT "Generating Fairlanes content artifacts"
-  VERBATIM
-)
-
-add_custom_target(fairlanes_content_check
-  DEPENDS
-    ${FAIRLANES_CONTENT_GENERATED_FILES}
-)
-
-add_custom_target(fairlanes_content_docs
-  COMMAND "${RUBY_EXECUTABLE}"
-          "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
-          --docs-dir "${FAIRLANES_CONTENT_DOCS_DIR}"
-  DEPENDS
-    "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
-    "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
-    ${FAIRLANES_CONTENT_RUBY_SOURCES}
-  COMMENT "Generating Fairlanes content docs"
-  VERBATIM
-)
-
-add_custom_target(fairlanes_content_docs_check
-  COMMAND "${RUBY_EXECUTABLE}"
-          "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
-          --docs-dir "${FAIRLANES_CONTENT_DOCS_DIR}"
-          --check-docs
-  DEPENDS
-    "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
-    "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
-    ${FAIRLANES_CONTENT_RUBY_SOURCES}
-  COMMENT "Checking Fairlanes generated content docs"
-  VERBATIM
-)
 
 if(GCOVR_EXECUTABLE)
   add_custom_target(coverage-lcov
