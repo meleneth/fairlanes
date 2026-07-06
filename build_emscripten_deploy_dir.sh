@@ -10,6 +10,8 @@ rm -rf "$DIST_DIR"
 mkdir -p "$DIST_DIR"
 
 docker run --rm \
+  --user "$(id -u):$(id -g)" \
+  -e HOME=/tmp \
   -v "$PWD":/src \
   -w /src \
   emscripten/emsdk:latest \

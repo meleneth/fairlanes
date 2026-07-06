@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-sudo rm -rf build-wasm
-
 ./build_emscripten_deploy_dir.sh
 
 rsync -av --delete dist/ whirred.io:dist/
