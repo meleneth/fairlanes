@@ -114,7 +114,5 @@ int Thump::thump(fl::context::AttackCtx &&ctx, SkillKey skill) {
                                       fl::skills::display_name(skill),
                                       ctx.log().name_tag_for(defender_h), dmg));
 
-  fl::ecs::systems::TakeDamage::commit(ctx);
-
-  return dmg;
+  return fl::ecs::systems::TakeDamage::commit(ctx);
 }

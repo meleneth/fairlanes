@@ -825,6 +825,63 @@ TEST_CASE("Second Freeze application shatters for half max HP",
       party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
 }
 
+TEST_CASE("A physical tagged skill hit breaks active Freeze",
+          "[encounter][skills][freeze][events]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &encounter = party.create_encounter();
+
+  const auto defender = party.members().front().member_id();
+  encounter.defenders().members().push_back(defender);
+  encounter.add_party_combatant_bus(defender);
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
+
+  const auto source = add_honey_badger(party_ctx, encounter);
+  encounter.combatant_bus(defender).emit(fl::events::CombatantEvent{
+      fl::events::FreezeApplied{source, defender, 30}});
+
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
+
+  encounter.combatant_bus(defender).emit(
+      fl::events::CombatantEvent{fl::events::SkillHitLanded{
+          source, defender, fl::skills::SkillId::Thump, 3}});
+
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));
+  REQUIRE_FALSE(
+      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
+}
+
+TEST_CASE("A non-physical skill hit does not break active Freeze",
+          "[encounter][skills][freeze][events]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &encounter = party.create_encounter();
+
+  const auto defender = party.members().front().member_id();
+  encounter.defenders().members().push_back(defender);
+  encounter.add_party_combatant_bus(defender);
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
+
+  const auto source = add_honey_badger(party_ctx, encounter);
+  encounter.combatant_bus(defender).emit(fl::events::CombatantEvent{
+      fl::events::FreezeApplied{source, defender, 30}});
+
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
+
+  encounter.combatant_bus(defender).emit(
+      fl::events::CombatantEvent{fl::events::SkillHitLanded{
+          source, defender, fl::skills::SkillId::FlameStrike, 3}});
+
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::StatusTint>(defender));
+}
+
 TEST_CASE("GrandCentral teardown clears lingering status listeners before party "
           "buses die",
           "[encounter][skills][status][lifetime]") {

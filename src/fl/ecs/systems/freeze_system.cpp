@@ -12,6 +12,7 @@
 #include "fl/lospec500.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/world_clock.hpp"
+#include "fl/skills/skill_definition.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include <ftxui/screen/color.hpp>
 
@@ -88,6 +89,28 @@ void FreezeSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
   lifetime.on_combat_removed([&party_ctx, target](const auto &) {
     FreezeSystem::clear(party_ctx, target);
   });
+  freeze.effect.skill_hit_sub = fl::events::ScopedCombatantListener{
+      party_ctx.party_data().encounter_data().combatant_bus(target),
+      std::in_place_type<fl::events::SkillHitLanded>,
+      [&party_ctx, target](const fl::events::SkillHitLanded &ev) {
+        if (ev.target != target || ev.damage <= 0 ||
+            !fl::skills::has_tag(ev.skill, fl::skills::SkillTag::Physical)) {
+          return;
+        }
+
+        auto &reg = party_ctx.reg();
+        if (!reg.valid(target) ||
+            !reg.any_of<fl::ecs::components::Freeze>(target)) {
+          return;
+        }
+
+        party_ctx.log().append_markup(fmt::format(
+            "{} broke [ability](Frost) on {} with [ability]({}).",
+            party_ctx.log().name_tag_for(entt::handle{reg, ev.source}),
+            party_ctx.log().name_tag_for(entt::handle{reg, target}),
+            fl::skills::display_name(ev.skill)));
+        FreezeSystem::clear(party_ctx, target);
+      }};
 
   set_background(reg, target, fl::lospec500::color_at(kFreezeFadeStartBlue));
   party_ctx.log().append_markup(

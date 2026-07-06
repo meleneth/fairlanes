@@ -1,10 +1,15 @@
 #pragma once
 
 #include <cassert>
+#include <atomic>
+#include <charconv>
 #include <chrono>
 #include <cstdint>
+#include <cstdlib>
+#include <iostream>
 #include <optional>
 #include <random>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -16,6 +21,17 @@ namespace fl::primitives {
 
 // Choose your engine here.
 using Engine = pcg64;
+
+enum class RandomSeedSource {
+  Environment,
+  Generated,
+  Explicit,
+};
+
+struct RandomSeedConfig {
+  uint64_t seed{0};
+  RandomSeedSource source{RandomSeedSource::Generated};
+};
 
 // ------------------------------ Utilities ------------------------------
 
@@ -47,14 +63,76 @@ inline uint64_t time_seed_now() {
           .count());
 }
 
+inline std::optional<uint64_t> parse_unsigned_seed(std::string_view text) {
+  if (text.empty()) {
+    return std::nullopt;
+  }
+
+  uint64_t value = 0;
+  const auto *begin = text.data();
+  const auto *end = begin + text.size();
+  const auto [ptr, ec] = std::from_chars(begin, end, value, 10);
+  if (ec != std::errc{} || ptr != end) {
+    return std::nullopt;
+  }
+
+  return value;
+}
+
+inline RandomSeedConfig generated_random_seed_config() {
+  return RandomSeedConfig{splitmix64_once(time_seed_now()),
+                          RandomSeedSource::Generated};
+}
+
+inline RandomSeedConfig resolve_random_seed_from_environment() {
+  constexpr std::string_view kEnvName = "FAIRLANES_RNG_SEED";
+  const char *env = std::getenv(kEnvName.data());
+  if (env == nullptr) {
+    return generated_random_seed_config();
+  }
+
+  if (const auto parsed = parse_unsigned_seed(env)) {
+    return RandomSeedConfig{*parsed, RandomSeedSource::Environment};
+  }
+
+#if FL_ENABLE_ASSERTS
+  throw std::invalid_argument(
+      "FAIRLANES_RNG_SEED must be an unsigned integer");
+#else
+  std::cerr << "[fairlanes] warning: ignoring invalid FAIRLANES_RNG_SEED=\""
+            << env << "\"; using generated seed instead\n";
+  return generated_random_seed_config();
+#endif
+}
+
+inline void report_random_seed(const RandomSeedConfig &config) {
+#if FL_ENABLE_ASSERTS
+  const char *source = "generated";
+  if (config.source == RandomSeedSource::Environment) {
+    source = "environment";
+  } else if (config.source == RandomSeedSource::Explicit) {
+    source = "explicit";
+  }
+  std::cerr << "[fairlanes] RNG seed " << config.seed << " (" << source
+            << ")\n";
+#else
+  (void)config;
+#endif
+}
+
 // ------------------------------ RandomStream ------------------------------
 
 class RandomStream {
 public:
   RandomStream() = default;
 
-  RandomStream(uint64_t master_seed, uint64_t sequence, std::string key)
-      : master_seed_(master_seed), sequence_(sequence), key_(std::move(key)) {}
+  RandomStream(uint64_t master_seed, uint64_t sequence,
+               uint64_t cache_namespace, std::string key)
+      : master_seed_(master_seed), sequence_(sequence), key_(std::move(key)) {
+    key_ = std::to_string(cache_namespace) + ":" +
+           std::to_string(master_seed_) + ":" + std::to_string(sequence_) +
+           ":" + key_;
+  }
 
   // Thread-local engine per (stream key). Deterministic (no thread salt).
   Engine &eng() const {
@@ -96,31 +174,47 @@ private:
 
 class RandomHub {
 public:
-  // If seed == nullopt → time-based; base_sequence is an optional global
-  // “stream id”.
+  // If seed == nullopt, resolve from FAIRLANES_RNG_SEED or generate one.
   explicit RandomHub(std::optional<uint64_t> seed = std::nullopt,
                      uint64_t base_sequence = 0)
-      : master_seed_(seed.value_or(splitmix64_once(time_seed_now()))),
-        base_sequence_(base_sequence) {}
+      : RandomHub(seed ? RandomSeedConfig{*seed, RandomSeedSource::Explicit}
+                       : resolve_random_seed_from_environment(),
+                  base_sequence) {}
+
+  explicit RandomHub(RandomSeedConfig seed_config, uint64_t base_sequence = 0)
+      : master_seed_(seed_config.seed), base_sequence_(base_sequence),
+        seed_source_(seed_config.source),
+        cache_namespace_(next_cache_namespace()) {
+    report_random_seed(seed_config);
+  }
 
   uint64_t master_seed() const noexcept { return master_seed_; }
+  uint64_t chosen_seed() const noexcept { return master_seed_; }
+  RandomSeedSource seed_source() const noexcept { return seed_source_; }
   uint64_t base_sequence() const noexcept { return base_sequence_; }
 
   // Named stream: sequence selector derived from base_sequence ^ hash(name) ^
   // sub_seq
   RandomStream stream(std::string_view name, uint64_t sub_seq = 0) const {
     const uint64_t seq = mix_seq(base_sequence_, fnv1a64(name), sub_seq);
-    return RandomStream(master_seed_, seq, key_for(name, sub_seq));
+    return RandomStream(master_seed_, seq, cache_namespace_,
+                        key_for(name, sub_seq));
   }
 
   // Pure numeric stream (no name)
   RandomStream stream(uint64_t sub_seq) const {
     const uint64_t seq =
         mix_seq(base_sequence_, 0xD1B54A32D192ED03ULL, sub_seq);
-    return RandomStream(master_seed_, seq, key_for("<num>", sub_seq));
+    return RandomStream(master_seed_, seq, cache_namespace_,
+                        key_for("<num>", sub_seq));
   }
 
 private:
+  static uint64_t next_cache_namespace() {
+    static std::atomic<uint64_t> next{1};
+    return next.fetch_add(1, std::memory_order_relaxed);
+  }
+
   static uint64_t mix_seq(uint64_t base, uint64_t name_hash, uint64_t sub) {
     // 3-way mix → stream selector
     return splitmix64_once(base ^ (name_hash + 0x9E3779B97F4A7C15ULL) ^
@@ -135,6 +229,8 @@ private:
 
   uint64_t master_seed_;
   uint64_t base_sequence_;
+  RandomSeedSource seed_source_{RandomSeedSource::Generated};
+  uint64_t cache_namespace_{0};
 };
 
 } // namespace fl::primitives

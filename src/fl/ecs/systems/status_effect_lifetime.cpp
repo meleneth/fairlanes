@@ -11,6 +11,7 @@ StatusEffectLifetime::create_instance(fl::context::PartyCtx &party_ctx,
       .owner = owner,
       .effect_id = party_ctx.reg().create(),
       .owner_died_sub = {},
+      .skill_hit_sub = {},
       .party_left_combat_sub = {},
       .party_wiped_sub = {},
   };

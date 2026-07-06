@@ -10,6 +10,7 @@ struct StatusEffectInstance {
   entt::entity owner{entt::null};
   entt::entity effect_id{entt::null};
   fl::events::ScopedCombatantListener owner_died_sub;
+  fl::events::ScopedCombatantListener skill_hit_sub;
   fl::events::ScopedPartyListener party_left_combat_sub;
   fl::events::ScopedPartyListener party_wiped_sub;
 };
