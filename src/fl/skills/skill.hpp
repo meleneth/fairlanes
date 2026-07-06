@@ -41,6 +41,10 @@ public:
 
   [[nodiscard]] constexpr int value() const noexcept { return value_; }
 
+  [[nodiscard]] constexpr bool valid() const noexcept {
+    return is_valid(value_);
+  }
+
   [[nodiscard]] constexpr bool operator==(const SkillRank &rhs) const noexcept {
     return value_ == rhs.value_;
   }
@@ -122,6 +126,69 @@ enum class SkillTag {
   Observe,
   Utility,
   Escape,
+  Rot,
+  Water,
+  Air,
+  Light,
+  Dark,
+  Arcane,
+  Ballistic,
+  Laser,
+  Plasma,
+  Data,
+  Ranged,
+  Spell,
+  Breath,
+  Song,
+  Trap,
+  Self,
+  Ally,
+  Enemy,
+  Group,
+  RandomEnemy,
+  AllEnemies,
+  AllAllies,
+  Field,
+  Summon,
+  Damage,
+  Heal,
+  Cleanse,
+  Buff,
+  Debuff,
+  PoisonStatus,
+  BurnStatus,
+  BleedStatus,
+  SlowStatus,
+  StunStatus,
+  BlindStatus,
+  SilenceStatus,
+  FearStatus,
+  RegenStatus,
+  ShieldStatus,
+  TauntStatus,
+  VulnerableStatus,
+  HasteStatus,
+  ReflectStatus,
+  Dispel,
+  Drain,
+  Execute,
+  Beast,
+  Vermin,
+  Plant,
+  Fungal,
+  Amphibian,
+  Reptile,
+  Aquatic,
+  Avian,
+  Undead,
+  Construct,
+  Machine,
+  Celestial,
+  Void,
+  Martial,
+  Natural,
+  Industrial,
+  Cybernetic,
 };
 
 enum class SkillExecutionKind {
@@ -132,6 +199,11 @@ enum class SkillExecutionKind {
   FlameStrike,
   FlameWave,
   DecalStrike,
+  DamageStrike,
+  GroupDamage,
+  SingleHeal,
+  GroupHeal,
+  PlaceholderEffect,
   Flee,
   Observe,
 };
@@ -139,6 +211,7 @@ enum class SkillExecutionKind {
 struct SkillDefinition;
 
 const SkillDefinition &definition(SkillKey skill) noexcept;
+bool has_definition(SkillKey skill) noexcept;
 
 std::string_view name(SkillKey skill) noexcept;
 std::string display_name(SkillKey skill);

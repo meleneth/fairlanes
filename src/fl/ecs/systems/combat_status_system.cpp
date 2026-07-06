@@ -276,7 +276,7 @@ int CombatStatusSystem::status_value(entt::registry &reg, entt::entity target,
 
 bool CombatStatusSystem::can_use_skill(entt::registry &reg, entt::entity actor,
                                        fl::skills::SkillKey skill) {
-  if (!fl::skills::is_valid(skill)) {
+  if (!skill.rank.valid()) {
     return false;
   }
 

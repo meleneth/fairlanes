@@ -2,9 +2,12 @@
 
 #include <algorithm>
 #include <array>
+#include <string_view>
 
 #include "fl/lospec500.hpp"
+#include "fl/widgets/effects/archetype_decal.hpp"
 #include "fl/widgets/effects/decal.hpp"
+#include "fl/widgets/effects/starfire.hpp"
 
 namespace {
 
@@ -23,6 +26,80 @@ int active_cells(const fl::widgets::effects::Frame &frame) {
   return count;
 }
 
+int visible_glyphs(const fl::widgets::effects::Frame &frame) {
+  int count = 0;
+  for (const auto &cell : frame.cells) {
+    if (cell.glyph != ' ') {
+      ++count;
+    }
+  }
+  return count;
+}
+
+int leftmost_visible_x(const fl::widgets::effects::Frame &frame) {
+  int left = frame.width;
+  for (int y = 0; y < frame.height; ++y) {
+    for (int x = 0; x < frame.width; ++x) {
+      if (frame.at(x, y).glyph != ' ') {
+        left = std::min(left, x);
+      }
+    }
+  }
+  return left == frame.width ? -1 : left;
+}
+
+int rightmost_visible_x(const fl::widgets::effects::Frame &frame) {
+  int right = -1;
+  for (int y = 0; y < frame.height; ++y) {
+    for (int x = 0; x < frame.width; ++x) {
+      if (frame.at(x, y).glyph != ' ') {
+        right = std::max(right, x);
+      }
+    }
+  }
+  return right;
+}
+
+bool same_frame(const fl::widgets::effects::Frame &lhs,
+                const fl::widgets::effects::Frame &rhs) {
+  if (lhs.width != rhs.width || lhs.height != rhs.height ||
+      lhs.cells.size() != rhs.cells.size()) {
+    return false;
+  }
+
+  for (std::size_t i = 0; i < lhs.cells.size(); ++i) {
+    if (lhs.cells[i].glyph != rhs.cells[i].glyph ||
+        lhs.cells[i].alpha != rhs.cells[i].alpha ||
+        lhs.cells[i].fg != rhs.cells[i].fg ||
+        lhs.cells[i].bg != rhs.cells[i].bg) {
+      return false;
+    }
+  }
+  return true;
+}
+
+int glyph_count(const fl::widgets::effects::Frame &frame, char glyph) {
+  int count = 0;
+  for (const auto &cell : frame.cells) {
+    if (cell.glyph == glyph) {
+      ++count;
+    }
+  }
+  return count;
+}
+
+bool has_non_lospec_color(const fl::widgets::effects::Frame &frame) {
+  for (const auto &cell : frame.cells) {
+    if (cell.fg && !is_lospec500_color(*cell.fg)) {
+      return true;
+    }
+    if (cell.bg && !is_lospec500_color(*cell.bg)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void require_lospec500_colors(const fl::widgets::effects::Frame &frame) {
   for (const auto &cell : frame.cells) {
     if (cell.fg) {
@@ -34,7 +111,161 @@ void require_lospec500_colors(const fl::widgets::effects::Frame &frame) {
   }
 }
 
+bool frame_contains_glyph(const fl::widgets::effects::Frame &frame,
+                          char glyph) {
+  for (const auto &cell : frame.cells) {
+    if (cell.glyph == glyph) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool frame_contains_any(const fl::widgets::effects::Frame &frame,
+                        std::string_view glyphs) {
+  for (const auto &cell : frame.cells) {
+    if (glyphs.find(cell.glyph) != std::string_view::npos) {
+      return true;
+    }
+  }
+  return false;
+}
+
 } // namespace
+
+TEST_CASE("Skill visual archetype decals render distinct shape languages",
+          "[widgets][effects][decal][archetype]") {
+  using fl::widgets::effects::DecalAnimationKind;
+
+  struct ExpectedArchetypeRender {
+    DecalAnimationKind kind;
+    std::string_view characteristic_glyphs;
+  };
+
+  constexpr std::array<ExpectedArchetypeRender, 12> expected{{
+      {DecalAnimationKind::Impact, "X#<>/\\"},
+      {DecalAnimationKind::Slash, "/"},
+      {DecalAnimationKind::Bite, "V^"},
+      {DecalAnimationKind::Projectile, ">-"},
+      {DecalAnimationKind::Sweep, "~="},
+      {DecalAnimationKind::Burst, "*o"},
+      {DecalAnimationKind::Beam, "=#"},
+      {DecalAnimationKind::Heal, "+"},
+      {DecalAnimationKind::Cleanse, "|o"},
+      {DecalAnimationKind::Glitch, "#%@?/\\|!"},
+      {DecalAnimationKind::Aura, "o^"},
+      {DecalAnimationKind::Field, "~:"},
+  }};
+
+  for (const auto &entry : expected) {
+    CAPTURE(fl::widgets::effects::name(entry.kind));
+    const auto animation =
+        fl::widgets::effects::make_decal_animation(entry.kind, 42, 9);
+    REQUIRE(animation != nullptr);
+    REQUIRE(animation->kind() == entry.kind);
+    REQUIRE(animation->name() == fl::widgets::effects::name(entry.kind));
+
+    const auto frame = animation->render(0.5F);
+    REQUIRE(frame.width == 42);
+    REQUIRE(frame.height == 9);
+    REQUIRE(active_cells(frame) > 0);
+    REQUIRE(visible_glyphs(frame) > 0);
+    REQUIRE(frame_contains_any(frame, entry.characteristic_glyphs));
+    require_lospec500_colors(frame);
+  }
+}
+
+TEST_CASE("Impact renders compact physical hit phases without reticle shapes",
+          "[widgets][effects][decal][archetype]") {
+  using fl::widgets::effects::ArchetypeDecal;
+  using fl::widgets::effects::DecalAnimationKind;
+
+  const ArchetypeDecal impact{DecalAnimationKind::Impact, 40, 9};
+  const auto contact = impact.render(0.1F);
+  const auto compression = impact.render(0.38F);
+  const auto aftermark = impact.render(0.82F);
+
+  CHECK(frame_contains_glyph(contact, 'X'));
+  CHECK(frame_contains_glyph(contact, '#'));
+  CHECK(frame_contains_glyph(compression, '<'));
+  CHECK(frame_contains_glyph(compression, '>'));
+  CHECK(frame_contains_glyph(aftermark, '#'));
+
+  CHECK_FALSE(frame_contains_glyph(contact, 'o'));
+  CHECK_FALSE(frame_contains_glyph(contact, 'O'));
+  CHECK_FALSE(frame_contains_glyph(contact, '+'));
+  CHECK_FALSE(frame_contains_glyph(compression, 'o'));
+  CHECK_FALSE(frame_contains_glyph(aftermark, 'o'));
+
+  CHECK(active_cells(contact) < 12);
+  CHECK(active_cells(aftermark) < active_cells(compression));
+}
+
+TEST_CASE("Extended archetype animations report longer durations",
+          "[widgets][effects][decal][archetype]") {
+  using fl::widgets::effects::ArchetypeDecal;
+  using fl::widgets::effects::DecalAnimationKind;
+
+  CHECK(ArchetypeDecal{DecalAnimationKind::Sweep, 32, 8}.duration_seconds() ==
+        2.0F);
+  CHECK(ArchetypeDecal{DecalAnimationKind::Cleanse, 32, 8}.duration_seconds() ==
+        2.0F);
+  CHECK(ArchetypeDecal{DecalAnimationKind::Beam, 32, 8}.duration_seconds() ==
+        1.0F);
+}
+
+TEST_CASE("Beam pass helper computes half-width moving beam spans",
+          "[widgets][effects][decal][archetype]") {
+  using fl::widgets::effects::beam_span_for_progress;
+  using fl::widgets::effects::beam_visual_length;
+
+  CHECK(beam_visual_length(40) == 20);
+  CHECK(beam_visual_length(1) == 1);
+
+  const auto start = beam_span_for_progress(40, 0.0F);
+  CHECK(start.start == -19);
+  CHECK(start.end == 0);
+
+  const auto middle = beam_span_for_progress(40, 0.5F);
+  CHECK(middle.end - middle.start + 1 == 20);
+  CHECK(middle.start > start.start);
+  CHECK(middle.end < 40);
+
+  const auto done = beam_span_for_progress(40, 1.0F);
+  CHECK(done.start == 40);
+  CHECK(done.end == 59);
+}
+
+TEST_CASE("Projectile embeds at the right edge and holds before ending",
+          "[widgets][effects][decal][archetype]") {
+  using fl::widgets::effects::projectile_embed_x;
+  using fl::widgets::effects::projectile_head_x_for_progress;
+  using fl::widgets::effects::projectile_is_holding;
+
+  CHECK(projectile_embed_x(24) == 23);
+  CHECK(projectile_head_x_for_progress(24, 0.0F) < 0);
+  CHECK(projectile_head_x_for_progress(24, 0.5F) < 23);
+  CHECK(projectile_head_x_for_progress(24, 0.78F) == 23);
+  CHECK(projectile_head_x_for_progress(24, 1.0F) == 23);
+  CHECK_FALSE(projectile_is_holding(0.5F));
+  CHECK(projectile_is_holding(0.9F));
+}
+
+TEST_CASE("Beam and projectile frames move through their render bounds",
+          "[widgets][effects][decal][archetype]") {
+  using fl::widgets::effects::ArchetypeDecal;
+  using fl::widgets::effects::DecalAnimationKind;
+
+  const ArchetypeDecal beam{DecalAnimationKind::Beam, 40, 7};
+  CHECK(leftmost_visible_x(beam.render(0.0F)) == 0);
+  CHECK(leftmost_visible_x(beam.render(0.5F)) > 0);
+  CHECK(active_cells(beam.render(1.0F)) == 0);
+
+  const ArchetypeDecal projectile{DecalAnimationKind::Projectile, 24, 7};
+  CHECK(rightmost_visible_x(projectile.render(0.5F)) < 23);
+  CHECK(rightmost_visible_x(projectile.render(0.9F)) == 23);
+  CHECK(rightmost_visible_x(projectile.render(1.0F)) == 23);
+}
 
 TEST_CASE(
     "New non-FlameWave decal animations render Lospec500-colored active frames",
@@ -60,6 +291,71 @@ TEST_CASE(
     REQUIRE(active_cells(frame) > 0);
     require_lospec500_colors(frame);
   }
+}
+
+TEST_CASE("Starfire decal converts rotating flame pixels into ASCII cells",
+          "[widgets][effects][decal][starfire]") {
+  using fl::widgets::effects::DecalAnimationKind;
+
+  const auto animation = fl::widgets::effects::make_decal_animation(
+      DecalAnimationKind::Starfire, 48, 12);
+
+  REQUIRE(animation != nullptr);
+  REQUIRE(animation->kind() == DecalAnimationKind::Starfire);
+  REQUIRE(animation->name() ==
+          fl::widgets::effects::name(DecalAnimationKind::Starfire));
+
+  const auto early = animation->render(0.15F);
+  const auto late = animation->render(0.75F);
+  const auto repeat = animation->render(0.75F);
+
+  REQUIRE(early.width == 48);
+  REQUIRE(early.height == 12);
+  REQUIRE(active_cells(early) > 20);
+  REQUIRE(visible_glyphs(early) > 10);
+  REQUIRE(glyph_count(early, '@') < active_cells(early) / 3);
+  REQUIRE(has_non_lospec_color(early));
+  REQUIRE(has_non_lospec_color(late));
+
+  REQUIRE(late.cells.size() == repeat.cells.size());
+  bool saw_motion = false;
+  for (std::size_t i = 0; i < late.cells.size(); ++i) {
+    CAPTURE(i);
+    REQUIRE(late.cells[i].glyph == repeat.cells[i].glyph);
+    REQUIRE(late.cells[i].alpha == repeat.cells[i].alpha);
+    REQUIRE(late.cells[i].fg.has_value() == repeat.cells[i].fg.has_value());
+    REQUIRE(late.cells[i].bg.has_value() == repeat.cells[i].bg.has_value());
+    if (early.cells[i].glyph != late.cells[i].glyph ||
+        early.cells[i].alpha != late.cells[i].alpha) {
+      saw_motion = true;
+    }
+  }
+  REQUIRE(saw_motion);
+}
+
+TEST_CASE("Starfire progress is quantized over an integer frame count",
+          "[widgets][effects][decal][starfire]") {
+  fl::widgets::effects::Starfire animation(32, 10, 5);
+
+  const auto frame_zero = animation.render(0.0F);
+  const auto still_zero = animation.render(0.124F);
+  const auto frame_one = animation.render(0.126F);
+
+  REQUIRE(same_frame(frame_zero, still_zero));
+  REQUIRE_FALSE(same_frame(frame_zero, frame_one));
+}
+
+TEST_CASE("Starfire final progress renders the loop's last frame",
+          "[widgets][effects][decal][starfire]") {
+  fl::widgets::effects::Starfire animation(32, 10, 9);
+
+  const auto final_frame = animation.render(1.0F);
+  const auto final_repeat = animation.render(1.2F);
+  const auto before_final = animation.render(0.93F);
+
+  REQUIRE(same_frame(final_frame, final_repeat));
+  REQUIRE_FALSE(same_frame(final_frame, before_final));
+  REQUIRE(active_cells(final_frame) > 20);
 }
 
 TEST_CASE("PoisonCloud decal renders active RGB fog",

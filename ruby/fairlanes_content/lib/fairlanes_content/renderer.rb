@@ -163,7 +163,8 @@ module FairlanesContent
                     expected.learn_chance_percent);
             REQUIRE(fl::skills::definition(expected.skill).flee_success_percent ==
                     expected.flee_success_percent);
-            REQUIRE(fl::skills::decal_animation_for(expected.skill) == expected.visual);
+            REQUIRE(fl::skills::definition(expected.skill).decal_animation ==
+                    expected.visual);
           }
         }
 

@@ -13,7 +13,7 @@
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
-#include "fl/generated/status_content.hpp"
+#include "fl/ecs/systems/combatant_status_visuals.hpp"
 #include "fl/lospec500.hpp"
 #include "fl/skills/skill.hpp"
 #include "fl/widgets/effects/decal.hpp"
@@ -117,6 +117,133 @@ public:
           } else if (had_text && cell.bg) {
             pixel.foreground_color = fl::lospec500::color_at(41);
           }
+        }
+      }
+    }
+  }
+
+private:
+  struct PreparedEffect {
+    fl::ecs::components::DecalEffect effect;
+    std::shared_ptr<const fl::widgets::effects::DecalAnimation> animation;
+  };
+
+  std::vector<fl::ecs::components::DecalEffect> effects_;
+  std::vector<PreparedEffect> prepared_;
+  int prepared_width_ = 0;
+  int prepared_height_ = 0;
+};
+
+class UnderlayDecalNode : public ftxui::Node {
+public:
+  UnderlayDecalNode(ftxui::Element child,
+                    std::vector<fl::ecs::components::DecalEffect> effects)
+      : ftxui::Node(ftxui::Elements{std::move(child)}),
+        effects_(std::move(effects)) {}
+
+  void ComputeRequirement() override {
+    children_[0]->ComputeRequirement();
+    requirement_ = children_[0]->requirement();
+  }
+
+  void SetBox(ftxui::Box box) override {
+    box_ = box;
+    children_[0]->SetBox(box);
+
+    const int width = box_.x_max - box_.x_min + 1;
+    const int combatant_height = box_.y_max - box_.y_min + 1;
+    if (width <= 0 || combatant_height <= 0) {
+      prepared_.clear();
+      prepared_width_ = 0;
+      prepared_height_ = 0;
+      return;
+    }
+
+    if (prepared_width_ == width && prepared_height_ == combatant_height &&
+        prepared_.size() == effects_.size()) {
+      return;
+    }
+
+    prepared_width_ = width;
+    prepared_height_ = combatant_height;
+    prepared_.clear();
+    prepared_.reserve(effects_.size());
+
+    for (const auto &effect : effects_) {
+      const int decal_height = combatant_height + effect.extra_height;
+      auto animation = fl::widgets::effects::make_decal_animation(
+          effect.animation_kind, width, decal_height, effect.config);
+      if (animation) {
+        prepared_.push_back(PreparedEffect{effect, std::move(animation)});
+      }
+    }
+  }
+
+  void Render(ftxui::Screen &screen) override {
+    children_[0]->Render(screen);
+
+    const int width = box_.x_max - box_.x_min + 1;
+    const int combatant_height = box_.y_max - box_.y_min + 1;
+    if (width <= 0 || combatant_height <= 0) {
+      return;
+    }
+
+    std::vector<ftxui::Pixel> text_pixels;
+    text_pixels.reserve(static_cast<std::size_t>(width * combatant_height));
+    for (int y = box_.y_min; y <= box_.y_max; ++y) {
+      for (int x = box_.x_min; x <= box_.x_max; ++x) {
+        if (x < 0 || y < 0 || x >= screen.dimx() || y >= screen.dimy()) {
+          text_pixels.push_back(ftxui::Pixel{});
+          continue;
+        }
+        text_pixels.push_back(screen.PixelAt(x, y));
+      }
+    }
+
+    const auto now = fl::ecs::components::DecalEffect::Clock::now();
+    for (const auto &prepared : prepared_) {
+      auto frame =
+          prepared.animation->render(prepared.effect.loop_progress_at(now));
+      const int decal_y_min = box_.y_max - frame.height + 1;
+      for (int y = 0; y < frame.height; ++y) {
+        const int screen_y = decal_y_min + y;
+        if (screen_y < 0 || screen_y >= screen.dimy()) {
+          continue;
+        }
+        for (int x = 0; x < frame.width; ++x) {
+          const int screen_x = box_.x_min + x;
+          if (screen_x < 0 || screen_x >= screen.dimx()) {
+            continue;
+          }
+
+          const auto &cell = frame.at(x, y);
+          if (!cell.active()) {
+            continue;
+          }
+
+          auto &pixel = screen.PixelAt(screen_x, screen_y);
+          if (cell.bg) {
+            pixel.background_color = *cell.bg;
+          }
+          if (cell.fg) {
+            pixel.foreground_color = *cell.fg;
+          }
+          if (cell.glyph != ' ') {
+            pixel.character = std::string(1, cell.glyph);
+          }
+        }
+      }
+    }
+
+    std::size_t index = 0;
+    for (int y = box_.y_min; y <= box_.y_max; ++y) {
+      for (int x = box_.x_min; x <= box_.x_max; ++x) {
+        const auto saved = text_pixels[index++];
+        if (x < 0 || y < 0 || x >= screen.dimx() || y >= screen.dimy()) {
+          continue;
+        }
+        if (saved.character != " ") {
+          screen.PixelAt(x, y) = saved;
         }
       }
     }
@@ -293,22 +420,30 @@ private:
 std::vector<DebuffLabel> debuff_rows_for(entt::registry &reg,
                                          entt::entity entity) {
   std::vector<DebuffLabel> debuffs;
-  const auto label_for = [](const fl::status::StatusId status) {
-    const auto metadata = fl::status::generated_content::metadata(status);
-    return DebuffLabel{std::string{metadata.display_name},
-                       fl::lospec500::color_at(metadata.palette_index)};
-  };
-
-  if (reg.any_of<fl::ecs::components::Poison>(entity)) {
-    debuffs.push_back(label_for(fl::status::StatusId::Poison));
-  }
-  if (reg.any_of<fl::ecs::components::DireBleed>(entity)) {
-    debuffs.push_back(label_for(fl::status::StatusId::DireBleed));
-  }
-  if (reg.any_of<fl::ecs::components::Freeze>(entity)) {
-    debuffs.push_back(label_for(fl::status::StatusId::Freeze));
+  const auto visuals = fl::ecs::systems::combatant_status_visuals_for(
+      reg, entity, fl::ecs::systems::CombatantVisualLayer::StatusText,
+      fl::ecs::systems::CombatantVisualRegion::StatusRows);
+  debuffs.reserve(visuals.size());
+  for (const auto &visual : visuals) {
+    if (!visual.label.empty()) {
+      debuffs.push_back(DebuffLabel{
+          visual.label, visual.color.value_or(fl::lospec500::color_at(32))});
+    }
   }
   return debuffs;
+}
+
+fl::ecs::components::CombatantUnderlayDecals
+underlay_decals_for(entt::registry &reg, entt::entity entity) {
+  fl::ecs::components::CombatantUnderlayDecals decals;
+  const auto visuals = fl::ecs::systems::combatant_status_visuals(reg, entity);
+  for (const auto &visual : visuals) {
+    if (visual.layer == fl::ecs::systems::CombatantVisualLayer::Underlay &&
+        visual.decal.has_value()) {
+      decals.effects.push_back(*visual.decal);
+    }
+  }
+  return decals;
 }
 
 ftxui::Element skill_rows(ftxui::Element child,
@@ -325,6 +460,12 @@ ftxui::Element
 attack_decal(ftxui::Element child,
              const fl::ecs::components::CombatantDecals &decals) {
   return std::make_shared<AttackDecalNode>(std::move(child), decals.effects);
+}
+
+ftxui::Element
+underlay_decal(ftxui::Element child,
+               const fl::ecs::components::CombatantUnderlayDecals &decals) {
+  return std::make_shared<UnderlayDecalNode>(std::move(child), decals.effects);
 }
 
 } // namespace
@@ -406,6 +547,11 @@ ftxui::Element Combatant::Render() {
 
   border = skill_rows(std::move(border), skill_rows_for(reg, entity));
   border = debuff_rows(std::move(border), debuff_rows_for(reg, entity));
+
+  auto derived_underlays = underlay_decals_for(reg, entity);
+  if (!derived_underlays.effects.empty()) {
+    border = underlay_decal(std::move(border), derived_underlays);
+  }
 
   if (auto *decals = reg.try_get<CombatantDecals>(entity)) {
     border = attack_decal(std::move(border), *decals);

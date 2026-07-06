@@ -16,6 +16,7 @@
 #include "fl/skills/skill.hpp"
 #include "fl/skills/skill_selection.hpp"
 #include "fl/skills/skill_sequence.hpp"
+#include "sr/atb_fsm.hpp"
 
 namespace {
 
@@ -363,172 +364,164 @@ TEST_CASE("Permanent field debuffs remain when no finite duration is set",
 
 namespace {
 
-struct TempoHarness {
-  fl::GrandCentral gc{1, 1, 2};
-  fl::context::AccountCtx account_ctx{gc.account_context(0)};
-  fl::context::PartyCtx party_ctx{account_ctx.party_context(0)};
-  fl::primitives::EncounterData &encounter{party_ctx.party_data().create_encounter()};
-  entt::entity actor{party_ctx.party_data().members().front().member_id()};
-  entt::entity caster{party_ctx.party_data().members().back().member_id()};
+void add_actor_to_charge_model(fl::context::PartyCtx &party_ctx,
+                               entt::entity actor) {
+  auto &charge =
+      party_ctx.reg().get_or_emplace<fl::ecs::components::AtbCharge>(actor);
+  const int rate_percent =
+      100 +
+      CombatStatusSystem::turn_tempo_modifier_percent(party_ctx.reg(), actor);
+  charge.charge_per_beat = std::max<int64_t>(
+      1, (seerin::AtbMachine::kChargePerBeat *
+          static_cast<int64_t>(rate_percent)) /
+             100);
+}
 
-  TempoHarness() {
-    encounter.defenders().members().push_back(actor);
-    encounter.defenders().members().push_back(caster);
-    encounter.add_party_combatant_bus(actor);
-    encounter.add_party_combatant_bus(caster);
-  }
-
-  CombatStatusSystem::Scheduler &scheduler() {
-    return encounter.atb_engine().scheduler();
-  }
-
-  void add_actor_to_atb() {
-    encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{actor}});
-  }
-
-  int beats_until_active(int limit = 200) {
-    for (int beat = 1; beat <= limit; ++beat) {
-      encounter.atb_in().emit(seerin::AtbInEvent{seerin::Beat{}});
-      if (encounter.atb_engine().active_combatant() == actor) {
-        return beat;
-      }
-    }
-    return -1;
-  }
-
-};
+int beats_until_active(fl::context::PartyCtx &party_ctx, entt::entity actor) {
+  const auto &charge =
+      party_ctx.reg().get<fl::ecs::components::AtbCharge>(actor);
+  return static_cast<int>((charge.max_charge + charge.charge_per_beat - 1) /
+                          charge.charge_per_beat);
+}
 
 } // namespace
 
 TEST_CASE("Slow reduces ATB charge rate through shared tempo modifiers",
           "[combat-status][tempo][atb]") {
-  TempoHarness h;
+  BuiltEncounter h;
+  const auto actor = h.defender();
   REQUIRE(CombatStatusSystem::apply_status(
       h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Slow,
                                    .name = "Test Slow",
-                                   .source = h.caster,
-                                   .target = h.actor,
+                                   .source = h.attacker(),
+                                   .target = actor,
                                    .value = 25}));
 
-  h.add_actor_to_atb();
+  add_actor_to_charge_model(h.party_ctx, actor);
 
-  REQUIRE(h.beats_until_active() == 80);
+  REQUIRE(beats_until_active(h.party_ctx, actor) == 80);
   REQUIRE(h.party_ctx.reg()
-              .get<fl::ecs::components::AtbCharge>(h.actor)
+              .get<fl::ecs::components::AtbCharge>(actor)
               .charge_per_beat == 60);
 }
 
 TEST_CASE("Haste increases ATB charge rate through shared tempo modifiers",
           "[combat-status][tempo][atb]") {
-  TempoHarness h;
+  BuiltEncounter h;
+  const auto actor = h.defender();
   REQUIRE(CombatStatusSystem::apply_status(
       h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Haste,
                                    .name = "Test Haste",
-                                   .source = h.caster,
-                                   .target = h.actor,
+                                   .source = h.attacker(),
+                                   .target = actor,
                                    .value = 25,
                                    .negative = false}));
 
-  h.add_actor_to_atb();
+  add_actor_to_charge_model(h.party_ctx, actor);
 
-  REQUIRE(h.beats_until_active() == 48);
+  REQUIRE(beats_until_active(h.party_ctx, actor) == 48);
   REQUIRE(h.party_ctx.reg()
-              .get<fl::ecs::components::AtbCharge>(h.actor)
+              .get<fl::ecs::components::AtbCharge>(actor)
               .charge_per_beat == 100);
 }
 
 TEST_CASE("Applied Slow affects ATB readiness timing",
           "[combat-status][tempo][atb]") {
-  TempoHarness h;
+  BuiltEncounter h;
+  const auto actor = h.defender();
 
   REQUIRE(CombatStatusSystem::apply_status(
       h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Slow,
                                    .name = "Applied Slow",
-                                   .source = h.caster,
-                                   .target = h.actor,
+                                   .source = h.attacker(),
+                                   .target = actor,
                                    .value = 25}));
-  h.add_actor_to_atb();
+  add_actor_to_charge_model(h.party_ctx, actor);
 
-  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.actor,
+  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), actor,
                                          CombatStatusKind::Slow));
-  REQUIRE(h.beats_until_active() == 80);
+  REQUIRE(beats_until_active(h.party_ctx, actor) == 80);
 }
 
 TEST_CASE("Applied Haste affects ATB readiness timing",
           "[combat-status][tempo][atb]") {
-  TempoHarness h;
+  BuiltEncounter h;
+  const auto actor = h.defender();
 
   REQUIRE(CombatStatusSystem::apply_status(
       h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Haste,
                                    .name = "Applied Haste",
-                                   .source = h.caster,
-                                   .target = h.actor,
+                                   .source = h.attacker(),
+                                   .target = actor,
                                    .value = 25,
                                    .negative = false}));
-  h.add_actor_to_atb();
+  add_actor_to_charge_model(h.party_ctx, actor);
 
-  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.actor,
+  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), actor,
                                          CombatStatusKind::Haste));
-  REQUIRE(h.beats_until_active() == 48);
+  REQUIRE(beats_until_active(h.party_ctx, actor) == 48);
 }
 
 TEST_CASE("Cleanse removes Slow timing impact",
           "[combat-status][tempo][atb][cleanse]") {
-  TempoHarness h;
+  BuiltEncounter h;
+  const auto actor = h.defender();
   REQUIRE(CombatStatusSystem::apply_status(
       h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Slow,
                                    .name = "Test Slow",
-                                   .source = h.caster,
-                                   .target = h.actor,
+                                   .source = h.attacker(),
+                                   .target = actor,
                                    .value = 25}));
 
-  REQUIRE(CombatStatusSystem::cleanse(h.party_ctx, h.caster, h.actor) == 1);
-  h.add_actor_to_atb();
+  REQUIRE(CombatStatusSystem::cleanse(h.party_ctx, h.attacker(), actor) == 1);
+  add_actor_to_charge_model(h.party_ctx, actor);
 
-  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.actor,
+  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), actor,
                                                CombatStatusKind::Slow));
-  REQUIRE(h.beats_until_active() == 60);
+  REQUIRE(beats_until_active(h.party_ctx, actor) == 60);
 }
 
 TEST_CASE("Expired Slow stops affecting future ATB charge timing",
           "[combat-status][tempo][atb][expiry]") {
-  TempoHarness h;
+  BuiltEncounter h;
+  const auto actor = h.defender();
   REQUIRE(CombatStatusSystem::apply_status(
       h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Slow,
                                    .name = "Brief Slow",
-                                   .source = h.caster,
-                                   .target = h.actor,
+                                   .source = h.attacker(),
+                                   .target = actor,
                                    .duration_seconds = 1,
                                    .value = 25}));
 
   tick_party(h.party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
-  h.add_actor_to_atb();
+  add_actor_to_charge_model(h.party_ctx, actor);
 
-  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.actor,
+  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), actor,
                                                CombatStatusKind::Slow));
-  REQUIRE(h.beats_until_active() == 60);
+  REQUIRE(beats_until_active(h.party_ctx, actor) == 60);
 }
 
 TEST_CASE("Slow and Haste combine deterministically by net tempo modifier",
           "[combat-status][tempo][atb]") {
-  TempoHarness h;
+  BuiltEncounter h;
+  const auto actor = h.defender();
   REQUIRE(CombatStatusSystem::apply_status(
       h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Slow,
                                    .name = "Test Slow",
-                                   .source = h.caster,
-                                   .target = h.actor,
+                                   .source = h.attacker(),
+                                   .target = actor,
                                    .value = 25}));
   REQUIRE(CombatStatusSystem::apply_status(
       h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Haste,
                                    .name = "Test Haste",
-                                   .source = h.caster,
-                                   .target = h.actor,
+                                   .source = h.attacker(),
+                                   .target = actor,
                                    .value = 25,
                                    .negative = false}));
 
-  h.add_actor_to_atb();
+  add_actor_to_charge_model(h.party_ctx, actor);
 
   REQUIRE(CombatStatusSystem::turn_tempo_modifier_percent(h.party_ctx.reg(),
-                                                          h.actor) == 0);
-  REQUIRE(h.beats_until_active() == 60);
+                                                          actor) == 0);
+  REQUIRE(beats_until_active(h.party_ctx, actor) == 60);
 }

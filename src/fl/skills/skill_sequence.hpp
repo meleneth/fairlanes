@@ -32,7 +32,16 @@ private:
   void schedule_decal_strike(entt::entity attacker, entt::entity target,
                              SkillKey skill);
   void schedule_mercyburst(entt::entity attacker, entt::entity target);
+  void schedule_single_heal(entt::entity attacker, entt::entity target,
+                            SkillKey skill, int heal_amount);
+  void schedule_group_heal(entt::entity attacker, SkillKey skill,
+                           int heal_amount);
   void schedule_flame_wave(entt::entity attacker);
+  void schedule_group_damage(entt::entity attacker, SkillKey skill);
+  void schedule_wired_status_effect(entt::entity attacker, entt::entity target,
+                                    SkillKey skill);
+  void schedule_placeholder_effect(entt::entity attacker, entt::entity target,
+                                   SkillKey skill);
   void schedule_flee(entt::entity attacker, SkillKey skill);
   void schedule_observe(entt::entity attacker);
   void schedule_reek_fade(entt::entity entity, std::string_view label,

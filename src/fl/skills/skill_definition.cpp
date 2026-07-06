@@ -13,6 +13,14 @@ namespace fl::skills {
 
 namespace {
 
+const SkillDefinition *find_definition(SkillKey skill) noexcept {
+  const auto all = all_definitions();
+  const auto it = std::find_if(all.begin(), all.end(), [skill](auto *entry) {
+    return entry->key.base == skill.base;
+  });
+  return it == all.end() ? nullptr : *it;
+}
+
 [[noreturn]] void abort_missing_definition(SkillKey skill) {
   std::cerr << "fairlanes: missing skill definition base="
             << static_cast<std::underlying_type_t<SkillId>>(skill.base)
@@ -23,14 +31,14 @@ namespace {
 } // namespace
 
 const SkillDefinition &definition(SkillKey skill) noexcept {
-  const auto all = all_definitions();
-  const auto it = std::find_if(all.begin(), all.end(), [skill](auto *entry) {
-    return entry->key.base == skill.base;
-  });
-  if (it == all.end()) {
-    abort_missing_definition(skill);
+  if (const auto *found = find_definition(skill)) {
+    return *found;
   }
-  return **it;
+  abort_missing_definition(skill);
+}
+
+bool has_definition(SkillKey skill) noexcept {
+  return find_definition(skill) != nullptr;
 }
 
 std::span<const SkillDefinition *const> all_definitions() noexcept {
@@ -42,7 +50,11 @@ std::string_view name(SkillKey skill) noexcept {
 }
 
 std::string display_name(SkillKey skill) {
-  auto display = std::string{name(skill)};
+  const auto *found = find_definition(skill);
+  auto display = found == nullptr
+                     ? "Unknown Skill #" + std::to_string(static_cast<
+                           std::underlying_type_t<SkillId>>(skill.base))
+                     : std::string{found->display_name};
   if (skill.rank.value() != SkillRank::kMin) {
     display += " ";
     display += roman(skill.rank);

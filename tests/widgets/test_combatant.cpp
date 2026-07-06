@@ -5,6 +5,7 @@
 #include <ftxui/screen/screen.hpp>
 
 #include "fl/ecs/components/atb_charge.hpp"
+#include "fl/ecs/components/combat_status.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"
 #include "fl/ecs/components/freeze.hpp"
 #include "fl/ecs/components/party_member.hpp"
@@ -63,6 +64,32 @@ TEST_CASE("Combatant renders skill slots when allocated at least nine lines",
   REQUIRE(rendered.find("Observe") != std::string::npos);
   REQUIRE(rendered.find("Thump") != std::string::npos);
   REQUIRE(rendered.find("--") != std::string::npos);
+}
+
+TEST_CASE("Combatant renders unknown skill slots without aborting",
+          "[widgets][combatant][skills]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto entity = party_ctx.party_data().members().front().member_id();
+
+  auto &party_member =
+      party_ctx.reg().get<fl::ecs::components::PartyMember>(entity);
+  party_member.closet().skill_slots[1] =
+      fl::skills::SkillKey{static_cast<fl::skills::SkillId>(999)};
+
+  fl::widgets::Combatant combatant{party_ctx.reg(), entity, true};
+  auto element = combatant.Render() |
+                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 48) |
+                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 9);
+
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(48),
+                                      ftxui::Dimension::Fixed(9));
+  ftxui::Render(screen, element);
+
+  const std::string rendered = screen.ToString();
+  REQUIRE(rendered.find("Unknown Skill #999") != std::string::npos);
 }
 
 TEST_CASE("Combatant renders debuff labels when allocated enough room",
@@ -156,6 +183,90 @@ TEST_CASE("Combatant non-flame decals do not change fitted widget dimensions",
 
   REQUIRE(ftxui::Dimension::Fit(decal_element).dimx == baseline_width);
   REQUIRE(ftxui::Dimension::Fit(decal_element).dimy == baseline_height);
+}
+
+TEST_CASE("Combatant underlay decal renders behind combatant text",
+          "[widgets][combatant][decal][underlay]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto entity = party_ctx.party_data().members().front().member_id();
+
+  fl::widgets::Combatant baseline{party_ctx.reg(), entity, true};
+  auto baseline_element = baseline.Render();
+  auto baseline_width = ftxui::Dimension::Fit(baseline_element).dimx;
+  auto baseline_height = ftxui::Dimension::Fit(baseline_element).dimy;
+
+  fl::widgets::effects::DecalConfig config;
+  config.seed = 0x57A2F17Eu;
+  party_ctx.reg()
+      .emplace_or_replace<fl::ecs::components::CombatantUnderlayDecals>(
+          entity,
+          fl::ecs::components::CombatantUnderlayDecals{
+              fl::ecs::components::DecalEffect{
+                  seerin::uWu{0},
+                  fl::ecs::components::DecalEffect::Clock::now(),
+                  std::chrono::milliseconds{2000},
+                  fl::widgets::effects::DecalAnimationKind::Starfire, config}});
+
+  fl::widgets::Combatant with_underlay{party_ctx.reg(), entity, true};
+  auto element = with_underlay.Render() |
+                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 48) |
+                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 9);
+
+  auto measured_underlay = with_underlay.Render();
+  REQUIRE(ftxui::Dimension::Fit(measured_underlay).dimx == baseline_width);
+  REQUIRE(ftxui::Dimension::Fit(measured_underlay).dimy == baseline_height);
+
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(48),
+                                      ftxui::Dimension::Fixed(9));
+  ftxui::Render(screen, element);
+
+  const std::string rendered = screen.ToString();
+  REQUIRE(rendered.find("Observe") != std::string::npos);
+  bool saw_starfire_glyph = false;
+  for (const char glyph : std::string{".,:;!*^#@"}) {
+    saw_starfire_glyph =
+        saw_starfire_glyph || rendered.find(glyph) != std::string::npos;
+  }
+  REQUIRE(saw_starfire_glyph);
+}
+
+TEST_CASE("Combatant derived status underlays do not change fitted dimensions",
+          "[widgets][combatant][status][underlay]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto entity = party_ctx.party_data().members().front().member_id();
+
+  fl::widgets::Combatant baseline{party_ctx.reg(), entity, true};
+  auto baseline_element = baseline.Render();
+  auto baseline_width = ftxui::Dimension::Fit(baseline_element).dimx;
+  auto baseline_height = ftxui::Dimension::Fit(baseline_element).dimy;
+
+  auto &statuses =
+      party_ctx.reg().emplace<fl::ecs::components::CombatStatuses>(entity);
+  fl::ecs::components::CombatStatusEffect shield;
+  shield.id = statuses.next_id++;
+  shield.kind = fl::ecs::components::CombatStatusKind::Shield;
+  shield.name = "Test Shield";
+  shield.negative = false;
+  statuses.effects.push_back(std::move(shield));
+
+  fl::ecs::components::CombatStatusEffect haste;
+  haste.id = statuses.next_id++;
+  haste.kind = fl::ecs::components::CombatStatusKind::Haste;
+  haste.name = "Test Haste";
+  haste.negative = false;
+  statuses.effects.push_back(std::move(haste));
+
+  fl::widgets::Combatant with_status_underlays{party_ctx.reg(), entity, true};
+  auto status_element = with_status_underlays.Render();
+
+  REQUIRE(ftxui::Dimension::Fit(status_element).dimx == baseline_width);
+  REQUIRE(ftxui::Dimension::Fit(status_element).dimy == baseline_height);
 }
 
 TEST_CASE("Combatant can render multiple decals without changing dimensions",

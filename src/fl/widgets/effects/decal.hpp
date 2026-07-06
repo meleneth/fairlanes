@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -20,8 +21,41 @@ enum class DecalAnimationKind {
   BloodBloom,
   FrostCrack,
   VoidRipple,
+  Starfire,
   HitpointNumber,
+  Impact,
+  Slash,
+  Bite,
+  Projectile,
+  Sweep,
+  Burst,
+  Beam,
+  Heal,
+  Cleanse,
+  Glitch,
+  Aura,
+  Field,
 };
+
+inline constexpr std::array<DecalAnimationKind, 22>
+    kAvailableDecalAnimationKinds{
+        DecalAnimationKind::FlameWave,  DecalAnimationKind::Shock,
+        DecalAnimationKind::RocksFall,  DecalAnimationKind::PoisonCloud,
+        DecalAnimationKind::HolyNova,   DecalAnimationKind::BloodBloom,
+        DecalAnimationKind::FrostCrack, DecalAnimationKind::VoidRipple,
+        DecalAnimationKind::Starfire,   DecalAnimationKind::HitpointNumber,
+        DecalAnimationKind::Impact,     DecalAnimationKind::Slash,
+        DecalAnimationKind::Bite,       DecalAnimationKind::Projectile,
+        DecalAnimationKind::Sweep,      DecalAnimationKind::Burst,
+        DecalAnimationKind::Beam,       DecalAnimationKind::Heal,
+        DecalAnimationKind::Cleanse,    DecalAnimationKind::Glitch,
+        DecalAnimationKind::Aura,       DecalAnimationKind::Field,
+    };
+
+[[nodiscard]] constexpr const std::array<DecalAnimationKind, 22> &
+available_decal_animation_kinds() noexcept {
+  return kAvailableDecalAnimationKinds;
+}
 
 struct DecalConfig {
   float duration_seconds = 1.0F;
@@ -29,6 +63,7 @@ struct DecalConfig {
   bool use_foreground_sparks = true;
   std::uint32_t seed = 0xA17CE5EDu;
   std::optional<ftxui::Color> color;
+  std::optional<char> glyph;
   int hitpoints = 0;
 };
 
@@ -65,8 +100,34 @@ name(DecalAnimationKind kind) noexcept {
     return "FrostCrack";
   case DecalAnimationKind::VoidRipple:
     return "VoidRipple";
+  case DecalAnimationKind::Starfire:
+    return "Starfire";
   case DecalAnimationKind::HitpointNumber:
     return "HitpointNumber";
+  case DecalAnimationKind::Impact:
+    return "Impact";
+  case DecalAnimationKind::Slash:
+    return "Slash";
+  case DecalAnimationKind::Bite:
+    return "Bite";
+  case DecalAnimationKind::Projectile:
+    return "Projectile";
+  case DecalAnimationKind::Sweep:
+    return "Sweep";
+  case DecalAnimationKind::Burst:
+    return "Burst";
+  case DecalAnimationKind::Beam:
+    return "Beam";
+  case DecalAnimationKind::Heal:
+    return "Heal";
+  case DecalAnimationKind::Cleanse:
+    return "Cleanse";
+  case DecalAnimationKind::Glitch:
+    return "Glitch";
+  case DecalAnimationKind::Aura:
+    return "Aura";
+  case DecalAnimationKind::Field:
+    return "Field";
   }
 
   return "Unknown";

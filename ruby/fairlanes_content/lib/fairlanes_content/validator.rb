@@ -16,21 +16,34 @@ module FairlanesContent
     VALID_POOLS = Set[:common_woodland, :rare_woodland].freeze
     VALID_EXECUTIONS = Set[
       :thump_like, :eviscerate, :poison, :cold_snap, :flame_strike,
-      :flame_wave, :decal_strike, :flee, :observe
+      :flame_wave, :decal_strike, :damage_strike, :group_damage,
+      :single_heal, :group_heal, :placeholder_effect, :flee, :observe
     ].freeze
     VALID_TAGS = Set[
       :physical, :blunt, :piercing, :slashing, :bleed, :poison, :disease,
       :acid, :fire, :cold, :lightning, :earth, :gravity, :sonic, :healing,
       :holy, :control, :area, :projectile, :melee, :observe, :utility,
-      :escape
+      :escape, :rot, :water, :air, :light, :dark, :arcane, :ballistic,
+      :laser, :plasma, :data, :ranged, :spell, :breath, :song, :trap, :self,
+      :ally, :enemy, :group, :random_enemy, :all_enemies, :all_allies, :field,
+      :summon, :damage, :heal, :cleanse, :buff, :debuff, :poison_status,
+      :burn_status, :bleed_status, :slow_status, :stun_status, :blind_status,
+      :silence_status, :fear_status, :regen_status, :shield_status,
+      :taunt_status, :vulnerable_status, :haste_status, :reflect_status,
+      :dispel, :drain, :execute, :beast, :vermin, :plant, :fungal,
+      :amphibian, :reptile, :aquatic, :avian, :undead, :construct, :machine,
+      :celestial, :void, :martial, :natural, :industrial, :cybernetic
     ].freeze
     VALID_VISUAL_CPP = Set[
       "FlameWave", "Shock", "RocksFall", "PoisonCloud", "HolyNova",
-      "BloodBloom", "FrostCrack", "VoidRipple", "HitpointNumber"
+      "BloodBloom", "FrostCrack", "VoidRipple", "HitpointNumber",
+      "Starfire"
     ].freeze
     VALID_DECLARATIVE_SHAPES = Set[
       :handwritten_behavior,
-      :decal_strike
+      :decal_strike,
+      :generated_runtime_behavior,
+      :placeholder_effect
     ].freeze
 
     def initialize(declarations)

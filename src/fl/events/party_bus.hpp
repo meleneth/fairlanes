@@ -6,6 +6,7 @@
 #include <utility>
 #include <variant>
 
+#include "fl/skills/skill.hpp"
 #include "sr/variant_bus.hpp"
 
 namespace fl::events {
@@ -60,6 +61,12 @@ struct FreezeStarted {
 struct FreezeEnded {
   entt::entity target{entt::null};
 };
+struct SkillHitLanded {
+  entt::entity source{entt::null};
+  entt::entity target{entt::null};
+  fl::skills::SkillKey skill{fl::skills::SkillId::Observe};
+  int damage{0};
+};
 struct FleeAttempted {
   entt::entity source{entt::null};
   int chance_percent{0};
@@ -76,7 +83,7 @@ struct PlayerDied {
 
 using CombatantEvent =
     std::variant<PoisonApplied, FreezeApplied, FreezeStarted, FreezeEnded,
-                 FleeAttempted, CombatantFled, PlayerDied>;
+                 SkillHitLanded, FleeAttempted, CombatantFled, PlayerDied>;
 
 using CombatantBus = seerin::VariantBus<CombatantEvent>;
 

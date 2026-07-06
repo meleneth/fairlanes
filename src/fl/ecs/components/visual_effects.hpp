@@ -66,6 +66,29 @@ struct DecalEffect {
                           static_cast<float>(duration.count());
     return std::clamp(progress, 0.0F, 1.0F);
   }
+
+  [[nodiscard]] float loop_progress_at(Clock::time_point now) const noexcept {
+    if (duration.count() <= 0) {
+      return 0.0F;
+    }
+
+    const auto elapsed =
+        std::chrono::duration_cast<std::chrono::milliseconds>(now - started_at);
+    const auto duration_count = duration.count();
+    const auto elapsed_count = elapsed.count();
+    const auto looped =
+        ((elapsed_count % duration_count) + duration_count) % duration_count;
+    return static_cast<float>(looped) / static_cast<float>(duration_count);
+  }
+};
+
+struct CombatantUnderlayDecals {
+  std::vector<DecalEffect> effects;
+
+  CombatantUnderlayDecals() = default;
+  explicit CombatantUnderlayDecals(DecalEffect effect) {
+    effects.push_back(std::move(effect));
+  }
 };
 
 struct CombatantDecals {

@@ -7,13 +7,18 @@
 #include <limits>
 #include <string>
 #include <type_traits>
+#include <vector>
 
+#include "fl/ecs/components/combat_status.hpp"
+#include "fl/ecs/components/field_debuff.hpp"
 #include "fl/ecs/components/hp_bar_color_override.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
+#include "fl/ecs/systems/combat_status_system.hpp"
 #include "fl/ecs/systems/dire_bleed_system.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/lospec500.hpp"
+#include "fl/primitives/damage.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/skills/eviscerate.hpp"
 #include "fl/skills/skill_definition.hpp"
@@ -78,6 +83,375 @@ void add_hitpoint_number_decal(fl::context::PartyCtx &party_ctx,
           kHitpointNumberExtraHeight});
 }
 
+int apply_damage_skill(fl::context::PartyCtx &party_ctx, entt::entity attacker,
+                       entt::entity target, SkillKey skill) {
+  fl::skills::Thump thump;
+  const int damage = thump.thump(
+      fl::context::AttackCtx::make_attack(party_ctx, attacker, target), skill);
+  if (damage > 0 && party_ctx.reg().valid(target)) {
+    party_ctx.party_data().encounter_data().combatant_bus(target).emit(
+        fl::events::CombatantEvent{
+            fl::events::SkillHitLanded{attacker, target, skill, damage}});
+  }
+  return damage;
+}
+
+std::vector<entt::entity>
+opposing_alive_targets(fl::context::PartyCtx &party_ctx,
+                       entt::entity attacker) {
+  auto &encounter = party_ctx.party_data().encounter_data();
+  return encounter.attackers().contains(attacker)
+             ? encounter.defenders().alive_members(party_ctx)
+             : encounter.attackers().alive_members(party_ctx);
+}
+
+std::vector<entt::entity> allied_alive_targets(fl::context::PartyCtx &party_ctx,
+                                               entt::entity actor) {
+  auto &encounter = party_ctx.party_data().encounter_data();
+  return encounter.attackers().contains(actor)
+             ? encounter.attackers().alive_members(party_ctx)
+             : encounter.defenders().alive_members(party_ctx);
+}
+
+bool is_wired_status_skill(SkillKey skill) noexcept {
+  switch (skill.base) {
+  case SkillId::ShellGuard:
+  case SkillId::ArmorPlate:
+  case SkillId::SmokeScreen:
+  case SkillId::HushHex:
+  case SkillId::Clearbell:
+  case SkillId::KindleWound:
+  case SkillId::RootLeech:
+  case SkillId::WebSnare:
+  case SkillId::BlueScreen:
+  case SkillId::SignalJam:
+  case SkillId::ChecksumWard:
+  case SkillId::Choirguard:
+  case SkillId::CinderVeil:
+  case SkillId::RimeArmor:
+  case SkillId::BattleFocus:
+  case SkillId::PackHowl:
+  case SkillId::SignalFlare:
+  case SkillId::ClockUp:
+  case SkillId::Burrow:
+  case SkillId::GnatCloud:
+  case SkillId::MiasmaCloud:
+  case SkillId::Whiteout:
+  case SkillId::WeightOfTuesday:
+  case SkillId::Overcharge:
+    return true;
+  default:
+    return false;
+  }
+}
+
+fl::ecs::components::FieldTeam
+enemy_field_team(fl::context::PartyCtx &party_ctx, entt::entity actor) {
+  auto &encounter = party_ctx.party_data().encounter_data();
+  return encounter.attackers().contains(actor)
+             ? fl::ecs::components::FieldTeam::Defenders
+             : fl::ecs::components::FieldTeam::Attackers;
+}
+
+void apply_wired_skill_effect(fl::context::PartyCtx &party_ctx,
+                              SkillSequencer::Scheduler &scheduler,
+                              entt::entity attacker, entt::entity target,
+                              SkillKey skill) {
+  using fl::ecs::components::CombatStatusKind;
+  using fl::ecs::components::FieldDebuffKind;
+  using fl::ecs::systems::CombatStatusSystem;
+
+  switch (skill.base) {
+  case SkillId::ShellGuard:
+    CombatStatusSystem::apply_status(party_ctx, scheduler,
+                                     {.kind = CombatStatusKind::Shield,
+                                      .name = display_name(skill),
+                                      .source = attacker,
+                                      .target = target,
+                                      .duration_seconds = 30,
+                                      .value = 35,
+                                      .negative = false});
+    return;
+  case SkillId::ArmorPlate:
+    CombatStatusSystem::apply_status(party_ctx, scheduler,
+                                     {.kind = CombatStatusKind::Shield,
+                                      .name = display_name(skill),
+                                      .source = attacker,
+                                      .target = target,
+                                      .duration_seconds = 45,
+                                      .value = 60,
+                                      .negative = false});
+    return;
+  case SkillId::SmokeScreen:
+    CombatStatusSystem::apply_field_debuff(
+        party_ctx, scheduler,
+        {.team = enemy_field_team(party_ctx, attacker),
+         .kind = FieldDebuffKind::AccuracyDown,
+         .name = display_name(skill),
+         .source = attacker,
+         .value = 35,
+         .duration_seconds = 30});
+    return;
+  case SkillId::HushHex:
+    CombatStatusSystem::apply_status(party_ctx, scheduler,
+                                     {.kind = CombatStatusKind::Silence,
+                                      .name = display_name(skill),
+                                      .source = attacker,
+                                      .target = target,
+                                      .duration_seconds = 24});
+    return;
+  case SkillId::Clearbell:
+    CombatStatusSystem::cleanse(party_ctx, attacker, target);
+    return;
+  case SkillId::KindleWound: {
+    apply_damage_skill(party_ctx, attacker, target, skill);
+    const bool already_burning = CombatStatusSystem::has_status(
+        party_ctx.reg(), target, CombatStatusKind::Burn);
+    const auto *stats =
+        party_ctx.reg().try_get<fl::ecs::components::Stats>(target);
+    const bool wounded = stats != nullptr && stats->hp_ < stats->max_hp_;
+    CombatStatusSystem::apply_status(
+        party_ctx, scheduler,
+        {.kind = CombatStatusKind::Burn,
+         .name = display_name(skill),
+         .source = attacker,
+         .target = target,
+         .duration_seconds = 18,
+         .tick_damage = already_burning || wounded ? 3 : 2,
+         .tick_count = 3});
+    return;
+  }
+  case SkillId::RootLeech: {
+    auto damage = fl::primitives::Damage{};
+    damage.physical = 6;
+    CombatStatusSystem::drain(party_ctx, attacker, target, damage, 50,
+                              display_name(skill));
+    return;
+  }
+  case SkillId::WebSnare:
+    CombatStatusSystem::apply_status(party_ctx, scheduler,
+                                     {.kind = CombatStatusKind::Slow,
+                                      .name = display_name(skill),
+                                      .source = attacker,
+                                      .target = target,
+                                      .duration_seconds = 30,
+                                      .value = 25});
+    return;
+  case SkillId::BlueScreen: {
+    auto targets = opposing_alive_targets(party_ctx, attacker);
+    if (targets.empty() && target != entt::null) {
+      targets.push_back(target);
+    }
+    for (const auto victim : targets) {
+      CombatStatusSystem::apply_status(party_ctx, scheduler,
+                                       {.kind = CombatStatusKind::Stun,
+                                        .name = display_name(skill),
+                                        .source = attacker,
+                                        .target = victim,
+                                        .duration_seconds = 12,
+                                        .stacks = 1});
+    }
+    return;
+  }
+  case SkillId::SignalJam:
+    CombatStatusSystem::apply_field_debuff(
+        party_ctx, scheduler,
+        {.team = enemy_field_team(party_ctx, attacker),
+         .kind = FieldDebuffKind::DamageDown,
+         .name = display_name(skill),
+         .source = attacker,
+         .value = 30,
+         .duration_seconds = 30});
+    return;
+  case SkillId::ChecksumWard:
+    CombatStatusSystem::cleanse(party_ctx, attacker, target);
+    // TODO: Replace or supplement this with removable-negative-status
+    // resistance once a shared ward/resistance mechanic exists.
+    CombatStatusSystem::apply_status(party_ctx, scheduler,
+                                     {.kind = CombatStatusKind::Shield,
+                                      .name = display_name(skill),
+                                      .source = attacker,
+                                      .target = target,
+                                      .duration_seconds = 36,
+                                      .value = 45,
+                                      .negative = false});
+    return;
+  case SkillId::Choirguard:
+    for (const auto ally : allied_alive_targets(party_ctx, attacker)) {
+      CombatStatusSystem::apply_status(party_ctx, scheduler,
+                                       {.kind = CombatStatusKind::Shield,
+                                        .name = display_name(skill),
+                                        .source = attacker,
+                                        .target = ally,
+                                        .duration_seconds = 30,
+                                        .value = 30,
+                                        .negative = false});
+    }
+    return;
+  case SkillId::CinderVeil:
+    CombatStatusSystem::apply_status(party_ctx, scheduler,
+                                     {.kind = CombatStatusKind::Shield,
+                                      .name = display_name(skill),
+                                      .source = attacker,
+                                      .target = target,
+                                      .duration_seconds = 30,
+                                      .value = 25,
+                                      .negative = false});
+    return;
+  case SkillId::RimeArmor:
+    CombatStatusSystem::apply_status(party_ctx, scheduler,
+                                     {.kind = CombatStatusKind::Shield,
+                                      .name = display_name(skill),
+                                      .source = attacker,
+                                      .target = target,
+                                      .duration_seconds = 36,
+                                      .value = 40,
+                                      .negative = false});
+    return;
+  case SkillId::BattleFocus:
+    CombatStatusSystem::apply_field_debuff(
+        party_ctx, scheduler,
+        {.team = enemy_field_team(party_ctx, attacker),
+         .kind = FieldDebuffKind::Vulnerable,
+         .name = display_name(skill),
+         .source = attacker,
+         .value = 15,
+         .duration_seconds = 24});
+    return;
+  case SkillId::PackHowl:
+    CombatStatusSystem::apply_field_debuff(
+        party_ctx, scheduler,
+        {.team = enemy_field_team(party_ctx, attacker),
+         .kind = FieldDebuffKind::Vulnerable,
+         .name = display_name(skill),
+         .source = attacker,
+         .value = 25,
+         .duration_seconds = 24});
+    return;
+  case SkillId::SignalFlare:
+    CombatStatusSystem::apply_field_debuff(
+        party_ctx, scheduler,
+        {.team = enemy_field_team(party_ctx, attacker),
+         .kind = FieldDebuffKind::AccuracyDown,
+         .name = display_name(skill),
+         .source = attacker,
+         .value = 20,
+         .duration_seconds = 24});
+    return;
+  case SkillId::ClockUp:
+    CombatStatusSystem::apply_status(party_ctx, scheduler,
+                                     {.kind = CombatStatusKind::Haste,
+                                      .name = display_name(skill),
+                                      .source = attacker,
+                                      .target = target,
+                                      .duration_seconds = 30,
+                                      .value = 25,
+                                      .negative = false});
+    return;
+  case SkillId::Burrow:
+    CombatStatusSystem::apply_status(party_ctx, scheduler,
+                                     {.kind = CombatStatusKind::Shield,
+                                      .name = display_name(skill),
+                                      .source = attacker,
+                                      .target = attacker,
+                                      .duration_seconds = 30,
+                                      .value = 45,
+                                      .negative = false});
+    return;
+  case SkillId::GnatCloud:
+    CombatStatusSystem::apply_field_debuff(
+        party_ctx, scheduler,
+        {.team = enemy_field_team(party_ctx, attacker),
+         .kind = FieldDebuffKind::AccuracyDown,
+         .name = display_name(skill),
+         .source = attacker,
+         .value = 30,
+         .duration_seconds = 24});
+    return;
+  case SkillId::MiasmaCloud:
+    CombatStatusSystem::apply_field_debuff(
+        party_ctx, scheduler,
+        {.team = enemy_field_team(party_ctx, attacker),
+         .kind = FieldDebuffKind::DamageDown,
+         .name = display_name(skill),
+         .source = attacker,
+         .value = 25,
+         .duration_seconds = 30});
+    return;
+  case SkillId::Whiteout:
+    CombatStatusSystem::apply_field_debuff(
+        party_ctx, scheduler,
+        {.team = enemy_field_team(party_ctx, attacker),
+         .kind = FieldDebuffKind::AccuracyDown,
+         .name = display_name(skill),
+         .source = attacker,
+         .value = 45,
+         .duration_seconds = 30});
+    return;
+  case SkillId::WeightOfTuesday: {
+    const auto targets = opposing_alive_targets(party_ctx, attacker);
+    for (const auto victim : targets) {
+      CombatStatusSystem::apply_status(party_ctx, scheduler,
+                                       {.kind = CombatStatusKind::Slow,
+                                        .name = display_name(skill),
+                                        .source = attacker,
+                                        .target = victim,
+                                        .duration_seconds = 30,
+                                        .value = 35});
+    }
+    CombatStatusSystem::apply_field_debuff(
+        party_ctx, scheduler,
+        {.team = enemy_field_team(party_ctx, attacker),
+         .kind = FieldDebuffKind::DamageDown,
+         .name = display_name(skill),
+         .source = attacker,
+         .value = 20,
+         .duration_seconds = 30});
+    return;
+  }
+  case SkillId::Overcharge:
+    CombatStatusSystem::apply_field_debuff(
+        party_ctx, scheduler,
+        {.team = enemy_field_team(party_ctx, attacker),
+         .kind = FieldDebuffKind::Vulnerable,
+         .name = display_name(skill),
+         .source = attacker,
+         .value = 35,
+         .duration_seconds = 18});
+    return;
+  default:
+    return;
+  }
+}
+
+int apply_healing(fl::context::PartyCtx &party_ctx, entt::entity healer,
+                  entt::entity target, SkillKey skill, int heal_amount) {
+  if (!party_ctx.reg().valid(target)) {
+    return 0;
+  }
+
+  auto *target_stats =
+      party_ctx.reg().try_get<fl::ecs::components::Stats>(target);
+  if (target_stats == nullptr) {
+    return 0;
+  }
+
+  const int before = target_stats->hp_;
+  target_stats->hp_ =
+      std::min(target_stats->max_hp_, target_stats->hp_ + heal_amount);
+  const int healed = target_stats->hp_ - before;
+  add_hitpoint_number_decal(party_ctx, target, fl::lospec500::color_at(15),
+                            healed);
+
+  entt::handle healer_h{party_ctx.reg(), healer};
+  entt::handle target_h{party_ctx.reg(), target};
+  party_ctx.log().append_markup(
+      fmt::format("{} used [ability]({}) on {} for [xp]({}) healing",
+                  party_ctx.log().name_tag_for(healer_h), display_name(skill),
+                  party_ctx.log().name_tag_for(target_h), healed));
+  return healed;
+}
+
 } // namespace
 
 SkillSequencer::SkillSequencer(fl::context::PartyCtx &party_ctx,
@@ -112,6 +486,29 @@ void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
     }
     schedule_decal_strike(attacker, target, skill);
     return;
+  case SkillExecutionKind::DamageStrike:
+    if (is_wired_status_skill(skill)) {
+      schedule_wired_status_effect(attacker, target, skill);
+      return;
+    }
+    schedule_decal_strike(attacker, target, skill);
+    return;
+  case SkillExecutionKind::GroupDamage:
+    schedule_group_damage(attacker, skill);
+    return;
+  case SkillExecutionKind::SingleHeal:
+    schedule_single_heal(attacker, target, skill, 5);
+    return;
+  case SkillExecutionKind::GroupHeal:
+    schedule_group_heal(attacker, skill, 4);
+    return;
+  case SkillExecutionKind::PlaceholderEffect:
+    if (is_wired_status_skill(skill)) {
+      schedule_wired_status_effect(attacker, target, skill);
+      return;
+    }
+    schedule_placeholder_effect(attacker, target, skill);
+    return;
   case SkillExecutionKind::Flee:
     schedule_flee(attacker, skill);
     return;
@@ -137,6 +534,10 @@ void SkillSequencer::schedule_thump_like(entt::entity attacker,
 
   teach_party_from_observed_skill(party_ctx_, attacker, skill);
 
+  const auto expires_at = seerin::uWu{
+      scheduler_.now().v + seerin::UWU_PER_BEAT.v * (finish_beat + 1)};
+  add_skill_decal(party_ctx_, target, expires_at, skill);
+
   schedule_reek_fade(attacker,
                      fmt::format("{}: attacker red pulse #1", skill_name), 10,
                      14, kRed, kRed);
@@ -151,10 +552,7 @@ void SkillSequencer::schedule_thump_like(entt::entity attacker,
   scheduler_.schedule_smelly_in_beats(
       damage_beat, fmt::format("{}: apply damage", skill_name),
       [&party_ctx = party_ctx_, attacker, target, skill] {
-        fl::skills::Thump thump;
-        thump.thump(
-            fl::context::AttackCtx::make_attack(party_ctx, attacker, target),
-            skill);
+        apply_damage_skill(party_ctx, attacker, target, skill);
       });
 
   auto finish_turn = finish_turn_;
@@ -174,6 +572,10 @@ void SkillSequencer::schedule_eviscerate(entt::entity attacker,
   auto const kYellow = fl::lospec500::color_at(14);
 
   teach_party_from_observed_skill(party_ctx_, attacker, SkillId::Eviscerate);
+
+  const auto expires_at =
+      seerin::uWu{scheduler_.now().v + seerin::UWU_PER_BEAT.v * 36};
+  add_skill_decal(party_ctx_, target, expires_at, SkillId::Eviscerate);
 
   schedule_reek_fade(attacker, "eviscerate: attacker red slash", 8, 18, kRed,
                      kNormalText);
@@ -266,10 +668,7 @@ void SkillSequencer::schedule_flame_strike(entt::entity attacker,
   scheduler_.schedule_smelly_in_beats_for(
       kAnimationBeats, target, "flame strike: apply damage",
       [&party_ctx = party_ctx_, attacker, target] {
-        fl::skills::Thump thump;
-        thump.thump(
-            fl::context::AttackCtx::make_attack(party_ctx, attacker, target),
-            SkillId::FlameStrike);
+        apply_damage_skill(party_ctx, attacker, target, SkillId::FlameStrike);
       });
 
   auto finish_turn = finish_turn_;
@@ -298,10 +697,7 @@ void SkillSequencer::schedule_decal_strike(entt::entity attacker,
       kAnimationBeats, target,
       fmt::format("{}: apply damage", display_name(skill)),
       [&party_ctx = party_ctx_, attacker, target, skill] {
-        fl::skills::Thump thump;
-        thump.thump(
-            fl::context::AttackCtx::make_attack(party_ctx, attacker, target),
-            skill);
+        apply_damage_skill(party_ctx, attacker, target, skill);
       });
 
   auto finish_turn = finish_turn_;
@@ -364,6 +760,66 @@ void SkillSequencer::schedule_mercyburst(entt::entity attacker,
             static_cast<double>(scheduler_.pending()));
 }
 
+void SkillSequencer::schedule_single_heal(entt::entity attacker,
+                                          entt::entity target, SkillKey skill,
+                                          int heal_amount) {
+  ZoneScopedN("SkillSequencer::schedule_single_heal");
+  static constexpr int kAnimationBeats = seerin::BEATS_PER_SEC;
+
+  teach_party_from_observed_skill(party_ctx_, attacker, skill);
+
+  scheduler_.schedule_smelly_in_beats_for(
+      kAnimationBeats, target,
+      fmt::format("{}: apply healing", display_name(skill)),
+      [&party_ctx = party_ctx_, attacker, target, skill, heal_amount] {
+        apply_healing(party_ctx, attacker, target, skill, heal_amount);
+      });
+
+  auto finish_turn = finish_turn_;
+  scheduler_.schedule_smelly_in_beats_for(
+      kAnimationBeats + 1, attacker,
+      fmt::format("{}: finish", display_name(skill)),
+      [finish_turn, attacker] { finish_turn(attacker); });
+
+  TracyPlot("SkillSequencer.PendingEvents",
+            static_cast<double>(scheduler_.pending()));
+}
+
+void SkillSequencer::schedule_group_heal(entt::entity attacker, SkillKey skill,
+                                         int heal_amount) {
+  ZoneScopedN("SkillSequencer::schedule_group_heal");
+  static constexpr int kAnimationBeats = seerin::BEATS_PER_SEC;
+  static constexpr int kStaggerBeats = 2;
+
+  teach_party_from_observed_skill(party_ctx_, attacker, skill);
+
+  const auto targets = allied_alive_targets(party_ctx_, attacker);
+  int index = 0;
+  for (const auto target : targets) {
+    const int heal_beat = (index * kStaggerBeats) + kAnimationBeats;
+    scheduler_.schedule_smelly_in_beats_for(
+        heal_beat, target,
+        fmt::format("{}: heal target {}", display_name(skill), index),
+        [&party_ctx = party_ctx_, attacker, target, skill, heal_amount] {
+          apply_healing(party_ctx, attacker, target, skill, heal_amount);
+        });
+    ++index;
+  }
+
+  auto finish_turn = finish_turn_;
+  const int finish_beat =
+      targets.empty()
+          ? 1
+          : ((static_cast<int>(targets.size()) - 1) * kStaggerBeats) +
+                kAnimationBeats + 1;
+  scheduler_.schedule_smelly_in_beats_for(
+      finish_beat, attacker, fmt::format("{}: finish", display_name(skill)),
+      [finish_turn, attacker] { finish_turn(attacker); });
+
+  TracyPlot("SkillSequencer.PendingEvents",
+            static_cast<double>(scheduler_.pending()));
+}
+
 void SkillSequencer::schedule_flame_wave(entt::entity attacker) {
   ZoneScopedN("SkillSequencer::schedule_flame_wave");
   static constexpr int kAnimationBeats = seerin::BEATS_PER_SEC;
@@ -412,10 +868,7 @@ void SkillSequencer::schedule_flame_wave(entt::entity attacker) {
             return;
           }
 
-          fl::skills::Thump thump;
-          thump.thump(
-              fl::context::AttackCtx::make_attack(party_ctx, attacker, target),
-              SkillId::FlameWave);
+          apply_damage_skill(party_ctx, attacker, target, SkillId::FlameWave);
         });
 
     ++index;
@@ -429,6 +882,127 @@ void SkillSequencer::schedule_flame_wave(entt::entity attacker) {
                 kAnimationBeats + 1;
   scheduler_.schedule_smelly_in_beats_for(
       finish_beat, attacker, "flame wave: finish",
+      [finish_turn, attacker] { finish_turn(attacker); });
+
+  TracyPlot("SkillSequencer.PendingEvents",
+            static_cast<double>(scheduler_.pending()));
+}
+
+void SkillSequencer::schedule_group_damage(entt::entity attacker,
+                                           SkillKey skill) {
+  ZoneScopedN("SkillSequencer::schedule_group_damage");
+  static constexpr int kAnimationBeats = seerin::BEATS_PER_SEC;
+  static constexpr int kStaggerBeats = 3;
+
+  teach_party_from_observed_skill(party_ctx_, attacker, skill);
+
+  const auto targets = opposing_alive_targets(party_ctx_, attacker);
+  int index = 0;
+  for (const auto target : targets) {
+    const int start_beat = index * kStaggerBeats;
+    const int damage_beat = start_beat + kAnimationBeats;
+    const auto expires_at = seerin::uWu{
+        scheduler_.now().v + seerin::UWU_PER_BEAT.v * (damage_beat + 1)};
+
+    scheduler_.schedule_smelly_in_beats_for(
+        start_beat, target,
+        fmt::format("{}: start target {}", display_name(skill), index),
+        [&party_ctx = party_ctx_, target, expires_at, skill] {
+          if (!party_ctx.reg().valid(target)) {
+            return;
+          }
+
+          auto *stats =
+              party_ctx.reg().try_get<fl::ecs::components::Stats>(target);
+          if (stats == nullptr || !stats->is_alive()) {
+            return;
+          }
+
+          add_skill_decal(party_ctx, target, expires_at, skill);
+        });
+
+    scheduler_.schedule_smelly_in_beats_for(
+        damage_beat, target,
+        fmt::format("{}: damage target {}", display_name(skill), index),
+        [&party_ctx = party_ctx_, attacker, target, skill] {
+          if (!party_ctx.reg().valid(target)) {
+            return;
+          }
+
+          auto *stats =
+              party_ctx.reg().try_get<fl::ecs::components::Stats>(target);
+          if (stats == nullptr || !stats->is_alive()) {
+            return;
+          }
+
+          apply_damage_skill(party_ctx, attacker, target, skill);
+        });
+
+    ++index;
+  }
+
+  auto finish_turn = finish_turn_;
+  const int finish_beat =
+      targets.empty()
+          ? 1
+          : ((static_cast<int>(targets.size()) - 1) * kStaggerBeats) +
+                kAnimationBeats + 1;
+  scheduler_.schedule_smelly_in_beats_for(
+      finish_beat, attacker, fmt::format("{}: finish", display_name(skill)),
+      [finish_turn, attacker] { finish_turn(attacker); });
+
+  TracyPlot("SkillSequencer.PendingEvents",
+            static_cast<double>(scheduler_.pending()));
+}
+
+void SkillSequencer::schedule_wired_status_effect(entt::entity attacker,
+                                                  entt::entity target,
+                                                  SkillKey skill) {
+  ZoneScopedN("SkillSequencer::schedule_wired_status_effect");
+  teach_party_from_observed_skill(party_ctx_, attacker, skill);
+
+  scheduler_.schedule_smelly_in_beats(
+      1, fmt::format("{}: apply shared status effect", display_name(skill)),
+      [&party_ctx = party_ctx_, &scheduler = scheduler_, attacker, target,
+       skill] {
+        apply_wired_skill_effect(party_ctx, scheduler, attacker, target, skill);
+      });
+
+  auto finish_turn = finish_turn_;
+  scheduler_.schedule_smelly_in_beats(
+      2, fmt::format("{}: finish", display_name(skill)),
+      [finish_turn, attacker] { finish_turn(attacker); });
+
+  TracyPlot("SkillSequencer.PendingEvents",
+            static_cast<double>(scheduler_.pending()));
+}
+
+void SkillSequencer::schedule_placeholder_effect(entt::entity attacker,
+                                                 entt::entity target,
+                                                 SkillKey skill) {
+  ZoneScopedN("SkillSequencer::schedule_placeholder_effect");
+  teach_party_from_observed_skill(party_ctx_, attacker, skill);
+
+  // TODO: Attach these tagged buff/debuff/cleanse effects to real status
+  // systems as those systems become explicit gameplay models.
+  scheduler_.schedule_smelly_in_beats(
+      1, fmt::format("{}: placeholder effect", display_name(skill)),
+      [&party_ctx = party_ctx_, attacker, target, skill] {
+        entt::handle attacker_h{party_ctx.reg(), attacker};
+        const auto target_name =
+            party_ctx.reg().valid(target)
+                ? party_ctx.log().name_tag_for(
+                      entt::handle{party_ctx.reg(), target})
+                : std::string{"the field"};
+        party_ctx.log().append_markup(fmt::format(
+            "{} used [ability]({}) on {}; its tagged effect is still forming.",
+            party_ctx.log().name_tag_for(attacker_h), display_name(skill),
+            target_name));
+      });
+
+  auto finish_turn = finish_turn_;
+  scheduler_.schedule_smelly_in_beats(
+      2, fmt::format("{}: finish", display_name(skill)),
       [finish_turn, attacker] { finish_turn(attacker); });
 
   TracyPlot("SkillSequencer.PendingEvents",
