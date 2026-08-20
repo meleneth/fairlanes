@@ -29,10 +29,10 @@ build:
   script:
     - cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
     - cmake --build build --target all
-#  artifacts:
-#    paths:
-#      - build
-#    expire_in: 1 week
+  artifacts:
+    paths:
+      - build/
+    expire_in: 1 week
 
 # ------------------------------------------------------------
 # TEST JOB
@@ -40,10 +40,8 @@ build:
 test:
   stage: test
   image: debian:trixie
-  needs: ["build"]
-  <<: *before_debian_trixie
+  needs:
+    - job: build
+      artifacts: true
   script:
-    # Re-run configure so absolute paths inside CMakeCache.txt are valid
-    - cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-    - cmake --build build --target fairlanes_tests
-    - ./build/tests/fairlanes_tests
+    - ./build/fairlanes_tests
