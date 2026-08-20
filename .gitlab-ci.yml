@@ -31,7 +31,8 @@ build:
     - cmake --build build --target all
   artifacts:
     paths:
-      - build/
+      - build/fairlanes
+      - build/fairlanes_tests
     expire_in: 1 week
 
 # ------------------------------------------------------------
