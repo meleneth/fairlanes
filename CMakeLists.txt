@@ -296,12 +296,12 @@ else()
   )
 endif()
 
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
 find_program(IWYU_EXECUTABLE NAMES include-what-you-use iwyu)
 set(FAIRLANES_IWYU_ONLY_REGEX "" CACHE STRING "Only run IWYU for source paths matching this regex")
 set(FAIRLANES_IWYU_EXCLUDE_REGEX "src/fl/skills/thump\\.cpp" CACHE STRING "Skip IWYU for source paths matching this regex")
 
 if(IWYU_EXECUTABLE)
+  find_package(Python3 COMPONENTS Interpreter REQUIRED)
   set(FAIRLANES_IWYU_ARGS
       --compile-commands ${CMAKE_BINARY_DIR}/compile_commands.json
       --iwyu ${IWYU_EXECUTABLE}
