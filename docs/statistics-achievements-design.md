@@ -26,6 +26,30 @@ The [raid design](raid-design.md) requires one shared account outcome while
 preserving participation and victory credit for all five parties, even wiped
 parties. Statistics and achievement semantics must respect that distinction.
 
+## Required event-system architecture
+
+**Statistics and achievements must be implemented through the project's event
+system.** This is a confirmed architectural requirement, not an optional approach.
+Gameplay producers publish specific typed facts through project bus types.
+Statistics listeners update the appropriate account/save records. Achievement
+listeners evaluate committed facts or explicit statistic-progress events and
+publish an achievement-unlocked event exactly once per defined scope.
+
+Do not wire gameplay code directly to a tracker or achievement evaluator, poll
+ECS state from a view to infer progress, or parse logs. Internal model helpers
+may be called by listeners; the integration boundary is the event system.
+Use scoped subscriptions with owner-controlled lifetimes and explicit event
+ordering wherever evaluation depends on updated statistics. Do not rely on
+listener registration order. Select one counting path for each fact to avoid
+counting both a source event and its derived progress event as two occurrences.
+
+Raid summoning is a distinct combat-exit fact. It retains successfully observed
+skills from the interrupted fight but does not count as that fight's victory,
+an enemy kill, a death, or an ordinary flee. Track the interruption separately
+if useful. Achievement predicates must distinguish it from a real win. The
+intentional timing loophole is valid gameplay; whether it deserves a named
+achievement is future content design, not a reason to prevent the behavior.
+
 ## Proposed first measurements
 
 | Measurement | Proposed contract |
@@ -70,6 +94,8 @@ storage model; decide what totals and recent summaries actually need retention.
   attract-demo isolation. Discovery is presence/absence knowledge, not statistics.
 - `PartyData::leave_combat` currently emits `PartyVictory` when members survive.
   Audit/fix the outcome contract before using it as a genuine win counter.
+  Raid summoning needs explicit exit/retention events rather than borrowing this
+  victory signal to keep skills.
 - `TakeDamage::commit` calculates post-mitigation damage but returns a total that
   can exceed remaining HP. Damage statistics need the actual before/after HP
   difference. Capture the fact before death callbacks can clean up the encounter.
@@ -129,7 +155,9 @@ by the raid reward contract.
 3. Test actual damage, single death transitions, disconnect/lifetime behavior,
    genuine wins versus exits, and duplicate outcome protection as applicable.
 4. Add a small achievement definition/evaluation model on those validated facts;
-   verify one-time unlocks and scope isolation. Add persistence if required for
+   drive evaluation and unlock notifications through typed events; verify
+   one-time unlocks, scope isolation, explicit update ordering, and no duplicate
+   counts from source/derived events. Add persistence if required for
    the initial release rather than labeling session-only counts "lifetime".
 5. Once raids exist, integrate account raid summaries: one win plus five party
    victory credits, including wiped parties, and ten actually awarded items.

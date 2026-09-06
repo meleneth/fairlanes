@@ -31,6 +31,49 @@ An already-dead party enters dead and can still receive shared victory credit.
 The case where all characters are dead at arrival needs an explicit resolution
 consistent with the collective defeat rule.
 
+## Confirmed summoning and skill retention
+
+At raid start, remove every participating player from their current combat and
+summon them into the shared raid encounter. They do not continue participating
+in their old fights. Preserve current HP and statuses as specified above.
+
+**Skills acquired through observation in those interrupted fights are kept.**
+Summoning is a legitimate extraction: the characters did not die and were called
+to the raid. Timing the Visitor to escape a fight with an observed skill that
+would otherwise be lost is an intentional gameplay loophole. Do not "fix" this
+by requiring victory in the interrupted fight or rolling the skill back on entry.
+
+This retains successful observation learning already acquired in that fight;
+it does not turn every skill merely witnessed for the libram into a learned
+character skill or bypass existing Observe rank/chance checks. Settle the old
+fight's pending skill retention at summoning, so its wipe/victory subscriptions
+cannot later revoke those skills during the raid. Skills learned within the raid
+are a separate acquisition scope governed by the raid's eventual outcome.
+
+Summoning must have a specific event-driven exit reason. It is not an enemy
+kill, an ordinary-fight victory, a wipe, or a successful Flee roll. Keeping skills
+must not require emitting a fake victory event, awarding unearned kill loot/XP,
+or inflating statistics and achievements. An interrupted fight and a newly
+started raid are separate lifecycle facts with separate identities.
+
+Required handoff behavior, with concrete event names still to be designed:
+
+1. Capture the participating roster and transfer state before old-encounter
+   cleanup can erase it.
+2. Publish the explicit raid-summoning/exit fact through the event system;
+   skill-retention listeners settle successful observations exactly once.
+3. Detach participants from the old combat/ATB and cancel old combat actions so
+   enemies or delayed attacks cannot continue hitting them from that encounter.
+   Transfer ongoing statuses and their remaining timing deliberately; ordinary
+   left-combat cleanup must not silently cleanse raid entrants.
+4. Enroll the participants in the one raid and publish its start fact once.
+
+Make this ordering explicit in named orchestration code and event contracts.
+Prevent reentrant/double processing. The handoff must not allow a global beat
+between detaching some parties and enrolling others to produce extra attacks.
+The exact policy for empty old encounters and characters previously dead remains
+part of lifecycle design, not permission to heal or rejoin old combat.
+
 ## Raid-exclusive rewards
 
 Start with **two drops per participating party**: a standard five-party raid
@@ -178,9 +221,9 @@ identity for progression and reward semantics while resolving combat collectivel
 
 ## Open decisions for the next discussion
 
-- At automatic Visitor arrival, what happens to parties already farming,
-  recovering, or otherwise occupied? HP and statuses carry in; settle how pending
-  actions, recovery work, and status timing transfer or stop.
+- Current combat is explicitly interrupted by summoning. Settle the mechanics
+  of status timer transfer, empty-encounter cleanup, and recovery/crafting work
+  that was already in progress; HP/status carryover and skill retention are fixed.
 - Are retries immediate, limited, or deferred until another convergence?
 - Is the initial convergence immediate, delayed by a full interval, or tied to
   account readiness? What happens while the application is closed?
@@ -206,5 +249,9 @@ identity for progression and reward semantics while resolving combat collectivel
    once their specific contracts are settled.
 6. Integrate resolved raid facts into statistics and achievements; verify one
    account result and consistent credit across all five parties.
+7. Protect the intentional summoning loophole with event-driven tests: retain a
+   successfully observed skill without winning the old fight; do not award a false
+   victory; do not let old callbacks revoke it on a later raid wipe; preserve
+   statuses while preventing old enemies/actions from continuing to attack.
 
 No raid runtime changes are part of this initial design documentation pass.

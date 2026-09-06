@@ -528,3 +528,13 @@ resolved gameplay facts, keep shared raid results separate from party credit,
 and exclude attract-demo activity. Per-account records and save-wide milestones are both required. Persistence,
 specific milestones, and achievement rewards remain open; do not treat other
 proposals as settled requirements.
+
+Statistics and achievements MUST integrate through the project event system:
+typed gameplay facts, scoped statistics/achievement listeners, and explicit
+unlock events. No direct gameplay-to-tracker calls, UI polling, or log parsing.
+Raid summoning removes all participants from current combat and deliberately
+keeps skills successfully acquired by observation there, without requiring an
+old-fight win. Timing this extraction is an intentional loophole. Give summoning
+an explicit event-driven exit/retention contract rather than a fake victory;
+settle old pending-skill subscriptions before raid outcomes can affect them.
+Preserve HP/status carryover and prevent old encounter actions from continuing.
