@@ -117,7 +117,17 @@ threshold over reliable facts. Keep definition data separate from unlocked state
 An unlock should occur once in its chosen scope and publish a notification once;
 rendering or reopening a screen must not re-grant it.
 
-Candidate first achievements for discussion, not approved content:
+Confirmed first achievement requirement: **mutual destruction in a raid**. When
+all participating characters and all enemies die together, record a raid defeat
+and unlock this dedicated achievement through the event system. The event must
+carry the raid identity and mutual-destruction outcome detail. A normal raid wipe
+with enemies surviving, a victory with survivors, and ordinary non-raid mutual
+destruction do not qualify. Duplicate outcome delivery must not repeat an unlock.
+Final display name, stable ID, and any reward are still content decisions.
+The criterion is settled; define the action/effect resolution boundary explicitly
+so event callback order cannot change the result. No victory credit accompanies it.
+
+Other candidate achievements for discussion, not approved content:
 
 - Win a first raid.
 - Win a raid after one or more participating parties have wiped.
@@ -141,7 +151,8 @@ by the raid reward contract.
 - Are achievements cosmetic, or do they have rewards? Are any hidden or repeatable?
 - Are unlocks retroactive when rules change, and can progress reset by Cycle?
 - How are summons, damage over time, friendly fire, overhealing, revival, and
-  simultaneous deaths attributed?
+  simultaneous deaths attributed to individual actors? Raid mutual destruction
+  itself is confirmed as defeat with its dedicated achievement.
 - Should tests, attract mode, and debug cheats count? Proposed default: exclude
   attract/demo activity and isolate test data; settle debug behavior explicitly.
 
@@ -161,5 +172,7 @@ by the raid reward contract.
    the initial release rather than labeling session-only counts "lifetime".
 5. Once raids exist, integrate account raid summaries: one win plus five party
    victory credits, including wiped parties, and ten actually awarded items.
+   On mutual destruction, record one defeat and the dedicated achievement instead;
+   test raid/non-raid distinction and one-time unlock behavior.
 6. Add read-only statistics/achievement views and notifications after the data
    contracts are stable. Keep raid layout priorities intact.

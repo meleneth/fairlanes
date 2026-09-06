@@ -11,13 +11,33 @@ reference for subsequent raid design discussions.
   (25 characters at the planned five characters per party).
 - One party wiping does not end the raid. The remaining characters continue
   fighting the same enemies.
-- Victory requires all enemies in the encounter to be dead. Defeat requires
+- Victory requires all enemies dead and at least one participating character alive. Defeat requires
   all participating characters to be dead. A boss dying while its adds remain
   alive is not sufficient for victory under this rule.
 - Victory is all or nothing for the account. Every participating party receives
   victory credit, including a party whose entire membership died before the win.
-- If the last enemies and characters die together, outcome precedence remains
-  an open decision; do not let callback ordering decide it accidentally.
+- If the last enemies and characters die together, **defeat takes precedence**.
+  This is a raid wipe and unlocks a dedicated raid mutual-destruction achievement.
+  Ordinary combat mutual destruction does not qualify for that achievement.
+  Resolve the shared outcome once after the relevant action/effect resolution;
+  do not let callback ordering publish victory before the mutual wipe is known.
+
+## Confirmed first arrival and retry policy
+
+For now, start the first Visitor raid **immediately at day zero**, once the account
+roster is initialized. Do not wait for a full Visitor interval or player readiness.
+The expected early result is a fast loss with no skills learned; this provides
+immediate access for iterating on raid setup and animation. This expectation is
+not a special rule disabling skill learning or forcing defeat.
+
+Consume that arrival once. After any raid outcome, **there are no retries**:
+the account waits for the next Visitor. The day-zero calendar value must not
+relaunch the raid on every beat or when the account calendar resumes.
+
+The intended later startup is day one instead of day zero, which avoids the
+immediate conjunction. That is a future starting-calendar change, not the current
+behavior to implement. Offline arrival behavior remains an open decision; missed
+arrivals must not become banked retries.
 
 ## Confirmed arrival condition
 
@@ -139,8 +159,9 @@ creating a claimable entry token. Offline behavior is still undecided; it must
 not be implemented as a bank of missed raid entries.
 
 The existing countdown is in whole days and reports every named event due at
-initial day zero. Raid scheduling needs a deliberate first-event policy and an
-exact countdown; a whole-day zero must not repeatedly launch encounters.
+initial day zero. The confirmed initial raid consumes that day-zero arrival once.
+Raid scheduling needs an exact countdown and consumed-occurrence tracking; a
+whole-day zero must not repeatedly launch encounters.
 
 ## Proposed account-time pause
 
@@ -284,24 +305,24 @@ identity for progression and reward semantics while resolving combat collectivel
 - Current combat is explicitly interrupted by summoning. Settle the mechanics
   of empty-encounter cleanup and recovery/crafting work already in progress.
   HP/death-state preservation, status removal, and skill retention are fixed.
-- Are retries immediate, limited, or deferred until another convergence?
-- Is the initial convergence immediate, delayed by a full interval, or tied to
-  account readiness? What happens while the application is closed?
+- What happens while the application is closed? Immediate day-zero entry and
+  waiting for the next Visitor without retries are confirmed.
 - Which timers pause, and how should speed controls affect the countdown?
 - How do wiped parties recover after the shared outcome? Is revival possible
   during the encounter?
 - How are exclusive drops allocated and equipped, and what happens on defeat?
 - Which raids gate which progression transitions, and how are they accessed
   independently of or alongside recurring celestial events?
-- How is simultaneous extinction resolved?
 
 ## Implementation milestones after requirements settle
 
-1. Finalize arrival handoff, calendar, retry, and reward semantics in this file.
+1. Finalize remaining arrival handoff, calendar, and reward semantics in this file.
 2. Introduce shared encounter ownership and participant tracking; test that a
    party wipe preserves the encounter and that only a collective outcome ends it.
+   Cover player-only defeat, enemy-only victory, and mutual extinction as defeat.
 3. Separate account calendar advancement from raid combat; test pause/resume,
-   other-account independence, first convergence, and single event consumption.
+   other-account independence, immediate day-zero entry, single event consumption,
+   and no retry before the next Visitor after either victory or defeat.
 4. Add account-wide outcome credit and raid-exclusive rewards; verify that wiped
    parties count toward the five-party ten-drop victory allocation.
 5. Add progression gates, boss declarations, and the raid/countdown presentation

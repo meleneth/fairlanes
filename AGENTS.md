@@ -509,8 +509,9 @@ See `docs/tour/development.md` for the contract.
 
 `docs/raid-design.md` is the evolving raid requirements reference. Raids are
 planned shared encounters for all five account parties. One party wiping does
-not end them: all enemies dead means account-wide victory (including wiped
-parties); all characters dead means defeat. Simultaneous extinction is unsettled.
+not end them: all enemies dead with player survivors means account-wide victory
+(including wiped parties); all characters dead means defeat. Mutual extinction
+is defeat and unlocks a dedicated raid-only mutual-destruction achievement.
 Start victory loot planning at two raid-exclusive drops per participating party
 (ten for five parties), with trinkets a tentative item category. Raids also gate
 progression Cycles in addition to recurring celestial encounters. Account-calendar
@@ -520,8 +521,10 @@ and all five parties their own lines in the bottom two thirds simultaneously.
 Characters retain current HP and death state: no healing or resurrection.
 Old combat statuses, visuals, listeners, and scheduled status work are cleared,
 not transferred. Targeting uses encounter-relative candidate helpers across all
-participating allies/enemies, not home-party enumeration. Retries, reward
-distribution, and remaining arrival mechanics are open. Update this document as decisions settle;
+participating allies/enemies, not home-party enumeration. Start immediately at
+day zero for now; consume the arrival once and allow no retries before the next
+Visitor. A future day-one start is planned. Reward distribution and remaining
+arrival mechanics are open. Update this document as decisions settle;
 do not treat proposed policies as implemented behavior.
 
 `docs/statistics-achievements-design.md` starts the statistics/achievement design.
