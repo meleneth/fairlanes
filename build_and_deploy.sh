@@ -3,12 +3,12 @@ set -euo pipefail
 
 ./build_emscripten_deploy_dir.sh
 
-rsync -av --delete dist/ whirred.io:dist/
+rsync -av --delete dist/fairlanes/ whirred.io:dist/fairlanes/
 
 ssh whirred.io '
   set -euo pipefail
   cd dist/fairlanes
   docker build -t fairlanes-staging .
   cd /www/docker-stuff
-  docker compose up -d
+  docker compose up -d --no-deps fairlanes-staging
 '
