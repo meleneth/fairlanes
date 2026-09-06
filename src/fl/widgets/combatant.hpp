@@ -9,7 +9,7 @@ namespace fl::widgets {
 class Combatant : public ftxui::ComponentBase {
 public:
   Combatant(entt::registry &reg_, entt::entity entity_,
-            bool render_uwu = false, bool active = false);
+            bool render_uwu = false, bool active = false, bool compact = false);
   ftxui::Element Render() override;
 
 private:
@@ -17,6 +17,7 @@ private:
   entt::entity entity;
   bool render_uwu_;
   bool active_;
+  bool compact_;
 };
 
 } // namespace fl::widgets

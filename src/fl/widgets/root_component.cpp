@@ -18,6 +18,7 @@
 #include "party_battle_screen.hpp"
 #include "party_view.hpp"
 #include "root_chrome.hpp"
+#include "raid_view.hpp"
 
 namespace fl::widgets {
 
@@ -224,8 +225,17 @@ ftxui::Element RootComponent::Render() {
   overlay->tick();
   update_fps_counter();
 
+  auto &account = ctx_.account_data();
+  if (auto *raid = account.raid(); raid && raid->active()) {
+    const auto key = std::pair{account.account_id(), raid->id()};
+    if (shown_raid_ != key) {
+      shown_raid_ = key;
+      active_screen_kind_ = ActiveScreen::raid;
+      replace_screen(ftxui::Make<RaidView>(ctx_));
+    }
+  }
   Element content = active_screen_ ? active_screen_->Render() : text("");
-  content = render_root_chrome(*world_clock_, std::move(content));
+  content = render_root_chrome(account.calendar(), std::move(content));
 
   content = dbox({
       content,
@@ -270,8 +280,14 @@ void RootComponent::set_full_open() { console_overlay()->set_full_open(); }
 
 void RootComponent::show_account_battle(std::size_t account_index) {
   ctx_ = make_context(account_index);
-  active_screen_kind_ = ActiveScreen::account_battle;
-  replace_screen(ftxui::Make<AccountBattleView>(ctx_));
+  if (auto *raid = ctx_.account_data().raid(); raid && raid->active()) {
+    shown_raid_ = std::pair{ctx_.account_data().account_id(), raid->id()};
+    active_screen_kind_ = ActiveScreen::raid;
+    replace_screen(ftxui::Make<RaidView>(ctx_));
+  } else {
+    active_screen_kind_ = ActiveScreen::account_battle;
+    replace_screen(ftxui::Make<AccountBattleView>(ctx_));
+  }
 }
 
 void RootComponent::show_party_battle(std::size_t account_index,
@@ -339,6 +355,9 @@ void RootComponent::show_bestiary(
 
 void RootComponent::toggle_active_screen() {
   switch (active_screen_kind_) {
+  case ActiveScreen::raid:
+    show_party(commands_.account_index(), commands_.party_index());
+    return;
   case ActiveScreen::party:
     show_account_battle(commands_.account_index());
     return;
@@ -356,6 +375,9 @@ void RootComponent::toggle_active_screen() {
 
 void RootComponent::toggle_party_battle_screen() {
   switch (active_screen_kind_) {
+  case ActiveScreen::raid:
+    show_party(commands_.account_index(), commands_.party_index());
+    return;
   case ActiveScreen::account_battle:
     show_party_battle(commands_.account_index(), commands_.party_index());
     return;

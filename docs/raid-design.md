@@ -431,3 +431,19 @@ and the account calendar resume. The next arrival occurs after 952,560 calendar
 beats (22h 3m at 1x), with no retry at the previous boundary. Attract mode explicitly
 disables Visitor arrivals. Account calendars have stable unique-pointer ownership;
 the account's beat subscription disconnects before its calendar and parties die.
+
+### First raid presentation
+
+`RootComponent` routes each newly active selected-account raid to `RaidView`.
+Returning to account battle while a raid is active also opens that shared view.
+The upper third shows the boss and a simple beat-driven celestial animation;
+the lower two thirds show all five parties using two-line compact `Combatant`
+widgets, retaining attack decals and combat colors. Render tests cover 80x24
+(with three rows reserved for root chrome) and 120x40 terminals. Tab returns to
+party presentation. Results remain visible until navigation, while the account
+resumes normal progression. The raid view explicitly labels account time paused
+and shows the consumed-arrival-aware countdown to the next Visitor.
+
+Root moon chrome now reads the selected account calendar. Its generic day-level
+Visitor phase label still represents celestial phase; the raid countdown is the
+precise remaining delay to the next unconsumed arrival.

@@ -44,6 +44,7 @@ public:
 
 private:
   enum class ActiveScreen {
+    raid,
     party,
     account_battle,
     party_battle,
@@ -69,6 +70,7 @@ private:
   const fl::primitives::DiscoveryJournal *discoveries_;
   std::optional<fl::monster::MonsterKind> return_monster_;
   ActiveScreen active_screen_kind_{ActiveScreen::account_battle};
+  std::optional<std::pair<entt::entity, std::uint64_t>> shown_raid_;
   bool keybind_help_open_{false};
   bool quit_confirmation_open_{false};
   bool quit_requested_{false};

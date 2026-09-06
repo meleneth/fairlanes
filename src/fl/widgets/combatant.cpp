@@ -479,8 +479,8 @@ underlay_decal(ftxui::Element child,
 } // namespace
 
 Combatant::Combatant(entt::registry &reg_, entt::entity entity_,
-                     bool render_uwu, bool active)
-    : reg(reg_), entity(entity_), render_uwu_(render_uwu), active_(active) {}
+                     bool render_uwu, bool active, bool compact)
+    : reg(reg_), entity(entity_), render_uwu_(render_uwu), active_(active), compact_(compact) {}
 
 ftxui::Element Combatant::Render() {
   using namespace fl::ecs::components;
@@ -545,6 +545,13 @@ ftxui::Element Combatant::Render() {
   );
   // clang-format on
 
+  if (compact_) {
+    border = ftxui::vbox({
+        ftxui::text(stats.name_.substr(0, 12)) | ftxui::color(ftxui::Color::BlueLight),
+        ftxui::text(stats.is_alive() ? "HP " + std::to_string(stats.hp_) + "/" +
+                                         std::to_string(stats.max_hp_) : "DEAD")});
+  }
+
   if (auto *co = reg.try_get<ResolvedColorOverride>(entity)) {
     border = border | ftxui::color(co->color);
   }
@@ -557,8 +564,10 @@ ftxui::Element Combatant::Render() {
     border = border | ftxui::color(fl::lospec500::color_at(28)) | ftxui::bold;
   }
 
-  border = skill_rows(std::move(border), skill_rows_for(reg, entity));
-  border = debuff_rows(std::move(border), debuff_rows_for(reg, entity));
+  if (!compact_) {
+    border = skill_rows(std::move(border), skill_rows_for(reg, entity));
+    border = debuff_rows(std::move(border), debuff_rows_for(reg, entity));
+  }
 
   auto derived_underlays = underlay_decals_for(reg, entity);
   if (!derived_underlays.effects.empty()) {
