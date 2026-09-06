@@ -1,4 +1,5 @@
 #pragma once
+#include "fl/widgets/effects/decal_animation_kind.hpp"
 
 #include <array>
 #include <cstdint>
@@ -12,31 +13,7 @@
 
 namespace fl::widgets::effects {
 
-enum class DecalAnimationKind {
-  FlameWave,
-  Shock,
-  RocksFall,
-  PoisonCloud,
-  HolyNova,
-  BloodBloom,
-  FrostCrack,
-  VoidRipple,
-  Starfire,
-  HitpointNumber,
-  Impact,
-  Slash,
-  Bite,
-  Projectile,
-  Sweep,
-  Burst,
-  Beam,
-  Heal,
-  Cleanse,
-  Glitch,
-  Aura,
-  Field,
-  Observe,
-};
+
 
 inline constexpr std::array<DecalAnimationKind, 23>
     kAvailableDecalAnimationKinds{

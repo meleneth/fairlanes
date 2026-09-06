@@ -4,9 +4,9 @@
 #include <span>
 #include <string_view>
 
-#include "fl/ecs/components/combat_status.hpp"
+#include "fl/ecs/components/combat_status_kind.hpp"
 #include "fl/skills/skill.hpp"
-#include "fl/widgets/effects/decal.hpp"
+#include "fl/widgets/effects/decal_animation_kind.hpp"
 
 namespace fl::skills {
 

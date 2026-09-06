@@ -1,4 +1,5 @@
 #pragma once
+#include "fl/targeting/target_status.hpp"
 
 #include <algorithm>
 #include <array>
@@ -14,19 +15,7 @@
 namespace fl::targeting {
 
 // Shared vocabulary for skill targeting and monster decision conditions.
-enum class TargetStatus {
-  None,
-  Shield,
-  Haste,
-  Burn,
-  Blind,
-  Silence,
-  Slow,
-  Stun,
-  Poison,
-  DireBleed,
-  Freeze
-};
+
 
 inline bool has_status(const entt::registry &reg, entt::entity entity,
                        TargetStatus status) {

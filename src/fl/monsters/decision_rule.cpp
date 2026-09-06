@@ -1,4 +1,5 @@
 #include "fl/monsters/decision_rule.hpp"
+#include "fl/targeting/status_filters.hpp"
 
 #include "fl/ecs/components/combat_status.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"

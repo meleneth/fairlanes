@@ -1,4 +1,5 @@
 #pragma once
+#include "fl/ecs/components/combat_status_kind.hpp"
 
 #include <entt/entt.hpp>
 
@@ -9,15 +10,7 @@
 
 namespace fl::ecs::components {
 
-enum class CombatStatusKind {
-  Shield,
-  Blind,
-  Silence,
-  Slow,
-  Stun,
-  Haste,
-  Burn,
-};
+
 
 struct CombatStatusEffect {
   CombatStatusEffect() = default;
