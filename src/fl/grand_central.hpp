@@ -105,6 +105,7 @@ private:
 
   std::deque<fl::primitives::AccountData> accounts_;
   fl::primitives::RaidMilestones raid_milestones_;
+  std::vector<fl::events::ScopedRaidListener> raid_log_subscriptions_;
   fl::primitives::DiscoveryJournal discoveries_;
   std::unique_ptr<fl::primitives::DiscoveryJournalListener> discovery_listener_;
 

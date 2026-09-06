@@ -146,6 +146,20 @@ GrandCentral::GrandCentral(uint8_t num_accounts,
       }
     }
   }
+  for (std::size_t index = 0; index < accounts_.size(); ++index) {
+    raid_log_subscriptions_.emplace_back(accounts_[index].raid_bus(),
+        std::in_place_type<fl::events::RaidResolved>,
+        [this, index](const auto &event) {
+          const auto outcome = event.result == fl::events::RaidResult::Victory
+              ? "victory" : event.result == fl::events::RaidResult::MutualDestruction
+              ? "wipe (mutual destruction)" : "wipe";
+          logger_.info("Visitor raid: Account " + std::to_string(index + 1) +
+              " - " + outcome + "; " + std::to_string(event.parties) +
+              " parties, " + std::to_string(event.combat_beats) + " combat beats. " +
+              (event.result == fl::events::RaidResult::Victory
+                  ? "Two exclusive trinkets awarded per party." : "Await the next Visitor; no retries."));
+        });
+  }
   bootstrap_logs();
 }
 

@@ -4,9 +4,52 @@
 #include <ftxui/dom/node.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <algorithm>
+#include <cmath>
+#include <ftxui/screen/screen.hpp>
 
 namespace fl::widgets {
 namespace {
+// A terminal-native celestial body scales to the actual boss allocation.
+class VisitorPortrait : public ftxui::Node {
+public:
+  VisitorPortrait(ftxui::Element labels, std::uint64_t beat)
+      : Node({std::move(labels)}), beat_(beat) {}
+  void ComputeRequirement() override {
+    children_[0]->ComputeRequirement();
+    requirement_ = children_[0]->requirement();
+    requirement_.flex_grow_x = requirement_.flex_grow_y = 1;
+  }
+  void SetBox(ftxui::Box box) override {
+    box_ = box;
+    children_[0]->SetBox(box);
+  }
+  void Render(ftxui::Screen &screen) override {
+    const double width = std::max(1, box_.x_max - box_.x_min);
+    const double height = std::max(1, box_.y_max - box_.y_min);
+    const double phase = static_cast<double>(beat_) / 12.0;
+    for (int y = box_.y_min; y <= box_.y_max; ++y) {
+      for (int x = box_.x_min; x <= box_.x_max; ++x) {
+        if (x < 0 || y < 0 || x >= screen.dimx() || y >= screen.dimy()) continue;
+        const double nx = 2.0 * (x - box_.x_min) / width - 1.0;
+        const double ny = 2.0 * (y - box_.y_min) / height - 1.0;
+        const double ring = std::sqrt(nx * nx + ny * ny);
+        auto &pixel = screen.PixelAt(x, y);
+        pixel.background_color = ftxui::Color::RGB(12, 5, 25);
+        if (std::abs(ring - 0.78) < 0.10 || std::abs(ny - 0.3 * std::sin(nx * 7 + phase)) < 0.08) {
+          pixel.character = ring < 0.65 ? "*" : ":";
+          pixel.foreground_color = ftxui::Color::MagentaLight;
+        } else if ((x * 13 + y * 7 + beat_ / 12) % 37 == 0) {
+          pixel.character = ".";
+          pixel.foreground_color = ftxui::Color::BlueLight;
+        }
+      }
+    }
+    children_[0]->Render(screen);
+  }
+private:
+  std::uint64_t beat_;
+};
+
 // Allocate the boss its upper third; the roster always gets the lower two thirds.
 class RaidLayout : public ftxui::Node {
 public:
@@ -36,13 +79,13 @@ ftxui::Element RaidView::Render() {
   auto &account = ctx_.account_data();
   auto *raid = account.raid();
   if (!raid) return text("No Visitor encounter.");
-  Elements boss_rows{text("VISITOR RAID") | bold};
+  Elements boss_rows{text("VISITOR RAID") | color(Color::White) | bold};
   if (raid->active()) {
-    static constexpr const char *sky[]{".   *   .   /\\   .   *   .", "  .   *   <  >   *   .  ", "*   .     \\/     .   *"};
-    boss_rows.push_back(text(sky[(raid->combat_beats() / 6) % 3]) | center | color(Color::MagentaLight));
+    boss_rows.push_back(filler());
     for (auto enemy : raid->encounter().attackers())
       if (ctx_.reg().valid(enemy)) boss_rows.push_back(Combatant(ctx_.reg(), enemy).Render());
-    boss_rows.push_back(text("Account time paused | One shared encounter") | dim);
+    boss_rows.push_back(filler());
+    boss_rows.push_back(text("Account time paused | One shared encounter") | color(Color::White) | dim);
   } else {
     const auto result = *raid->result();
     boss_rows.push_back(text(result == fl::events::RaidResult::Victory ? "VICTORY" :
@@ -70,11 +113,10 @@ ftxui::Element RaidView::Render() {
     rows.push_back(hbox(std::move(members)) | size(HEIGHT, EQUAL, 2));
     rows.push_back(filler());
   }
-  const auto seconds = (account.beats_until_visitor() + account.calendar().effective_beats_per_wall_second() - 1) /
-                        account.calendar().effective_beats_per_wall_second();
-  rows.push_back(text("Next Visitor: " + std::to_string(seconds / 3600) + "h " +
-      std::to_string((seconds / 60) % 60) + "m " + std::to_string(seconds % 60) + "s" +
-      (raid->active() ? " (paused) | h: help" : " | Tab: party view | h: help")) | dim);
-  return std::make_shared<RaidLayout>(vbox(std::move(boss_rows)), vbox(std::move(rows)));
+  rows.push_back(text(raid->active() ? "h: help" :
+      "Enter: return to party combat | Wipe results close after 5 minutes | h: help") | dim);
+  Element boss = vbox(std::move(boss_rows));
+  if (raid->active()) boss = std::make_shared<VisitorPortrait>(std::move(boss), raid->combat_beats());
+  return std::make_shared<RaidLayout>(std::move(boss), vbox(std::move(rows)));
 }
 } // namespace fl::widgets

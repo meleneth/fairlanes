@@ -467,3 +467,20 @@ The result screen also projects account attempt/win/wipe/trinket totals from the
 event-driven records. Progression gates and persistent save records are the next
 substantive design-dependent milestones; the numbered sequence above is the
 original implementation roadmap, not a claim that these remaining policies exist.
+
+### Visitor presentation revision
+
+The Visitor's celestial portrait fills the entire upper third of the content
+allocation, below moon chrome and its separator. Labels and the boss health card
+are overlaid on this scalable, beat-animated terminal rendering. Raid results are
+published to the game-wide log by scoped `RaidResolved` listeners at the root.
+After a wipe (including mutual destruction), results close five real minutes after
+resolution, independent of overdrive or account calendar time. Enter dismisses any
+resolved raid immediately. Both paths return to the selected individual party's
+combat screen; Enter does not interrupt a live raid.
+
+The next-Visitor countdown belongs at the end of the moon-status line, with no
+separate countdown row in chrome or raid content. Future research will unlock this
+forecast; it remains visible in the current prototype until research mechanics and
+unlock criteria are designed. This requirement does not create a research system
+or silently choose a research cost.

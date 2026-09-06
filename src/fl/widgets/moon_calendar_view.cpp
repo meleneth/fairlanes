@@ -39,16 +39,20 @@ render_moon_calendar(const fl::primitives::WorldClock &world_clock,
   const auto chrome = fl::lospec500::color_at(32);
   const auto accent = fl::lospec500::color_at(15);
 
+  std::string visitor_text = "Visitor " + days_text(snapshot.days_until_visitor);
+  if (visitor) {
+    const auto rate = world_clock.effective_beats_per_wall_second();
+    const auto seconds = (visitor->remaining_beats + rate - 1) / rate;
+    visitor_text = "Next Visitor: " + std::to_string(seconds / 3600) + "h " +
+        std::to_string((seconds / 60) % 60) + "m " + std::to_string(seconds % 60) + "s" +
+        (visitor->paused ? " PAUSED" : "");
+  }
   auto primary = hbox({
-      text("Moons") | bold | color(accent),
-      text(" | Day " + std::to_string(snapshot.day)),
-      text(" | "),
-      moon_status_line(snapshot.runner),
-      text(" | "),
-      moon_status_line(snapshot.elder),
-      filler(),
-      text("x" + std::to_string(world_clock.beat_rate_multiplier()) + " "),
-      text(visitor ? "" : "Visitor " + days_text(snapshot.days_until_visitor)),
+      hbox({text("Moons | Day " + std::to_string(snapshot.day)), text(" | "),
+            moon_status_line(snapshot.runner), text(" | "),
+            moon_status_line(snapshot.elder)}) | xflex,
+      text(" | x" + std::to_string(world_clock.beat_rate_multiplier()) + " | "),
+      text(visitor_text) | color(accent),
   });
 
   auto events = hbox({
@@ -59,16 +63,6 @@ render_moon_calendar(const fl::primitives::WorldClock &world_clock,
   });
 
   Elements lines{primary, events | dim};
-  if (visitor) {
-    const auto rate = world_clock.effective_beats_per_wall_second();
-    const auto seconds = (visitor->remaining_beats + rate - 1) / rate;
-    lines.push_back(
-        text("Next Visitor: " + std::to_string(seconds / 3600) + "h " +
-             std::to_string((seconds / 60) % 60) + "m " +
-             std::to_string(seconds % 60) + "s" +
-             (visitor->paused ? " | Account time PAUSED (raid)" : "")) |
-        color(accent));
-  }
   return vbox(std::move(lines)) | bgcolor(fl::lospec500::color_at(0)) |
          color(chrome);
 }

@@ -21,6 +21,10 @@ TEST_CASE("Raid layout exposes all twenty-five members at terminal sizes",
     auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(width),
                                         ftxui::Dimension::Fixed(height));
     ftxui::Render(screen, view.Render());
+    REQUIRE(screen.PixelAt(width - 1, height / 3 - 1).background_color ==
+            ftxui::Color::RGB(12, 5, 25));
+    REQUIRE(screen.PixelAt(width - 1, height / 3).background_color !=
+            ftxui::Color::RGB(12, 5, 25));
     auto output = screen.ToString();
     REQUIRE(output.find("Visitor's Herald") != std::string::npos);
     REQUIRE(output.find("paused") != std::string::npos);
@@ -47,6 +51,7 @@ TEST_CASE(
                                       ftxui::Dimension::Fixed(24));
   ftxui::Render(screen, root.Render());
   auto output = screen.ToString();
+  root.OnEvent(ftxui::Event::Return);
   REQUIRE(output.find("VISITOR RAID") != std::string::npos);
   REQUIRE(output.find("Next Visitor: 22h 3m 0s") != std::string::npos);
   REQUIRE(output.find("PAUSED") != std::string::npos);
@@ -62,5 +67,15 @@ TEST_CASE(
   output = screen.ToString();
   REQUIRE(output.find("PAUSED") == std::string::npos);
   REQUIRE(output.find("Wipes: 1") != std::string::npos);
+  auto &raid = *ctx.account_data().raid();
+  REQUIRE_FALSE(raid.result_expired(*raid.resolved_at() + std::chrono::seconds(299)));
+  REQUIRE(raid.result_expired(*raid.resolved_at() + std::chrono::minutes(5)));
+  auto log_screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(180), ftxui::Dimension::Fixed(12));
+  ftxui::Render(log_screen, gc.game_log().Render());
+  REQUIRE(log_screen.ToString().find("Visitor raid: Account 1 - wipe") != std::string::npos);
   REQUIRE(output.find("Next Visitor: 22h 3m 0s") != std::string::npos);
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  screen.Clear();
+  ftxui::Render(screen, root.Render());
+  REQUIRE(screen.ToString().find("VISITOR RAID") == std::string::npos);
 }

@@ -4,6 +4,7 @@
 #include "fl/events/raid_bus.hpp"
 #include "fl/primitives/encounter_data.hpp"
 #include <optional>
+#include <chrono>
 #include <span>
 #include <vector>
 
@@ -19,6 +20,12 @@ public:
   ~RaidData();
   RaidData(const RaidData &) = delete;
   RaidData &operator=(const RaidData &) = delete;
+  using ResultClock = std::chrono::steady_clock;
+  bool result_expired(ResultClock::time_point now = ResultClock::now()) const {
+    return resolved_at_ && result_ != fl::events::RaidResult::Victory &&
+           now - *resolved_at_ >= std::chrono::minutes(5);
+  }
+  std::optional<ResultClock::time_point> resolved_at() const { return resolved_at_; }
   bool active() const noexcept { return !result_; }
   std::optional<fl::events::RaidResult> result() const { return result_; }
   EncounterData &encounter() { return encounter_; }
@@ -39,6 +46,7 @@ private:
   EncounterData encounter_;
   std::vector<PartyData *> parties_;
   std::optional<fl::events::RaidResult> result_;
+  std::optional<ResultClock::time_point> resolved_at_;
   std::uint64_t combat_beats_{0};
   bool cleaned_{false};
   bool announced_{false};

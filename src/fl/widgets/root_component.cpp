@@ -97,6 +97,14 @@ bool RootComponent::OnEvent(ftxui::Event event) {
     return console_overlay_->OnEvent(event);
   }
 
+  if (active_screen_kind_ == ActiveScreen::raid && event == ftxui::Event::Return) {
+    auto *raid = ctx_.account_data().raid();
+    if (raid && !raid->active()) {
+      show_party_battle(commands_.account_index(), commands_.party_index());
+      return true;
+    }
+  }
+
   if (active_screen_kind_ == ActiveScreen::effect_gallery &&
       (event == ftxui::Event::Escape ||
        event == ftxui::Event::Character("q"))) {
@@ -234,6 +242,9 @@ ftxui::Element RootComponent::Render() {
       replace_screen(ftxui::Make<RaidView>(ctx_));
     }
   }
+  if (active_screen_kind_ == ActiveScreen::raid && account.raid() &&
+      account.raid()->result_expired())
+    show_party_battle(commands_.account_index(), commands_.party_index());
   Element content = active_screen_ ? active_screen_->Render() : text("");
   content = render_root_chrome(account.calendar(), std::move(content),
       VisitorCountdown{account.beats_until_visitor(), account.in_raid()});

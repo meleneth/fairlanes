@@ -105,6 +105,7 @@ void RaidData::resolve(fl::events::RaidResult result) {
   if (!active())
     return;
   result_ = result;
+  resolved_at_ = ResultClock::now();
   cleanup();
   const bool victory = result == fl::events::RaidResult::Victory;
   if (victory) fl::ecs::systems::RaidLootSystem::commit(ctx_, events_, id_, parties_);
