@@ -498,3 +498,9 @@ effects with no timeout. Update descriptions alongside behavior; verify C++
 execution rather than inferring effects from tags. See the skill description
 requirements in `docs/tour/development.md`. The libram explicitly identifies
 current values as having had no balance passes.
+
+Monster declarations require explicit cycle membership (`origin`, `resonance`,
+`conflict`, or `singularity`). Generated MonsterStats exposes `fl::primitives::Cycle`;
+the manifest includes membership and the content balance report includes all four
+cycle counts. These are content-planning assignments, not encounter gating.
+See `docs/tour/development.md` for the contract.

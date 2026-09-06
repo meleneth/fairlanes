@@ -45,6 +45,7 @@ module FairlanesContent
                   #{monster.hp},
                   #{monster.mp},
                   #{monster.level || 0},
+                  fl::primitives::Cycle::#{camel(monster.cycle)},
                   std::array<fl::skills::SkillId, #{monster.known_skills.size}>{#{known_skills}},
                   Pool::#{pool_cpp(monster.pool)},
               },
@@ -93,6 +94,7 @@ module FairlanesContent
         #include "fl/ecs/components/stats.hpp"
         #include "fl/ecs/components/track_xp.hpp"
         #include "fl/grand_central.hpp"
+        #include "fl/primitives/cycle.hpp"
         #include "fl/monsters/monster_kind.hpp"
         #include "fl/monsters/monster_registry.hpp"
         #include "fl/monsters/register_monsters.hpp"
@@ -137,6 +139,7 @@ module FairlanesContent
           int hp;
           int mp;
           int level;
+          fl::primitives::Cycle cycle;
           std::array<fl::skills::SkillId, KnownSkillCount> known_skills;
           Pool pool;
         };
@@ -246,6 +249,7 @@ module FairlanesContent
             const auto metadata = fl::monster::generated_content::stats(expected.monster);
             REQUIRE_FALSE(metadata.description.empty());
             REQUIRE(metadata.description == expected.description);
+            REQUIRE(metadata.cycle == expected.cycle);
             auto &registry = fl::monster::monster_registry();
             const auto found = registry.find(expected.monster);
             REQUIRE(found != registry.end());
@@ -285,6 +289,7 @@ module FairlanesContent
             const auto metadata = fl::monster::generated_content::stats(expected.monster);
             REQUIRE_FALSE(metadata.description.empty());
             REQUIRE(metadata.description == expected.description);
+            REQUIRE(metadata.cycle == expected.cycle);
             if (expected.pool == Pool::RareWoodland) {
               const auto pool = fl::primitives::EncounterBuilder::rare_woodland();
               REQUIRE(std::find(pool.begin(), pool.end(), expected.monster) !=
@@ -528,6 +533,7 @@ module FairlanesContent
         #include <span>
         #include <string_view>
 
+        #include "fl/primitives/cycle.hpp"
         #include "fl/monsters/monster_kind.hpp"
         #include "fl/monsters/decision_rule.hpp"
         #include "fl/skills/skill.hpp"
@@ -540,6 +546,7 @@ module FairlanesContent
           int hp;
           int mp;
           int level;
+          fl::primitives::Cycle cycle;
         };
 
         MonsterStats stats(MonsterKind kind) noexcept;
@@ -620,6 +627,7 @@ module FairlanesContent
         #include <span>
         #include <string_view>
 
+        #include "fl/primitives/cycle.hpp"
         #include "fl/monsters/monster_kind.hpp"
         #include "fl/skills/skill.hpp"
 
@@ -712,6 +720,7 @@ module FairlanesContent
             #{monster.hp},
             #{monster.mp},
             #{monster.level || 0},
+            fl::primitives::Cycle::#{camel(monster.cycle)},
         };
 
         } // namespace
@@ -756,6 +765,7 @@ module FairlanesContent
         #include "fl/generated/monster_registration.hpp"
 
         #include "fl/monsters/apply_monster_stats.hpp"
+        #include "fl/primitives/cycle.hpp"
         #include "fl/monsters/monster_kind.hpp"
         #include "fl/monsters/monster_registry.hpp"
         #include "fl/primitives/entity_builder.hpp"
@@ -791,6 +801,14 @@ module FairlanesContent
         "| Monster declarations | #{monsters.size} | Ruby DSL generated C++ monster topology table |",
         "| Common woodland monsters | #{monsters.count { |monster| monster.pool == :common_woodland }} | Ruby DSL generated C++ encounter pool |",
         "| Rare woodland monsters | #{monsters.count { |monster| monster.pool == :rare_woodland }} | Ruby DSL generated C++ encounter pool |",
+        "",
+        "## Monsters by Cycle",
+        "",
+        "Initial themed assignments for content planning; cycle metadata does not filter encounter pools.",
+        "",
+        "| Cycle | Monsters |",
+        "| --- | ---: |",
+        *CYCLES.map { |cycle| "| #{camel(cycle)} | #{monsters.count { |monster| monster.cycle == cycle }} |" },
         "",
         "## Skill Metadata",
         "",
@@ -838,14 +856,15 @@ module FairlanesContent
         "",
         "## Monster Topology",
         "",
-        "| Monster | C++ ID | HP | MP | Level | Known skills | Pool |",
-        "| --- | --- | ---: | ---: | ---: | --- | --- |"
+        "| Monster | C++ ID | Cycle | HP | MP | Level | Known skills | Pool |",
+        "| --- | --- | --- | ---: | ---: | ---: | --- | --- |"
       ]
 
       monsters.each do |monster|
         lines << [
           monster.display,
           monster.cpp_id,
+          camel(monster.cycle),
           monster.hp,
           monster.mp,
           monster.level || "",
@@ -966,6 +985,7 @@ module FairlanesContent
             "cpp_id" => monster.cpp_id,
             "display" => monster.display,
             "description" => monster.description,
+            "cycle" => monster.cycle.to_s,
             "hp" => monster.hp,
             "mp" => monster.mp,
             "level" => monster.level,
@@ -1020,12 +1040,13 @@ module FairlanesContent
           ),
           "random_combat_skills" => { "type" => "array", "items" => string_type },
           "monsters" => array_schema(
-            %w[id cpp_id display description hp mp level known_skills pool],
+            %w[id cpp_id display description cycle hp mp level known_skills pool],
             {
               "id" => string_type,
               "cpp_id" => string_type,
               "display" => string_type,
               "description" => { "type" => "string", "minLength" => 1 },
+              "cycle" => { "enum" => CYCLES.map(&:to_s) },
               "hp" => { "type" => "integer", "minimum" => 1 },
               "mp" => { "type" => "integer", "minimum" => 0 },
               "level" => { "type" => %w[integer null], "minimum" => 1 },

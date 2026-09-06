@@ -220,6 +220,7 @@ module FairlanesContent
         unless monster.description.is_a?(String) && !monster.description.strip.empty?
           errors << "monster #{monster.id} is missing a description"
         end
+        errors << "monster #{monster.id} has invalid cycle #{monster.cycle.inspect}" unless CYCLES.include?(monster.cycle)
         unless positive_integer?(monster.hp)
           errors << "monster #{monster.id} has invalid hp #{monster.hp}"
         end

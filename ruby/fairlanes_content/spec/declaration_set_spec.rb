@@ -28,6 +28,7 @@ RSpec.describe FairlanesContent::DeclarationSet do
     declarations = described_class.new
 
     declarations.monster :field_mouse,
+                         cycle: :origin,
                          hp: 5,
                          known_skills: %i[thump],
                          pool: :common_woodland

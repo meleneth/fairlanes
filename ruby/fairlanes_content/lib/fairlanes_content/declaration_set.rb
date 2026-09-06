@@ -72,11 +72,12 @@ module FairlanesContent
     end
 
     def monster(id, cpp_id: nil, display: nil, hp:, mp: 0, level: nil,
-                known_skills:, pool:, decision_rules: [], description: nil)
+                known_skills:, pool:, cycle:, decision_rules: [], description: nil)
       monsters << Monster.new(
         id: id,
         cpp_id: cpp_id || cpp_name(id),
         display: display || display_name(id),
+        cycle: cycle,
         hp: hp,
         mp: mp,
         level: level,

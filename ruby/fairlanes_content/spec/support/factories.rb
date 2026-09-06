@@ -20,6 +20,7 @@ FactoryBot.define do
                 declarative_shape: :handwritten_behavior
       set.random_combat_skills :thump
       set.monster :field_mouse,
+                  cycle: :origin,
                   cpp_id: "FieldMouse",
                   display: "Field Mouse",
                   description: "A small mouse with a determined thump.",

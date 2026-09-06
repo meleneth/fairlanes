@@ -220,11 +220,14 @@ module FairlanesContent
       return unless manifest["monsters"].is_a?(Array)
 
       manifest["monsters"].each do |monster|
-        %w[id cpp_id display description hp mp level known_skills pool].each do |key|
+        %w[id cpp_id display description cycle hp mp level known_skills pool].each do |key|
           errors << "manifest monster missing #{key}" unless monster.key?(key)
         end
         unless monster["description"].is_a?(String) && !monster["description"].strip.empty?
           errors << "manifest monster #{monster['id']} description must be nonempty text"
+        end
+        unless CYCLES.map(&:to_s).include?(monster["cycle"])
+          errors << "manifest monster #{monster['id']} has invalid cycle"
         end
         unless monster["hp"].is_a?(Integer)
           errors << "manifest monster #{monster['id']} hp is not an integer"

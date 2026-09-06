@@ -18,6 +18,7 @@ RSpec.describe FairlanesContent::Validator do
   it "rejects monster references to unknown skills" do
     declarations = build(:declaration_set)
     declarations.monster :honey_badger,
+                         cycle: :origin,
                          cpp_id: "HoneyBadger",
                          display: "Honey Badger",
                          hp: 500,
@@ -71,6 +72,7 @@ RSpec.describe FairlanesContent::Validator do
   it "rejects duplicate monster C++ ids" do
     declarations = build(:declaration_set)
     declarations.monster :other_mouse,
+                         cycle: :origin,
                          cpp_id: "FieldMouse",
                          hp: 5,
                          known_skills: %i[thump],
@@ -110,6 +112,7 @@ RSpec.describe FairlanesContent::Validator do
   it "rejects invalid monster stats" do
     declarations = build(:declaration_set)
     declarations.monster :bad_mouse,
+                         cycle: :origin,
                          hp: 0,
                          mp: -1,
                          level: 0,
@@ -159,6 +162,19 @@ RSpec.describe FairlanesContent::Validator do
     expect(described_class.new(declarations).validate).to include(/must be an array/)
     declarations.monster_rules :field_mouse, {skill: :thump, chance: 30}
     expect(described_class.new(declarations).validate).to include(/unknown fields/)
+  end
+
+  it "requires a recognized cycle on every monster" do
+    declarations = build(:declaration_set)
+    [nil, :industrial, "origin"].each do |cycle|
+      declarations.monsters.first.cycle = cycle
+      expect(described_class.new(declarations).validate)
+        .to include("monster field_mouse has invalid cycle #{cycle.inspect}")
+    end
+    FairlanesContent::CYCLES.each do |cycle|
+      declarations.monsters.first.cycle = cycle
+      expect(described_class.new(declarations).validate).to be_empty
+    end
   end
 
 end

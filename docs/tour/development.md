@@ -232,3 +232,18 @@ To inspect profiling data:
 - Download the [Tracy client](https://github.com/wolfpld/tracy/releases)
 - Run the game
 - Connect using the Tracy UI
+
+### Monster cycle metadata
+
+Every monster declaration requires an explicit `cycle:`: `:origin`, `:resonance`,
+`:conflict`, or `:singularity`. These map to `fl::primitives::Cycle` in generated
+`MonsterStats` and to a `cycle` string in the JSON content manifest.
+The generated [content balance report](generated/content-balance.md) lists counts
+for all four cycles, including zero counts, and each monster's assignment.
+Counts measure monster archetypes, not spawned combatants.
+
+The initial assignments follow wildlife, magical, industrial/military, and
+cybernetic/cosmic themes respectively. They are content-planning assignments,
+independent of level and encounter pool; they do not gate encounters by cycle.
+New content must declare its cycle explicitly rather than infer it from skills
+or level. Review the per-cycle counts when planning further content generation.
