@@ -543,3 +543,11 @@ Preserve HP/death state, clear old combat statuses, and prevent old encounter
 actions from continuing. Use helpers such as FriendlyPossibleTargets to scale
 normal and raid targeting automatically; keep skill-specific eligibility and
 single-target/group behavior on top of encounter-wide candidates.
+
+Target helpers are iterator-based ranges, not eagerly allocated lists:
+FriendlyPossibleTargets / FriendlyDeadPossibleTargets and EnemyPossibleTargets /
+EnemyDeadPossibleTargets select encounter-relative side and living/dead state.
+Exclude invalid entities; preserve skill-specific filters. Ranges borrow encounter
+storage and must not survive cleanup, raid transfer, or be captured by delayed
+work. Specify invalidation rules; snapshot entity IDs before effects that can
+structurally mutate or destroy the encounter, then revalidate at execution.

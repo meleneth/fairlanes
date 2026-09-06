@@ -168,11 +168,24 @@ account-specific pause as-is.
 
 ## Confirmed targeting abstraction
 
-Target selection uses encounter-scoped helper methods such as
-`FriendlyPossibleTargets(actor)` and an opposing-target equivalent. These return
-the available candidates relative to the acting combatant's side in the active
-encounter. Callers must not enumerate the actor's home party to discover targets.
-Exact C++ naming and signatures will follow repository conventions at implementation.
+Target selection uses encounter-scoped **iterator-based ranges**, not helpers
+that eagerly allocate a candidate list. Each range traverses and filters the
+active encounter's participants relative to the actor's side. Support ordinary
+range iteration and composition with skill-specific eligibility filters.
+
+| Range | Side relative to actor | Candidate life state |
+| --- | --- | --- |
+| `FriendlyPossibleTargets(actor)` | Friendly | Alive |
+| `FriendlyDeadPossibleTargets(actor)` | Friendly | Dead |
+| `EnemyPossibleTargets(actor)` | Opposing | Alive |
+| `EnemyDeadPossibleTargets(actor)` | Opposing | Dead |
+
+These are the intended API names; exact C++ signatures will be settled during
+implementation. All variants exclude invalid/destroyed entities and entities
+outside the encounter. Dead means a valid participating combatant that is dead,
+not a null or stale entity handle. The friendly range can include the actor when
+its life state matches; skills that exclude self apply that constraint explicitly.
+Callers must not enumerate the actor's home party to discover targets.
 
 In a normal fight, friendly candidates are the participating allies in that
 encounter. In a raid, they span all five participating parties. For a boss or an
@@ -185,15 +198,25 @@ single-target heal still picks one eligible ally, while an all-allies effect
 covers all eligible allies in the encounter. This scales with participants
 without separate party-versus-raid skill implementations. Preserve explicit
 skill constraints such as self-only, exclusions, target count, and required
-status. Normal damage/healing candidates exclude dead or invalid entities;
-future resurrection, if introduced, needs an explicit eligibility rule rather
-than weakening this default. An actor outside the encounter has no candidates.
+status. Normal damage/healing use living ranges. Skills targeting corpses or
+future resurrection use the explicit dead variants plus their own eligibility
+rules. Providing a dead-target range does not introduce a resurrection mechanic
+or change the no-resurrection-on-raid-entry rule. An actor outside the encounter
+has an empty range for every variant.
 
 Use this common path for player skills, monster decision rules, group effects,
 and effect execution. Validate targets again when delayed effects execute;
 being eligible at scheduling time does not guarantee eligibility later. Ordered
 monster-rule conditions must still match the same candidate ultimately selected.
-Keep these helpers read-only and accessible through narrow encounter authority.
+Keep these ranges read-only and accessible through narrow encounter authority.
+They borrow encounter storage: do not store an iterator or range beyond its
+encounter lifetime, across raid transfer, or in a delayed callback. Delayed work
+captures stable entity IDs and revalidates them at execution. Define iterator
+invalidation rules explicitly; effects that may structurally change membership
+or end the encounter must collect the needed IDs before applying those effects.
+That deliberate snapshot is a consumer choice, not eager allocation in every
+candidate helper. HP changes during iteration must not permit an invalid or
+wrong-life-state candidate to pass eligibility checks when used.
 
 Existing `allied_alive_targets` / `opposing_alive_targets` and `Team` queries
 provide useful starting points, but currently resolve through party-owned
@@ -291,7 +314,9 @@ identity for progression and reward semantics while resolving combat collectivel
    HP/death state, clear old statuses, and prevent old enemies/actions from
    continuing to attack.
 8. Test the common target helpers in both normal and raid encounters, including
-   cross-party healing/buffs, enemy-side symmetry, invalid actors, dead targets,
-   delayed target invalidation, and unchanged single-target versus group rules.
+   cross-party healing/buffs, enemy-side symmetry, all four living/dead variants,
+   empty ranges, invalid actors/entities, self eligibility, iterator lifetime and
+   invalidation, delayed target invalidation, and unchanged single-target versus
+   group rules.
 
 No raid runtime changes are part of this initial design documentation pass.
