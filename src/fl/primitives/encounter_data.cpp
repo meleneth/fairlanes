@@ -48,14 +48,15 @@ bool has_cleansable_debuff(entt::registry &reg, entt::entity target) {
   return reg.any_of<Poison, Freeze, DireBleed>(target);
 }
 
-std::optional<entt::entity> cleansable_member(const Team &team,
-                                              fl::context::PartyCtx &ctx) {
-  std::optional<entt::entity> selected;
-  team.for_each_alive_member(ctx, [&](entt::entity candidate) {
-    if (!selected.has_value() && has_cleansable_debuff(ctx.reg(), candidate)) {
+entt::entity random_target(fl::targeting::TargetRange candidates,
+                           fl::primitives::RandomHub &rng) {
+  auto random = rng.stream("encounter/team");
+  auto selected = entt::entity{entt::null};
+  int seen = 0;
+  for (const auto candidate : candidates) {
+    if (random.random_index(++seen) == 0)
       selected = candidate;
-    }
-  });
+  }
   return selected;
 }
 
@@ -67,8 +68,8 @@ void EncounterData::innervate_event_system() {
       [this](const seerin::BecameActive &ev) {
         ZoneScopedN("EncounterData::BecameActive");
         const entt::entity attacker = ev.id;
-        if (fl::ecs::systems::CombatStatusSystem::consume_stun_turn(
-                *party_ctx_, attacker)) {
+        if (fl::ecs::systems::CombatStatusSystem::consume_stun_turn(*party_ctx_,
+                                                                    attacker)) {
           atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{attacker}});
           return;
         }
@@ -110,11 +111,8 @@ EncounterData::choose_action(entt::entity actor) {
     const auto rules =
         fl::monster::generated_content::decision_rules(monster->kind);
     if (!rules.empty()) {
-      const bool attacking = attackers().contains(actor);
-      const auto allies =
-          (attacking ? attackers() : defenders()).alive_members(*party_ctx_);
-      const auto enemies =
-          (attacking ? defenders() : attackers()).alive_members(*party_ctx_);
+      auto allies = possible_targets().FriendlyPossibleTargets(actor);
+      auto enemies = possible_targets().EnemyPossibleTargets(actor);
       auto random = party_ctx_->rng().stream("encounter/monster-rule",
                                              entt::to_integral(actor));
       return fl::monster::evaluate_rules(
@@ -126,74 +124,64 @@ EncounterData::choose_action(entt::entity actor) {
   return fl::monster::SkillDecision{skill, target_for_skill(actor, skill)};
 }
 
-entt::entity EncounterData::target_for_skill(entt::entity attacker,
+entt::entity
+EncounterData::target_random_alive_opposition(entt::entity actor) const {
+  return random_target(possible_targets().EnemyPossibleTargets(actor),
+                       party_ctx_->rng());
+}
+
+entt::entity EncounterData::target_for_skill(entt::entity actor,
                                              fl::skills::SkillKey skill) const {
   ZoneScopedN("EncounterData::target_for_skill");
+  auto candidates = possible_targets();
+  if (!party_ctx_->reg().valid(actor) ||
+      (!attackers().contains(actor) && !defenders().contains(actor)))
+    return entt::null;
   if (fl::skills::has_tag(skill, fl::skills::SkillTag::Self)) {
-    return attacker;
+    for (auto candidate : candidates.FriendlyPossibleTargets(actor))
+      if (candidate == actor)
+        return actor;
+    return entt::null;
   }
   if (fl::skills::definition(skill).consumes_status) {
-    const auto enemies =
-        (topo_.attackers_.contains(attacker) ? topo_.defenders_
-                                             : topo_.attackers_)
-            .alive_members(*party_ctx_);
-    for (auto candidate : enemies) {
+    for (auto candidate : candidates.EnemyPossibleTargets(actor)) {
       if (fl::skills::target_meets_skill_requirements(party_ctx_->reg(),
-                                                      candidate, skill)) {
+                                                      candidate, skill))
         return candidate;
-      }
     }
     return entt::null;
   }
   if (fl::skills::has_tag(skill, fl::skills::SkillTag::Healing)) {
-    if (topo_.attackers_.contains(attacker)) {
-      return topo_.attackers_.least_health_member(*party_ctx_)
-          .value_or(entt::null);
+    auto selected = entt::entity{entt::null};
+    int lowest_hp = 0;
+    for (auto candidate : candidates.FriendlyPossibleTargets(actor)) {
+      const auto hp =
+          party_ctx_->reg().get<fl::ecs::components::Stats>(candidate).hp_;
+      if (selected == entt::null || hp < lowest_hp) {
+        selected = candidate;
+        lowest_hp = hp;
+      }
     }
-
-    if (topo_.defenders_.contains(attacker)) {
-      return topo_.defenders_.least_health_member(*party_ctx_)
-          .value_or(entt::null);
-    }
-
-    return entt::null;
+    return selected;
   }
-
-  const bool is_cleanse =
+  const bool cleanse =
       fl::skills::has_tag(skill, fl::skills::SkillTag::Cleanse);
-  if (is_cleanse) {
-    if (topo_.attackers_.contains(attacker)) {
-      if (auto target = cleansable_member(topo_.attackers_, *party_ctx_)) {
-        return *target;
-      }
-    }
-
-    if (topo_.defenders_.contains(attacker)) {
-      if (auto target = cleansable_member(topo_.defenders_, *party_ctx_)) {
-        return *target;
-      }
-    }
+  if (cleanse) {
+    auto eligible = candidates.FriendlyPossibleTargets(actor) |
+                    std::views::filter([this](entt::entity target) {
+                      return has_cleansable_debuff(party_ctx_->reg(), target);
+                    });
+    for (auto candidate : eligible)
+      return candidate;
   }
-
-  const bool targets_ally =
-      fl::skills::has_tag(skill, fl::skills::SkillTag::Heal) ||
+  const bool friendly =
+      cleanse || fl::skills::has_tag(skill, fl::skills::SkillTag::Heal) ||
       fl::skills::has_tag(skill, fl::skills::SkillTag::Ally) ||
       fl::skills::has_tag(skill, fl::skills::SkillTag::AllAllies) ||
-      is_cleanse || fl::skills::has_tag(skill, fl::skills::SkillTag::Buff);
-
-  if (targets_ally) {
-    if (topo_.attackers_.contains(attacker)) {
-      return topo_.attackers_.random_alive_member(*party_ctx_)
-          .value_or(entt::null);
-    }
-
-    if (topo_.defenders_.contains(attacker)) {
-      return topo_.defenders_.random_alive_member(*party_ctx_)
-          .value_or(entt::null);
-    }
-  }
-
-  return target_random_alive_opposition(attacker);
+      fl::skills::has_tag(skill, fl::skills::SkillTag::Buff);
+  return random_target(friendly ? candidates.FriendlyPossibleTargets(actor)
+                                : candidates.EnemyPossibleTargets(actor),
+                       party_ctx_->rng());
 }
 
 void EncounterData::finalize() {
@@ -347,8 +335,9 @@ EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
   });
 
   rt_.atb_.set_charge_rate_percent_fn([this](entt::entity entity) {
-    return 100 + fl::ecs::systems::CombatStatusSystem::turn_tempo_modifier_percent(
-                     party_ctx_->reg(), entity);
+    return 100 +
+           fl::ecs::systems::CombatStatusSystem::turn_tempo_modifier_percent(
+               party_ctx_->reg(), entity);
   });
 
   wire_.party_beat_ = fl::events::ScopedPartyListener{

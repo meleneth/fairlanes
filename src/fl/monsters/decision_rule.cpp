@@ -16,41 +16,13 @@ namespace fl::monster {
 
 bool has_rule_status(entt::registry &reg, entt::entity entity,
                      RuleStatus status) {
-  using fl::ecs::components::CombatStatusKind;
-  using fl::ecs::systems::CombatStatusSystem;
-  if (!reg.valid(entity))
-    return false;
-  switch (status) {
-  case RuleStatus::None:
-    return false;
-  case RuleStatus::Poison:
-    return reg.all_of<fl::ecs::components::Poison>(entity);
-  case RuleStatus::DireBleed:
-    return reg.all_of<fl::ecs::components::DireBleed>(entity);
-  case RuleStatus::Freeze:
-    return reg.all_of<fl::ecs::components::Freeze>(entity);
-  case RuleStatus::Shield:
-    return CombatStatusSystem::has_status(reg, entity,
-                                          CombatStatusKind::Shield);
-  case RuleStatus::Haste:
-    return CombatStatusSystem::has_status(reg, entity, CombatStatusKind::Haste);
-  case RuleStatus::Burn:
-    return CombatStatusSystem::has_status(reg, entity, CombatStatusKind::Burn);
-  case RuleStatus::Blind:
-    return CombatStatusSystem::has_status(reg, entity, CombatStatusKind::Blind);
-  case RuleStatus::Silence:
-    return CombatStatusSystem::has_status(reg, entity,
-                                          CombatStatusKind::Silence);
-  case RuleStatus::Slow:
-    return CombatStatusSystem::has_status(reg, entity, CombatStatusKind::Slow);
-  case RuleStatus::Stun:
-    return CombatStatusSystem::has_status(reg, entity, CombatStatusKind::Stun);
-  }
-  return false;
+  return fl::targeting::has_status(reg, entity, status);
 }
 
 namespace {
 bool alive(entt::registry &reg, entt::entity entity) {
+  if (!reg.valid(entity))
+    return false;
   const auto *stats = reg.try_get<fl::ecs::components::Stats>(entity);
   return stats && stats->hp_ > 0;
 }
@@ -78,12 +50,10 @@ bool matches(entt::registry &reg, entt::entity actor, entt::entity target,
 }
 } // namespace
 
-std::optional<SkillDecision>
-evaluate_rules(entt::registry &reg, entt::entity actor,
-               std::span<const entt::entity> allies,
-               std::span<const entt::entity> enemies,
-               std::span<const DecisionRule> rules,
-               const std::function<int()> &roll_percent) {
+std::optional<SkillDecision> evaluate_rules(
+    entt::registry &reg, entt::entity actor, fl::targeting::TargetRange allies,
+    fl::targeting::TargetRange enemies, std::span<const DecisionRule> rules,
+    const std::function<int()> &roll_percent) {
   if (!alive(reg, actor))
     return std::nullopt;
   const auto *slots = reg.try_get<fl::ecs::components::SkillSlots>(actor);
@@ -104,10 +74,12 @@ evaluate_rules(entt::registry &reg, entt::entity actor,
     }
     if (!skill)
       continue;
-    const auto candidates = rule.target == RuleTarget::Self
-                                ? std::span<const entt::entity>{self}
-                            : rule.target == RuleTarget::Ally ? allies
-                                                              : enemies;
+    auto candidates =
+        rule.target == RuleTarget::Self
+            ? fl::targeting::TargetRange{std::span<const entt::entity>{self},
+                                         {&reg, true}}
+        : rule.target == RuleTarget::Ally ? allies
+                                          : enemies;
     const auto target =
         std::ranges::find_if(candidates, [&](entt::entity candidate) {
           return alive(reg, candidate) &&
@@ -128,6 +100,17 @@ evaluate_rules(entt::registry &reg, entt::entity actor,
     return SkillDecision{*skill, *target};
   }
   return std::nullopt;
+}
+
+std::optional<SkillDecision>
+evaluate_rules(entt::registry &reg, entt::entity actor,
+               std::span<const entt::entity> allies,
+               std::span<const entt::entity> enemies,
+               std::span<const DecisionRule> rules,
+               const std::function<int()> &roll_percent) {
+  return evaluate_rules(
+      reg, actor, fl::targeting::TargetRange{allies, {&reg, true}},
+      fl::targeting::TargetRange{enemies, {&reg, true}}, rules, roll_percent);
 }
 
 } // namespace fl::monster

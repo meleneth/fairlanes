@@ -251,6 +251,10 @@ The first targeting slice provides `fl::targeting::PossibleTargets` in
 ranges over borrowed encounter participant storage. This is a reusable primitive;
 shared account raid ownership is still to be implemented.
 
+Encounter skill targeting, ordered monster rules, and group-effect target
+snapshots now use these ranges. Monster rule statuses share `TargetStatus`
+through the `RuleStatus` alias, so rule checks and chained status filters agree.
+
 Typed status adaptors in `src/fl/targeting/status_filters.hpp` compose with those
 ranges. Has/lacks, any-of, and all-of use the same `TargetStatus` vocabulary for
 buffs and debuffs, including Poison, Freeze, and Dire Bleed:

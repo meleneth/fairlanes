@@ -87,8 +87,23 @@ void add_hitpoint_number_decal(fl::context::PartyCtx &party_ctx,
           kHitpointNumberExtraHeight});
 }
 
+bool eligible_target(fl::context::PartyCtx &ctx, entt::entity actor,
+                     entt::entity target, bool friendly) {
+  if (!ctx.party_data().has_encounter() || !ctx.reg().valid(actor)) return false;
+  const auto *stats = ctx.reg().try_get<fl::ecs::components::Stats>(actor);
+  if (!stats || !stats->is_alive()) return false;
+  auto candidates = ctx.party_data().encounter_data().possible_targets();
+  auto range = friendly ? candidates.FriendlyPossibleTargets(actor)
+                        : candidates.EnemyPossibleTargets(actor);
+  for (auto candidate : range)
+    if (candidate == target) return true;
+  return false;
+}
+
 int apply_damage_skill(fl::context::PartyCtx &party_ctx, entt::entity attacker,
                        entt::entity target, SkillKey skill) {
+  if (!eligible_target(party_ctx, attacker, target, false) ||
+      !target_meets_skill_requirements(party_ctx.reg(), target, skill)) return 0;
   fl::skills::Thump thump;
   const int damage = thump.thump(
       fl::context::AttackCtx::make_attack(party_ctx, attacker, target), skill);
@@ -105,6 +120,7 @@ void apply_status_detonation(fl::context::PartyCtx &ctx, entt::entity attacker,
   const auto *actor_stats =
       ctx.reg().try_get<fl::ecs::components::Stats>(attacker);
   if (!actor_stats || actor_stats->hp_ <= 0 ||
+      !eligible_target(ctx, attacker, target, false) ||
       !target_meets_skill_requirements(ctx.reg(), target, skill))
     return;
   const auto &entry = definition(skill);
@@ -128,17 +144,15 @@ std::vector<entt::entity>
 opposing_alive_targets(fl::context::PartyCtx &party_ctx,
                        entt::entity attacker) {
   auto &encounter = party_ctx.party_data().encounter_data();
-  return encounter.attackers().contains(attacker)
-             ? encounter.defenders().alive_members(party_ctx)
-             : encounter.attackers().alive_members(party_ctx);
+  return fl::targeting::snapshot_targets(
+      encounter.possible_targets().EnemyPossibleTargets(attacker));
 }
 
 std::vector<entt::entity> allied_alive_targets(fl::context::PartyCtx &party_ctx,
                                                entt::entity actor) {
   auto &encounter = party_ctx.party_data().encounter_data();
-  return encounter.attackers().contains(actor)
-             ? encounter.attackers().alive_members(party_ctx)
-             : encounter.defenders().alive_members(party_ctx);
+  return fl::targeting::snapshot_targets(
+      encounter.possible_targets().FriendlyPossibleTargets(actor));
 }
 
 bool is_wired_status_skill(SkillKey skill) noexcept {
@@ -454,7 +468,7 @@ void apply_wired_skill_effect(fl::context::PartyCtx &party_ctx,
 
 int apply_healing(fl::context::PartyCtx &party_ctx, entt::entity healer,
                   entt::entity target, SkillKey skill, int heal_amount) {
-  if (!party_ctx.reg().valid(target)) {
+  if (!eligible_target(party_ctx, healer, target, true)) {
     return 0;
   }
 
@@ -858,9 +872,8 @@ void SkillSequencer::schedule_flame_wave(entt::entity attacker) {
   teach_party_from_observed_skill(party_ctx_, attacker, SkillId::FlameWave);
 
   auto &encounter = party_ctx_.party_data().encounter_data();
-  const auto targets = encounter.attackers().contains(attacker)
-                           ? encounter.defenders().alive_members(party_ctx_)
-                           : encounter.attackers().alive_members(party_ctx_);
+  const auto targets = fl::targeting::snapshot_targets(
+      encounter.possible_targets().EnemyPossibleTargets(attacker));
 
   int index = 0;
   for (const auto target : targets) {

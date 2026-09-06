@@ -752,3 +752,53 @@ TEST_CASE("Observe active effect renders as underlay without cast decal",
 }
 
 } // namespace
+
+TEST_CASE("Encounter targeting spans enrolled home parties and excludes outsiders",
+          "[encounter][targeting][multi_party]") {
+  fl::GrandCentral gc{1, 5, 5};
+  auto account = gc.account_context(0);
+  auto party = account.party_context(0);
+  auto &encounter = fl::primitives::EncounterBuilder{party}.thump_it_out();
+  const auto actor = encounter.defenders().members().front();
+  auto &reg = party.reg();
+  entt::entity wounded{entt::null};
+  for (std::size_t i = 1; i < 5; ++i) {
+    auto other = account.party_context(i);
+    for (const auto &member : other.party_data().members()) {
+      encounter.defenders().members().push_back(member.member_id());
+      wounded = member.member_id();
+    }
+  }
+  reg.get<fl::ecs::components::Stats>(wounded).hp_ = 1;
+  REQUIRE(fl::targeting::snapshot_targets(
+      encounter.possible_targets().FriendlyPossibleTargets(actor)).size() == 25);
+  REQUIRE(encounter.target_for_skill(actor, fl::skills::SkillId::Mercyburst) == wounded);
+  const auto outsider = reg.create();
+  reg.emplace<fl::ecs::components::Stats>(outsider);
+  REQUIRE(encounter.target_for_skill(outsider, fl::skills::SkillId::ArmorPlate) == entt::entity{entt::null});
+  REQUIRE(encounter.target_random_alive_opposition(outsider) == entt::entity{entt::null});
+  reg.get<fl::ecs::components::Stats>(wounded).hp_ = 0;
+  REQUIRE(encounter.target_for_skill(actor, fl::skills::SkillId::Mercyburst) != wounded);
+  REQUIRE(fl::targeting::snapshot_targets(
+      encounter.possible_targets().FriendlyDeadPossibleTargets(actor)) == std::vector{wounded});
+}
+
+TEST_CASE("Delayed healing rechecks encounter membership before applying",
+          "[encounter][targeting][healing]") {
+  fl::GrandCentral gc{1, 1, 2};
+  auto account = gc.account_context(0);
+  auto ctx = account.party_context(0);
+  auto &encounter = fl::primitives::EncounterBuilder{ctx}.thump_it_out();
+  auto actor = encounter.defenders().members().front();
+  auto target = encounter.defenders().members().back();
+  auto &stats = ctx.reg().get<fl::ecs::components::Stats>(target);
+  stats.hp_ = 1;
+  auto &scheduler = encounter.atb_engine().scheduler();
+  bool finished = false;
+  fl::skills::SkillSequencer sequencer{ctx, scheduler, [&](entt::entity) { finished = true; }};
+  sequencer.schedule(actor, target, fl::skills::SkillId::Mercyburst);
+  encounter.defenders().members().pop_back();
+  for (int i = 0; i < 100; ++i) scheduler.on_beat();
+  REQUIRE(stats.hp_ == 1);
+  REQUIRE(finished);
+}

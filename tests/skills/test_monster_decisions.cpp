@@ -140,3 +140,36 @@ TEST_CASE("Disabled and unavailable rules do not roll or invent skills",
     return 1;
   }));
 }
+
+TEST_CASE("Monster rule evaluation consumes lazy encounter candidates",
+          "[monster-rules][targeting]") {
+  entt::registry reg;
+  auto actor = combatant(reg);
+  auto wrong_status = combatant(reg);
+  auto wanted = combatant(reg);
+  auto dead = combatant(reg);
+  reg.get<fl::ecs::components::SkillSlots>(actor).learn(SkillId::Cinderburst);
+  status(reg, wanted, CombatStatusKind::Burn);
+  status(reg, dead, CombatStatusKind::Burn);
+  reg.get<fl::ecs::components::Stats>(dead).hp_ = 0;
+  const std::array allies{actor};
+  const std::array enemies{wrong_status, dead, wanted};
+  fl::targeting::PossibleTargets targets{reg, allies, enemies};
+  const std::array conditions{
+      RuleCondition{RuleSubject::Target, RulePredicate::HasStatus,
+                    RuleStatus::Burn},
+      RuleCondition{RuleSubject::Target, RulePredicate::MissingStatus,
+                    RuleStatus::Shield}};
+  const std::array rules{
+      DecisionRule{SkillId::Cinderburst, RuleTarget::Enemy, 100, conditions}};
+  auto choose = [&] {
+    return evaluate_rules(reg, actor, targets.FriendlyPossibleTargets(actor),
+                          targets.EnemyPossibleTargets(actor), rules,
+                          [] { return 1; });
+  };
+  REQUIRE(choose()->target == wanted);
+  status(reg, wanted, CombatStatusKind::Shield);
+  REQUIRE_FALSE(choose());
+  reg.destroy(wanted);
+  REQUIRE_FALSE(choose());
+}

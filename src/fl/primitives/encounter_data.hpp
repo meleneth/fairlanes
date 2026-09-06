@@ -10,6 +10,7 @@
 #include "fl/monsters/decision_rule.hpp"
 #include "fl/primitives/team.hpp"
 #include "fl/skills/skill.hpp"
+#include "fl/targeting/possible_targets.hpp"
 #include "sr/atb_bus.hpp"
 #include "sr/atb_engine.hpp"
 
@@ -90,19 +91,11 @@ public:
   bool is_good_guy(entt::entity e) const { return !owns_entity(e); }
   bool is_bad_guy(entt::entity e) const { return owns_entity(e); }
 
-  entt::entity target_random_alive_opposition(entt::entity e) const {
-    if (topo_.attackers_.contains(e)) {
-      return topo_.defenders_.random_alive_member(*party_ctx_)
-          .value_or(entt::null);
-    }
-
-    if (topo_.defenders_.contains(e)) {
-      return topo_.attackers_.random_alive_member(*party_ctx_)
-          .value_or(entt::null);
-    }
-
-    return entt::null;
+  fl::targeting::PossibleTargets possible_targets() const {
+    return {party_ctx_->reg(), attackers().members(), defenders().members()};
   }
+
+  entt::entity target_random_alive_opposition(entt::entity actor) const;
 
   entt::entity target_for_skill(entt::entity attacker,
                                 fl::skills::SkillKey skill) const;
