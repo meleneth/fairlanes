@@ -576,3 +576,19 @@ Visitor arrivals start immediately on day zero and consume the occurrence; accou
 calendar and party recovery pause until collective resolution. Attract mode calls
 `innervate_event_system(false)` to exclude Visitors. Do not separately hook normal
 parties to the global beat bus: the account now controls forwarding order.
+
+The first raid screen is `RaidView`, selected by `RootComponent` for an active
+account raid. Its compact `Combatant` rows must keep all 25 characters visible at
+80x24. Do not put the floating root help/metrics panel over this roster. Gameplay
+moon chrome displays the selected account's next unconsumed Visitor countdown.
+
+Raid records are event-driven: `RaidStarted` / `RaidResolved` update account
+`RaidStatistics`; `RaidRecorded` follows committed records and feeds save-wide
+`RaidMilestones`. Mutual destruction unlocks `RaidMutualDestruction` once through
+`AchievementUnlocked`. These are session records pending persistence design.
+Attract construction separately disables progress subscriptions.
+
+Collective victory calls `RaidLootSystem` once, granting two exclusive collectible
+`RaidTrinket` entities per participating party before `RaidLootAwarded`. Wiped
+parties receive the same allocation. These items currently have no equipment slot
+or combat bonus. Definitions/effects and progression-gate rules remain open.

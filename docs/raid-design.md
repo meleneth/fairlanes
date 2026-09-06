@@ -80,7 +80,7 @@ must not require emitting a fake victory event, awarding unearned kill loot/XP,
 or inflating statistics and achievements. An interrupted fight and a newly
 started raid are separate lifecycle facts with separate identities.
 
-Required handoff behavior, with concrete event names still to be designed:
+Implemented handoff ordering (`PartySummonedToRaid`, then `RaidStarted`):
 
 1. Capture the participating roster and transfer state before old-encounter
    cleanup can erase it.
@@ -95,8 +95,8 @@ Required handoff behavior, with concrete event names still to be designed:
 Make this ordering explicit in named orchestration code and event contracts.
 Prevent reentrant/double processing. The handoff must not allow a global beat
 between detaching some parties and enrolling others to produce extra attacks.
-The exact policy for empty old encounters and characters previously dead remains
-part of lifecycle design, not permission to heal or rejoin old combat.
+Old encounters are finalized at extraction. Dead participants stay dead and
+participate in collective outcome credit; they do not rejoin the old combat.
 
 ## Raid-exclusive rewards
 
@@ -108,9 +108,9 @@ Drops must be special items exclusive to raids. Trinkets are the current example
 not a finalized item category or equipment-slot contract. Ordinary farming and
 non-raid loot tables must not award these items.
 
-Working interpretation: the ten-drop allocation is a victory reward. Failure
-rewards, ownership/distribution, duplicates, and whether two items are assigned
-to each party or pooled into account inventory still need decisions.
+Initial implementation: the ten-drop allocation is a victory reward, assigned
+as two collectible trinkets to each party inventory. Duplicates are allowed.
+Defeat grants none. Individual trinket designs and equipment effects remain open.
 
 ## Two reasons to raid
 
@@ -241,10 +241,8 @@ That deliberate snapshot is a consumer choice, not eager allocation in every
 candidate helper. HP changes during iteration must not permit an invalid or
 wrong-life-state candidate to pass eligibility checks when used.
 
-Existing `allied_alive_targets` / `opposing_alive_targets` and `Team` queries
-provide useful starting points, but currently resolve through party-owned
-encounters. Consolidate the duplicated side-selection logic as shared encounter
-ownership is introduced; this contract is planned, not already implemented.
+`PossibleTargets` now centralizes side selection for normal and shared encounters.
+Skill execution and ordered monster rules consume these encounter-relative ranges.
 
 ## Summoning implementation progress
 
@@ -256,17 +254,15 @@ transient visuals and scheduled actions are removed while HP/death state remain.
 Tests cover retained skills surviving a later wipe and removal of poison, freeze,
 Dire Bleed, buffs, visuals, and old callbacks without healing or resurrection.
 
-This boundary is not yet called by an account raid controller. Shared ownership,
-Visitor entry scheduling, account-calendar pause, and the raid screen remain
-unimplemented. The controller must call extraction between combat ticks and
-prevent individual party loops resuming until the shared raid resolves.
+`RaidData` now calls extraction while constructing the shared encounter between
+combat ticks. Participating party loops remain suspended until shared resolution.
 
 ## Targeting implementation progress
 
 The first targeting slice provides `fl::targeting::PossibleTargets` in
 `src/fl/targeting/possible_targets.hpp`: four lazy living/dead side-relative
-ranges over borrowed encounter participant storage. This is a reusable primitive;
-shared account raid ownership is still to be implemented.
+ranges over borrowed encounter participant storage. Both party-owned encounters
+and account-owned raids use the same primitive.
 
 Encounter skill targeting, ordered monster rules, and group-effect target
 snapshots now use these ranges. Monster rule statuses share `TargetStatus`
@@ -324,24 +320,19 @@ Raid attempts and outcomes must be recorded once per shared encounter, with
 participation credit for every party. A wiped party in a victorious raid must
 not turn that account win into an account defeat or reduce its reward count.
 
-## Existing implementation and boundaries to change
+## Implemented ownership and boundaries
 
-- `AccountData` owns parties; each `PartyData` owns its own encounter.
-- `EncounterBuilder::thump_it_out` enrolls one party against five enemies.
-- `EncounterData` uses one `PartyCtx` and one party's tick source.
-- `Team` and Seerin's combatant registration provide variable-sized collections,
-  but no shared account encounter lifecycle exists yet.
-- Damage/death handling resolves encounters through the character's home party.
-- Party exit currently clears scheduled work and destroys its encounter's
-  enemies. A wiped party must not trigger that cleanup for a continuing raid.
-- Rewards and victory-sensitive skill learning currently have party-scoped
-  paths; they must consume the shared outcome for raid participants.
-- The existing multi-party wipe test exercises separate encounters, not a raid.
+- `AccountData` owns parties and one optional shared `RaidData`; parties borrow
+  its encounter while participating and retain their own identities/inventories.
+- `EncounterCtx` supplies combat authority, log, bus, owner and scheduler access.
+- The account chooses raid combat or normal party progression on each world beat.
+- Individual deaths remove status effects; a party wipe cannot finalize the raid.
+- Collective resolution settles provisional raid learning and credits all parties.
+- Named ECS reward logic grants exclusive items before the actual-award event;
+  statistics and achievement listeners consume committed facts.
 
-A future design needs an explicit owner for the shared encounter, one tick source,
-participant/home-party identity, and narrow encounter authority for combat code.
-Do not flatten party ownership or use GrandCentral as a shortcut. Retain party
-identity for progression and reward semantics while resolving combat collectively.
+Ordinary encounters still use the party-owned path. `GrandCentral` provides root
+ownership and beat wiring; combat systems use narrower contexts.
 
 ## Open decisions for the next discussion
 
@@ -440,14 +431,14 @@ Returning to account battle while a raid is active also opens that shared view.
 The upper third shows the boss and a simple beat-driven celestial animation;
 the lower two thirds show all five parties using two-line compact `Combatant`
 widgets, retaining attack decals and combat colors. Render tests cover 80x24
-(with three rows reserved for root chrome) and 120x40 terminals. Tab returns to
+(including the account countdown chrome) and 120x40 terminals. Tab returns to
 party presentation. Results remain visible until navigation, while the account
 resumes normal progression. The raid view explicitly labels account time paused
 and shows the consumed-arrival-aware countdown to the next Visitor.
 
-Root moon chrome now reads the selected account calendar. Its generic day-level
-Visitor phase label still represents celestial phase; the raid countdown is the
-precise remaining delay to the next unconsumed arrival.
+Root moon chrome reads the selected account calendar and shows a real-time
+countdown to the next unconsumed Visitor on every gameplay screen. The paused
+state is explicit. Attract mode retains its generic celestial phase display.
 
 ### Initial exclusive drops
 
@@ -464,3 +455,15 @@ account statistics subscribe to the actual-award fact. One resolution grants ten
 items for five parties; repeat ticks and duplicate event delivery do not grant or
 count them again. Defeat and mutual destruction grant none. Ordinary boss kill
 loot remains suppressed, and the dedicated reward path does not grant ordinary XP.
+
+### Verification checkpoint
+
+The normal build and full test suite cover the implemented slices above, including
+a generated Visitor fight driven to defeat through the actual account beat path,
+all 25 characters visible through the root at 80x24, and post-wipe countdown state.
+The floating root help/metrics panel is omitted on raids to avoid covering party
+five at small terminal sizes; the normal help key remains available.
+The result screen also projects account attempt/win/wipe/trinket totals from the
+event-driven records. Progression gates and persistent save records are the next
+substantive design-dependent milestones; the numbered sequence above is the
+original implementation roadmap, not a claim that these remaining policies exist.

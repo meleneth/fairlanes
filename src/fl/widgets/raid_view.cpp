@@ -52,6 +52,11 @@ ftxui::Element RaidView::Render() {
       boss_rows.push_back(text("Two exclusive trinkets awarded to every party."));
     if (result == fl::events::RaidResult::MutualDestruction)
       boss_rows.push_back(text("Raid mutual-destruction achievement fulfilled."));
+    const auto &records = account.raid_records();
+    boss_rows.push_back(text("Account raids: " + std::to_string(records.attempts) +
+        " | Wins: " + std::to_string(records.wins) + " | Wipes: " +
+        std::to_string(records.defeats) + " | Trinkets: " +
+        std::to_string(records.trinkets_awarded)));
   }
   Elements rows;
   std::size_t party_index = 0;
@@ -69,7 +74,7 @@ ftxui::Element RaidView::Render() {
                         account.calendar().effective_beats_per_wall_second();
   rows.push_back(text("Next Visitor: " + std::to_string(seconds / 3600) + "h " +
       std::to_string((seconds / 60) % 60) + "m " + std::to_string(seconds % 60) + "s" +
-      (raid->active() ? " (paused)" : " | Tab: party view")) | dim);
+      (raid->active() ? " (paused) | h: help" : " | Tab: party view | h: help")) | dim);
   return std::make_shared<RaidLayout>(vbox(std::move(boss_rows)), vbox(std::move(rows)));
 }
 } // namespace fl::widgets

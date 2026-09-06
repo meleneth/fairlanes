@@ -9,10 +9,11 @@
 
 namespace fl::widgets {
 
-ftxui::Element render_root_chrome(
-    const fl::primitives::WorldClock &world_clock, ftxui::Element content) {
+ftxui::Element render_root_chrome(const fl::primitives::WorldClock &world_clock,
+                                  ftxui::Element content,
+                                  std::optional<VisitorCountdown> visitor) {
   return ftxui::vbox({
-      render_moon_calendar(world_clock),
+      render_moon_calendar(world_clock, visitor),
       ftxui::separator() |
           fl::lospec500::on_not_black(fl::lospec500::color_at(32)),
       std::move(content) | ftxui::flex,

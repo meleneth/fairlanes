@@ -235,12 +235,14 @@ ftxui::Element RootComponent::Render() {
     }
   }
   Element content = active_screen_ ? active_screen_->Render() : text("");
-  content = render_root_chrome(account.calendar(), std::move(content));
+  content = render_root_chrome(account.calendar(), std::move(content),
+      VisitorCountdown{account.beats_until_visitor(), account.in_raid()});
 
-  content = dbox({
-      content,
-      render_help_hint(),
-  });
+  // The floating metrics/help panel would cover the last raid party on small
+  // terminals. RaidView carries a compact hint in its own allocated footer.
+  if (active_screen_kind_ != ActiveScreen::raid) {
+    content = dbox({content, render_help_hint()});
+  }
 
   if (keybind_help_open_) {
     content = dbox({

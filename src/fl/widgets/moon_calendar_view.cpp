@@ -32,7 +32,8 @@ ftxui::Element moon_status_line(const fl::primitives::MoonStatus &moon) {
 } // namespace
 
 ftxui::Element
-render_moon_calendar(const fl::primitives::WorldClock &world_clock) {
+render_moon_calendar(const fl::primitives::WorldClock &world_clock,
+                     std::optional<VisitorCountdown> visitor) {
   using namespace ftxui;
   const auto snapshot = fl::primitives::MoonCalendar::snapshot(world_clock);
   const auto chrome = fl::lospec500::color_at(32);
@@ -47,7 +48,7 @@ render_moon_calendar(const fl::primitives::WorldClock &world_clock) {
       moon_status_line(snapshot.elder),
       filler(),
       text("x" + std::to_string(world_clock.beat_rate_multiplier()) + " "),
-      text("Visitor " + days_text(snapshot.days_until_visitor)),
+      text(visitor ? "" : "Visitor " + days_text(snapshot.days_until_visitor)),
   });
 
   auto events = hbox({
@@ -57,11 +58,19 @@ render_moon_calendar(const fl::primitives::WorldClock &world_clock) {
       text(" | Twin Dark " + days_text(snapshot.days_until_twin_dark)),
   });
 
-  return vbox({
-             primary,
-             events | dim,
-         }) |
-         bgcolor(fl::lospec500::color_at(0)) | color(chrome);
+  Elements lines{primary, events | dim};
+  if (visitor) {
+    const auto rate = world_clock.effective_beats_per_wall_second();
+    const auto seconds = (visitor->remaining_beats + rate - 1) / rate;
+    lines.push_back(
+        text("Next Visitor: " + std::to_string(seconds / 3600) + "h " +
+             std::to_string((seconds / 60) % 60) + "m " +
+             std::to_string(seconds % 60) + "s" +
+             (visitor->paused ? " | Account time PAUSED (raid)" : "")) |
+        color(accent));
+  }
+  return vbox(std::move(lines)) | bgcolor(fl::lospec500::color_at(0)) |
+         color(chrome);
 }
 
 } // namespace fl::widgets
