@@ -6,6 +6,8 @@
 #include "fl/context.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/visual_effects.hpp"
+#include "fl/ecs/components/color_override.hpp"
 #include "fl/ecs/systems/loot_drop.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/fsm/party_loop_machine.hpp"
@@ -92,15 +94,40 @@ void PartyData::start_town_penalty() {
 }
 
 void PartyData::leave_combat() {
-  if (!encounter_data_) {
+  if (!encounter_data_ || leaving_combat_) {
     return;
   }
+  leaving_combat_ = true;
 
   if (!all_members_dead()) {
     party_bus_.emit(fl::events::PartyEvent{fl::events::PartyVictory{}});
   }
 
+  cleanup_encounter();
+  leaving_combat_ = false;
+}
+
+void PartyData::summon_to_raid() {
+  if (!encounter_data_ || leaving_combat_) return;
+  leaving_combat_ = true;
+  party_bus_.emit(fl::events::PartyEvent{fl::events::PartySummonedToRaid{}});
+  cleanup_encounter();
+  leaving_combat_ = false;
+}
+
+void PartyData::cleanup_encounter() {
+  // Status lifetime listeners require the old encounter/scheduler to remain
+  // alive while they disconnect and clear their owned effect entities.
   party_bus_.emit(fl::events::PartyEvent{fl::events::PartyLeftCombat{}});
+  using namespace fl::ecs::components;
+  for (const auto &member : members_) {
+    auto entity = member.member_id();
+    if (!party_ctx_.reg().valid(entity)) continue;
+    party_ctx_.reg().remove<DamageFlash, ActiveGlow, CombatantDecals,
+        CombatantUnderlayDecals, StatusTint, ColorOverride,
+        ResolvedColorOverride, ResolvedHPBarColorOverride,
+        ResolvedBackgroundColorOverride>(entity);
+  }
   encounter_data_->clear_pending_events();
   encounter_data_->finalize();
   encounter_data_.reset();
@@ -122,6 +149,12 @@ void PartyData::watch_skill_learned_this_combat(entt::entity member,
         resolve_pending_learned_skill(it, false);
       }};
 
+  it->summoned_sub = fl::events::ScopedPartyListener{
+      party_bus_, std::in_place_type<fl::events::PartySummonedToRaid>,
+      [this, it](const fl::events::PartySummonedToRaid &) {
+        resolve_pending_learned_skill(it, true);
+      }};
+
   it->victory_sub = fl::events::ScopedPartyListener{
       party_bus_, std::in_place_type<fl::events::PartyVictory>,
       [this, it](const fl::events::PartyVictory &) {
@@ -140,6 +173,7 @@ void PartyData::resolve_pending_learned_skill(
 
   it->wipe_sub.reset();
   it->victory_sub.reset();
+  it->summoned_sub.reset();
   pending_learned_skills_.erase(it);
 
   if (keep_skill) {

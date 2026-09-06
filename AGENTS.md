@@ -554,3 +554,9 @@ Exclude invalid entities; preserve skill-specific filters. Ranges borrow encount
 storage and must not survive cleanup, raid transfer, or be captured by delayed
 work. Specify invalidation rules; snapshot entity IDs before effects that can
 structurally mutate or destroy the encounter, then revalidate at execution.
+
+Implementation progress: `fl::targeting::PossibleTargets` supplies the four lazy
+ranges; typed status adaptors compose with them. Existing skill/monster targeting
+uses these ranges. `PartyData::summon_to_raid()` emits `PartySummonedToRaid`, retains
+pending learned skills, and cleans the old encounter without victory/healing.
+The account raid controller, Visitor scheduling, and raid view are still pending.

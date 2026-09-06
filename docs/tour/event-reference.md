@@ -82,9 +82,17 @@ Emitted by `TakeDamage::commit(...)` when the final living party member dies. Ob
 
 Emitted by `PartyData::leave_combat()` when combat ends and party members are still alive. Observed by pending-skill retention logic.
 
+### `fl::events::PartySummonedToRaid`
+
+Emitted by `PartyData::summon_to_raid()` before leaving the interrupted combat.
+Pending-skill listeners retain successful observation learning and disconnect from
+old wipe/victory events. This event does not imply victory, award combat rewards,
+or heal/resurrect participants. The account raid controller is not wired yet.
+
 ### `fl::events::PartyLeftCombat`
 
-Emitted by `PartyData::leave_combat()` before encounter teardown. Observed by status cleanup listeners.
+Emitted during `PartyData::leave_combat()` or `summon_to_raid()` before encounter
+teardown. Observed by status cleanup listeners while the old scheduler is still alive.
 
 ### `fl::events::PartyGainedLevel`
 

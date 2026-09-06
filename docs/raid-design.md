@@ -244,6 +244,21 @@ provide useful starting points, but currently resolve through party-owned
 encounters. Consolidate the duplicated side-selection logic as shared encounter
 ownership is introduced; this contract is planned, not already implemented.
 
+## Summoning implementation progress
+
+`PartyData::summon_to_raid()` now provides the party extraction boundary. It
+emits `PartySummonedToRaid` to settle pending observation learning, then performs
+left-combat cleanup without emitting victory. Repeated/reentrant extraction is
+ignored. Status lifetime listeners clear old effects before encounter destruction;
+transient visuals and scheduled actions are removed while HP/death state remain.
+Tests cover retained skills surviving a later wipe and removal of poison, freeze,
+Dire Bleed, buffs, visuals, and old callbacks without healing or resurrection.
+
+This boundary is not yet called by an account raid controller. Shared ownership,
+Visitor entry scheduling, account-calendar pause, and the raid screen remain
+unimplemented. The controller must call extraction between combat ticks and
+prevent individual party loops resuming until the shared raid resolves.
+
 ## Targeting implementation progress
 
 The first targeting slice provides `fl::targeting::PossibleTargets` in
@@ -366,4 +381,5 @@ identity for progression and reward semantics while resolving combat collectivel
    invalidation, delayed target invalidation, and unchanged single-target versus
    group rules.
 
-No raid runtime changes are part of this initial design documentation pass.
+The initial design pass is now followed by incremental implementation; the
+progress sections above distinguish working foundations from remaining raid work.

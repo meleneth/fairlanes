@@ -90,6 +90,8 @@ public:
   void revitalize_members();
   void start_town_penalty();
   void leave_combat();
+  // Call between combat ticks, before enrollment into the account raid.
+  void summon_to_raid();
   void watch_skill_learned_this_combat(entt::entity member,
                                        fl::skills::SkillKey skill);
 
@@ -174,9 +176,12 @@ private:
     fl::skills::SkillKey skill{fl::skills::SkillId::Observe};
     fl::events::ScopedPartyListener wipe_sub{};
     fl::events::ScopedPartyListener victory_sub{};
+    fl::events::ScopedPartyListener summoned_sub{};
   };
 
   std::list<PendingLearnedSkill> pending_learned_skills_;
+  bool leaving_combat_{false};
+  void cleanup_encounter();
 
   void
   resolve_pending_learned_skill(std::list<PendingLearnedSkill>::iterator it,
