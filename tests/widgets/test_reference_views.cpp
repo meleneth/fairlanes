@@ -4,6 +4,7 @@
 
 #include "fl/ecs/components/monster_identity.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/generated/monster_content.hpp"
 #include "fl/widgets/bestiary_view.hpp"
 #include "fl/widgets/libram_view.hpp"
 #include "fl/widgets/root_component.hpp"
@@ -137,4 +138,26 @@ TEST_CASE("Back leaves reference screens and overlays without requesting quit",
   REQUIRE(root.OnEvent(ftxui::Event::Escape));
   REQUIRE_FALSE(root.quit_requested());
   REQUIRE(render(root).find("Quit Fairlanes?") == std::string::npos);
+}
+
+TEST_CASE("Bestiary shows encountered monster lore without revealing skills",
+          "[discovery][widgets]") {
+  using fl::monster::MonsterKind;
+  fl::primitives::DiscoveryJournal journal;
+  journal.encounter(MonsterKind::FieldMouse);
+  journal.encounter(MonsterKind::HoneyBadger);
+  fl::widgets::BestiaryView view{journal, {}, MonsterKind::FieldMouse};
+  auto text = render(view);
+  REQUIRE(text.find("A field mouse with dusty paws") != std::string::npos);
+  REQUIRE(text.find("Thump") == std::string::npos);
+  REQUIRE(text.find("--") != std::string::npos);
+  REQUIRE(text.find("A low, striped disagreement") == std::string::npos);
+  REQUIRE(text.find("Fork Bomb Imp") == std::string::npos);
+
+  view.OnEvent(ftxui::Event::ArrowDown);
+  text = render(view);
+  REQUIRE(text.find("A low, striped disagreement") != std::string::npos);
+  REQUIRE(text.find("A field mouse with dusty paws") == std::string::npos);
+  REQUIRE(text.find("Eviscerate") == std::string::npos);
+  REQUIRE(journal.skill_slots(MonsterKind::FieldMouse)[0] == std::nullopt);
 }

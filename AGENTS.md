@@ -487,3 +487,7 @@ a skill-and-target decision before scheduling it; conditions must match the
 same target. See `docs/libram-bestiary-plan.md` for rule semantics, supported
 status consumption, initial monster policies, and the ordered implementation
 milestones. Keep this document current when changing the policy contract.
+
+Monster flavor descriptions live in the Ruby content declarations, are required by
+content validation, and render in the bestiary once the monster is encountered.
+They do not reveal or populate witnessed skill links.

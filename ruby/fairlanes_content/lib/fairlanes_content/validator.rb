@@ -217,6 +217,9 @@ module FairlanesContent
       declarations.monsters.each do |monster|
         errors << "monster #{monster.id} is missing a C++ id" if monster.cpp_id.to_s.empty?
         errors << "monster #{monster.id} is missing a display name" if monster.display.to_s.empty?
+        unless monster.description.is_a?(String) && !monster.description.strip.empty?
+          errors << "monster #{monster.id} is missing a description"
+        end
         unless positive_integer?(monster.hp)
           errors << "monster #{monster.id} has invalid hp #{monster.hp}"
         end

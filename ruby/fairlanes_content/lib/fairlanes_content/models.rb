@@ -8,7 +8,7 @@ module FairlanesContent
   )
 
   Monster = Struct.new(
-    :id, :cpp_id, :display, :hp, :mp, :level, :known_skills, :pool, :decision_rules,
+    :id, :cpp_id, :display, :hp, :mp, :level, :known_skills, :pool, :decision_rules, :description,
     keyword_init: true
   )
 

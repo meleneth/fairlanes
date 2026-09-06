@@ -7,6 +7,14 @@ RSpec.describe FairlanesContent::Validator do
     expect(described_class.new(declarations).validate).to be_empty
   end
 
+  it "rejects blank monster descriptions" do
+    declarations = build(:declaration_set)
+    declarations.monsters.first.description = "   "
+
+    expect(described_class.new(declarations).validate)
+      .to include("monster field_mouse is missing a description")
+  end
+
   it "rejects monster references to unknown skills" do
     declarations = build(:declaration_set)
     declarations.monster :honey_badger,

@@ -41,6 +41,7 @@ module FairlanesContent
               ExpectedMonster{
                   #{monster_cpp(monster)},
                   #{cpp_string(monster.display)},
+                  #{cpp_string(monster.description)},
                   #{monster.hp},
                   #{monster.mp},
                   #{monster.level || 0},
@@ -132,6 +133,7 @@ module FairlanesContent
         struct ExpectedMonster {
           fl::monster::MonsterKind monster;
           std::string_view monster_name;
+          std::string_view description;
           int hp;
           int mp;
           int level;
@@ -241,6 +243,9 @@ module FairlanesContent
 
           for_each_expected_monster([&](const auto &expected) {
             CAPTURE(expected.monster_name);
+            const auto metadata = fl::monster::generated_content::stats(expected.monster);
+            REQUIRE_FALSE(metadata.description.empty());
+            REQUIRE(metadata.description == expected.description);
             auto &registry = fl::monster::monster_registry();
             const auto found = registry.find(expected.monster);
             REQUIRE(found != registry.end());
@@ -277,6 +282,9 @@ module FairlanesContent
                   "[generated][content][encounter_builder]") {
           for_each_expected_monster([](const auto &expected) {
             CAPTURE(expected.monster_name);
+            const auto metadata = fl::monster::generated_content::stats(expected.monster);
+            REQUIRE_FALSE(metadata.description.empty());
+            REQUIRE(metadata.description == expected.description);
             if (expected.pool == Pool::RareWoodland) {
               const auto pool = fl::primitives::EncounterBuilder::rare_woodland();
               REQUIRE(std::find(pool.begin(), pool.end(), expected.monster) !=
@@ -528,6 +536,7 @@ module FairlanesContent
 
         struct MonsterStats {
           std::string_view display_name;
+          std::string_view description;
           int hp;
           int mp;
           int level;
@@ -640,7 +649,7 @@ module FairlanesContent
           switch (kind) {
         #{stat_cases}
           }
-          return MonsterStats{"", 0, 0, 0};
+          return MonsterStats{};
         }
 
         std::span<const fl::skills::SkillId> known_skills(MonsterKind kind) noexcept {
@@ -699,6 +708,7 @@ module FairlanesContent
         constexpr std::array k#{monster.cpp_id}KnownSkillsData{#{known_skills}};
         constexpr MonsterStats k#{monster.cpp_id}StatsData{
             #{cpp_string(monster.display)},
+            #{cpp_string(monster.description)},
             #{monster.hp},
             #{monster.mp},
             #{monster.level || 0},
@@ -821,6 +831,10 @@ module FairlanesContent
       end
 
       lines.concat [
+        "",
+        "## Monster Descriptions",
+        "",
+        *monsters.map { |monster| "- **#{monster.display}:** #{monster.description}" },
         "",
         "## Monster Topology",
         "",
@@ -951,6 +965,7 @@ module FairlanesContent
             "id" => monster.id.to_s,
             "cpp_id" => monster.cpp_id,
             "display" => monster.display,
+            "description" => monster.description,
             "hp" => monster.hp,
             "mp" => monster.mp,
             "level" => monster.level,
@@ -1005,11 +1020,12 @@ module FairlanesContent
           ),
           "random_combat_skills" => { "type" => "array", "items" => string_type },
           "monsters" => array_schema(
-            %w[id cpp_id display hp mp level known_skills pool],
+            %w[id cpp_id display description hp mp level known_skills pool],
             {
               "id" => string_type,
               "cpp_id" => string_type,
               "display" => string_type,
+              "description" => { "type" => "string", "minLength" => 1 },
               "hp" => { "type" => "integer", "minimum" => 1 },
               "mp" => { "type" => "integer", "minimum" => 0 },
               "level" => { "type" => %w[integer null], "minimum" => 1 },

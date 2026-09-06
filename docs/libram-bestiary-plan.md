@@ -1,5 +1,9 @@
 # Libram, bestiary, and monster decisions
 
+Every monster declaration includes a nonempty flavor description. The bestiary
+shows that description when the monster is encountered, above its base stats and
+witnessed skill links. Descriptions do not mark skills as witnessed.
+
 Implement these goals in order. The game-wide reference is the libram; a
 member's collection of learned, ranked skills remains the grimoire.
 

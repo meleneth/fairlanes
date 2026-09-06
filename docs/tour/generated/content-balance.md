@@ -98,6 +98,80 @@ Generated artifacts currently provide runtime skill metadata C++, status metadat
 | Dire Bleed | DireBleed | DireBleed | dire-bleed | 6 |
 | Frozen | Freeze | Freeze | freeze | 27 |
 
+## Monster Descriptions
+
+- **Field Mouse:** A field mouse with dusty paws and absolute faith in the power of a good thump. Most adventuring careers begin with an argument over its grain.
+- **Honey Badger:** A low, striped disagreement with teeth. It has never read the food chain and would resent the suggested placement.
+- **Bumpkin Hare:** Raised between cabbage rows, this hare settles trespassing disputes forehead first. Its ears arrive at the scene slightly later.
+- **Scaredy Cat:** Every rustle is an ambush and every shadow has teeth. It would very much like to win this fight from somewhere else.
+- **Mire Squish:** A wandering lump of marsh that has developed opinions about boots. Lost buttons and small bones bob beneath its surface.
+- **Bark Smack:** A fallen branch too offended to stay fallen. It patrols the woodland looking for someone to blame for the axe marks.
+- **Poison Toad:** Bright spots advertise a deeply unpleasant dining experience. It regards the entire pond as its personal soaking bowl.
+- **Yeti:** A shaggy mountain recluse trailing frost into places frost has no business being. The enormous footprints usually lead to stolen lunch.
+- **Salamander:** A coal-red lizard that sleeps in warm ashes and leaves little scorches on everything it loves. Unfortunately, it is very affectionate.
+- **Fire Drake:** A furnace with wings and a collector's eye for dry timber. Villages measure its visits in replacement roofs.
+- **Stormtick Imp:** A twitching little nuisance with thunder caught between its horns. It rubs its feet on the clouds before touching doorknobs.
+- **Ceiling Grudge:** Something old and bitter clinging to the underside of the world. Even outdoors, it seems convinced there ought to be a ceiling above you.
+- **Miasma Toad:** A swamp toad swollen with the smells nobody else wanted. Reeds wilt politely when it opens its mouth.
+- **Choir Wisp:** A wandering note from a song whose singers are long gone. It keeps trying to gather a choir, with little concern for who can carry a tune.
+- **Gorecap Sprout:** A small red mushroom walking on pale, tangled roots. It grows best where heroic speeches end abruptly.
+- **Rimefang Hare:** Its winter coat never thaws, and its front teeth shine like broken icicles. Gardeners find frozen bite marks in the cabbages.
+- **Null Mote:** A speck of absence that makes nearby stones lean toward it. Looking straight at it gives the uneasy impression that something has been erased.
+- **Grass Wolf:** Its green-gold coat disappears among the seed heads. A ripple moving against the wind may be the only warning the meadow gives you.
+- **Bristle Boar:** A barrel of bad temper wrapped in thorny bristles. It spends its mornings uprooting things and its afternoons defending the holes.
+- **Prairie Meerkat:** A self-appointed lookout with a cheek full of pebbles. It reports suspicious activity by throwing the report at it.
+- **Squirrel Brigand:** A masked woodland robber with elaborate plans for your trail mix. Its hidden caches contain nuts, loose coins, and several other squirrels' maps.
+- **Webling Spider:** An ambitious young spider convinced every path needs a curtain. Its webs are decorated with the remains of less careful travelers.
+- **Moss Wolf:** Moss blankets its shoulders and tiny roots lace its fur. When the pack lies still, the forest floor seems unusually well fed.
+- **Antler Stag:** An old stag carrying a whole winter's worth of branches on its head. It grants right of way to neither travelers nor trees.
+- **Mosquito Choir:** A cloud of tiny singers rehearsing directly beside your ear. Every performance ends with an unsolicited blood donation.
+- **Dragonfly Cutter:** Its wings skim the reeds with the sound of scissors closing. Pond keepers admire its elegance from behind thick gloves.
+- **Bog Snail:** A patient mound of shell and swamp muck. Things left in its path become part of its slow, unpleasant journey.
+- **Cave Bat:** A leathery bundle of elbows with a very loud sense of direction. It considers every visitor an unreasonable interruption to its hanging time.
+- **Blind Scorpion:** Sight would only distract it from the footsteps trembling through the stone. Stand still and it may mistake you for tomorrow's problem.
+- **Echo Moth:** Its dusty wings repeat sounds made long after their owners have left. Following a familiar voice underground is rarely a good idea.
+- **Sand Scorpion:** A pale scorpion that buries itself beneath a flawless patch of sand. The desert has many such patches and poor labeling.
+- **Tarantula Nomad:** A long-legged wanderer carrying its home as a bundle of silk. It pitches camp wherever dinner looks likely to stop.
+- **Dust Hare:** A hare-shaped interruption in a cloud of grit. Nobody has established whether it sheds dust or simply collects every road it crosses.
+- **Glass Lizard:** Sunlight passes through its scales in thin, dangerous colors. Collectors prize its shed skin; sensible collectors wait until it has gone.
+- **Snail Lantern:** A warm light glows within its spiral shell. Lost travelers follow it to shelter, provided they have several days to spare.
+- **Briar Hexling:** A knot of thorns wearing a stolen scrap of cloth like a scholar's robe. It whispers spiteful little verses into passing sleeves.
+- **Owlshade:** An owl's silhouette with no dependable owl inside it. Its eyes remain visible a moment after the rest has left.
+- **Rotcap Elder:** A towering mushroom remembering every fallen tree that fed it. Smaller fungi gather at its feet to hear the dampest parts again.
+- **Carrion Dragonfly:** A heavy dragonfly with stained wings and a taste for battlefields. It circles patiently while the future becomes lunch.
+- **Sludge Saint:** A figure of dripping mire crowned with a ring of pondweed. The swamp's sick and unwanted gather around its outstretched hands.
+- **Snowdrift Bison:** A white-backed giant easily mistaken for a harmless hill. The distinction becomes clear when the hill takes offense.
+- **Ice Mote:** A bright crystal drifting on air too still to carry it. Around it, breath hangs a little longer than it should.
+- **Berg Wyrm:** A pale serpent tunneling through ancient ice. Sailors call the long grooves on icebergs scratches and try not to imagine the claws.
+- **Prism Newt:** A jewel-bright amphibian whose colors never agree on the weather. Its favorite rock is simultaneously warm, frosted, and faintly buzzing.
+- **Pickaxe Goblin:** A tunnel worker with a battered helmet and strong views on mineral rights. It includes your belt buckle in the local deposits.
+- **Powder Rat:** A soot-furred scavenger nesting in abandoned ammunition crates. Its whiskers smell of burnt matches, which is all the warning you get.
+- **Drill Beetle:** A burrowing beetle with a corkscrew horn and rivet-like spots. Miners hear it working and briefly assume someone else is on shift.
+- **Mine Canary Revenant:** A small yellow ghost still trying to warn a mine that no longer listens. Its empty cage swings even when the air is still.
+- **Rust Loader:** An abandoned loading machine stubbornly finishing an obsolete work order. Everything nearby is classified as material awaiting relocation.
+- **Rifle Hare:** A sharp-eyed hare shouldering a rifle longer than its burrow. It chews the stock while waiting for a clear shot.
+- **Trench Wolf:** A scarred pack hunter that learned to follow supply lines. Old wire hangs from its coat, rattling softly between the gunshots.
+- **Grenadier Badger:** Someone gave a badger a satchel of explosives and then wisely left the area. It has taken to the arrangement with worrying enthusiasm.
+- **Shield Bison:** A lumbering bison clad in overlapping plates of battlefield salvage. Its herd travels behind it, enjoying the shade and relative safety.
+- **Smoke Crow:** A black bird nesting in cold chimneys and spent shell casings. Its feathers leave soot on the sky.
+- **Swordfish Duelist:** An exquisitely offended swordfish with a taste for formal challenges. Nobody knows how it got onto dry land, and asking is apparently an insult.
+- **Narwhal Gunner:** A tusked marine marksman with salt-crusted sights and impeccable posture. It treats every stretch of shore as a firing range.
+- **Deck Kraken:** A kraken that outgrew the hold but kept the ship. Several of its arms are still employed as the crew.
+- **Bilge Eel:** A slick eel thriving in the warm, filthy water beneath the decks. Loose wiring has made it an especially poor thing to step on.
+- **Chrome Gecko:** A mirror-bright gecko that scampers across machinery without leaving fingerprints. Its reflection sometimes starts running before it does.
+- **Packet Snake:** A segmented serpent slipping through cables and cracks in communication. Messages emerge from its territory with bite marks in the middle.
+- **Holo-Tarantula:** Eight legs, several conflicting shadows, and no reliable outline. By the time you decide which spider is real, the web has already tightened.
+- **Neon Orchid:** An electric blossom rooted in discarded circuitry. Its petals glow invitingly above a tangle of cables that used to belong to other things.
+- **Cache Bat:** A little digital scavenger hoarding echoes of places that no longer exist. Its roost is crowded with yesterday's noises.
+- **Kernel Grudge:** An ancient fault that has developed a personal objection to continued operation. The ceiling remembers it, even in rooms built yesterday.
+- **Fork Bomb Imp:** A grinning imp that answers every demand to leave by becoming a committee. None of its members accepts responsibility.
+- **Segfault Loader:** A cargo machine reaching confidently into spaces that are not there. It pauses after each disaster as though awaiting praise.
+- **Glass Scorpion:** A transparent scorpion with a bright filament curled inside its tail. Its tracks look delicate; the cuts beside them do not.
+- **Orbital Yeti:** A shaggy shape drifting past a porthole that should show only stars. Frost gathers on the outside of its helmet; nobody recalls issuing it one.
+- **Null Kraken:** A vast tangle of arms reaching out of a patch of missing sky. Charts mark its territory with an empty space that keeps getting larger.
+- **Blue Screen Wisp:** A blue glow carrying the last unfinished thought of a broken machine. It offers reassurance in a voice that has stopped responding.
+- **Starfire Anomaly:** A wandering knot of stellar heat with no agreed place in the heavens. Shadows point toward it, then reconsider.
+
 ## Monster Topology
 
 | Monster | C++ ID | HP | MP | Level | Known skills | Pool |
