@@ -25,7 +25,7 @@ struct Stats {
 
   Stats() = default;
   explicit Stats(std::string name_);
-  bool is_alive();
+  bool is_alive() const;
 };
 
 } // namespace fl::ecs::components

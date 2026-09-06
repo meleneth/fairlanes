@@ -244,6 +244,28 @@ provide useful starting points, but currently resolve through party-owned
 encounters. Consolidate the duplicated side-selection logic as shared encounter
 ownership is introduced; this contract is planned, not already implemented.
 
+## Targeting implementation progress
+
+The first targeting slice provides `fl::targeting::PossibleTargets` in
+`src/fl/targeting/possible_targets.hpp`: four lazy living/dead side-relative
+ranges over borrowed encounter participant storage. This is a reusable primitive;
+shared account raid ownership is still to be implemented.
+
+Typed status adaptors in `src/fl/targeting/status_filters.hpp` compose with those
+ranges. Has/lacks, any-of, and all-of use the same `TargetStatus` vocabulary for
+buffs and debuffs, including Poison, Freeze, and Dire Bleed:
+
+```cpp
+auto candidates = targets.EnemyPossibleTargets(actor)
+    | fl::targeting::HasStatus(reg, TargetStatus::Burn)
+    | fl::targeting::LacksStatus(reg, TargetStatus::Shield);
+```
+
+Filters narrow the same entity; they never satisfy two conditions on different
+targets. These C++20 filter views may cache their first matching iterator, so
+recreate ranges after eligibility changes. Deferred/mutating effects can use
+`snapshot_targets` to copy IDs deliberately and must still revalidate at use.
+
 ## Dedicated raid screen
 
 Confirmed layout direction: a raid has its own screen. Reserve approximately the
