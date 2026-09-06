@@ -517,9 +517,11 @@ progression Cycles in addition to recurring celestial encounters. Account-calend
 pause during raids is a design direction. Visitor arrival automatically triggers
 the raid and cannot be banked. The dedicated screen gives the boss the top third
 and all five parties their own lines in the bottom two thirds simultaneously.
-Characters carry current HP and statuses into the raid; there is no entry heal
-or cleanse. Transfer of pending actions/status timing, targeting, retries, and
-reward distribution remain open. Update this document as decisions settle;
+Characters retain current HP and death state: no healing or resurrection.
+Old combat statuses, visuals, listeners, and scheduled status work are cleared,
+not transferred. Targeting uses encounter-relative candidate helpers across all
+participating allies/enemies, not home-party enumeration. Retries, reward
+distribution, and remaining arrival mechanics are open. Update this document as decisions settle;
 do not treat proposed policies as implemented behavior.
 
 `docs/statistics-achievements-design.md` starts the statistics/achievement design.
@@ -537,4 +539,7 @@ keeps skills successfully acquired by observation there, without requiring an
 old-fight win. Timing this extraction is an intentional loophole. Give summoning
 an explicit event-driven exit/retention contract rather than a fake victory;
 settle old pending-skill subscriptions before raid outcomes can affect them.
-Preserve HP/status carryover and prevent old encounter actions from continuing.
+Preserve HP/death state, clear old combat statuses, and prevent old encounter
+actions from continuing. Use helpers such as FriendlyPossibleTargets to scale
+normal and raid targeting automatically; keep skill-specific eligibility and
+single-target/group behavior on top of encounter-wide candidates.

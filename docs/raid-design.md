@@ -21,21 +21,24 @@ reference for subsequent raid design discussions.
 
 ## Confirmed arrival condition
 
-Characters enter the automatic Visitor raid with their **current HP and statuses**.
-Do not restore HP, revive dead characters, cleanse debuffs, or refresh status
-budgets simply because the raid begins. Preserve the current state when handing
-participants from party encounters to the shared raid. Exact transfer of pending
-actions, timed status callbacks, and other encounter-local work still needs design;
-retaining a status component alone is insufficient if its behavior loses its clock.
-An already-dead party enters dead and can still receive shared victory credit.
-The case where all characters are dead at arrival needs an explicit resolution
-consistent with the collective defeat rule.
+Characters enter the automatic Visitor raid with their **current HP and living/dead
+state**. No entry healing and no resurrection: injured characters stay injured,
+and dead characters stay dead. An already-dead party can still receive shared
+victory credit. All characters dead at arrival must resolve consistently with
+the collective defeat rule; the exact entry/outcome event sequence needs design.
+
+**Combat statuses do not transfer.** Remove prior-fight buffs, debuffs, associated
+visual overrides, listeners, and scheduled status work through explicit cleanup.
+Do not migrate their remaining durations or callbacks into the raid. This
+supersedes the earlier status-carryover requirement. Cleanup itself must not heal,
+revive, or apply an extra status tick while the characters are being transferred.
+Persistent character progression, equipment, and retained skills are unaffected.
 
 ## Confirmed summoning and skill retention
 
 At raid start, remove every participating player from their current combat and
 summon them into the shared raid encounter. They do not continue participating
-in their old fights. Preserve current HP and statuses as specified above.
+in their old fights. Preserve current HP and death state; clear old combat statuses as specified above.
 
 **Skills acquired through observation in those interrupted fights are kept.**
 Summoning is a legitimate extraction: the characters did not die and were called
@@ -64,8 +67,8 @@ Required handoff behavior, with concrete event names still to be designed:
    skill-retention listeners settle successful observations exactly once.
 3. Detach participants from the old combat/ATB and cancel old combat actions so
    enemies or delayed attacks cannot continue hitting them from that encounter.
-   Transfer ongoing statuses and their remaining timing deliberately; ordinary
-   left-combat cleanup must not silently cleanse raid entrants.
+   Clear old combat statuses, visuals, subscriptions, and status callbacks.
+   No status timing is transferred, and cleanup must preserve HP/death state.
 4. Enroll the participants in the one raid and publish its start fact once.
 
 Make this ordering explicit in named orchestration code and event contracts.
@@ -163,6 +166,40 @@ to shorten the raid calendar interval. The current global clock advances both
 calendar time and the beats forwarded to parties; it cannot provide this
 account-specific pause as-is.
 
+## Confirmed targeting abstraction
+
+Target selection uses encounter-scoped helper methods such as
+`FriendlyPossibleTargets(actor)` and an opposing-target equivalent. These return
+the available candidates relative to the acting combatant's side in the active
+encounter. Callers must not enumerate the actor's home party to discover targets.
+Exact C++ naming and signatures will follow repository conventions at implementation.
+
+In a normal fight, friendly candidates are the participating allies in that
+encounter. In a raid, they span all five participating parties. For a boss or an
+add, friendly candidates are its own encounter allies and opposing candidates
+are the participating player side. Home-party identity remains available for
+credit, progression, and presentation; it does not limit friendly targeting.
+
+The helpers supply candidates; skill rules then select or filter them. A
+single-target heal still picks one eligible ally, while an all-allies effect
+covers all eligible allies in the encounter. This scales with participants
+without separate party-versus-raid skill implementations. Preserve explicit
+skill constraints such as self-only, exclusions, target count, and required
+status. Normal damage/healing candidates exclude dead or invalid entities;
+future resurrection, if introduced, needs an explicit eligibility rule rather
+than weakening this default. An actor outside the encounter has no candidates.
+
+Use this common path for player skills, monster decision rules, group effects,
+and effect execution. Validate targets again when delayed effects execute;
+being eligible at scheduling time does not guarantee eligibility later. Ordered
+monster-rule conditions must still match the same candidate ultimately selected.
+Keep these helpers read-only and accessible through narrow encounter authority.
+
+Existing `allied_alive_targets` / `opposing_alive_targets` and `Team` queries
+provide useful starting points, but currently resolve through party-owned
+encounters. Consolidate the duplicated side-selection logic as shared encounter
+ownership is introduced; this contract is planned, not already implemented.
+
 ## Dedicated raid screen
 
 Confirmed layout direction: a raid has its own screen. Reserve approximately the
@@ -222,13 +259,12 @@ identity for progression and reward semantics while resolving combat collectivel
 ## Open decisions for the next discussion
 
 - Current combat is explicitly interrupted by summoning. Settle the mechanics
-  of status timer transfer, empty-encounter cleanup, and recovery/crafting work
-  that was already in progress; HP/status carryover and skill retention are fixed.
+  of empty-encounter cleanup and recovery/crafting work already in progress.
+  HP/death-state preservation, status removal, and skill retention are fixed.
 - Are retries immediate, limited, or deferred until another convergence?
 - Is the initial convergence immediate, delayed by a full interval, or tied to
   account readiness? What happens while the application is closed?
 - Which timers pause, and how should speed controls affect the countdown?
-- Do heals, buffs, and group attacks target a home party or the full raid team?
 - How do wiped parties recover after the shared outcome? Is revival possible
   during the encounter?
 - How are exclusive drops allocated and equipped, and what happens on defeat?
@@ -238,7 +274,7 @@ identity for progression and reward semantics while resolving combat collectivel
 
 ## Implementation milestones after requirements settle
 
-1. Finalize arrival handoff, calendar, retry, targeting, and reward semantics in this file.
+1. Finalize arrival handoff, calendar, retry, and reward semantics in this file.
 2. Introduce shared encounter ownership and participant tracking; test that a
    party wipe preserves the encounter and that only a collective outcome ends it.
 3. Separate account calendar advancement from raid combat; test pause/resume,
@@ -252,6 +288,10 @@ identity for progression and reward semantics while resolving combat collectivel
 7. Protect the intentional summoning loophole with event-driven tests: retain a
    successfully observed skill without winning the old fight; do not award a false
    victory; do not let old callbacks revoke it on a later raid wipe; preserve
-   statuses while preventing old enemies/actions from continuing to attack.
+   HP/death state, clear old statuses, and prevent old enemies/actions from
+   continuing to attack.
+8. Test the common target helpers in both normal and raid encounters, including
+   cross-party healing/buffs, enemy-side symmetry, invalid actors, dead targets,
+   delayed target invalidation, and unchanged single-target versus group rules.
 
 No raid runtime changes are part of this initial design documentation pass.
