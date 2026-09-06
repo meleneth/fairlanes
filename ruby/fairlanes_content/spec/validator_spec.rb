@@ -130,4 +130,27 @@ RSpec.describe FairlanesContent::Validator do
     expect(described_class.new(declarations).validate)
       .to include("skill thump has invalid tag bogus")
   end
+  it "validates ordered rule skill, probability, and status conditions" do
+    declarations = build(:declaration_set)
+    declarations.monster_rules :field_mouse,
+      {skill: :thump, target: :enemy, chance_percent: 30,
+       conditions: [{predicate: :has_status, status: :burn},
+                    {subject: :actor, predicate: :hp_below, percent: 50}]}
+    expect(described_class.new(declarations).validate).to be_empty
+    declarations.monsters.first.decision_rules.first[:chance_percent] = 101
+    expect(described_class.new(declarations).validate).to include(/invalid chance/)
+    declarations.monsters.first.decision_rules.first[:skill] = :missing
+    expect(described_class.new(declarations).validate).to include(/unknown or unequipped skill/)
+    declarations.monsters.first.decision_rules.first[:conditions][0][:status] = :imaginary
+    expect(described_class.new(declarations).validate).to include(/invalid status/)
+  end
+
+  it "rejects malformed rule collections and misspelled fields" do
+    declarations = build(:declaration_set)
+    declarations.monsters.first.decision_rules = nil
+    expect(described_class.new(declarations).validate).to include(/must be an array/)
+    declarations.monster_rules :field_mouse, {skill: :thump, chance: 30}
+    expect(described_class.new(declarations).validate).to include(/unknown fields/)
+  end
+
 end

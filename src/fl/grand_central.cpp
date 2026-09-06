@@ -123,7 +123,8 @@ void GrandCentral::_create_initial_accounts() {
 
 GrandCentral::GrandCentral(uint8_t num_accounts,
                            uint8_t num_parties_per_account,
-                           uint8_t num_members_per_party)
+                           uint8_t num_members_per_party,
+                           bool record_discoveries)
     : num_accounts_(num_accounts),
       num_parties_per_account_(num_parties_per_account),
       num_members_per_party_(num_members_per_party), reg_(), rng_(), log_bus_(),
@@ -132,6 +133,16 @@ GrandCentral::GrandCentral(uint8_t num_accounts,
           log_bus_, *game_log_, fl::primitives::LogLevel::trace)) {
   fl::monster::register_all_monsters();
   _create_initial_accounts();
+  if (record_discoveries) {
+    discovery_listener_ =
+        std::make_unique<fl::primitives::DiscoveryJournalListener>(discoveries_,
+                                                                   reg_);
+    for (auto &account : accounts_) {
+      for (auto &party : account.parties()) {
+        discovery_listener_->bind(party.party_bus());
+      }
+    }
+  }
   bootstrap_logs();
 }
 
@@ -351,7 +362,7 @@ void GrandCentral::build_ui() {
 
   root_component_ = ftxui::Make<fl::widgets::RootComponent>(
       fl::context::AccountCtx{reg_, rng_, account}, accounts_, *game_log_,
-      world_clock_);
+      world_clock_, &discoveries_);
 }
 void GrandCentral::resolve_visuals_for_render() {
   ZoneScopedN("ResolveVisualsForRender");

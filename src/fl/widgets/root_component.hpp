@@ -9,6 +9,7 @@
 #include "fl/context.hpp"
 #include "fl/fwd.hpp"
 #include "fl/primitives/account_data.hpp"
+#include "fl/primitives/discovery_journal.hpp"
 #include "fl/primitives/world_clock.hpp"
 #include "fl/widgets/ui_command_controller.hpp"
 
@@ -21,10 +22,12 @@ class RootComponent : public ftxui::ComponentBase {
 public:
   RootComponent(fl::context::AccountCtx ctx,
                 std::deque<fl::primitives::AccountData> &accounts,
-                FancyLog &console_log, fl::primitives::WorldClock &world_clock);
+                FancyLog &console_log, fl::primitives::WorldClock &world_clock,
+                const fl::primitives::DiscoveryJournal *discoveries = nullptr);
 
   bool OnEvent(ftxui::Event event) override;
   ftxui::Element Render() override;
+  ftxui::Component ActiveChild() override;
 
   void toggle_console();
   void set_full_open();
@@ -33,6 +36,9 @@ public:
   void show_party_battle(std::size_t account_index, std::size_t party_index);
   void show_party(std::size_t account_index, std::size_t party_index);
   void show_effect_gallery();
+  void show_libram(std::optional<fl::skills::SkillId> skill = std::nullopt);
+  void
+  show_bestiary(std::optional<fl::monster::MonsterKind> monster = std::nullopt);
 
 private:
   enum class ActiveScreen {
@@ -40,8 +46,11 @@ private:
     account_battle,
     party_battle,
     effect_gallery,
+    libram,
+    bestiary,
   };
 
+  void replace_screen(ftxui::Component screen);
   ConsoleOverlay *console_overlay();
   fl::context::AccountCtx make_context(std::size_t account_index);
   void toggle_active_screen();
@@ -55,6 +64,8 @@ private:
   FancyLog *console_log_{nullptr};
   fl::primitives::WorldClock *world_clock_{nullptr};
   UiCommandController commands_;
+  const fl::primitives::DiscoveryJournal *discoveries_;
+  std::optional<fl::monster::MonsterKind> return_monster_;
   ActiveScreen active_screen_kind_{ActiveScreen::account_battle};
   bool keybind_help_open_{false};
   bool fps_initialized_{false};

@@ -23,6 +23,23 @@ In source terms:
 7. `EncounterData` listens for `BecameActive`, chooses target/skill, and delegates to `SkillSequencer`.
 8. The scheduled action emits `seerin::FinishedTurn` when the active turn is complete.
 
+## Discovery Events
+
+`MonsterEncountered{kind}` is emitted on the party bus when an enemy with a
+monster identity is added to an encounter. `SkillWitnessed{user, skill}` is
+emitted when a valid skill action starts scheduling, independently of Observe,
+learning chance, damage, and eventual victory. An interrupted effect can still
+have been witnessed; a rejected prerequisite emits no discovery event.
+
+`DiscoveryJournalListener` subscribes to normal-game party buses and records
+encountered kinds, globally witnessed skills, and witnessed skills per monster
+kind. The game owns the journal and its RAII listener; listener destruction
+precedes destruction of the buses and journal. The attract demo constructs its
+game with discovery recording disabled, so these subscriptions are absent.
+
+The libram exposes only witnessed skill descriptions. The bestiary exposes only
+encountered monsters and uses `--` for each declared but unwitnessed skill.
+
 ## SML Events
 
 ### `fl::fsm::NextEvent`
@@ -154,4 +171,3 @@ Typed scheduled event wrapper in `src/sr/timed_scheduler.hpp`. The API exists, b
 ### `seerin::TimedScheduler<AtbOutEvent>::SmellyCallback`
 
 The active scheduling tool for skill visuals, delayed damage, status ticks, and turn completion. Callback notes are part of the current debugging surface.
-

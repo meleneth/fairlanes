@@ -40,6 +40,9 @@ Fairlanes currently has:
 - Poison, Freeze, and Dire Bleed status effects with cleanup on death/combat exit.
 - XP, level gains, town recovery, loot requests, starting festival drops, and basic gear maintenance.
 - Account/party battle views, combatant projections, logs, inventory rows, and console/debug commands.
+- A shared discovery libram and bestiary, excluding attract-demo observations.
+- Ordered monster skill rules with status/health conditions, percentage gates,
+  and a Salamander burn/detonation combo.
 
 The codebase has moved past speculative event/bus scaffolding. If a type is not part of the current runtime, it should not be treated as architecture.
 
@@ -74,6 +77,13 @@ cmake --build build-linux-debug
 ```
 
 Function keys `F1` through `F8` switch between accounts.
+
+Press `l` for the **libram** of witnessed skill descriptions, or `b` for the
+**bestiary** of encountered monsters. In the bestiary, Tab switches between
+monsters and skills; Enter follows a witnessed skill into the libram. `--` means
+that monster has a skill you have not witnessed it use. Esc returns to the
+previous reference screen or battle. The console also accepts `screen libram`
+and `screen bestiary`. Discovery lasts for the current game session.
 
 Tracy profiling is integrated. If Tracy is enabled in the build, the game may open a profiling connection when it runs.
 

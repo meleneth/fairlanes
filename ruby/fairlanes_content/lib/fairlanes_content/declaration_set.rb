@@ -30,7 +30,8 @@ module FairlanesContent
 
     def skill(id, cpp_id: nil, display: nil, learn_chance_percent:, random_combat: true,
               flee_success_percent: 0,
-              execution:, visual: nil, tags:, declarative_shape:)
+              execution:, visual: nil, tags:, declarative_shape:, description: nil,
+              consumes_status: nil, effect_damage: 0)
       skills << Skill.new(
         id: id,
         cpp_id: cpp_id || cpp_name(id),
@@ -41,12 +42,15 @@ module FairlanesContent
         execution: execution,
         visual: visual,
         tags: tags,
-        declarative_shape: declarative_shape
+        declarative_shape: declarative_shape,
+        description: description,
+        consumes_status: consumes_status,
+        effect_damage: effect_damage
       )
     end
 
     def decal_skill(id, visual:, tags:, learn_chance_percent: 5,
-                    random_combat: true, cpp_id: nil, display: nil)
+                    random_combat: true, cpp_id: nil, display: nil, description: nil)
       skill(
         id,
         cpp_id: cpp_id,
@@ -56,7 +60,8 @@ module FairlanesContent
         execution: :decal_strike,
         visual: visual,
         tags: tags,
-        declarative_shape: :decal_strike
+        declarative_shape: :decal_strike,
+        description: description
       )
     end
 
@@ -67,7 +72,7 @@ module FairlanesContent
     end
 
     def monster(id, cpp_id: nil, display: nil, hp:, mp: 0, level: nil,
-                known_skills:, pool:)
+                known_skills:, pool:, decision_rules: [])
       monsters << Monster.new(
         id: id,
         cpp_id: cpp_id || cpp_name(id),
@@ -76,8 +81,15 @@ module FairlanesContent
         mp: mp,
         level: level,
         known_skills: known_skills,
-        pool: pool
+        pool: pool,
+        decision_rules: decision_rules
       )
+    end
+
+    def monster_rules(id, *rules)
+      entry = monsters.find { |monster| monster.id == id }
+      raise ArgumentError, "Unknown monster #{id}" unless entry
+      entry.decision_rules = rules
     end
 
     def status(id, cpp_id: nil, display: nil, debug_name: nil, component: nil,

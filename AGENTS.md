@@ -8,6 +8,10 @@
 
 # Local Build
 
+- Implementation work is complete only after required tests pass and all task
+  changes are committed. Verify Git status before reporting completion; do not
+  leave validated work uncommitted.
+
 - Use the existing `build-linux-debug` tree for normal compile and test checks: `cmake --build build-linux-debug` and `ctest --test-dir build-linux-debug --output-on-failure`.
 
 # Local Debugging
@@ -465,3 +469,21 @@ Library notes:
 Lore/design brainstorm:
 
 - `brainstorms/a_tale_of_two_moons_and_a_comet.md`
+
+
+## Libram, Bestiary, and Monster Rules
+
+The per-member `Grimoire` remains the collection of learned ranked skills.
+The game-wide **libram** displays only witnessed skill descriptions. The
+**bestiary** displays encountered monsters with links for witnessed skills and
+`--` for declared but unwitnessed skills. Discovery is shared across accounts
+for the game session and populated by `MonsterEncountered` and `SkillWitnessed`
+party events. `GrandCentral` owns the journal and scoped listeners; attract-demo
+construction explicitly disables those listeners. Do not populate discovery
+from rendering, character learning, or the attract demo.
+
+Monster declarations can carry ordered decision rules. `EncounterData` obtains
+a skill-and-target decision before scheduling it; conditions must match the
+same target. See `docs/libram-bestiary-plan.md` for rule semantics, supported
+status consumption, initial monster policies, and the ordered implementation
+milestones. Keep this document current when changing the policy contract.

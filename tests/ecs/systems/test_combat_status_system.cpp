@@ -172,23 +172,28 @@ TEST_CASE("Stun consumes one action through shared turn resolution",
 TEST_CASE("Burn deals scheduled damage over time and then clears",
           "[combat-status][burn]") {
   BuiltEncounter h;
+  // Advance status time without giving random combatants unrelated turns.
   const auto target = h.defender();
   set_hp(h.party_ctx, target, 100, 100);
 
-  REQUIRE(CombatStatusSystem::apply_status(
-      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Burn,
-                                   .name = "Test Burn",
-                                   .source = h.attacker(),
-                                   .target = target,
-                                   .tick_damage = 3,
-                                   .tick_count = 2}));
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Burn,
+                                            .name = "Test Burn",
+                                            .source = h.attacker(),
+                                            .target = target,
+                                            .tick_damage = 3,
+                                            .tick_count = 2}));
 
-  tick_party(h.party_ctx, fl::primitives::WorldClock::beats_from_seconds(3));
+  h.scheduler().advance(
+      seerin::uWu{fl::primitives::WorldClock::beats_from_seconds(3) *
+                  seerin::UWU_PER_BEAT.v});
   REQUIRE(hp(h.party_ctx, target) == 97);
   REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), target,
                                          CombatStatusKind::Burn));
 
-  tick_party(h.party_ctx, fl::primitives::WorldClock::beats_from_seconds(3));
+  h.scheduler().advance(
+      seerin::uWu{fl::primitives::WorldClock::beats_from_seconds(3) *
+                  seerin::UWU_PER_BEAT.v});
   REQUIRE(hp(h.party_ctx, target) == 94);
   REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), target,
                                                CombatStatusKind::Burn));

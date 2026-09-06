@@ -256,6 +256,14 @@ void UiCommandController::set_show_party_view(ShowPartyView callback) {
   show_party_view_ = std::move(callback);
 }
 
+void UiCommandController::set_show_libram(ShowEffectGallery callback) {
+  show_libram_ = std::move(callback);
+}
+
+void UiCommandController::set_show_bestiary(ShowEffectGallery callback) {
+  show_bestiary_ = std::move(callback);
+}
+
 void UiCommandController::set_show_effect_gallery(ShowEffectGallery callback) {
   show_effect_gallery_ = std::move(callback);
 }
@@ -276,11 +284,21 @@ void UiCommandController::handle(std::string_view command) {
 
   if (verb == "screen" || verb == "view") {
     if (words.size() < 2) {
-      write("usage: screen account|party|effects");
+      write("usage: screen account|party|effects|libram|bestiary");
       write("try: help screen");
       return;
     }
 
+    if (words[1] == "libram") {
+      if (show_libram_)
+        show_libram_();
+      return;
+    }
+    if (words[1] == "bestiary" || words[1] == "beastiary") {
+      if (show_bestiary_)
+        show_bestiary_();
+      return;
+    }
     if (words[1] == "account" || words[1] == "accounts") {
       show_account_view();
       return;
@@ -480,6 +498,8 @@ void UiCommandController::show_help(std::string_view topic) {
   }
 
   if (topic == "screen" || topic == "view") {
+    write("screen libram: browse witnessed skill descriptions");
+    write("screen bestiary: browse discovered monsters and witnessed skills");
     write("screen account: show all parties for the selected account");
     write("screen party: show the selected party and inventory");
     write("screen effects: show the visual effect gallery; Esc returns to "

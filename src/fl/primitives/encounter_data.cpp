@@ -10,13 +10,16 @@
 #include "fl/ecs/components/combat_status.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"
 #include "fl/ecs/components/freeze.hpp"
+#include "fl/ecs/components/monster_identity.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/poison.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/systems/combat_status_system.hpp"
 #include "fl/ecs/systems/freeze_system.hpp"
 #include "fl/ecs/systems/poison_system.hpp"
+#include "fl/generated/monster_content.hpp"
 #include "fl/primitives/member_data.hpp"
+#include "fl/primitives/random_hub.hpp"
 #include "fl/skills/skill_definition.hpp"
 #include "fl/skills/skill_selection.hpp"
 #include "fl/skills/skill_sequence.hpp"
@@ -70,8 +73,8 @@ void EncounterData::innervate_event_system() {
           return;
         }
 
-        const auto skill = choose_skill(attacker);
-        const entt::entity target = target_for_skill(attacker, skill);
+        const auto decision = choose_action(attacker);
+        const entt::entity target = decision ? decision->target : entt::null;
 
         if (target == entt::null) {
           party_ctx_->log().append_markup(fmt::format(
@@ -87,7 +90,7 @@ void EncounterData::innervate_event_system() {
             *party_ctx_, rt_.atb_.scheduler(), [this](entt::entity entity) {
               atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{entity}});
             }};
-        sequencer.schedule(attacker, target, skill);
+        sequencer.schedule(attacker, target, decision->skill);
         TracyPlot("Encounter.PendingEvents",
                   static_cast<double>(rt_.atb_.scheduler().pending()));
       });
@@ -99,9 +102,49 @@ fl::skills::SkillKey EncounterData::choose_skill(entt::entity attacker) {
                                   attacker);
 }
 
+std::optional<fl::monster::SkillDecision>
+EncounterData::choose_action(entt::entity actor) {
+  if (const auto *monster =
+          party_ctx_->reg().try_get<fl::ecs::components::MonsterIdentity>(
+              actor)) {
+    const auto rules =
+        fl::monster::generated_content::decision_rules(monster->kind);
+    if (!rules.empty()) {
+      const bool attacking = attackers().contains(actor);
+      const auto allies =
+          (attacking ? attackers() : defenders()).alive_members(*party_ctx_);
+      const auto enemies =
+          (attacking ? defenders() : attackers()).alive_members(*party_ctx_);
+      auto random = party_ctx_->rng().stream("encounter/monster-rule",
+                                             entt::to_integral(actor));
+      return fl::monster::evaluate_rules(
+          party_ctx_->reg(), actor, allies, enemies, rules,
+          [&random] { return random.uniform_int<int>(1, 100); });
+    }
+  }
+  const auto skill = choose_skill(actor);
+  return fl::monster::SkillDecision{skill, target_for_skill(actor, skill)};
+}
+
 entt::entity EncounterData::target_for_skill(entt::entity attacker,
                                              fl::skills::SkillKey skill) const {
   ZoneScopedN("EncounterData::target_for_skill");
+  if (fl::skills::has_tag(skill, fl::skills::SkillTag::Self)) {
+    return attacker;
+  }
+  if (fl::skills::definition(skill).consumes_status) {
+    const auto enemies =
+        (topo_.attackers_.contains(attacker) ? topo_.defenders_
+                                             : topo_.attackers_)
+            .alive_members(*party_ctx_);
+    for (auto candidate : enemies) {
+      if (fl::skills::target_meets_skill_requirements(party_ctx_->reg(),
+                                                      candidate, skill)) {
+        return candidate;
+      }
+    }
+    return entt::null;
+  }
   if (fl::skills::has_tag(skill, fl::skills::SkillTag::Healing)) {
     if (topo_.attackers_.contains(attacker)) {
       return topo_.attackers_.least_health_member(*party_ctx_)

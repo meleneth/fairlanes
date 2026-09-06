@@ -195,7 +195,17 @@ skill :starblaze,
       tags: %i[fire arcane spell enemy damage],
       declarative_shape: :decal_strike
 
+skill :cinderburst,
+      learn_chance_percent: 5,
+      execution: :status_detonation,
+      consumes_status: :burn,
+      effect_damage: 8,
+      visual: :flame_wave,
+      tags: %i[fire spell enemy damage],
+      declarative_shape: :generated_runtime_behavior
+
 random_combat_skills(
+  :cinderburst,
   :flee,
   :thump,
   :eviscerate,
@@ -314,7 +324,7 @@ monster :yeti,
 monster :salamander,
         hp: 24,
         level: 6,
-        known_skills: %i[flame_strike],
+        known_skills: %i[flame_strike kindle_wound cinderburst],
         pool: :common_woodland
 
 monster :fire_drake,
@@ -429,3 +439,89 @@ monster :null_mote,
           known_skills: known_skills,
           pool: :common_woodland
 end
+
+
+# Libram prose describes current effects, independently of character learning.
+# Explicit overrides below cover bespoke effects; generic damage/heal families
+# share prose because they share runtime behavior.
+skills.each do |entry|
+  entry.description = case entry.execution
+                      when :thump_like then "Strike one enemy with a blunt attack."
+                      when :damage_strike, :decal_strike then "Strike one enemy for damage."
+                      when :group_damage then "Deal damage to every living enemy."
+                      when :single_heal then "Restore 5 HP to one living ally, up to their maximum HP."
+                      when :group_heal then "Restore 4 HP to every living ally, up to their maximum HP."
+                      end
+end
+
+{
+  cinderburst: "Detonate an existing burn on one enemy for 8 fire damage, consuming the burn. Requires the burn to still be present when the blast lands.",
+  observe: "Watch other combatants to learn their skills. Must be equipped for learning; its rank limits which skill ranks can be learned. Observe ranks are learned in order. Learning during combat is retained on victory and lost on a party wipe.",
+  flee: "Attempt to leave combat. The escape attempt has a 65% success chance.",
+  thump: "Strike one enemy with a blunt attack. Higher ranks increase damage and change the timing of the attack.",
+  eviscerate: "Tear into one enemy and inflict Dire Bleed, which deals damage repeatedly until the effect ends.",
+  poison: "Poison one enemy for 27 seconds, dealing periodic poison damage.",
+  cold_snap: "Freeze one enemy for 30 seconds, interrupting their combat readiness.",
+  flame_strike: "Strike one enemy with a burst of flame.",
+  flame_wave: "Send a wave of flame through the enemy team, damaging living enemies in sequence.",
+  mercyburst: "Restore HP to one living ally, without exceeding their maximum HP.",
+  kindle_wound: "Strike one enemy and apply a burn with three damage ticks. Wounded or already burning enemies suffer a stronger burn.",
+  cinder_veil: "Give one ally a shield reducing incoming damage by 25% for 30 seconds.",
+  rime_armor: "Give one ally a shield reducing incoming damage by 40% for 36 seconds.",
+  whiteout: "Reduce the enemy team's accuracy by 45% for 30 seconds.",
+  overcharge: "Make the enemy team 35% more vulnerable to damage for 18 seconds.",
+  clearbell: "Remove removable negative effects from one ally.",
+  hush_hex: "Silence one enemy for 24 seconds, preventing skills blocked by silence.",
+  choirguard: "Give every living ally a shield reducing incoming damage by 30% for 30 seconds.",
+  miasma_cloud: "Reduce the enemy team's damage by 25% for 30 seconds.",
+  root_leech: "Deal 6 physical damage to one enemy and heal the user for half of the damage dealt.",
+  weight_of_tuesday: "Slow every living enemy by 20% for 30 seconds.",
+  smoke_screen: "Reduce the enemy team's accuracy by 35% for 30 seconds.",
+  signal_jam: "Reduce the enemy team's damage by 30% for 30 seconds.",
+  clock_up: "Hasten one ally by 25% for 30 seconds.",
+  blue_screen: "Stun every living enemy, costing each a turn. The stun expires after 12 seconds.",
+  pack_howl: "Make the enemy team 25% more vulnerable to damage for 24 seconds.",
+  shell_guard: "Reduce incoming damage to the user by 35% for 30 seconds.",
+  web_snare: "Slow one enemy by 25% for 30 seconds.",
+  gnat_cloud: "Reduce the enemy team's accuracy by 30% for 24 seconds.",
+  burrow: "Reduce incoming damage to the user by 45% for 30 seconds.",
+  battle_focus: "Make the enemy team 15% more vulnerable to damage for 24 seconds.",
+  armor_plate: "Reduce incoming damage to the user by 60% for 45 seconds.",
+  signal_flare: "Reduce the enemy team's accuracy by 20% for 24 seconds.",
+  checksum_ward: "Cleanse one ally's removable negative effects and give them a shield reducing incoming damage by 45% for 36 seconds."
+}.each do |id, description|
+  skills.find { |entry| entry.id == id }.description = description
+end
+
+skills.each do |entry|
+  raise "Missing libram description: #{entry.id}" if entry.description.to_s.strip.empty?
+end
+
+# Rules are tried in order. Every condition applies to the selected candidate;
+# actor conditions can additionally gate a move on the user's health/status.
+monster_rules :glass_lizard,
+  {skill: :cinder_veil, target: :ally,
+   conditions: [{predicate: :missing_status, status: :shield}]},
+  {skill: :flee, target: :self, chance_percent: 30,
+   conditions: [{subject: :actor, predicate: :hp_below, percent: 30}]},
+  {skill: :venom_needle, chance_percent: 35},
+  {skill: :laser_stitch}
+
+monster_rules :chrome_gecko,
+  {skill: :clock_up, target: :ally,
+   conditions: [{predicate: :missing_status, status: :haste}]},
+  {skill: :flee, target: :self, chance_percent: 25,
+   conditions: [{subject: :actor, predicate: :hp_below, percent: 25}]},
+  {skill: :laser_stitch}
+
+monster_rules :drill_beetle,
+  {skill: :armor_plate, target: :self,
+   conditions: [{predicate: :missing_status, status: :shield}]},
+  {skill: :bumper_rush, chance_percent: 40},
+  {skill: :smack}
+
+
+monster_rules :salamander,
+  {skill: :cinderburst, conditions: [{predicate: :has_status, status: :burn}]},
+  {skill: :kindle_wound, conditions: [{predicate: :missing_status, status: :burn}]},
+  {skill: :flame_strike}

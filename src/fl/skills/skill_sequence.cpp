@@ -16,12 +16,14 @@
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/ecs/systems/combat_status_system.hpp"
 #include "fl/ecs/systems/dire_bleed_system.hpp"
+#include "fl/ecs/systems/take_damage.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/lospec500.hpp"
 #include "fl/primitives/damage.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/skills/skill_definition.hpp"
 #include "fl/skills/skill_learning.hpp"
+#include "fl/skills/skill_selection.hpp"
 #include "fl/skills/skill_visuals.hpp"
 #include "fl/skills/thump.hpp"
 #include "fl/tracy_shim.hpp"
@@ -96,6 +98,30 @@ int apply_damage_skill(fl::context::PartyCtx &party_ctx, entt::entity attacker,
             fl::events::SkillHitLanded{attacker, target, skill, damage}});
   }
   return damage;
+}
+
+void apply_status_detonation(fl::context::PartyCtx &ctx, entt::entity attacker,
+                             entt::entity target, SkillKey skill) {
+  const auto *actor_stats =
+      ctx.reg().try_get<fl::ecs::components::Stats>(attacker);
+  if (!actor_stats || actor_stats->hp_ <= 0 ||
+      !target_meets_skill_requirements(ctx.reg(), target, skill))
+    return;
+  const auto &entry = definition(skill);
+  if (!fl::ecs::systems::CombatStatusSystem::clear_status(
+          ctx, target, *entry.consumes_status))
+    return;
+  auto attack = fl::context::AttackCtx::make_attack(ctx, attacker, target);
+  attack.damage().fire = entry.effect_damage;
+  const int dealt = fl::ecs::systems::TakeDamage::commit(attack);
+  ctx.log().append_markup(
+      fmt::format("[ability]({}) detonated for [error]({}) damage.",
+                  display_name(skill), dealt));
+  if (dealt > 0) {
+    ctx.party_data().encounter_data().combatant_bus(target).emit(
+        fl::events::CombatantEvent{
+            fl::events::SkillHitLanded{attacker, target, skill, dealt}});
+  }
 }
 
 std::vector<entt::entity>
@@ -465,7 +491,17 @@ void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
                               SkillKey skill) {
   ZoneScopedN("SkillSequencer::schedule");
   const auto &skill_definition = definition(skill);
+  if (skill_definition.consumes_status &&
+      !target_meets_skill_requirements(party_ctx_.reg(), target, skill)) {
+    finish_turn_(attacker);
+    return;
+  }
+  party_ctx_.bus().emit(
+      fl::events::PartyEvent{fl::events::SkillWitnessed{attacker, skill}});
   switch (skill_definition.execution) {
+  case SkillExecutionKind::StatusDetonation:
+    schedule_status_detonation(attacker, target, skill);
+    return;
   case SkillExecutionKind::Eviscerate:
     schedule_eviscerate(attacker, target);
     return;
@@ -521,6 +557,24 @@ void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
     schedule_observe(attacker);
     return;
   }
+}
+
+void SkillSequencer::schedule_status_detonation(entt::entity attacker,
+                                                entt::entity target,
+                                                SkillKey skill) {
+  teach_party_from_observed_skill(party_ctx_, attacker, skill);
+  const auto expires_at =
+      seerin::uWu{scheduler_.now().v + 3 * seerin::UWU_PER_BEAT.v};
+  add_skill_decal(party_ctx_, target, expires_at, skill);
+  scheduler_.schedule_smelly_in_beats_for(
+      1, target, "status detonation: recheck prerequisite, consume, and damage",
+      [&ctx = party_ctx_, attacker, target, skill] {
+        apply_status_detonation(ctx, attacker, target, skill);
+      });
+  auto finish = finish_turn_;
+  scheduler_.schedule_smelly_in_beats_for(
+      2, attacker, "status detonation: finish turn",
+      [finish, attacker] { finish(attacker); });
 }
 
 void SkillSequencer::schedule_thump_like(entt::entity attacker,

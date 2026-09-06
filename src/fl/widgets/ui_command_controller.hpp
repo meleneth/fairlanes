@@ -26,6 +26,8 @@ public:
   void set_show_account_view(ShowAccountView callback);
   void set_show_party_view(ShowPartyView callback);
   void set_show_effect_gallery(ShowEffectGallery callback);
+  void set_show_libram(ShowEffectGallery callback);
+  void set_show_bestiary(ShowEffectGallery callback);
 
   void handle(std::string_view command);
 
@@ -58,6 +60,8 @@ private:
   ShowAccountView show_account_view_;
   ShowPartyView show_party_view_;
   ShowEffectGallery show_effect_gallery_;
+  ShowEffectGallery show_libram_;
+  ShowEffectGallery show_bestiary_;
 };
 
 } // namespace fl::widgets

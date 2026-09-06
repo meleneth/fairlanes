@@ -182,6 +182,7 @@ visual_archetype_for(SkillKey skill) noexcept {
   case SkillId::Bump:
   case SkillId::Smack:
   case SkillId::KindleWound:
+  case SkillId::Cinderburst:
   case SkillId::RootLeech:
   case SkillId::BumperRush:
     return SkillVisualArchetype::Impact;

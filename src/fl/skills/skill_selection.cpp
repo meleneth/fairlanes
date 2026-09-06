@@ -8,8 +8,10 @@
 #include "fl/ecs/components/closet.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/skill_slots.hpp"
+#include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/systems/combat_status_system.hpp"
 #include "fl/primitives/random_hub.hpp"
+#include "fl/skills/skill_definition.hpp"
 
 namespace fl::skills {
 namespace {
@@ -41,6 +43,16 @@ const EquippedSkills *equipped_skills_for(entt::registry &reg,
 }
 
 } // namespace
+
+bool target_meets_skill_requirements(entt::registry &reg, entt::entity target,
+                                     SkillKey skill) {
+  const auto *stats = reg.try_get<fl::ecs::components::Stats>(target);
+  if (!stats || stats->hp_ <= 0)
+    return false;
+  const auto status = definition(skill).consumes_status;
+  return !status ||
+         fl::ecs::systems::CombatStatusSystem::has_status(reg, target, *status);
+}
 
 SkillKey choose_skill(entt::registry &reg, fl::primitives::RandomHub &rng,
                       entt::entity actor) {

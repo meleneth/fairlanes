@@ -132,6 +132,12 @@ monster registration glue that applies those generated stats. Handwritten C++
 remains the authority for skill behavior, status lifecycles, combat effects,
 rendering implementation, and monster construction primitives.
 
+Skill declarations also supply libram descriptions and status-detonation
+metadata. Monster declarations may supply ordered `decision_rules` (or use
+`monster_rules` to attach them after a shared declaration table). See
+[Libram, bestiary, and monster decisions](../libram-bestiary-plan.md) for the
+rule contract, examples, and milestone order.
+
 Generator code lives in the local `ruby/fairlanes_content` gem.
 Fairlanes-specific DSL usage lives outside the gem in
 `scripts/fairlanes_content_declarations.rb`.

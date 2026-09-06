@@ -7,6 +7,7 @@
 
 #include "fl/context.hpp"
 #include "fl/events/party_bus.hpp"
+#include "fl/monsters/decision_rule.hpp"
 #include "fl/primitives/team.hpp"
 #include "fl/skills/skill.hpp"
 #include "sr/atb_bus.hpp"
@@ -106,6 +107,8 @@ public:
   entt::entity target_for_skill(entt::entity attacker,
                                 fl::skills::SkillKey skill) const;
   fl::skills::SkillKey choose_skill(entt::entity attacker);
+  std::optional<fl::monster::SkillDecision>
+  choose_action(entt::entity attacker);
 
 private:
   struct Topology {

@@ -12,6 +12,7 @@
 #include "fl/context.hpp"
 #include "fl/fwd.hpp"
 #include "fl/primitives/account_data.hpp"
+#include "fl/primitives/discovery_journal.hpp"
 #include "fl/primitives/logging.hpp"
 #include "fl/primitives/random_hub.hpp"
 #include "fl/primitives/world_clock.hpp"
@@ -28,7 +29,7 @@ struct GrandCentralRunOptions {
 class GrandCentral {
 public:
   GrandCentral(uint8_t num_accounts, uint8_t num_parties_per_account,
-               uint8_t num_members_per_party);
+               uint8_t num_members_per_party, bool record_discoveries = true);
   ~GrandCentral();
 
   // ---- accessors (refs only, no ownership leaks) ----
@@ -41,6 +42,9 @@ public:
   }
 
   entt::registry &reg() noexcept { return reg_; }
+  const fl::primitives::DiscoveryJournal &discoveries() const noexcept {
+    return discoveries_;
+  }
   const entt::registry &reg() const noexcept { return reg_; }
 
   fl::primitives::RandomHub &rng() noexcept { return rng_; }
@@ -96,6 +100,8 @@ private:
   seerin::BeatBus gc_beat_bus_;
 
   std::deque<fl::primitives::AccountData> accounts_;
+  fl::primitives::DiscoveryJournal discoveries_;
+  std::unique_ptr<fl::primitives::DiscoveryJournalListener> discovery_listener_;
 
   std::unique_ptr<fl::widgets::FancyLog> game_log_;
   std::unique_ptr<fl::primitives::FancyLogSink> fancy_log_sink_;

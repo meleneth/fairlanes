@@ -206,6 +206,7 @@ enum class SkillExecutionKind {
   PlaceholderEffect,
   Flee,
   Observe,
+  StatusDetonation,
 };
 
 struct SkillDefinition;

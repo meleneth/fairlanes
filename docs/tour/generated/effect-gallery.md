@@ -6,7 +6,7 @@ This is review metadata for the handwritten decal renderer and generated skill m
 
 | Visual | Skills | Monsters | Tags | Shape |
 | --- | --- | --- | --- | --- |
-| FlameWave | Flame Strike, Flame Wave | Salamander, Prism Newt, Fire Drake, Starfire Anomaly | fire, spell, enemy, damage, area, group | handwritten_behavior |
+| FlameWave | Flame Strike, Flame Wave, Cinderburst | Salamander, Prism Newt, Fire Drake, Starfire Anomaly | fire, spell, enemy, damage, area, group | handwritten_behavior, generated_runtime_behavior |
 | Shock | Joltspasm | Stormtick Imp, Prism Newt, Bilge Eel | lightning, control, enemy, damage | decal_strike |
 | RocksFall | Rocks Fall | Ceiling Grudge, Kernel Grudge | physical, earth, blunt, area, group, damage | decal_strike |
 | PoisonCloud | Sour Breath | Miasma Toad, Mine Canary Revenant | acid, disease, area, group, damage | decal_strike |
@@ -32,3 +32,4 @@ This is review metadata for the handwritten decal renderer and generated skill m
 | Ice Splitter | FrostCrack | decal_strike | Rimefang Hare, Berg Wyrm, Orbital Yeti | cold, piercing, projectile, enemy, damage |
 | Gravity Sigh | VoidRipple | decal_strike | Null Mote, Starfire Anomaly | gravity, control, area, group, damage |
 | Starblaze | Starfire | decal_strike | Starfire Anomaly | fire, arcane, spell, enemy, damage |
+| Cinderburst | FlameWave | status_detonation | Salamander | fire, spell, enemy, damage |

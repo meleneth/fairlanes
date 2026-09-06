@@ -10,22 +10,25 @@
 #include <ftxui/dom/elements.hpp>
 
 #include "account_battle_view.hpp"
+#include "bestiary_view.hpp"
 #include "console_overlay.hpp"
 #include "effect_gallery_view.hpp"
 #include "fl/lospec500.hpp"
+#include "libram_view.hpp"
 #include "party_battle_screen.hpp"
 #include "party_view.hpp"
 #include "root_chrome.hpp"
 
 namespace fl::widgets {
 
-RootComponent::RootComponent(fl::context::AccountCtx ctx,
-                             std::deque<fl::primitives::AccountData> &accounts,
-                             FancyLog &console_log,
-                             fl::primitives::WorldClock &world_clock)
+RootComponent::RootComponent(
+    fl::context::AccountCtx ctx,
+    std::deque<fl::primitives::AccountData> &accounts, FancyLog &console_log,
+    fl::primitives::WorldClock &world_clock,
+    const fl::primitives::DiscoveryJournal *discoveries)
     : ctx_(std::move(ctx)), accounts_(&accounts), console_log_(&console_log),
-      world_clock_(&world_clock),
-      commands_(accounts, console_log, world_clock) {
+      world_clock_(&world_clock), commands_(accounts, console_log, world_clock),
+      discoveries_(discoveries) {
   console_overlay_ = ftxui::Make<ConsoleOverlay>(console_log_);
   commands_.set_show_account_view([this](std::size_t account_index) {
     show_account_battle(account_index);
@@ -35,11 +38,20 @@ RootComponent::RootComponent(fl::context::AccountCtx ctx,
         show_party(account_index, party_index);
       });
   commands_.set_show_effect_gallery([this]() { show_effect_gallery(); });
+  commands_.set_show_libram([this] {
+    return_monster_.reset();
+    show_libram();
+  });
+  commands_.set_show_bestiary([this] { show_bestiary(); });
   console_overlay()->set_on_command(
       [this](std::string_view command) { commands_.handle(command); });
   Add(console_overlay_);
 
   show_party_battle(commands_.account_index(), commands_.party_index());
+}
+
+ftxui::Component RootComponent::ActiveChild() {
+  return console_overlay()->open() ? console_overlay_ : active_screen_;
 }
 
 bool RootComponent::OnEvent(ftxui::Event event) {
@@ -74,6 +86,33 @@ bool RootComponent::OnEvent(ftxui::Event event) {
   if (active_screen_kind_ == ActiveScreen::effect_gallery && active_screen_ &&
       active_screen_->OnEvent(event)) {
     return true;
+  }
+
+  if (active_screen_kind_ != ActiveScreen::effect_gallery) {
+    if (event == ftxui::Event::Character("l")) {
+      return_monster_.reset();
+      show_libram();
+      return true;
+    }
+    if (event == ftxui::Event::Character("b")) {
+      show_bestiary();
+      return true;
+    }
+  }
+  if (active_screen_kind_ == ActiveScreen::libram ||
+      active_screen_kind_ == ActiveScreen::bestiary) {
+    if (event == ftxui::Event::Escape ||
+        event == ftxui::Event::Character("q")) {
+      if (active_screen_kind_ == ActiveScreen::libram && return_monster_) {
+        show_bestiary(return_monster_);
+      } else {
+        show_party_battle(commands_.account_index(), commands_.party_index());
+      }
+      return true;
+    }
+    // Keep the view alive if its link callback replaces the current screen.
+    auto screen = active_screen_;
+    return screen->OnEvent(event);
   }
 
   if (event == ftxui::Event::Character("h") &&
@@ -197,8 +236,7 @@ void RootComponent::set_full_open() { console_overlay()->set_full_open(); }
 void RootComponent::show_account_battle(std::size_t account_index) {
   ctx_ = make_context(account_index);
   active_screen_kind_ = ActiveScreen::account_battle;
-  active_screen_ = ftxui::Make<AccountBattleView>(ctx_);
-  Add(active_screen_);
+  replace_screen(ftxui::Make<AccountBattleView>(ctx_));
 }
 
 void RootComponent::show_party_battle(std::size_t account_index,
@@ -212,8 +250,7 @@ void RootComponent::show_party_battle(std::size_t account_index,
   }
 
   active_screen_kind_ = ActiveScreen::party_battle;
-  active_screen_ = ftxui::Make<PartyBattleScreen>(ctx_, party_index);
-  Add(active_screen_);
+  replace_screen(ftxui::Make<PartyBattleScreen>(ctx_, party_index));
 }
 
 void RootComponent::show_party(std::size_t account_index,
@@ -227,14 +264,42 @@ void RootComponent::show_party(std::size_t account_index,
   }
 
   active_screen_kind_ = ActiveScreen::party;
-  active_screen_ = ftxui::Make<PartyView>(ctx_, party_index);
-  Add(active_screen_);
+  replace_screen(ftxui::Make<PartyView>(ctx_, party_index));
 }
 
 void RootComponent::show_effect_gallery() {
   active_screen_kind_ = ActiveScreen::effect_gallery;
-  active_screen_ = ftxui::Make<EffectGalleryView>();
+  replace_screen(ftxui::Make<EffectGalleryView>());
+}
+
+void RootComponent::replace_screen(ftxui::Component screen) {
+  if (active_screen_) {
+    active_screen_->Detach();
+  }
+  active_screen_ = std::move(screen);
   Add(active_screen_);
+  active_screen_->TakeFocus();
+}
+
+void RootComponent::show_libram(std::optional<fl::skills::SkillId> skill) {
+  if (!discoveries_)
+    return;
+  active_screen_kind_ = ActiveScreen::libram;
+  replace_screen(ftxui::Make<LibramView>(*discoveries_, skill));
+}
+
+void RootComponent::show_bestiary(
+    std::optional<fl::monster::MonsterKind> monster) {
+  if (!discoveries_)
+    return;
+  active_screen_kind_ = ActiveScreen::bestiary;
+  replace_screen(ftxui::Make<BestiaryView>(
+      *discoveries_,
+      [this](fl::monster::MonsterKind kind, fl::skills::SkillId skill) {
+        return_monster_ = kind;
+        show_libram(skill);
+      },
+      monster));
 }
 
 void RootComponent::toggle_active_screen() {
@@ -246,6 +311,8 @@ void RootComponent::toggle_active_screen() {
   case ActiveScreen::party_battle:
     show_party(commands_.account_index(), commands_.party_index());
     return;
+  case ActiveScreen::libram:
+  case ActiveScreen::bestiary:
   case ActiveScreen::effect_gallery:
     show_party_battle(commands_.account_index(), commands_.party_index());
     return;
@@ -262,6 +329,8 @@ void RootComponent::toggle_party_battle_screen() {
     return;
   case ActiveScreen::party:
     return;
+  case ActiveScreen::libram:
+  case ActiveScreen::bestiary:
   case ActiveScreen::effect_gallery:
     show_party_battle(commands_.account_index(), commands_.party_index());
     return;
@@ -388,6 +457,7 @@ ftxui::Element RootComponent::render_keybind_help() const {
   lines.push_back(separator() | chrome);
   lines.push_back(text("h        close this help") | chrome);
   lines.push_back(text("`        open command console") | chrome);
+  lines.push_back(text("l / b    open libram / bestiary") | chrome);
   lines.push_back(text("q / Esc  quit") | chrome);
 
   if (active_screen_kind_ == ActiveScreen::effect_gallery) {

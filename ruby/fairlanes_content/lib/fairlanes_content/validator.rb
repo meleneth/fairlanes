@@ -17,7 +17,7 @@ module FairlanesContent
     VALID_EXECUTIONS = Set[
       :thump_like, :eviscerate, :poison, :cold_snap, :flame_strike,
       :flame_wave, :decal_strike, :damage_strike, :group_damage,
-      :single_heal, :group_heal, :placeholder_effect, :flee, :observe
+      :single_heal, :group_heal, :placeholder_effect, :flee, :observe, :status_detonation
     ].freeze
     VALID_TAGS = Set[
       :physical, :blunt, :piercing, :slashing, :bleed, :poison, :disease,
@@ -65,6 +65,7 @@ module FairlanesContent
       validate_skills(errors)
       validate_random_combat_skills(errors)
       validate_monsters(errors)
+      validate_decision_rules(errors)
       errors
     end
 
@@ -107,6 +108,14 @@ module FairlanesContent
 
     def validate_skills(errors)
       declarations.skills.each do |skill|
+        if skill.execution == :status_detonation
+          unless %i[shield haste burn blind silence slow stun].include?(skill.consumes_status)
+            errors << "skill #{skill.id} has invalid consumed status"
+          end
+          errors << "skill #{skill.id} requires positive effect damage" unless positive_integer?(skill.effect_damage)
+        elsif skill.consumes_status || skill.effect_damage != 0
+          errors << "skill #{skill.id} has detonation metadata without detonation execution"
+        end
         errors << "skill #{skill.id} is missing a C++ id" if skill.cpp_id.to_s.empty?
         errors << "skill #{skill.id} is missing a display name" if skill.display.to_s.empty?
         unless percent?(skill.learn_chance_percent)
@@ -151,6 +160,53 @@ module FairlanesContent
       random_skill_ids.each do |skill_id|
         unless declarations.random_combat_skills.include?(skill_id)
           errors << "random combat skill #{skill_id} is missing from order table"
+        end
+      end
+    end
+
+    def validate_decision_rules(errors)
+      declarations.monsters.each do |monster|
+        unless monster.decision_rules.is_a?(Array)
+          errors << "monster #{monster.id} decision_rules must be an array"
+          next
+        end
+        monster.decision_rules.each do |rule|
+          prefix = "monster #{monster.id} decision rule"
+          unless rule.is_a?(Hash)
+            errors << "#{prefix} must be a hash"
+            next
+          end
+          errors << "#{prefix} has unknown fields" unless (rule.keys - %i[skill target chance_percent conditions]).empty?
+          errors << "#{prefix} uses an unknown or unequipped skill" unless monster.known_skills.include?(rule[:skill])
+          errors << "#{prefix} has invalid target" unless %i[self ally enemy].include?(rule.fetch(:target, :enemy))
+          chance = rule.fetch(:chance_percent, 100)
+          errors << "#{prefix} has invalid chance" unless chance.is_a?(Integer) && (0..100).cover?(chance)
+          conditions = rule.fetch(:conditions, [])
+          unless conditions.is_a?(Array)
+            errors << "#{prefix} conditions must be an array"
+            next
+          end
+          conditions.each do |condition|
+            unless condition.is_a?(Hash)
+              errors << "#{prefix} condition must be a hash"
+              next
+            end
+            errors << "#{prefix} condition has unknown fields" unless (condition.keys - %i[subject predicate status percent]).empty?
+            errors << "#{prefix} has invalid subject" unless %i[actor target].include?(condition.fetch(:subject, :target))
+            case condition[:predicate]
+            when :has_status, :missing_status
+              unless %i[shield haste burn blind silence slow stun poison dire_bleed freeze].include?(condition[:status])
+                errors << "#{prefix} has invalid status"
+              end
+              errors << "#{prefix} status condition cannot have percent" if condition.key?(:percent)
+            when :hp_below, :hp_above
+              percent = condition[:percent]
+              errors << "#{prefix} has invalid health percent" unless percent.is_a?(Integer) && (0..100).cover?(percent)
+              errors << "#{prefix} health condition cannot have status" if condition.key?(:status)
+            else
+              errors << "#{prefix} has invalid predicate"
+            end
+          end
         end
       end
     end

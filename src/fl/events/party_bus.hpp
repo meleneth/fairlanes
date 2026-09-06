@@ -6,6 +6,7 @@
 #include <utility>
 #include <variant>
 
+#include "fl/monsters/monster_kind.hpp"
 #include "fl/skills/skill.hpp"
 #include "sr/variant_bus.hpp"
 
@@ -35,12 +36,19 @@ struct LootDropRequested {
   entt::entity party{entt::null};
 };
 struct PartyTick {};
+struct MonsterEncountered {
+  fl::monster::MonsterKind kind;
+};
+struct SkillWitnessed {
+  entt::entity user{entt::null};
+  fl::skills::SkillKey skill{fl::skills::SkillId::Observe};
+};
 
 using PartyEvent =
     std::variant<PartyCreated, MemberJoined, PartyWiped, PartyVictory,
-                 PartyLeftCombat, PartyGainedXP, PartyGainedLevel,
-                 PartyHealed, PartyRevitalizeRequested, LootDropRequested,
-                 PartyTick>;
+                 PartyLeftCombat, PartyGainedXP, PartyGainedLevel, PartyHealed,
+                 PartyRevitalizeRequested, LootDropRequested, PartyTick,
+                 MonsterEncountered, SkillWitnessed>;
 
 using PartyBus = seerin::VariantBus<PartyEvent>;
 

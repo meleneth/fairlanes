@@ -8,6 +8,7 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/encounter.hpp"
+#include "fl/ecs/components/monster_identity.hpp"
 #include "fl/generated/monster_content.hpp"
 #include "fl/monsters/monster_kind.hpp"
 #include "fl/monsters/monster_registry.hpp"
@@ -109,6 +110,11 @@ void EncounterBuilder::add_to_enemy_team(entt::entity entity) {
   // First strike wen?
 
   encounter_data.attackers().members().push_back(entity);
+  if (const auto *identity =
+          ctx_.reg().try_get<fl::ecs::components::MonsterIdentity>(entity)) {
+    ctx_.bus().emit(
+        fl::events::PartyEvent{fl::events::MonsterEncountered{identity->kind}});
+  }
   encounter_data.entities_to_cleanup().push_back(entity);
   encounter_data.add_enemy_combatant_bus(entity);
   encounter_data.atb_in().emit(

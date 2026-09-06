@@ -4,6 +4,7 @@
 #include <span>
 #include <string_view>
 
+#include "fl/ecs/components/combat_status.hpp"
 #include "fl/skills/skill.hpp"
 #include "fl/widgets/effects/decal.hpp"
 
@@ -17,6 +18,9 @@ struct SkillDefinition {
   int flee_success_percent;
   SkillExecutionKind execution;
   std::optional<fl::widgets::effects::DecalAnimationKind> decal_animation;
+  std::string_view description;
+  std::optional<fl::ecs::components::CombatStatusKind> consumes_status{};
+  int effect_damage{0};
 };
 
 std::span<const SkillDefinition *const> all_definitions() noexcept;

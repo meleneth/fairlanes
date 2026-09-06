@@ -8,8 +8,8 @@ Generated artifacts currently provide runtime skill metadata C++, status metadat
 
 | Projection | Count | Source of truth |
 | --- | ---: | --- |
-| Skill definitions | 69 | Ruby DSL generated C++ `SkillDefinition` table |
-| Random combat skills | 68 | Ruby DSL generated C++ random combat table |
+| Skill definitions | 70 | Ruby DSL generated C++ `SkillDefinition` table |
+| Random combat skills | 69 | Ruby DSL generated C++ random combat table |
 | Status declarations | 3 | Ruby DSL generated C++ status metadata table |
 | Monster declarations | 71 | Ruby DSL generated C++ monster topology table |
 | Common woodland monsters | 69 | Ruby DSL generated C++ encounter pool |
@@ -41,7 +41,7 @@ Generated artifacts currently provide runtime skill metadata C++, status metadat
 | Rake Line | RakeLine | 5 | 0 | yes | group_damage |  | Dragonfly Cutter, Owlshade, Carrion Dragonfly, Smoke Crow, Swordfish Duelist | generated_runtime_behavior |
 | Smackdown Sweep | SmackdownSweep | 5 | 0 | yes | group_damage |  | Antler Stag, Pickaxe Goblin, Rust Loader, Deck Kraken, Segfault Loader, Null Kraken | generated_runtime_behavior |
 | Bumper Rush | BumperRush | 5 | 0 | yes | group_damage |  | Bristle Boar, Antler Stag, Snowdrift Bison, Drill Beetle, Shield Bison, Deck Kraken | generated_runtime_behavior |
-| Kindle Wound | KindleWound | 5 | 0 | yes | damage_strike |  |  | generated_runtime_behavior |
+| Kindle Wound | KindleWound | 5 | 0 | yes | damage_strike |  | Salamander | generated_runtime_behavior |
 | Cinder Veil | CinderVeil | 5 | 0 | yes | placeholder_effect |  | Glass Lizard, Glass Scorpion | placeholder_effect |
 | Frost Fan | FrostFan | 5 | 0 | yes | group_damage |  | Berg Wyrm | generated_runtime_behavior |
 | Rime Armor | RimeArmor | 5 | 0 | yes | placeholder_effect |  | Snowdrift Bison | placeholder_effect |
@@ -88,6 +88,7 @@ Generated artifacts currently provide runtime skill metadata C++, status metadat
 | Checksum Ward | ChecksumWard | 5 | 0 | yes | placeholder_effect |  | Neon Orchid, Orbital Yeti | placeholder_effect |
 | Plasma Arc | PlasmaArc | 5 | 0 | yes | damage_strike |  | Neon Orchid | generated_runtime_behavior |
 | Starblaze | Starblaze | 1 | 0 | yes | decal_strike | Starfire | Starfire Anomaly | decal_strike |
+| Cinderburst | Cinderburst | 5 | 0 | yes | status_detonation | FlameWave | Salamander | generated_runtime_behavior |
 
 ## Status Metadata
 
@@ -109,7 +110,7 @@ Generated artifacts currently provide runtime skill metadata C++, status metadat
 | Bark Smack | BarkSmack | 12 | 0 | 4 | Smack | common_woodland |
 | Poison Toad | PoisonToad | 16 | 0 | 5 | Poison | common_woodland |
 | Yeti | Yeti | 40 | 0 |  | Cold Snap | common_woodland |
-| Salamander | Salamander | 24 | 0 | 6 | Flame Strike | common_woodland |
+| Salamander | Salamander | 24 | 0 | 6 | Flame Strike, Kindle Wound, Cinderburst | common_woodland |
 | Fire Drake | FireDrake | 500 | 0 | 8 | Flame Wave | rare_woodland |
 | Stormtick Imp | StormtickImp | 10 | 0 | 3 | Joltspasm | common_woodland |
 | Ceiling Grudge | CeilingGrudge | 18 | 0 | 5 | Rocks Fall | common_woodland |
@@ -188,3 +189,4 @@ Generated artifacts currently provide runtime skill metadata C++, status metadat
 | Ice Splitter | Rimefang Hare, Berg Wyrm, Orbital Yeti | FrostCrack | cold, piercing, projectile, enemy, damage |
 | Gravity Sigh | Null Mote, Starfire Anomaly | VoidRipple | gravity, control, area, group, damage |
 | Starblaze | Starfire Anomaly | Starfire | fire, arcane, spell, enemy, damage |
+| Cinderburst | Salamander | FlameWave | fire, spell, enemy, damage |
