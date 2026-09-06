@@ -56,7 +56,7 @@ void GrandCentral::_create_initial_accounts() {
   // party_ctx.party_loop_ctx();
 
   for (std::size_t a = 0; a < num_accounts_; ++a) {
-    auto &account_data = accounts_.emplace_back(reg_.create());
+    auto &account_data = accounts_.emplace_back(reg_.create(), record_progress_);
 
     logger_.info(
         "[yellow](Account " + std::to_string(a) + " initialized with ID " +
@@ -124,8 +124,8 @@ void GrandCentral::_create_initial_accounts() {
 GrandCentral::GrandCentral(uint8_t num_accounts,
                            uint8_t num_parties_per_account,
                            uint8_t num_members_per_party,
-                           bool record_discoveries)
-    : num_accounts_(num_accounts),
+                           bool record_discoveries, bool record_progress)
+    : record_progress_(record_progress), num_accounts_(num_accounts),
       num_parties_per_account_(num_parties_per_account),
       num_members_per_party_(num_members_per_party), reg_(), rng_(), log_bus_(),
       logger_{log_bus_}, game_log_(std::make_unique<fl::widgets::FancyLog>()),
@@ -133,6 +133,9 @@ GrandCentral::GrandCentral(uint8_t num_accounts,
           log_bus_, *game_log_, fl::primitives::LogLevel::trace)) {
   fl::monster::register_all_monsters();
   _create_initial_accounts();
+  if (record_progress_) {
+    for (auto &account : accounts_) raid_milestones_.bind(account.raid_bus(), account.account_id());
+  }
   if (record_discoveries) {
     discovery_listener_ =
         std::make_unique<fl::primitives::DiscoveryJournalListener>(discoveries_,

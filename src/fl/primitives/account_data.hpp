@@ -11,14 +11,16 @@
 #include "party_data.hpp"
 #include "fl/primitives/raid_data.hpp"
 #include "fl/primitives/moon_calendar.hpp"
+#include "fl/primitives/raid_statistics.hpp"
 
 namespace fl::primitives {
 
 struct AccountData {
 public:
-  explicit AccountData(entt::entity account_id)
+  explicit AccountData(entt::entity account_id, bool record_progress = true)
       : account_id_{account_id},
-        log_{std::make_unique<fl::widgets::FancyLog>()} {}
+        log_{std::make_unique<fl::widgets::FancyLog>()},
+        statistics_{std::make_unique<RaidStatistics>(*raid_bus_, account_id, record_progress)} {}
 
   AccountData(AccountData &&) noexcept = default;
   AccountData &operator=(AccountData &&) noexcept = default;
@@ -26,6 +28,7 @@ public:
   AccountData(const AccountData &) = delete;
   AccountData &operator=(const AccountData &) = delete;
 
+  const RaidRecords &raid_records() const { return statistics_->records(); }
   RaidData *raid() { return raid_.get(); }
   const RaidData *raid() const { return raid_.get(); }
   bool in_raid() const { return raid_ && raid_->active(); }
@@ -70,6 +73,7 @@ private:
 
   std::deque<PartyData> parties_{}; // owned parties
   std::unique_ptr<fl::events::RaidBus> raid_bus_{std::make_unique<fl::events::RaidBus>()};
+  std::unique_ptr<RaidStatistics> statistics_;
   std::uint64_t raid_id_{0};
   std::unique_ptr<WorldClock> calendar_{std::make_unique<WorldClock>()};
   std::uint64_t next_visitor_beat_{0};

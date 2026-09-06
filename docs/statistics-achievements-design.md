@@ -1,10 +1,9 @@
 # Statistics and achievements: initial design
 
-Status: design in progress, 2026-09-06. Establishing these systems alongside raids
-is requested. This pass is explicitly design and milestones only.
-No gameplay statistics tracker or achievement system was found in
-the current implementation. The contracts and milestones below are proposals
-for review, not implemented features or finalized achievement content.
+Status: initial raid records and the mutual-destruction milestone are implemented.
+The broader measurements, persistence, and presentation milestones remain planned.
+These records currently cover the running game session, with account-local totals
+and save-wide aggregation across its accounts.
 
 ## Confirmed scope
 
@@ -102,8 +101,8 @@ storage model; decide what totals and recent summaries actually need retention.
 - Poison and Dire Bleed call `TakeDamage`; `SkillHitLanded` is emitted by selected
   skill execution paths. Counting only skill-hit events misses other damage.
 - `LootDropRequested` requests loot; it does not prove an item was awarded.
-- A global clock exists, but account-calendar pause and shared raid outcome
-  producers are still to be designed and implemented.
+- Account calendars now pause during shared raids, and typed raid lifecycle
+  events drive the initial records.
 
 Prefer authoritative facts emitted after gameplay commits, with enough captured
 identity to survive cleanup. Resolve lifecycle and measurement ambiguities at the
@@ -176,3 +175,27 @@ by the raid reward contract.
    test raid/non-raid distinction and one-time unlock behavior.
 6. Add read-only statistics/achievement views and notifications after the data
    contracts are stable. Keep raid layout priorities intact.
+
+## Implemented first slice
+
+`AccountData` owns a stable `RaidStatistics` subscriber. `RaidStarted` counts one
+attempt and roster-size party participation; `RaidResolved` counts one win or
+defeat, mutual destruction as a defeat subset, all-party victory credit, and
+completed-raid combat beats. Monotonically increasing account-local raid IDs
+reject repeated starts/outcomes. Resolution must match the most recently started
+raid. These are in-process identities, not a proposed persistent save ID format.
+
+After committing totals the subscriber emits `RaidRecorded`. `GrandCentral` owns
+`RaidMilestones`, which consumes that event for save-wide completed/win/defeat
+counts and the dedicated `RaidMutualDestruction` achievement. A single
+`AchievementUnlocked` event follows committed account and save records. It has
+no implicit item or power reward. Duplicate delivery and multiple qualifying
+accounts cannot repeat the unlock. Each listener owns scoped subscriptions;
+models and source buses have explicit destruction order. Attract construction
+disables progress subscriptions separately from discovery and Visitor timing.
+
+Tests exercise real shared outcomes, duplicate delivery, five-party win credit,
+mutual destruction across accounts, exclusion from demos, notification ordering,
+and the initial generated Visitor fight running to completion through world beats.
+No damage, healing, ordinary encounter-win, item-award, or persistence counters
+are claimed by this slice.

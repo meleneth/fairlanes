@@ -1,4 +1,5 @@
 #pragma once
+#include "fl/primitives/raid_milestones.hpp"
 // INTERNAL: Do not include from engine code.
 
 #include <cstdint>
@@ -29,8 +30,10 @@ struct GrandCentralRunOptions {
 class GrandCentral {
 public:
   GrandCentral(uint8_t num_accounts, uint8_t num_parties_per_account,
-               uint8_t num_members_per_party, bool record_discoveries = true);
+               uint8_t num_members_per_party, bool record_discoveries = true, bool record_progress = true);
   ~GrandCentral();
+
+  fl::primitives::RaidMilestones &raid_milestones() { return raid_milestones_; }
 
   // ---- accessors (refs only, no ownership leaks) ----
   uint8_t num_accounts() const noexcept { return num_accounts_; }
@@ -87,6 +90,7 @@ public:
 
 private:
   // ---- owned state ----
+  bool record_progress_{true};
   uint8_t num_accounts_{8};
   uint8_t num_parties_per_account_{5};
   uint8_t num_members_per_party_{5};
@@ -100,6 +104,7 @@ private:
   seerin::BeatBus gc_beat_bus_;
 
   std::deque<fl::primitives::AccountData> accounts_;
+  fl::primitives::RaidMilestones raid_milestones_;
   fl::primitives::DiscoveryJournal discoveries_;
   std::unique_ptr<fl::primitives::DiscoveryJournalListener> discovery_listener_;
 

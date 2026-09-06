@@ -17,7 +17,8 @@ struct RaidResolved {
   std::size_t parties;
   std::uint64_t combat_beats;
 };
-using RaidEvent = std::variant<RaidStarted, RaidResolved>;
+struct RaidRecorded { RaidResolved outcome; };
+using RaidEvent = std::variant<RaidStarted, RaidResolved, RaidRecorded>;
 using RaidBus = seerin::VariantBus<RaidEvent>;
 using ScopedRaidListener = ScopedListener<RaidBus>;
 } // namespace fl::events
