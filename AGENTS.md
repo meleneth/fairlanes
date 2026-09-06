@@ -514,6 +514,14 @@ parties); all characters dead means defeat. Simultaneous extinction is unsettled
 Start victory loot planning at two raid-exclusive drops per participating party
 (ten for five parties), with trinkets a tentative item category. Raids also gate
 progression Cycles in addition to recurring celestial encounters. Account-calendar
-pause during raids is a design direction; cadence, entry, targeting, retries,
-and reward distribution remain open. Update this document as decisions settle;
+pause during raids is a design direction. Visitor arrival automatically triggers
+the raid and cannot be banked. The dedicated screen gives the boss the top third
+and all five parties their own lines in the bottom two thirds simultaneously.
+Arrival handoff, targeting, retries, and reward distribution remain open. Update this document as decisions settle;
 do not treat proposed policies as implemented behavior.
+
+`docs/statistics-achievements-design.md` starts the statistics/achievement design.
+No runtime tracker or achievement system exists yet. Proposed foundations count
+resolved gameplay facts, keep shared raid results separate from party credit,
+and exclude attract-demo activity. Scope, persistence, and achievement rewards
+remain open; do not treat proposals as settled requirements.
