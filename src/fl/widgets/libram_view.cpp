@@ -63,6 +63,9 @@ ftxui::Element LibramView::Render() {
                                 flex}) |
                           flex,
                       separator(),
+                      paragraph("No balance passes have been done. Damage numbers "
+                                "are base values before misses, resistances, shields "
+                                "and field modifiers. Times use combat seconds."),
                       text("Up/Down: skill   Esc: back   b: bestiary") | dim}));
 }
 

@@ -132,6 +132,18 @@ monster registration glue that applies those generated stats. Handwritten C++
 remains the authority for skill behavior, status lifecycles, combat effects,
 rendering implementation, and monster construction primitives.
 
+Skill descriptions are part of the implementation requirements. Every new or
+changed skill must state its actual damage/healing numbers and damage channel,
+target count, chance, duration, tick interval/count, and rank formula where
+applicable. Describe status replacement, removal and lethal consequences
+explicitly; a status with no timeout must say so. Verify against the execution
+path and ECS systems, not the name, tags or intended future design. Document
+missing effects plainly. Update descriptions in the same change as behavior.
+The libram reports unbalanced current values, with a visible notice that no
+balance passes have been done; damage values precede combat modifiers and times
+are combat time. Content validation rejects descriptions without numbers, but
+review must still verify that those numbers match the implementation.
+
 Skill declarations also supply libram descriptions and status-detonation
 metadata. Monster declarations may supply ordered `decision_rules` (or use
 `monster_rules` to attach them after a shared declaration table). See

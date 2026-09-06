@@ -491,3 +491,10 @@ milestones. Keep this document current when changing the policy contract.
 Monster flavor descriptions live in the Ruby content declarations, are required by
 content validation, and render in the bestiary once the monster is encountered.
 They do not reveal or populate witnessed skill links.
+
+Skill descriptions must report actual implementation numbers, damage channels,
+targets, rank scaling, and status duration/removal conditions, including lethal
+effects with no timeout. Update descriptions alongside behavior; verify C++
+execution rather than inferring effects from tags. See the skill description
+requirements in `docs/tour/development.md`. The libram explicitly identifies
+current values as having had no balance passes.

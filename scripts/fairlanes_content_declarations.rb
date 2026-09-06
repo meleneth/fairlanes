@@ -519,60 +519,67 @@ end
   monsters.find { |entry| entry.id == id }.description = description
 end
 
-# Libram prose describes current effects, independently of character learning.
-# Explicit overrides below cover bespoke effects; generic damage/heal families
-# share prose because they share runtime behavior.
+# Libram descriptions are implementation contracts: include actual numbers,
+# damage channels, targets, rank scaling, and status termination conditions.
+# Audit against skill_sequence.cpp, thump.cpp, and the ECS status systems.
+# Names/tags do not imply effects. Shared prose reflects shared runtime behavior.
 skills.each do |entry|
   entry.description = case entry.execution
-                      when :thump_like then "Strike one enemy with a blunt attack."
-                      when :damage_strike, :decal_strike then "Strike one enemy for damage."
-                      when :group_damage then "Deal damage to every living enemy."
+                      when :thump_like then "Deal 1-5 physical damage to 1 enemy with a blunt attack."
+                      when :damage_strike, :decal_strike then "Deal 1-5 physical damage to 1 enemy. No additional status or healing effect."
+                      when :group_damage then "Deal 1-5 physical damage to each living enemy. No additional status or healing effect."
                       when :single_heal then "Restore 5 HP to one living ally, up to their maximum HP."
                       when :group_heal then "Restore 4 HP to every living ally, up to their maximum HP."
                       end
 end
 
 {
+  rocks_fall: "Deal 1-5 physical damage. Hits only 1 enemy despite its area tags.",
+  sour_breath: "Deal 1-5 physical damage. Hits only 1 enemy; applies no Poison or disease.",
+  blood_bloom: "Deal 1-5 physical damage. Hits only 1 enemy; causes no bleeding and heals nobody.",
+  gravity_sigh: "Deal 1-5 physical damage. Hits only 1 enemy; applies no control effect.",
+  reboot_pulse: "Restore 4 HP to each living ally, capped at maximum HP. Does not cleanse statuses.",
   cinderburst: "Detonate an existing burn on one enemy for 8 fire damage, consuming the burn. Requires the burn to still be present when the blast lands.",
-  observe: "Watch other combatants to learn their skills. Must be equipped for learning; its rank limits which skill ranks can be learned. Observe ranks are learned in order. Learning during combat is retained on victory and lost on a party wipe.",
+  observe: "Spend 12 beats observing, dealing 0 damage. Equipping Observe enables learning from other combatants; its rank caps learnable skill ranks. Observe itself is learned in order, at most 1 rank above the equipped rank, without a chance roll. Combat learning is kept on victory and lost on a party wipe.",
   flee: "Attempt to leave combat. The escape attempt has a 65% success chance.",
-  thump: "Strike one enemy with a blunt attack. Higher ranks increase damage and change the timing of the attack.",
-  eviscerate: "Tear into one enemy and inflict Dire Bleed, which deals damage repeatedly until the effect ends.",
-  poison: "Poison one enemy for 27 seconds, dealing periodic poison damage.",
-  cold_snap: "Freeze one enemy for 30 seconds, interrupting their combat readiness.",
-  flame_strike: "Strike one enemy with a burst of flame.",
-  flame_wave: "Send a wave of flame through the enemy team, damaging living enemies in sequence.",
-  mercyburst: "Restore HP to one living ally, without exceeding their maximum HP.",
-  kindle_wound: "Strike one enemy and apply a burn with three damage ticks. Wounded or already burning enemies suffer a stronger burn.",
+  thump: "Deal 1-5 physical damage to 1 enemy with a blunt attack at rank 1, plus 3 damage per additional rank. Hit at beat 26 + 2 x (rank - 1); finish at beat 31 + 3 x (rank - 1). Higher ranks hit harder but take longer.",
+  eviscerate: "Inflict Dire Bleed on 1 enemy: they bleed to death unless it is stopped. Every 3 seconds, starting 3 seconds after application, deal physical damage equal to 10% of their maximum HP at application (rounded down, minimum 1). No timeout and no initial hit. Cleanse, target death or leaving combat clears it; source death or removal stops it at the next tick. Reapplication replaces the bleed and restarts its timer.",
+  poison: "Poison 1 enemy for 1 magical damage every 3 seconds: 9 ticks over 27 seconds, starting 3 seconds after application (9 total base damage). No initial hit. Cleanse, target death or leaving combat clears it; source death or removal stops further ticks. Reapplication replaces the poison and restarts its timer.",
+  cold_snap: "Freeze 1 enemy for 30 seconds, stopping combat readiness. No initial damage. Casting again while they are frozen clears Freeze and shatters them for ice damage equal to 50% of their maximum HP (rounded down, minimum 1). Freeze can be cleansed and ends on death or leaving combat.",
+  flame_strike: "Deal 1-5 physical damage to 1 enemy. The flame animation currently adds no fire damage or Burn.",
+  flame_wave: "Deal 1-5 physical damage to each living enemy in sequence, 3 beats apart. The flame animation currently adds no fire damage or Burn.",
+  mercyburst: "Restore 5 HP to 1 living ally, capped at their maximum HP.",
+  kindle_wound: "Deal 1-5 physical damage to 1 enemy, then apply Burn. Burn deals 3 fire damage every 3 seconds for 3 ticks (9 total) if the target is wounded after the hit or already burning; otherwise 2 per tick (6 total). Replaces an existing Burn. Cleanse, target death or leaving combat clears it; source death stops further ticks.",
   cinder_veil: "Give one ally a shield reducing incoming damage by 25% for 30 seconds.",
   rime_armor: "Give one ally a shield reducing incoming damage by 40% for 36 seconds.",
-  whiteout: "Reduce the enemy team's accuracy by 45% for 30 seconds.",
+  whiteout: "Give the enemy team a 45% miss chance on damage, including damage ticks, for 30 seconds. Uses the larger of this chance and Blind; they do not add together.",
   overcharge: "Make the enemy team 35% more vulnerable to damage for 18 seconds.",
-  clearbell: "Remove removable negative effects from one ally.",
-  hush_hex: "Silence one enemy for 24 seconds, preventing skills blocked by silence.",
+  clearbell: "Cleanse 1 ally of all removable negative statuses, including Poison, Freeze and Dire Bleed. Does not remove team-wide field effects or heal HP.",
+  hush_hex: "Silence 1 enemy for 24 seconds, preventing use of skills tagged Spell. Other skills remain usable.",
   choirguard: "Give every living ally a shield reducing incoming damage by 30% for 30 seconds.",
   miasma_cloud: "Reduce the enemy team's damage by 25% for 30 seconds.",
-  root_leech: "Deal 6 physical damage to one enemy and heal the user for half of the damage dealt.",
-  weight_of_tuesday: "Slow every living enemy by 20% for 30 seconds.",
-  smoke_screen: "Reduce the enemy team's accuracy by 35% for 30 seconds.",
+  root_leech: "Deal 6 physical damage to 1 enemy and heal the user for 50% of damage dealt (including overkill; rounded down), capped at maximum HP. No Slow is applied.",
+  weight_of_tuesday: "Reduce each living enemy's readiness charge rate by 35 percentage points for 30 seconds. Also reduce the enemy team's damage by 20% for 30 seconds.",
+  smoke_screen: "Give the enemy team a 35% miss chance on damage, including damage ticks, for 30 seconds. Uses the larger of this chance and Blind; they do not add together.",
   signal_jam: "Reduce the enemy team's damage by 30% for 30 seconds.",
-  clock_up: "Hasten one ally by 25% for 30 seconds.",
-  blue_screen: "Stun every living enemy, costing each a turn. The stun expires after 12 seconds.",
+  clock_up: "Increase 1 ally's readiness charge rate by 25 percentage points for 30 seconds. Replaces existing Haste.",
+  blue_screen: "Make every living enemy skip 1 turn. Each stun expires when consumed or after 12 seconds, whichever comes first. Does not apply Silence.",
   pack_howl: "Make the enemy team 25% more vulnerable to damage for 24 seconds.",
   shell_guard: "Reduce incoming damage to the user by 35% for 30 seconds.",
-  web_snare: "Slow one enemy by 25% for 30 seconds.",
-  gnat_cloud: "Reduce the enemy team's accuracy by 30% for 24 seconds.",
+  web_snare: "Reduce 1 enemy's readiness charge rate by 25 percentage points for 30 seconds. Replaces existing Slow.",
+  gnat_cloud: "Give the enemy team a 30% miss chance on damage, including damage ticks, for 24 seconds. Uses the larger of this chance and Blind; they do not add together.",
   burrow: "Reduce incoming damage to the user by 45% for 30 seconds.",
   battle_focus: "Make the enemy team 15% more vulnerable to damage for 24 seconds.",
   armor_plate: "Reduce incoming damage to the user by 60% for 45 seconds.",
-  signal_flare: "Reduce the enemy team's accuracy by 20% for 24 seconds.",
-  checksum_ward: "Cleanse one ally's removable negative effects and give them a shield reducing incoming damage by 45% for 36 seconds."
+  signal_flare: "Give the enemy team a 20% miss chance on damage, including damage ticks, for 24 seconds. Uses the larger of this chance and Blind; they do not add together.",
+  checksum_ward: "Cleanse 1 ally of all removable negative statuses, including Poison, Freeze and Dire Bleed, then reduce incoming damage by 45% for 36 seconds. Does not prevent new statuses or remove team-wide field effects."
 }.each do |id, description|
   skills.find { |entry| entry.id == id }.description = description
 end
 
 skills.each do |entry|
   raise "Missing libram description: #{entry.id}" if entry.description.to_s.strip.empty?
+  raise "Missing libram numbers: #{entry.id}" unless entry.description.match?(/[0-9]/)
 end
 
 # Rules are tried in order. Every condition applies to the selected candidate;

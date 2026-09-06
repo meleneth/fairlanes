@@ -7,6 +7,18 @@ witnessed skill links. Descriptions do not mark skills as witnessed.
 Implement these goals in order. The game-wide reference is the libram; a
 member's collection of learned, ranked skills remains the grimoire.
 
+Skill descriptions are part of the implementation requirements. Every new or
+changed skill must state its actual damage/healing numbers and damage channel,
+target count, chance, duration, tick interval/count, and rank formula where
+applicable. Describe status replacement, removal and lethal consequences
+explicitly; a status with no timeout must say so. Verify against the execution
+path and ECS systems, not the name, tags or intended future design. Document
+missing effects plainly. Update descriptions in the same change as behavior.
+The libram reports unbalanced current values, with a visible notice that no
+balance passes have been done; damage values precede combat modifiers and times
+are combat time. Content validation rejects descriptions without numbers, but
+review must still verify that those numbers match the implementation.
+
 1. **Reference and discovery data.** Give every skill a textual description in
    content metadata. Track encountered monster kinds and witnessed skill uses
    for the game session, shared across accounts. A discovered monster exposes
