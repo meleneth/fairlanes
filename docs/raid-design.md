@@ -393,3 +393,20 @@ the party's active encounter context. Normal fights retain their party log and
 bus. Independently owned encounters can supply their own log, bus, owner entity,
 and tick source. Skill sequencing and status lifetimes no longer need a home
 party to reach the scheduler. These contexts must not outlive their encounter.
+
+### Shared raid encounter
+
+`AccountData::start_raid` now creates account-owned `RaidData`. All parties borrow
+one encounter and suspend their independent party loops. A party wipe neither
+clears the raid scheduler nor rolls back provisional raid learning. After a full
+combat beat, `RaidData` resolves collective victory/defeat, with mutual extinction
+classified as defeat, and publishes a single typed `RaidResolved` event. Wiped
+parties receive victory credit when survivors win. Dead parties enter the usual
+town recovery penalty afterward; there is no instant revival. Account-scoped
+`RaidStarted` / `RaidResolved` events are ready for statistics subscribers.
+
+Normal kill loot/XP is suppressed inside raids so a boss cannot accidentally
+roll the ordinary loot table. Raid reward grants are the next integration step.
+Flee cannot extract combatants from this shared encounter: raids end only through
+the collective outcome rules. Automatic Visitor timing and the screen are not
+wired yet in this slice.

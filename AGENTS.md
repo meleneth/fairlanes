@@ -560,3 +560,10 @@ ranges; typed status adaptors compose with them. Existing skill/monster targetin
 uses these ranges. `PartyData::summon_to_raid()` emits `PartySummonedToRaid`, retains
 pending learned skills, and cleans the old encounter without victory/healing.
 The account raid controller, Visitor scheduling, and raid view are still pending.
+
+`EncounterCtx` now owns combat authority within EncounterData; party contexts
+convert to their active encounter context. AccountData owns RaidData, and parties
+borrow its encounter while their loops pause. RaidStarted/RaidResolved use the
+account RaidBus. Shared outcomes are decided after a complete beat; partial party
+wipes do not clear scheduled work or provisional skills. Normal kill loot is
+suppressed in raids. Visitor scheduling and the dedicated view are pending.

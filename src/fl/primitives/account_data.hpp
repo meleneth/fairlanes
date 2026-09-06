@@ -9,6 +9,7 @@
 #include "fl/fwd.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "party_data.hpp"
+#include "fl/primitives/raid_data.hpp"
 
 namespace fl::primitives {
 
@@ -23,6 +24,18 @@ public:
 
   AccountData(const AccountData &) = delete;
   AccountData &operator=(const AccountData &) = delete;
+
+  RaidData *raid() { return raid_.get(); }
+  const RaidData *raid() const { return raid_.get(); }
+  bool in_raid() const { return raid_ && raid_->active(); }
+  fl::events::RaidBus &raid_bus() { return *raid_bus_; }
+  bool start_raid(fl::context::AccountCtx ctx, std::span<const fl::monster::MonsterKind> enemies) {
+    if (in_raid() || parties_.empty() || enemies.empty()) return false;
+    raid_.reset();
+    raid_ = std::make_unique<RaidData>(ctx, *raid_bus_, ++raid_id_, enemies);
+    raid_->announce_started();
+    return true;
+  }
 
   // --- capability-style accessors ---
   entt::entity account_id() const { return account_id_; }
@@ -43,6 +56,9 @@ private:
   std::unique_ptr<fl::widgets::FancyLog> log_{};
 
   std::deque<PartyData> parties_{}; // owned parties
+  std::unique_ptr<fl::events::RaidBus> raid_bus_{std::make_unique<fl::events::RaidBus>()};
+  std::uint64_t raid_id_{0};
+  std::unique_ptr<RaidData> raid_; // destroyed before participants and event bus
 };
 
 } // namespace fl::primitives

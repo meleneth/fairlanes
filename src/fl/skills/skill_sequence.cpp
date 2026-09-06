@@ -1061,7 +1061,7 @@ void SkillSequencer::schedule_flee(entt::entity attacker, SkillKey skill) {
       static_cast<std::underlying_type_t<entt::entity>>(attacker);
   auto rs = party_ctx_.rng().stream("encounter/skill/flee", sub_seq);
   const int roll = rs.uniform_int<int>(1, 100);
-  const bool success = roll <= flee_chance;
+  const bool success = !party_ctx_.encounter().is_raid() && roll <= flee_chance;
 
   scheduler_.schedule_smelly_in_beats(
       1, "flee: resolve",

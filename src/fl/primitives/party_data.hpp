@@ -59,9 +59,9 @@ public:
     return members_;
   }
 
-  fl::primitives::EncounterData &encounter_data() { return *encounter_data_; }
+  fl::primitives::EncounterData &encounter_data() { return raid_encounter_ ? *raid_encounter_ : *encounter_data_; }
   const fl::primitives::EncounterData &encounter_data() const {
-    return *encounter_data_;
+    return raid_encounter_ ? *raid_encounter_ : *encounter_data_;
   }
 
   fl::events::PartyBus &party_bus() noexcept { return party_bus_; }
@@ -78,9 +78,9 @@ public:
     return *party_loop_machine_;
   }
   EncounterData &create_encounter();
-  bool has_encounter() const noexcept { return encounter_data_ != nullptr; }
+  bool has_encounter() const noexcept { return raid_encounter_ != nullptr || encounter_data_ != nullptr; }
   bool in_combat() const noexcept {
-    return encounter_data_ != nullptr && !encounter_data_->is_over();
+    return has_encounter() && !encounter_data().is_over();
   }
   // ---- behavior ----
   void hook_to_beat(seerin::BeatBus &gc_beat_bus);
@@ -92,6 +92,10 @@ public:
   void leave_combat();
   // Call between combat ticks, before enrollment into the account raid.
   void summon_to_raid();
+  bool in_raid() const noexcept { return raid_encounter_ != nullptr; }
+  void join_raid(EncounterData &encounter);
+  void resolve_raid(bool victory);
+  void detach_raid() noexcept { raid_encounter_ = nullptr; }
   void watch_skill_learned_this_combat(entt::entity member,
                                        fl::skills::SkillKey skill);
 
@@ -153,6 +157,7 @@ private:
   fl::context::PartyCtx party_ctx_;
   std::unique_ptr<fl::fsm::PartyLoopMachine> party_loop_machine_;
   std::unique_ptr<fl::primitives::EncounterData> encounter_data_{nullptr};
+  EncounterData *raid_encounter_{nullptr}; // borrowed from account RaidData
   std::deque<fl::primitives::MemberData> members_;
   seerin::AtbEngine atb_;
   std::vector<entt::entity> inventory_;
@@ -177,11 +182,13 @@ private:
     fl::events::ScopedPartyListener wipe_sub{};
     fl::events::ScopedPartyListener victory_sub{};
     fl::events::ScopedPartyListener summoned_sub{};
+    fl::events::ScopedPartyListener raid_resolved_sub{};
   };
 
   std::list<PendingLearnedSkill> pending_learned_skills_;
   bool leaving_combat_{false};
   void cleanup_encounter();
+  void clear_combat_visuals();
 
   void
   resolve_pending_learned_skill(std::list<PendingLearnedSkill>::iterator it,

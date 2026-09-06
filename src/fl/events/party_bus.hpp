@@ -21,6 +21,7 @@ struct PartyVictory {};
 struct PartyLeftCombat {};
 // Extraction preserves observation learning without claiming combat victory.
 struct PartySummonedToRaid {};
+struct PartyRaidResolved { bool victory{false}; };
 struct PartyGainedXP {
   int amount{0};
 };
@@ -48,7 +49,7 @@ struct SkillWitnessed {
 
 using PartyEvent =
     std::variant<PartyCreated, MemberJoined, PartyWiped, PartyVictory,
-                 PartyLeftCombat, PartySummonedToRaid, PartyGainedXP, PartyGainedLevel, PartyHealed,
+                 PartyLeftCombat, PartySummonedToRaid, PartyRaidResolved, PartyGainedXP, PartyGainedLevel, PartyHealed,
                  PartyRevitalizeRequested, LootDropRequested, PartyTick,
                  MonsterEncountered, SkillWitnessed>;
 

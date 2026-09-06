@@ -190,7 +190,7 @@ void EncounterData::finalize() {
                   life_.entities_to_cleanup_.size()));
 
   for (auto e_cleanup : life_.entities_to_cleanup_) {
-    context_.reg().destroy(e_cleanup);
+    if (context_.reg().valid(e_cleanup)) context_.reg().destroy(e_cleanup);
   }
 
   context_.log().append_markup(
@@ -306,7 +306,7 @@ void EncounterData::bind_combatant_bus(
   wire_.wired_combatants_.push_back(combatant);
 }
 
-bool EncounterData::has_alive_enemies() {
+bool EncounterData::has_alive_enemies() const {
   using fl::ecs::components::Stats;
 
   for (auto e : life_.entities_to_cleanup_) {
@@ -323,7 +323,7 @@ bool EncounterData::has_alive_enemies() {
   return false;
 }
 
-bool EncounterData::is_over() { return !has_alive_enemies(); }
+bool EncounterData::is_over() const { return !has_alive_enemies(); }
 
 EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
     : EncounterData(party_ctx->reg(), party_ctx->rng(), party_ctx->log(),

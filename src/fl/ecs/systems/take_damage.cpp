@@ -81,7 +81,7 @@ int TakeDamage::commit(fl::context::AttackCtx &ctx,
       }
     }
 
-    if (party_member) {
+    if (party_member && !party_member->party().party_data().in_raid()) {
       fl::systems::GrantXPToParty::commit(
           ctx.entity_context(party_member->party_), 256);
       auto &party_data = party_member->party().party_data();

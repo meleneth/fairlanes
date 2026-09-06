@@ -49,6 +49,7 @@ void PartyData::hook_to_beat(seerin::BeatBus &gc_beat_bus) {
       gc_beat_bus.subscribe<seerin::Beat>([this](const seerin::Beat &) {
         // Beat{} on both sides, as requested:
         // log_->append_markup("PartyData received beat");
+        if (in_raid()) return;
         party_beat_bus_.emit(seerin::Beat{});
         party_loop_machine_->beat_event();
       });
@@ -94,7 +95,7 @@ void PartyData::start_town_penalty() {
 }
 
 void PartyData::leave_combat() {
-  if (!encounter_data_ || leaving_combat_) {
+  if (in_raid() || !encounter_data_ || leaving_combat_) {
     return;
   }
   leaving_combat_ = true;
@@ -108,7 +109,7 @@ void PartyData::leave_combat() {
 }
 
 void PartyData::summon_to_raid() {
-  if (!encounter_data_ || leaving_combat_) return;
+  if (in_raid() || !encounter_data_ || leaving_combat_) return;
   leaving_combat_ = true;
   party_bus_.emit(fl::events::PartyEvent{fl::events::PartySummonedToRaid{}});
   cleanup_encounter();
@@ -119,6 +120,13 @@ void PartyData::cleanup_encounter() {
   // Status lifetime listeners require the old encounter/scheduler to remain
   // alive while they disconnect and clear their owned effect entities.
   party_bus_.emit(fl::events::PartyEvent{fl::events::PartyLeftCombat{}});
+  clear_combat_visuals();
+  encounter_data_->clear_pending_events();
+  encounter_data_->finalize();
+  encounter_data_.reset();
+}
+
+void PartyData::clear_combat_visuals() {
   using namespace fl::ecs::components;
   for (const auto &member : members_) {
     auto entity = member.member_id();
@@ -128,9 +136,23 @@ void PartyData::cleanup_encounter() {
         ResolvedColorOverride, ResolvedHPBarColorOverride,
         ResolvedBackgroundColorOverride>(entity);
   }
-  encounter_data_->clear_pending_events();
-  encounter_data_->finalize();
-  encounter_data_.reset();
+}
+
+void PartyData::join_raid(EncounterData &encounter) {
+  summon_to_raid();
+  raid_encounter_ = &encounter;
+}
+
+void PartyData::resolve_raid(bool victory) {
+  if (!in_raid()) return;
+  party_bus_.emit(fl::events::PartyEvent{fl::events::PartyRaidResolved{victory}});
+  if (victory) party_bus_.emit(fl::events::PartyEvent{fl::events::PartyVictory{}});
+  party_bus_.emit(fl::events::PartyEvent{fl::events::PartyLeftCombat{}});
+  raid_encounter_ = nullptr;
+  clear_combat_visuals();
+  party_loop_machine_ = std::make_unique<fl::fsm::PartyLoopMachine>(party_ctx_);
+  if (all_members_dead())
+    party_bus_.emit(fl::events::PartyEvent{fl::events::PartyWiped{}});
 }
 
 void PartyData::watch_skill_learned_this_combat(entt::entity member,
@@ -146,7 +168,14 @@ void PartyData::watch_skill_learned_this_combat(entt::entity member,
   it->wipe_sub = fl::events::ScopedPartyListener{
       party_bus_, std::in_place_type<fl::events::PartyWiped>,
       [this, it](const fl::events::PartyWiped &) {
+        if (in_raid()) return;
         resolve_pending_learned_skill(it, false);
+      }};
+
+  it->raid_resolved_sub = fl::events::ScopedPartyListener{
+      party_bus_, std::in_place_type<fl::events::PartyRaidResolved>,
+      [this, it](const fl::events::PartyRaidResolved &event) {
+        resolve_pending_learned_skill(it, event.victory);
       }};
 
   it->summoned_sub = fl::events::ScopedPartyListener{
@@ -174,6 +203,7 @@ void PartyData::resolve_pending_learned_skill(
   it->wipe_sub.reset();
   it->victory_sub.reset();
   it->summoned_sub.reset();
+  it->raid_resolved_sub.reset();
   pending_learned_skills_.erase(it);
 
   if (keep_skill) {

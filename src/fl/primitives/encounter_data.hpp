@@ -75,9 +75,11 @@ public:
   const seerin::AtbOutBus &atb_out() const noexcept { return rt_.atb_.out(); }
 
   // ---- behavior ----
-  bool has_alive_enemies();
-  bool is_over();
+  bool has_alive_enemies() const;
+  bool is_over() const;
   void finalize();
+  bool is_raid() const noexcept { return raid_; }
+  void mark_as_raid() noexcept { raid_ = true; }
   void clear_pending_events();
   void clear_active_turn_for(entt::entity id);
   void innervate_event_system();
@@ -141,6 +143,7 @@ private:
                           fl::events::CombatantBus &combatant_bus);
 
   fl::context::EncounterCtx context_;
+  bool raid_{false};
 };
 
 } // namespace fl::primitives

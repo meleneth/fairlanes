@@ -23,6 +23,7 @@ struct PartyLoopMachine::Impl {
             [this](const fl::events::PartyWiped &) { on_party_wiped(); }) {}
 
   void on_party_wiped() {
+    if (ctx->party_data().in_raid()) return;
     if (processing_beat_) {
       if (ctx != nullptr && ctx->party_data().has_encounter()) {
         ctx->party_data().encounter_data().clear_pending_events();
@@ -35,6 +36,7 @@ struct PartyLoopMachine::Impl {
   }
 
   void beat_event() {
+    if (ctx->party_data().in_raid()) return;
     processing_beat_ = true;
     sm_.process_event(fl::fsm::NextEvent{});
     processing_beat_ = false;
