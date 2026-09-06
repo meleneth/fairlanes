@@ -48,6 +48,10 @@ ftxui::Element RaidView::Render() {
     boss_rows.push_back(text(result == fl::events::RaidResult::Victory ? "VICTORY" :
         result == fl::events::RaidResult::MutualDestruction ? "WIPE - MUTUAL DESTRUCTION" : "WIPE") | bold);
     boss_rows.push_back(text("This Visitor is spent. No retries."));
+    if (result == fl::events::RaidResult::Victory)
+      boss_rows.push_back(text("Two exclusive trinkets awarded to every party."));
+    if (result == fl::events::RaidResult::MutualDestruction)
+      boss_rows.push_back(text("Raid mutual-destruction achievement fulfilled."));
   }
   Elements rows;
   std::size_t party_index = 0;

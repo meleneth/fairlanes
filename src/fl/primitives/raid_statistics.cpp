@@ -3,6 +3,12 @@ namespace fl::primitives {
 RaidStatistics::RaidStatistics(fl::events::RaidBus &bus, entt::entity account, bool enabled)
     : bus_(bus), account_(account) {
   if (!enabled) return;
+  loot_sub_ = fl::events::ScopedRaidListener{bus_, std::in_place_type<fl::events::RaidLootAwarded>,
+      [this](const auto &event) {
+        if (event.account != account_ || event.id != last_started_ || event.id <= last_awarded_) return;
+        last_awarded_ = event.id;
+        records_.trinkets_awarded += event.items;
+      }};
   start_sub_ = fl::events::ScopedRaidListener{bus_, std::in_place_type<fl::events::RaidStarted>,
       [this](const auto &event) { started(event); }};
   resolved_sub_ = fl::events::ScopedRaidListener{bus_, std::in_place_type<fl::events::RaidResolved>,

@@ -9,6 +9,7 @@ struct RaidRecords {
   std::uint64_t mutual_destructions{0}; // subset of defeats
   std::uint64_t party_participations{0};
   std::uint64_t party_victory_credits{0};
+  std::uint64_t trinkets_awarded{0};
   std::uint64_t combat_beats{0}; // completed raids only
 };
 
@@ -23,7 +24,7 @@ private:
   fl::events::RaidBus &bus_;
   entt::entity account_;
   RaidRecords records_;
-  std::uint64_t last_started_{0}, last_resolved_{0};
-  fl::events::ScopedRaidListener start_sub_, resolved_sub_;
+  std::uint64_t last_started_{0}, last_resolved_{0}, last_awarded_{0};
+  fl::events::ScopedRaidListener start_sub_, resolved_sub_, loot_sub_;
 };
 } // namespace fl::primitives

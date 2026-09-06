@@ -1,4 +1,5 @@
 #include "fl/primitives/raid_data.hpp"
+#include "fl/ecs/systems/raid_loot.hpp"
 
 #include "fl/ecs/components/field_debuff.hpp"
 #include "fl/primitives/account_data.hpp"
@@ -106,6 +107,7 @@ void RaidData::resolve(fl::events::RaidResult result) {
   result_ = result;
   cleanup();
   const bool victory = result == fl::events::RaidResult::Victory;
+  if (victory) fl::ecs::systems::RaidLootSystem::commit(ctx_, events_, id_, parties_);
   for (auto *party : parties_)
     party->resolve_raid(victory);
   ctx_.log().append_plain(victory ? "Raid victory!"

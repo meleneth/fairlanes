@@ -197,5 +197,6 @@ disables progress subscriptions separately from discovery and Visitor timing.
 Tests exercise real shared outcomes, duplicate delivery, five-party win credit,
 mutual destruction across accounts, exclusion from demos, notification ordering,
 and the initial generated Visitor fight running to completion through world beats.
-No damage, healing, ordinary encounter-win, item-award, or persistence counters
-are claimed by this slice.
+`RaidLootAwarded` now records actually granted exclusive trinkets once per raid,
+after inventory mutation. No damage, healing, ordinary encounter-win, general
+item-award, or persistence counters are claimed by this slice.

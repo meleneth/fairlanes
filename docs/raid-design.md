@@ -1,9 +1,10 @@
 # Account raids: design requirements
 
-Status: design in progress, recorded 2026-09-06. These requirements describe
-planned behavior; account raids are not implemented. Settle the open decisions
-before implementing their dependent mechanics. This document is the working
-reference for subsequent raid design discussions.
+Status: initial implementation running, 2026-09-06. Shared account combat,
+automatic Visitor arrivals, paused account calendars, initial boss content and
+presentation, exclusive collectible drops, and event-driven records are implemented.
+Progression-gate policy, trinket effects, persistence, and richer presentation remain
+open. The implementation sections below distinguish working behavior from plans.
 
 ## Confirmed encounter and outcome rules
 
@@ -407,10 +408,10 @@ town recovery penalty afterward; there is no instant revival. Account-scoped
 `RaidStarted` / `RaidResolved` events are ready for statistics subscribers.
 
 Normal kill loot/XP is suppressed inside raids so a boss cannot accidentally
-roll the ordinary loot table. Raid reward grants are the next integration step.
+roll the ordinary loot table. Collective victory now grants the initial exclusive
+trinket rewards described below.
 Flee cannot extract combatants from this shared encounter: raids end only through
-the collective outcome rules. Automatic Visitor timing is now wired; the dedicated screen remains the next
-presentation slice.
+the collective outcome rules. Automatic Visitor timing and the first dedicated screen are now wired.
 
 ### Initial Visitor content
 
@@ -447,3 +448,19 @@ and shows the consumed-arrival-aware countdown to the next Visitor.
 Root moon chrome now reads the selected account calendar. Its generic day-level
 Visitor phase label still represents celestial phase; the raid countdown is the
 precise remaining delay to the next unconsumed arrival.
+
+### Initial exclusive drops
+
+Collective victory grants exactly two `RaidTrinket` entities into each participating
+party's inventory, including wiped parties. These are initial collectible trinkets,
+shown as exclusive in inventory. They have raid/account provenance and cannot be
+rolled by the ordinary loot table, equipped, upgraded, or consumed by gearing.
+An equipment slot, stat effects, individual named variants, and their balance remain
+future content decisions. This establishes the drop quantity and ownership without
+silently assigning a combat bonus.
+
+`RaidLootSystem` commits all inventory grants before emitting `RaidLootAwarded`;
+account statistics subscribe to the actual-award fact. One resolution grants ten
+items for five parties; repeat ticks and duplicate event delivery do not grant or
+count them again. Defeat and mutual destruction grant none. Ordinary boss kill
+loot remains suppressed, and the dedicated reward path does not grant ordinary XP.
