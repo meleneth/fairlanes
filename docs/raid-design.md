@@ -19,6 +19,18 @@ reference for subsequent raid design discussions.
 - If the last enemies and characters die together, outcome precedence remains
   an open decision; do not let callback ordering decide it accidentally.
 
+## Confirmed arrival condition
+
+Characters enter the automatic Visitor raid with their **current HP and statuses**.
+Do not restore HP, revive dead characters, cleanse debuffs, or refresh status
+budgets simply because the raid begins. Preserve the current state when handing
+participants from party encounters to the shared raid. Exact transfer of pending
+actions, timed status callbacks, and other encounter-local work still needs design;
+retaining a status component alone is insufficient if its behavior loses its clock.
+An already-dead party enters dead and can still receive shared victory credit.
+The case where all characters are dead at arrival needs an explicit resolution
+consistent with the collective defeat rule.
+
 ## Raid-exclusive rewards
 
 Start with **two drops per participating party**: a standard five-party raid
@@ -167,7 +179,8 @@ identity for progression and reward semantics while resolving combat collectivel
 ## Open decisions for the next discussion
 
 - At automatic Visitor arrival, what happens to parties already farming,
-  recovering, or otherwise occupied? Do existing HP and statuses carry in?
+  recovering, or otherwise occupied? HP and statuses carry in; settle how pending
+  actions, recovery work, and status timing transfer or stop.
 - Are retries immediate, limited, or deferred until another convergence?
 - Is the initial convergence immediate, delayed by a full interval, or tied to
   account readiness? What happens while the application is closed?

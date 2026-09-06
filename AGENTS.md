@@ -517,11 +517,14 @@ progression Cycles in addition to recurring celestial encounters. Account-calend
 pause during raids is a design direction. Visitor arrival automatically triggers
 the raid and cannot be banked. The dedicated screen gives the boss the top third
 and all five parties their own lines in the bottom two thirds simultaneously.
-Arrival handoff, targeting, retries, and reward distribution remain open. Update this document as decisions settle;
+Characters carry current HP and statuses into the raid; there is no entry heal
+or cleanse. Transfer of pending actions/status timing, targeting, retries, and
+reward distribution remain open. Update this document as decisions settle;
 do not treat proposed policies as implemented behavior.
 
 `docs/statistics-achievements-design.md` starts the statistics/achievement design.
 No runtime tracker or achievement system exists yet. Proposed foundations count
 resolved gameplay facts, keep shared raid results separate from party credit,
-and exclude attract-demo activity. Scope, persistence, and achievement rewards
-remain open; do not treat proposals as settled requirements.
+and exclude attract-demo activity. Per-account records and save-wide milestones are both required. Persistence,
+specific milestones, and achievement rewards remain open; do not treat other
+proposals as settled requirements.

@@ -6,6 +6,15 @@ No gameplay statistics tracker or achievement system was found in
 the current implementation. The contracts and milestones below are proposals
 for review, not implemented features or finalized achievement content.
 
+## Confirmed scope
+
+Support both **per-account records** and **save-wide milestones**. Account records
+retain their own statistics and attribution; save-wide milestones can recognize
+progress across accounts. Decide individual achievement definitions and any
+additional account-local unlocks explicitly. A shared raid contributes one account
+outcome and one corresponding outcome to save-wide aggregation, not five wins
+because five parties received credit.
+
 ## Purpose and separation
 
 Statistics answer what happened and how much. Achievements recognize named
@@ -38,8 +47,8 @@ Do not invent empty raid events just to make a tracker appear integrated.
 ## Proposed ownership and records
 
 Use data-oriented account records with encounter summaries and optional party
-and character breakdowns. Define global rollups only after deciding whether
-achievements belong to the player/save or to each account. Do not count a single
+and character breakdowns, plus save-wide milestone state. Keep ownership and
+aggregation explicit across these two confirmed scopes. Do not count a single
 shared raid five times when aggregating party participation into account totals.
 
 Snapshot attribution while participants exist: account, home party, character,
@@ -97,7 +106,9 @@ by the raid reward contract.
 
 ## Open decisions
 
-- Are statistics and achievements per account, per save/player, or both?
+- Which specific milestones aggregate across accounts, and which achievements
+  also have account-local unlocks? Both account records and save-wide milestones
+  are required.
 - Must the first implementation persist across restarts? What is the save owner,
   format/versioning policy, and behavior for old saves with no recorded history?
 - Which measurements matter first, and which breakdowns/retention are useful?
@@ -110,7 +121,8 @@ by the raid reward contract.
 
 ## Proposed implementation sequence
 
-1. Choose ownership, persistence scope, and the first small metric set. Document
+1. Define owners for account records and save-wide milestones, choose persistence
+   scope and the first small metric set. Document
    the units and exact counting contracts before implementing counters.
 2. Add a focused statistics model and repair/add the necessary authoritative
    producers. Wire scoped listeners in normal gameplay, excluding attract mode.
