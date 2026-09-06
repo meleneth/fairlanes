@@ -104,24 +104,20 @@ int total_damage(const fl::primitives::Damage &damage) {
          damage.lightning;
 }
 
-std::optional<fl::context::PartyCtx> party_ctx_for_combatant(
+fl::context::EncounterCtx *party_ctx_for_combatant(
     entt::registry &reg, entt::entity first, entt::entity second) {
-  if (auto *member = reg.try_get<fl::ecs::components::PartyMember>(first)) {
-    return member->party().party_data().party_ctx();
+  for (auto entity : {first, second}) {
+    if (auto *member = reg.try_get<fl::ecs::components::PartyMember>(entity)) {
+      auto &party = member->party().party_data();
+      if (party.has_encounter()) return &party.encounter_data().context();
+    }
   }
-  if (auto *member = reg.try_get<fl::ecs::components::PartyMember>(second)) {
-    return member->party().party_data().party_ctx();
-  }
-  return std::nullopt;
+  return nullptr;
 }
 
-std::optional<FieldTeam> team_for(fl::context::PartyCtx &party_ctx,
+std::optional<FieldTeam> team_for(fl::context::EncounterCtx &party_ctx,
                                   entt::entity entity) {
-  if (!party_ctx.party_data().has_encounter()) {
-    return std::nullopt;
-  }
-
-  auto &encounter = party_ctx.party_data().encounter_data();
+  auto &encounter = party_ctx.encounter();
   if (encounter.attackers().contains(entity)) {
     return FieldTeam::Attackers;
   }
@@ -131,14 +127,14 @@ std::optional<FieldTeam> team_for(fl::context::PartyCtx &party_ctx,
   return std::nullopt;
 }
 
-std::string name_for(fl::context::PartyCtx &party_ctx, entt::entity entity) {
+std::string name_for(fl::context::EncounterCtx &party_ctx, entt::entity entity) {
   return std::string{party_ctx.log().name_tag_for(
       entt::handle{party_ctx.reg(), entity})};
 }
 
 } // namespace
 
-bool CombatStatusSystem::apply_status(fl::context::PartyCtx &party_ctx,
+bool CombatStatusSystem::apply_status(fl::context::EncounterCtx &party_ctx,
                                       Scheduler &scheduler,
                                       const ApplyStatusRequest &request) {
   auto &reg = party_ctx.reg();
@@ -206,7 +202,7 @@ bool CombatStatusSystem::apply_status(fl::context::PartyCtx &party_ctx,
   return true;
 }
 
-void CombatStatusSystem::clear_status_by_id(fl::context::PartyCtx &party_ctx,
+void CombatStatusSystem::clear_status_by_id(fl::context::EncounterCtx &party_ctx,
                                             entt::entity target,
                                             int status_id) {
   auto &reg = party_ctx.reg();
@@ -220,7 +216,7 @@ void CombatStatusSystem::clear_status_by_id(fl::context::PartyCtx &party_ctx,
   }
 
   auto remove_one = [&](CombatStatusEffect &effect) {
-    auto &scheduler = party_ctx.party_data().encounter_data().atb_engine().scheduler();
+    auto &scheduler = party_ctx.encounter().atb_engine().scheduler();
     StatusEffectLifetime lifetime{party_ctx, scheduler, effect.effect};
     lifetime.clear_scheduled();
     lifetime.destroy_instance_entity();
@@ -249,7 +245,7 @@ void CombatStatusSystem::clear_status_by_id(fl::context::PartyCtx &party_ctx,
   }
 }
 
-bool CombatStatusSystem::clear_status(fl::context::PartyCtx &party_ctx,
+bool CombatStatusSystem::clear_status(fl::context::EncounterCtx &party_ctx,
                                       entt::entity target,
                                       CombatStatusKind kind) {
   auto &reg = party_ctx.reg();
@@ -288,7 +284,7 @@ bool CombatStatusSystem::can_use_skill(entt::registry &reg, entt::entity actor,
   return true;
 }
 
-bool CombatStatusSystem::consume_stun_turn(fl::context::PartyCtx &party_ctx,
+bool CombatStatusSystem::consume_stun_turn(fl::context::EncounterCtx &party_ctx,
                                            entt::entity actor) {
   auto &reg = party_ctx.reg();
   auto *stun = find_status(reg, actor, CombatStatusKind::Stun);
@@ -372,7 +368,7 @@ void CombatStatusSystem::apply_damage_modifiers(fl::context::AttackCtx &ctx,
   }
 }
 
-int CombatStatusSystem::heal(fl::context::PartyCtx &party_ctx,
+int CombatStatusSystem::heal(fl::context::EncounterCtx &party_ctx,
                              entt::entity source, entt::entity target,
                              int amount, std::string_view label) {
   auto &reg = party_ctx.reg();
@@ -397,7 +393,7 @@ int CombatStatusSystem::heal(fl::context::PartyCtx &party_ctx,
   return healed;
 }
 
-int CombatStatusSystem::drain(fl::context::PartyCtx &party_ctx,
+int CombatStatusSystem::drain(fl::context::EncounterCtx &party_ctx,
                               entt::entity source, entt::entity target,
                               fl::primitives::Damage damage, int heal_percent,
                               std::string_view label) {
@@ -416,7 +412,7 @@ int CombatStatusSystem::drain(fl::context::PartyCtx &party_ctx,
               label);
 }
 
-int CombatStatusSystem::cleanse(fl::context::PartyCtx &party_ctx,
+int CombatStatusSystem::cleanse(fl::context::EncounterCtx &party_ctx,
                                 entt::entity source, entt::entity target) {
   auto &reg = party_ctx.reg();
   if (!reg.valid(source) || !reg.valid(target)) {
@@ -456,7 +452,7 @@ int CombatStatusSystem::cleanse(fl::context::PartyCtx &party_ctx,
   return removed;
 }
 
-void CombatStatusSystem::schedule_burn_tick(fl::context::PartyCtx &party_ctx,
+void CombatStatusSystem::schedule_burn_tick(fl::context::EncounterCtx &party_ctx,
                                             Scheduler &scheduler,
                                             entt::entity target,
                                             int status_id) {
@@ -505,7 +501,7 @@ void CombatStatusSystem::schedule_burn_tick(fl::context::PartyCtx &party_ctx,
 }
 
 void CombatStatusSystem::clear_field_debuff_by_id(
-    fl::context::PartyCtx &party_ctx, int field_id) {
+    fl::context::EncounterCtx &party_ctx, int field_id) {
   auto &reg = party_ctx.reg();
   auto *field = reg.try_get<FieldDebuffs>(party_ctx.self());
   if (field == nullptr) {
@@ -523,7 +519,7 @@ void CombatStatusSystem::clear_field_debuff_by_id(
   const auto effect_id = it->effect_id;
   const auto name = it->name;
   if (effect_id != entt::null) {
-    auto &scheduler = party_ctx.party_data().encounter_data().atb_engine().scheduler();
+    auto &scheduler = party_ctx.encounter().atb_engine().scheduler();
     scheduler.clear_smelly_callbacks_for(effect_id);
     if (reg.valid(effect_id)) {
       reg.destroy(effect_id);
@@ -539,7 +535,7 @@ void CombatStatusSystem::clear_field_debuff_by_id(
   }
 }
 
-void CombatStatusSystem::apply_field_debuff(fl::context::PartyCtx &party_ctx,
+void CombatStatusSystem::apply_field_debuff(fl::context::EncounterCtx &party_ctx,
                                             const FieldDebuffRequest &request) {
   auto &reg = party_ctx.reg();
   auto &field = reg.get_or_emplace<FieldDebuffs>(party_ctx.self());
@@ -550,7 +546,7 @@ void CombatStatusSystem::apply_field_debuff(fl::context::PartyCtx &party_ctx,
                          });
   if (it != field.effects.end()) {
     if (it->effect_id != entt::null) {
-      auto &scheduler = party_ctx.party_data().encounter_data().atb_engine().scheduler();
+      auto &scheduler = party_ctx.encounter().atb_engine().scheduler();
       scheduler.clear_smelly_callbacks_for(it->effect_id);
       if (reg.valid(it->effect_id)) {
         reg.destroy(it->effect_id);
@@ -575,7 +571,7 @@ void CombatStatusSystem::apply_field_debuff(fl::context::PartyCtx &party_ctx,
                                             request.name));
 }
 
-void CombatStatusSystem::apply_field_debuff(fl::context::PartyCtx &party_ctx,
+void CombatStatusSystem::apply_field_debuff(fl::context::EncounterCtx &party_ctx,
                                             Scheduler &scheduler,
                                             const FieldDebuffRequest &request) {
   auto &reg = party_ctx.reg();
@@ -625,13 +621,13 @@ void CombatStatusSystem::apply_field_debuff(fl::context::PartyCtx &party_ctx,
       });
 }
 
-bool CombatStatusSystem::has_field_debuff(fl::context::PartyCtx &party_ctx,
+bool CombatStatusSystem::has_field_debuff(fl::context::EncounterCtx &party_ctx,
                                           FieldTeam team,
                                           FieldDebuffKind kind) {
   return field_debuff_value(party_ctx, team, kind) > 0;
 }
 
-int CombatStatusSystem::field_debuff_value(fl::context::PartyCtx &party_ctx,
+int CombatStatusSystem::field_debuff_value(fl::context::EncounterCtx &party_ctx,
                                            FieldTeam team,
                                            FieldDebuffKind kind) {
   const auto *field = party_ctx.reg().try_get<FieldDebuffs>(party_ctx.self());

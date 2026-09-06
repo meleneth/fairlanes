@@ -35,7 +35,7 @@ int ticks_for_duration(int duration_seconds) {
 } // namespace
 
 fl::events::ScopedCombatantListener
-PoisonSystem::bind_apply_listener(fl::context::PartyCtx &party_ctx,
+PoisonSystem::bind_apply_listener(fl::context::EncounterCtx &party_ctx,
                                   fl::events::CombatantBus &combatant_bus,
                                   Scheduler &scheduler) {
   return fl::events::ScopedCombatantListener{
@@ -46,7 +46,7 @@ PoisonSystem::bind_apply_listener(fl::context::PartyCtx &party_ctx,
       }};
 }
 
-void PoisonSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
+void PoisonSystem::apply(fl::context::EncounterCtx &party_ctx, Scheduler &scheduler,
                          entt::entity source, entt::entity target,
                          int damage_per_tick, int duration_seconds) {
   auto &reg = party_ctx.reg();
@@ -66,7 +66,7 @@ void PoisonSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
 
   auto &poison = replace_status_effect<fl::ecs::components::Poison>(
       party_ctx, target,
-      [](fl::context::PartyCtx &ctx, entt::entity status_target) {
+      [](fl::context::EncounterCtx &ctx, entt::entity status_target) {
         PoisonSystem::clear(ctx, status_target);
       },
       [source, damage_per_tick,
@@ -95,7 +95,7 @@ void PoisonSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
   schedule_tick(party_ctx, scheduler, target);
 }
 
-void PoisonSystem::schedule_tick(fl::context::PartyCtx &party_ctx,
+void PoisonSystem::schedule_tick(fl::context::EncounterCtx &party_ctx,
                                  Scheduler &scheduler, entt::entity target) {
   auto *scheduled_poison =
       party_ctx.reg().try_get<fl::ecs::components::Poison>(target);
@@ -155,7 +155,7 @@ void PoisonSystem::schedule_tick(fl::context::PartyCtx &party_ctx,
       });
 }
 
-void PoisonSystem::schedule_visual_pulse(fl::context::PartyCtx &party_ctx,
+void PoisonSystem::schedule_visual_pulse(fl::context::EncounterCtx &party_ctx,
                                          Scheduler &scheduler,
                                          entt::entity target, bool bright) {
   auto *scheduled_poison =
@@ -183,7 +183,7 @@ void PoisonSystem::schedule_visual_pulse(fl::context::PartyCtx &party_ctx,
       });
 }
 
-void PoisonSystem::clear(fl::context::PartyCtx &party_ctx,
+void PoisonSystem::clear(fl::context::EncounterCtx &party_ctx,
                          entt::entity target) {
   auto &reg = party_ctx.reg();
   if (!reg.valid(target)) {
@@ -196,7 +196,7 @@ void PoisonSystem::clear(fl::context::PartyCtx &party_ctx,
   }
 
   auto &scheduler =
-      party_ctx.party_data().encounter_data().atb_engine().scheduler();
+      party_ctx.encounter().atb_engine().scheduler();
   StatusEffectLifetime lifetime{party_ctx, scheduler, poison->effect};
   lifetime.clear_scheduled();
   lifetime.destroy_instance_entity();

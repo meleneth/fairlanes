@@ -383,3 +383,13 @@ identity for progression and reward semantics while resolving combat collectivel
 
 The initial design pass is now followed by incremental implementation; the
 progress sections above distinguish working foundations from remaining raid work.
+
+### Encounter authority foundation
+
+Combat execution now uses `EncounterCtx`, owned by `EncounterData`. It exposes
+registry, RNG, scoped log/bus, field-effect owner, and the encounter directly.
+`PartyCtx::encounter_context()` (also its conversion to `EncounterCtx&`) borrows
+the party's active encounter context. Normal fights retain their party log and
+bus. Independently owned encounters can supply their own log, bus, owner entity,
+and tick source. Skill sequencing and status lifetimes no longer need a home
+party to reach the scheduler. These contexts must not outlive their encounter.

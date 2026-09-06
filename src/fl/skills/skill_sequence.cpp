@@ -52,7 +52,7 @@ int thump_rank_tempo_offset(SkillKey skill) noexcept {
   return skill.rank.value() - SkillRank::kMin;
 }
 
-void add_skill_decal(fl::context::PartyCtx &party_ctx, entt::entity target,
+void add_skill_decal(fl::context::EncounterCtx &party_ctx, entt::entity target,
                      seerin::uWu expires_at, SkillKey skill) {
   const auto kind = decal_animation_for(skill);
   if (!kind.has_value() || !party_ctx.reg().valid(target)) {
@@ -70,7 +70,7 @@ void add_skill_decal(fl::context::PartyCtx &party_ctx, entt::entity target,
           decal_extra_height(*kind)});
 }
 
-void add_hitpoint_number_decal(fl::context::PartyCtx &party_ctx,
+void add_hitpoint_number_decal(fl::context::EncounterCtx &party_ctx,
                                entt::entity target, ftxui::Color color,
                                int hitpoints) {
   fl::widgets::effects::DecalConfig config;
@@ -87,12 +87,12 @@ void add_hitpoint_number_decal(fl::context::PartyCtx &party_ctx,
           kHitpointNumberExtraHeight});
 }
 
-bool eligible_target(fl::context::PartyCtx &ctx, entt::entity actor,
+bool eligible_target(fl::context::EncounterCtx &ctx, entt::entity actor,
                      entt::entity target, bool friendly) {
-  if (!ctx.party_data().has_encounter() || !ctx.reg().valid(actor)) return false;
+  if (!ctx.reg().valid(actor)) return false;
   const auto *stats = ctx.reg().try_get<fl::ecs::components::Stats>(actor);
   if (!stats || !stats->is_alive()) return false;
-  auto candidates = ctx.party_data().encounter_data().possible_targets();
+  auto candidates = ctx.encounter().possible_targets();
   auto range = friendly ? candidates.FriendlyPossibleTargets(actor)
                         : candidates.EnemyPossibleTargets(actor);
   for (auto candidate : range)
@@ -100,7 +100,7 @@ bool eligible_target(fl::context::PartyCtx &ctx, entt::entity actor,
   return false;
 }
 
-int apply_damage_skill(fl::context::PartyCtx &party_ctx, entt::entity attacker,
+int apply_damage_skill(fl::context::EncounterCtx &party_ctx, entt::entity attacker,
                        entt::entity target, SkillKey skill) {
   if (!eligible_target(party_ctx, attacker, target, false) ||
       !target_meets_skill_requirements(party_ctx.reg(), target, skill)) return 0;
@@ -108,14 +108,14 @@ int apply_damage_skill(fl::context::PartyCtx &party_ctx, entt::entity attacker,
   const int damage = thump.thump(
       fl::context::AttackCtx::make_attack(party_ctx, attacker, target), skill);
   if (damage > 0 && party_ctx.reg().valid(target)) {
-    party_ctx.party_data().encounter_data().combatant_bus(target).emit(
+    party_ctx.encounter().combatant_bus(target).emit(
         fl::events::CombatantEvent{
             fl::events::SkillHitLanded{attacker, target, skill, damage}});
   }
   return damage;
 }
 
-void apply_status_detonation(fl::context::PartyCtx &ctx, entt::entity attacker,
+void apply_status_detonation(fl::context::EncounterCtx &ctx, entt::entity attacker,
                              entt::entity target, SkillKey skill) {
   const auto *actor_stats =
       ctx.reg().try_get<fl::ecs::components::Stats>(attacker);
@@ -134,23 +134,23 @@ void apply_status_detonation(fl::context::PartyCtx &ctx, entt::entity attacker,
       fmt::format("[ability]({}) detonated for [error]({}) damage.",
                   display_name(skill), dealt));
   if (dealt > 0) {
-    ctx.party_data().encounter_data().combatant_bus(target).emit(
+    ctx.encounter().combatant_bus(target).emit(
         fl::events::CombatantEvent{
             fl::events::SkillHitLanded{attacker, target, skill, dealt}});
   }
 }
 
 std::vector<entt::entity>
-opposing_alive_targets(fl::context::PartyCtx &party_ctx,
+opposing_alive_targets(fl::context::EncounterCtx &party_ctx,
                        entt::entity attacker) {
-  auto &encounter = party_ctx.party_data().encounter_data();
+  auto &encounter = party_ctx.encounter();
   return fl::targeting::snapshot_targets(
       encounter.possible_targets().EnemyPossibleTargets(attacker));
 }
 
-std::vector<entt::entity> allied_alive_targets(fl::context::PartyCtx &party_ctx,
+std::vector<entt::entity> allied_alive_targets(fl::context::EncounterCtx &party_ctx,
                                                entt::entity actor) {
-  auto &encounter = party_ctx.party_data().encounter_data();
+  auto &encounter = party_ctx.encounter();
   return fl::targeting::snapshot_targets(
       encounter.possible_targets().FriendlyPossibleTargets(actor));
 }
@@ -188,14 +188,14 @@ bool is_wired_status_skill(SkillKey skill) noexcept {
 }
 
 fl::ecs::components::FieldTeam
-enemy_field_team(fl::context::PartyCtx &party_ctx, entt::entity actor) {
-  auto &encounter = party_ctx.party_data().encounter_data();
+enemy_field_team(fl::context::EncounterCtx &party_ctx, entt::entity actor) {
+  auto &encounter = party_ctx.encounter();
   return encounter.attackers().contains(actor)
              ? fl::ecs::components::FieldTeam::Defenders
              : fl::ecs::components::FieldTeam::Attackers;
 }
 
-void apply_wired_skill_effect(fl::context::PartyCtx &party_ctx,
+void apply_wired_skill_effect(fl::context::EncounterCtx &party_ctx,
                               SkillSequencer::Scheduler &scheduler,
                               entt::entity attacker, entt::entity target,
                               SkillKey skill) {
@@ -466,7 +466,7 @@ void apply_wired_skill_effect(fl::context::PartyCtx &party_ctx,
   }
 }
 
-int apply_healing(fl::context::PartyCtx &party_ctx, entt::entity healer,
+int apply_healing(fl::context::EncounterCtx &party_ctx, entt::entity healer,
                   entt::entity target, SkillKey skill, int heal_amount) {
   if (!eligible_target(party_ctx, healer, target, true)) {
     return 0;
@@ -496,7 +496,7 @@ int apply_healing(fl::context::PartyCtx &party_ctx, entt::entity healer,
 
 } // namespace
 
-SkillSequencer::SkillSequencer(fl::context::PartyCtx &party_ctx,
+SkillSequencer::SkillSequencer(fl::context::EncounterCtx &party_ctx,
                                Scheduler &scheduler, FinishTurnFn finish_turn)
     : party_ctx_(party_ctx), scheduler_(scheduler),
       finish_turn_(std::move(finish_turn)) {}
@@ -683,7 +683,7 @@ void SkillSequencer::schedule_poison(entt::entity attacker,
   scheduler_.schedule_smelly_in_beats_for(
       24, attacker, "poison: apply and finish",
       [&party_ctx = party_ctx_, finish_turn, attacker, target] {
-        party_ctx.party_data().encounter_data().combatant_bus(target).emit(
+        party_ctx.encounter().combatant_bus(target).emit(
             fl::events::CombatantEvent{
                 fl::events::PoisonApplied{attacker, target, 1, 27}});
         finish_turn(attacker);
@@ -708,7 +708,7 @@ void SkillSequencer::schedule_cold_snap(entt::entity attacker,
   scheduler_.schedule_smelly_in_beats_for(
       24, attacker, "cold snap: apply freeze and finish",
       [&party_ctx = party_ctx_, finish_turn, attacker, target] {
-        party_ctx.party_data().encounter_data().combatant_bus(target).emit(
+        party_ctx.encounter().combatant_bus(target).emit(
             fl::events::CombatantEvent{
                 fl::events::FreezeApplied{attacker, target, 30}});
         finish_turn(attacker);
@@ -871,7 +871,7 @@ void SkillSequencer::schedule_flame_wave(entt::entity attacker) {
 
   teach_party_from_observed_skill(party_ctx_, attacker, SkillId::FlameWave);
 
-  auto &encounter = party_ctx_.party_data().encounter_data();
+  auto &encounter = party_ctx_.encounter();
   const auto targets = fl::targeting::snapshot_targets(
       encounter.possible_targets().EnemyPossibleTargets(attacker));
 
@@ -1066,7 +1066,7 @@ void SkillSequencer::schedule_flee(entt::entity attacker, SkillKey skill) {
   scheduler_.schedule_smelly_in_beats(
       1, "flee: resolve",
       [&party_ctx = party_ctx_, attacker, flee_chance, roll, success] {
-        party_ctx.party_data().encounter_data().combatant_bus(attacker).emit(
+        party_ctx.encounter().combatant_bus(attacker).emit(
             fl::events::CombatantEvent{fl::events::FleeAttempted{
                 attacker, flee_chance, roll, success}});
 
@@ -1074,9 +1074,7 @@ void SkillSequencer::schedule_flee(entt::entity attacker, SkillKey skill) {
           return;
         }
 
-        auto *encounter = party_ctx.party_data().has_encounter()
-                              ? &party_ctx.party_data().encounter_data()
-                              : nullptr;
+        auto *encounter = &party_ctx.encounter();
         if (encounter == nullptr) {
           return;
         }
@@ -1088,7 +1086,7 @@ void SkillSequencer::schedule_flee(entt::entity attacker, SkillKey skill) {
         }
 
         encounter->clear_active_turn_for(attacker);
-        party_ctx.party_data().encounter_data().combatant_bus(attacker).emit(
+        party_ctx.encounter().combatant_bus(attacker).emit(
             fl::events::CombatantEvent{fl::events::CombatantFled{attacker}});
       });
 

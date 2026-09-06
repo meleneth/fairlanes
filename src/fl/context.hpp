@@ -11,6 +11,7 @@ namespace fl::primitives {
 class RandomHub;
 struct AccountData;
 struct PartyData;
+struct EncounterData;
 struct Damage; // only if you KEEP it as value you must include its header
 } // namespace fl::primitives
 
@@ -19,6 +20,7 @@ class FancyLog;
 }
 
 namespace fl::context {
+struct EncounterCtx;
 
 struct EntityCtx {
 public:
@@ -107,6 +109,9 @@ public:
     return *bus_;
   }
 
+  EncounterCtx &encounter_context() const;
+  operator EncounterCtx &() const { return encounter_context(); }
+
   entt::entity self() const;
   EntityCtx entity_context(entt::entity ent) const;
   BuildCtx build_context() const;
@@ -118,6 +123,30 @@ private:
   fl::primitives::PartyData *party_data_{};
   fl::widgets::FancyLog *log_{};
   fl::events::PartyBus *bus_{};
+};
+
+// Owned by EncounterData; borrowed only while that encounter lives. Its log,
+// bus and field-effect owner are encounter scoped, not necessarily party scoped.
+struct EncounterCtx {
+  EncounterCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
+               fl::widgets::FancyLog &log, fl::events::PartyBus &bus,
+               entt::entity owner, fl::primitives::EncounterData &encounter)
+      : reg_(&reg), rng_(&rng), log_(&log), bus_(&bus), owner_(owner), encounter_(&encounter) {}
+  entt::registry &reg() const { return *reg_; }
+  fl::primitives::RandomHub &rng() const { return *rng_; }
+  fl::widgets::FancyLog &log() const { return *log_; }
+  fl::events::PartyBus &bus() const { return *bus_; }
+  entt::entity self() const { return owner_; }
+  fl::primitives::EncounterData &encounter() const { return *encounter_; }
+  EntityCtx entity_context(entt::entity entity) const { return {reg(), rng(), log(), entity}; }
+  BuildCtx build_context() const { return {reg(), rng(), log()}; }
+private:
+  entt::registry *reg_;
+  fl::primitives::RandomHub *rng_;
+  fl::widgets::FancyLog *log_;
+  fl::events::PartyBus *bus_;
+  entt::entity owner_;
+  fl::primitives::EncounterData *encounter_;
 };
 
 struct AccountCtx {
@@ -187,6 +216,8 @@ public:
   const fl::primitives::Damage &damage() const { return damage_; }
 
   fl::context::EntityCtx entity_context(entt::entity e) const;
+  static AttackCtx make_attack(EncounterCtx &ctx, entt::entity attacker,
+                               entt::entity defender);
   static AttackCtx make_attack(PartyCtx &ctx, entt::entity attacker,
                                entt::entity defender);
 

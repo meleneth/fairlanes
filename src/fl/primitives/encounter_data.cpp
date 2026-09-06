@@ -68,7 +68,7 @@ void EncounterData::innervate_event_system() {
       [this](const seerin::BecameActive &ev) {
         ZoneScopedN("EncounterData::BecameActive");
         const entt::entity attacker = ev.id;
-        if (fl::ecs::systems::CombatStatusSystem::consume_stun_turn(*party_ctx_,
+        if (fl::ecs::systems::CombatStatusSystem::consume_stun_turn(context_,
                                                                     attacker)) {
           atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{attacker}});
           return;
@@ -78,8 +78,8 @@ void EncounterData::innervate_event_system() {
         const entt::entity target = decision ? decision->target : entt::null;
 
         if (target == entt::null) {
-          party_ctx_->log().append_markup(fmt::format(
-              "{} did nothing.", party_ctx_->reg()
+          context_.log().append_markup(fmt::format(
+              "{} did nothing.", context_.reg()
                                      .get<fl::ecs::components::Stats>(attacker)
                                      .name_));
 
@@ -88,7 +88,7 @@ void EncounterData::innervate_event_system() {
         }
 
         fl::skills::SkillSequencer sequencer{
-            *party_ctx_, rt_.atb_.scheduler(), [this](entt::entity entity) {
+            context_, rt_.atb_.scheduler(), [this](entt::entity entity) {
               atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{entity}});
             }};
         sequencer.schedule(attacker, target, decision->skill);
@@ -99,24 +99,24 @@ void EncounterData::innervate_event_system() {
 
 fl::skills::SkillKey EncounterData::choose_skill(entt::entity attacker) {
   ZoneScopedN("EncounterData::choose_skill");
-  return fl::skills::choose_skill(party_ctx_->reg(), party_ctx_->rng(),
+  return fl::skills::choose_skill(context_.reg(), context_.rng(),
                                   attacker);
 }
 
 std::optional<fl::monster::SkillDecision>
 EncounterData::choose_action(entt::entity actor) {
   if (const auto *monster =
-          party_ctx_->reg().try_get<fl::ecs::components::MonsterIdentity>(
+          context_.reg().try_get<fl::ecs::components::MonsterIdentity>(
               actor)) {
     const auto rules =
         fl::monster::generated_content::decision_rules(monster->kind);
     if (!rules.empty()) {
       auto allies = possible_targets().FriendlyPossibleTargets(actor);
       auto enemies = possible_targets().EnemyPossibleTargets(actor);
-      auto random = party_ctx_->rng().stream("encounter/monster-rule",
+      auto random = context_.rng().stream("encounter/monster-rule",
                                              entt::to_integral(actor));
       return fl::monster::evaluate_rules(
-          party_ctx_->reg(), actor, allies, enemies, rules,
+          context_.reg(), actor, allies, enemies, rules,
           [&random] { return random.uniform_int<int>(1, 100); });
     }
   }
@@ -127,14 +127,14 @@ EncounterData::choose_action(entt::entity actor) {
 entt::entity
 EncounterData::target_random_alive_opposition(entt::entity actor) const {
   return random_target(possible_targets().EnemyPossibleTargets(actor),
-                       party_ctx_->rng());
+                       context_.rng());
 }
 
 entt::entity EncounterData::target_for_skill(entt::entity actor,
                                              fl::skills::SkillKey skill) const {
   ZoneScopedN("EncounterData::target_for_skill");
   auto candidates = possible_targets();
-  if (!party_ctx_->reg().valid(actor) ||
+  if (!context_.reg().valid(actor) ||
       (!attackers().contains(actor) && !defenders().contains(actor)))
     return entt::null;
   if (fl::skills::has_tag(skill, fl::skills::SkillTag::Self)) {
@@ -145,7 +145,7 @@ entt::entity EncounterData::target_for_skill(entt::entity actor,
   }
   if (fl::skills::definition(skill).consumes_status) {
     for (auto candidate : candidates.EnemyPossibleTargets(actor)) {
-      if (fl::skills::target_meets_skill_requirements(party_ctx_->reg(),
+      if (fl::skills::target_meets_skill_requirements(context_.reg(),
                                                       candidate, skill))
         return candidate;
     }
@@ -156,7 +156,7 @@ entt::entity EncounterData::target_for_skill(entt::entity actor,
     int lowest_hp = 0;
     for (auto candidate : candidates.FriendlyPossibleTargets(actor)) {
       const auto hp =
-          party_ctx_->reg().get<fl::ecs::components::Stats>(candidate).hp_;
+          context_.reg().get<fl::ecs::components::Stats>(candidate).hp_;
       if (selected == entt::null || hp < lowest_hp) {
         selected = candidate;
         lowest_hp = hp;
@@ -169,7 +169,7 @@ entt::entity EncounterData::target_for_skill(entt::entity actor,
   if (cleanse) {
     auto eligible = candidates.FriendlyPossibleTargets(actor) |
                     std::views::filter([this](entt::entity target) {
-                      return has_cleansable_debuff(party_ctx_->reg(), target);
+                      return has_cleansable_debuff(context_.reg(), target);
                     });
     for (auto candidate : eligible)
       return candidate;
@@ -181,21 +181,21 @@ entt::entity EncounterData::target_for_skill(entt::entity actor,
       fl::skills::has_tag(skill, fl::skills::SkillTag::Buff);
   return random_target(friendly ? candidates.FriendlyPossibleTargets(actor)
                                 : candidates.EnemyPossibleTargets(actor),
-                       party_ctx_->rng());
+                       context_.rng());
 }
 
 void EncounterData::finalize() {
-  party_ctx_->log().append_markup(
+  context_.log().append_markup(
       fmt::format("Finalizing encounter with {} entities to clean up",
                   life_.entities_to_cleanup_.size()));
 
   for (auto e_cleanup : life_.entities_to_cleanup_) {
-    party_ctx_->reg().destroy(e_cleanup);
+    context_.reg().destroy(e_cleanup);
   }
 
-  party_ctx_->log().append_markup(
+  context_.log().append_markup(
       fmt::format("Encounter {} finalized and cleaned up",
-                  int(entt::to_integral(party_ctx_->self()))));
+                  int(entt::to_integral(context_.self()))));
 }
 
 void EncounterData::clear_pending_events() { rt_.atb_.clear_pending_events(); }
@@ -232,7 +232,7 @@ fl::events::CombatantBus &EncounterData::combatant_bus(entt::entity combatant) {
   }
 
   auto *member =
-      party_ctx_->reg().try_get<fl::ecs::components::PartyMember>(combatant);
+      context_.reg().try_get<fl::ecs::components::PartyMember>(combatant);
   if (member == nullptr) {
     fl::fail("combatant bus requested for an entity not enrolled as an enemy "
              "or party member");
@@ -247,7 +247,7 @@ EncounterData::combatant_bus(entt::entity combatant) const {
   }
 
   auto *member =
-      party_ctx_->reg().try_get<fl::ecs::components::PartyMember>(combatant);
+      context_.reg().try_get<fl::ecs::components::PartyMember>(combatant);
   if (member == nullptr) {
     fl::fail("combatant bus requested for an entity not enrolled as an enemy "
              "or party member");
@@ -286,10 +286,10 @@ void EncounterData::bind_combatant_bus(
 
   auto &wiring = wire_.combatant_wiring_.emplace_back();
   wiring.poison_apply_ = fl::ecs::systems::PoisonSystem::bind_apply_listener(
-      *party_ctx_, combatant_bus, rt_.atb_.scheduler());
+      context_, combatant_bus, rt_.atb_.scheduler());
 
   wiring.freeze_apply_ = fl::ecs::systems::FreezeSystem::bind_apply_listener(
-      *party_ctx_, combatant_bus, rt_.atb_.scheduler());
+      context_, combatant_bus, rt_.atb_.scheduler());
 
   wiring.freeze_started_ = fl::events::ScopedCombatantListener{
       combatant_bus, std::in_place_type<fl::events::FreezeStarted>,
@@ -310,11 +310,11 @@ bool EncounterData::has_alive_enemies() {
   using fl::ecs::components::Stats;
 
   for (auto e : life_.entities_to_cleanup_) {
-    if (!party_ctx_->reg().valid(e) || !party_ctx_->reg().all_of<Stats>(e)) {
+    if (!context_.reg().valid(e) || !context_.reg().all_of<Stats>(e)) {
       continue;
     }
 
-    auto &enemy = party_ctx_->reg().get<Stats>(e);
+    auto &enemy = context_.reg().get<Stats>(e);
     if (enemy.is_alive()) {
       return true;
     }
@@ -326,22 +326,28 @@ bool EncounterData::has_alive_enemies() {
 bool EncounterData::is_over() { return !has_alive_enemies(); }
 
 EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
-    : party_ctx_(party_ctx) {
-  rt_.atb_.bind_registry(party_ctx_->reg());
+    : EncounterData(party_ctx->reg(), party_ctx->rng(), party_ctx->log(),
+                    party_ctx->bus(), party_ctx->self()) {}
+
+EncounterData::EncounterData(entt::registry &reg, RandomHub &rng,
+    fl::widgets::FancyLog &log, fl::events::PartyBus &bus, entt::entity owner,
+    bool subscribe_to_party_ticks)
+    : context_(reg, rng, log, bus, owner, *this) {
+  rt_.atb_.bind_registry(context_.reg());
 
   rt_.atb_.set_can_charge_fn([this](entt::entity entity) {
-    auto *stats = party_ctx_->reg().try_get<fl::ecs::components::Stats>(entity);
+    auto *stats = context_.reg().try_get<fl::ecs::components::Stats>(entity);
     return stats && stats->is_alive();
   });
 
   rt_.atb_.set_charge_rate_percent_fn([this](entt::entity entity) {
     return 100 +
            fl::ecs::systems::CombatStatusSystem::turn_tempo_modifier_percent(
-               party_ctx_->reg(), entity);
+               context_.reg(), entity);
   });
 
-  wire_.party_beat_ = fl::events::ScopedPartyListener{
-      party_ctx_->bus(), std::in_place_type<fl::events::PartyTick>,
+  if (subscribe_to_party_ticks) wire_.party_beat_ = fl::events::ScopedPartyListener{
+      context_.bus(), std::in_place_type<fl::events::PartyTick>,
       [this](const fl::events::PartyTick &) { atb_in().emit(seerin::Beat{}); }};
 }
 

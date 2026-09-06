@@ -12,7 +12,7 @@ namespace fl::ecs::systems {
 
 template <typename Status, typename ClearExisting, typename Configure>
 Status &
-replace_status_effect(fl::context::PartyCtx &party_ctx, entt::entity target,
+replace_status_effect(fl::context::EncounterCtx &party_ctx, entt::entity target,
                       ClearExisting &&clear_existing, Configure &&configure) {
   auto &reg = party_ctx.reg();
 

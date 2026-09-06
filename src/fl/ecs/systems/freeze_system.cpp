@@ -45,7 +45,7 @@ void clear_background(entt::registry &reg, entt::entity target) {
 } // namespace
 
 fl::events::ScopedCombatantListener
-FreezeSystem::bind_apply_listener(fl::context::PartyCtx &party_ctx,
+FreezeSystem::bind_apply_listener(fl::context::EncounterCtx &party_ctx,
                                   fl::events::CombatantBus &combatant_bus,
                                   Scheduler &scheduler) {
   return fl::events::ScopedCombatantListener{
@@ -56,7 +56,7 @@ FreezeSystem::bind_apply_listener(fl::context::PartyCtx &party_ctx,
       }};
 }
 
-void FreezeSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
+void FreezeSystem::apply(fl::context::EncounterCtx &party_ctx, Scheduler &scheduler,
                          entt::entity source, entt::entity target,
                          int duration_seconds) {
   auto &reg = party_ctx.reg();
@@ -90,7 +90,7 @@ void FreezeSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
     FreezeSystem::clear(party_ctx, target);
   });
   freeze.effect.skill_hit_sub = fl::events::ScopedCombatantListener{
-      party_ctx.party_data().encounter_data().combatant_bus(target),
+      party_ctx.encounter().combatant_bus(target),
       std::in_place_type<fl::events::SkillHitLanded>,
       [&party_ctx, target](const fl::events::SkillHitLanded &ev) {
         if (ev.target != target || ev.damage <= 0 ||
@@ -118,7 +118,7 @@ void FreezeSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
                   party_ctx.log().name_tag_for(entt::handle{reg, source}),
                   party_ctx.log().name_tag_for(entt::handle{reg, target})));
 
-  party_ctx.party_data().encounter_data().combatant_bus(target).emit(
+  party_ctx.encounter().combatant_bus(target).emit(
       fl::events::CombatantEvent{fl::events::FreezeStarted{target}});
 
   const auto from = fl::lospec500::color_at(kFreezeFadeStartBlue);
@@ -143,7 +143,7 @@ void FreezeSystem::apply(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
   schedule_clear(party_ctx, scheduler, target, clear_after_beats);
 }
 
-void FreezeSystem::shatter(fl::context::PartyCtx &party_ctx,
+void FreezeSystem::shatter(fl::context::EncounterCtx &party_ctx,
                            entt::entity source, entt::entity target) {
   auto &reg = party_ctx.reg();
   if (!reg.valid(source) || !reg.valid(target)) {
@@ -170,7 +170,7 @@ void FreezeSystem::shatter(fl::context::PartyCtx &party_ctx,
   fl::ecs::systems::TakeDamage::commit(attack_ctx);
 }
 
-void FreezeSystem::schedule_clear(fl::context::PartyCtx &party_ctx,
+void FreezeSystem::schedule_clear(fl::context::EncounterCtx &party_ctx,
                                   Scheduler &scheduler, entt::entity target,
                                   int clear_after_beats) {
   auto *scheduled_freeze =
@@ -194,7 +194,7 @@ void FreezeSystem::schedule_clear(fl::context::PartyCtx &party_ctx,
       });
 }
 
-void FreezeSystem::clear(fl::context::PartyCtx &party_ctx,
+void FreezeSystem::clear(fl::context::EncounterCtx &party_ctx,
                          entt::entity target) {
   auto &reg = party_ctx.reg();
   if (!reg.valid(target)) {
@@ -207,14 +207,14 @@ void FreezeSystem::clear(fl::context::PartyCtx &party_ctx,
   }
 
   auto &scheduler =
-      party_ctx.party_data().encounter_data().atb_engine().scheduler();
+      party_ctx.encounter().atb_engine().scheduler();
   StatusEffectLifetime lifetime{party_ctx, scheduler, freeze->effect};
   lifetime.clear_scheduled();
   lifetime.destroy_instance_entity();
 
   clear_background(reg, target);
   reg.remove<fl::ecs::components::Freeze>(target);
-  party_ctx.party_data().encounter_data().combatant_bus(target).emit(
+  party_ctx.encounter().combatant_bus(target).emit(
       fl::events::CombatantEvent{fl::events::FreezeEnded{target}});
 }
 

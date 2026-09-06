@@ -223,4 +223,14 @@ void teach_party_from_observed_skill(fl::context::PartyCtx &party_ctx,
   }
 }
 
+void teach_party_from_observed_skill(fl::context::EncounterCtx &ctx,
+                                     entt::entity user, SkillKey skill) {
+  for (auto entity : ctx.encounter().defenders().members()) {
+    auto *member = ctx.reg().try_get<fl::ecs::components::PartyMember>(entity);
+    if (!member) continue;
+    auto &party = member->party().party_data();
+    maybe_teach_observed_skill(party.party_ctx(), entity, user, skill);
+  }
+}
+
 } // namespace fl::skills

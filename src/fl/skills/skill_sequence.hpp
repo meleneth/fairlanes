@@ -17,7 +17,7 @@ class SkillSequencer {
 public:
   using Scheduler = seerin::TimedScheduler<seerin::AtbOutEvent>;
   using FinishTurnFn = std::function<void(entt::entity)>;
-  SkillSequencer(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
+  SkillSequencer(fl::context::EncounterCtx &party_ctx, Scheduler &scheduler,
                  FinishTurnFn finish_turn);
 
   void schedule(entt::entity attacker, entt::entity target, SkillKey skill);
@@ -50,7 +50,7 @@ private:
                           int start_beat, int end_beat, ftxui::Color from,
                           ftxui::Color to);
 
-  fl::context::PartyCtx &party_ctx_;
+  fl::context::EncounterCtx &party_ctx_;
   Scheduler &scheduler_;
   FinishTurnFn finish_turn_;
 };

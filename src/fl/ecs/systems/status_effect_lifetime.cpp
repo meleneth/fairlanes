@@ -5,7 +5,7 @@
 namespace fl::ecs::systems {
 
 fl::ecs::components::StatusEffectInstance
-StatusEffectLifetime::create_instance(fl::context::PartyCtx &party_ctx,
+StatusEffectLifetime::create_instance(fl::context::EncounterCtx &party_ctx,
                                       entt::entity owner) {
   return fl::ecs::components::StatusEffectInstance{
       .owner = owner,
@@ -18,7 +18,7 @@ StatusEffectLifetime::create_instance(fl::context::PartyCtx &party_ctx,
 }
 
 StatusEffectLifetime::StatusEffectLifetime(
-    fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
+    fl::context::EncounterCtx &party_ctx, Scheduler &scheduler,
     fl::ecs::components::StatusEffectInstance &instance)
     : party_ctx_(party_ctx), scheduler_(scheduler), instance_(instance) {}
 
@@ -49,7 +49,7 @@ void StatusEffectLifetime::destroy_instance_entity() {
 }
 
 fl::events::CombatantBus &StatusEffectLifetime::owner_bus() {
-  return party_ctx_.party_data().encounter_data().combatant_bus(
+  return party_ctx_.encounter().combatant_bus(
       instance_.owner);
 }
 

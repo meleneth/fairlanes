@@ -20,9 +20,9 @@ public:
   using Scheduler = seerin::TimedScheduler<seerin::AtbOutEvent>;
 
   static fl::ecs::components::StatusEffectInstance
-  create_instance(fl::context::PartyCtx &party_ctx, entt::entity owner);
+  create_instance(fl::context::EncounterCtx &party_ctx, entt::entity owner);
 
-  StatusEffectLifetime(fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
+  StatusEffectLifetime(fl::context::EncounterCtx &party_ctx, Scheduler &scheduler,
                        fl::ecs::components::StatusEffectInstance &instance);
 
   [[nodiscard]] entt::entity owner() const noexcept;
@@ -62,7 +62,7 @@ public:
 private:
   fl::events::CombatantBus &owner_bus();
 
-  fl::context::PartyCtx &party_ctx_;
+  fl::context::EncounterCtx &party_ctx_;
   Scheduler &scheduler_;
   fl::ecs::components::StatusEffectInstance &instance_;
 };

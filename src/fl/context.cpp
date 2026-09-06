@@ -94,6 +94,15 @@ PartyCtx EntityCtx::expect_party_ctx() const {
   return is_party->party_data().loop_ctx();
 }
 
+EncounterCtx &PartyCtx::encounter_context() const {
+  return party_data().encounter_data().context();
+}
+
+AttackCtx AttackCtx::make_attack(EncounterCtx &ctx, entt::entity attacker,
+                                  entt::entity defender) {
+  return AttackCtx{ctx.reg(), ctx.rng(), ctx.log(), attacker, defender};
+}
+
 // MARK_CLASS_MOVEONLY(AttackCtx);
 
 } // namespace fl::context

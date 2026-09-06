@@ -19,6 +19,11 @@ namespace fl::primitives {
 struct EncounterData {
 public:
   explicit EncounterData(fl::context::PartyCtx *party_ctx);
+  EncounterData(entt::registry &reg, RandomHub &rng, fl::widgets::FancyLog &log,
+                fl::events::PartyBus &bus, entt::entity owner,
+                bool subscribe_to_party_ticks = true);
+  fl::context::EncounterCtx &context() { return context_; }
+  const fl::context::EncounterCtx &context() const { return context_; }
 
   EncounterData(EncounterData &&) = delete;
   EncounterData &operator=(EncounterData &&) = delete;
@@ -92,7 +97,7 @@ public:
   bool is_bad_guy(entt::entity e) const { return owns_entity(e); }
 
   fl::targeting::PossibleTargets possible_targets() const {
-    return {party_ctx_->reg(), attackers().members(), defenders().members()};
+    return {context_.reg(), attackers().members(), defenders().members()};
   }
 
   entt::entity target_random_alive_opposition(entt::entity actor) const;
@@ -135,7 +140,7 @@ private:
   void bind_combatant_bus(entt::entity combatant,
                           fl::events::CombatantBus &combatant_bus);
 
-  fl::context::PartyCtx *party_ctx_;
+  fl::context::EncounterCtx context_;
 };
 
 } // namespace fl::primitives

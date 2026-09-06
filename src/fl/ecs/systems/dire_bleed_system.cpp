@@ -23,7 +23,7 @@ constexpr int kDireBleedTickBeats =
     fl::primitives::WorldClock::beats_from_seconds(kDireBleedTickSeconds);
 } // namespace
 
-void DireBleedSystem::apply(fl::context::PartyCtx &party_ctx,
+void DireBleedSystem::apply(fl::context::EncounterCtx &party_ctx,
                             Scheduler &scheduler, entt::entity source,
                             entt::entity target) {
   auto &reg = party_ctx.reg();
@@ -39,7 +39,7 @@ void DireBleedSystem::apply(fl::context::PartyCtx &party_ctx,
   const int damage_per_tick = std::max(1, target_stats->max_hp_ / 10);
   replace_status_effect<fl::ecs::components::DireBleed>(
       party_ctx, target,
-      [](fl::context::PartyCtx &ctx, entt::entity status_target) {
+      [](fl::context::EncounterCtx &ctx, entt::entity status_target) {
         DireBleedSystem::clear(ctx, status_target);
       },
       [source, damage_per_tick](fl::ecs::components::DireBleed &bleed) {
@@ -57,7 +57,7 @@ void DireBleedSystem::apply(fl::context::PartyCtx &party_ctx,
 }
 
 void DireBleedSystem::bind_cleanup_and_schedule(
-    fl::context::PartyCtx &party_ctx, Scheduler &scheduler,
+    fl::context::EncounterCtx &party_ctx, Scheduler &scheduler,
     entt::entity target) {
   auto *bleed = party_ctx.reg().try_get<fl::ecs::components::DireBleed>(target);
   if (bleed == nullptr) {
@@ -79,7 +79,7 @@ void DireBleedSystem::bind_cleanup_and_schedule(
   schedule_tick(party_ctx, scheduler, target);
 }
 
-void DireBleedSystem::schedule_tick(fl::context::PartyCtx &party_ctx,
+void DireBleedSystem::schedule_tick(fl::context::EncounterCtx &party_ctx,
                                     Scheduler &scheduler, entt::entity target) {
   auto *scheduled_bleed =
       party_ctx.reg().try_get<fl::ecs::components::DireBleed>(target);
@@ -129,7 +129,7 @@ void DireBleedSystem::schedule_tick(fl::context::PartyCtx &party_ctx,
       });
 }
 
-void DireBleedSystem::clear(fl::context::PartyCtx &party_ctx,
+void DireBleedSystem::clear(fl::context::EncounterCtx &party_ctx,
                             entt::entity target) {
   auto &reg = party_ctx.reg();
   if (!reg.valid(target)) {
@@ -142,7 +142,7 @@ void DireBleedSystem::clear(fl::context::PartyCtx &party_ctx,
   }
 
   auto &scheduler =
-      party_ctx.party_data().encounter_data().atb_engine().scheduler();
+      party_ctx.encounter().atb_engine().scheduler();
   StatusEffectLifetime lifetime{party_ctx, scheduler, bleed->effect};
   lifetime.clear_scheduled();
   lifetime.destroy_instance_entity();

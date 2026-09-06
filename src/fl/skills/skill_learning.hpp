@@ -32,6 +32,9 @@ bool maybe_teach_observed_skill(fl::context::PartyCtx &party_ctx,
                                 entt::entity observer, entt::entity user,
                                 SkillKey skill);
 
+void teach_party_from_observed_skill(fl::context::EncounterCtx &ctx,
+                                     entt::entity user, SkillKey skill);
+
 void teach_party_from_observed_skill(fl::context::PartyCtx &party_ctx,
                                      entt::entity user, SkillKey skill);
 
