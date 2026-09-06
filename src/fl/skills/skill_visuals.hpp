@@ -123,6 +123,7 @@ visual_archetype_for(SkillKey skill) noexcept {
     return SkillVisualArchetype::Sweep;
   case SkillId::Poison:
   case SkillId::RocksFall:
+  case SkillId::VisitorFall:
   case SkillId::FlameStrike:
   case SkillId::FlameWave:
   case SkillId::SourBreath:

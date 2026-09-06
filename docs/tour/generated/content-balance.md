@@ -8,10 +8,10 @@ Generated artifacts currently provide runtime skill metadata C++, status metadat
 
 | Projection | Count | Source of truth |
 | --- | ---: | --- |
-| Skill definitions | 70 | Ruby DSL generated C++ `SkillDefinition` table |
-| Random combat skills | 69 | Ruby DSL generated C++ random combat table |
+| Skill definitions | 71 | Ruby DSL generated C++ `SkillDefinition` table |
+| Random combat skills | 70 | Ruby DSL generated C++ random combat table |
 | Status declarations | 3 | Ruby DSL generated C++ status metadata table |
-| Monster declarations | 71 | Ruby DSL generated C++ monster topology table |
+| Monster declarations | 72 | Ruby DSL generated C++ monster topology table |
 | Common woodland monsters | 69 | Ruby DSL generated C++ encounter pool |
 | Rare woodland monsters | 2 | Ruby DSL generated C++ encounter pool |
 
@@ -21,7 +21,7 @@ Initial themed assignments for content planning; cycle metadata does not filter 
 
 | Cycle | Monsters |
 | --- | ---: |
-| Origin | 23 |
+| Origin | 24 |
 | Resonance | 20 |
 | Conflict | 14 |
 | Singularity | 14 |
@@ -100,6 +100,7 @@ Initial themed assignments for content planning; cycle metadata does not filter 
 | Plasma Arc | PlasmaArc | 5 | 0 | yes | damage_strike |  | Neon Orchid | generated_runtime_behavior |
 | Starblaze | Starblaze | 1 | 0 | yes | decal_strike | Starfire | Starfire Anomaly | decal_strike |
 | Cinderburst | Cinderburst | 5 | 0 | yes | status_detonation | FlameWave | Salamander | generated_runtime_behavior |
+| Visitor Fall | VisitorFall | 1 | 0 | yes | group_damage | Starfire | Visitor's Herald | generated_runtime_behavior |
 
 ## Status Metadata
 
@@ -182,6 +183,7 @@ Initial themed assignments for content planning; cycle metadata does not filter 
 - **Null Kraken:** A vast tangle of arms reaching out of a patch of missing sky. Charts mark its territory with an empty space that keeps getting larger.
 - **Blue Screen Wisp:** A blue glow carrying the last unfinished thought of a broken machine. It offers reassurance in a voice that has stopped responding.
 - **Starfire Anomaly:** A wandering knot of stellar heat with no agreed place in the heavens. Shadows point toward it, then reconsider.
+- **Visitor's Herald:** The first shadow cast by the Visitor walks before the falling sky. It has come for every banner in the account.
 
 ## Monster Topology
 
@@ -258,6 +260,7 @@ Initial themed assignments for content planning; cycle metadata does not filter 
 | Null Kraken | NullKraken | Singularity | 430 | 120 | 32 | Event Horizon, Smoke Screen, Packet Storm, Smackdown Sweep | common_woodland |
 | Blue Screen Wisp | BlueScreenWisp | Singularity | 260 | 130 | 28 | Mercywave, Blue Screen, Reboot Pulse | common_woodland |
 | Starfire Anomaly | StarfireAnomaly | Singularity | 320 | 120 | 24 | Starblaze, Flame Wave, Gravity Sigh | common_woodland |
+| Visitor's Herald | VisitorHerald | Origin | 10000 | 0 | 40 | Visitor Fall | raid |
 
 ## Decal Skill Projection
 
@@ -275,3 +278,4 @@ Initial themed assignments for content planning; cycle metadata does not filter 
 | Gravity Sigh | Null Mote, Starfire Anomaly | VoidRipple | gravity, control, area, group, damage |
 | Starblaze | Starfire Anomaly | Starfire | fire, arcane, spell, enemy, damage |
 | Cinderburst | Salamander | FlameWave | fire, spell, enemy, damage |
+| Visitor Fall | Visitor's Herald | Starfire | physical, celestial, area, all_enemies, damage |

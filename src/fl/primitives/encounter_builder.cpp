@@ -29,7 +29,8 @@ EncounterBuilder::chaos_attractor_monster_pool() {
 
   for (const auto &[kind, definition] : registry) {
     (void)definition;
-    pool.push_back(kind);
+    const auto bosses = fl::monster::generated_content::raid_bosses();
+    if (std::ranges::find(bosses, kind) == bosses.end()) pool.push_back(kind);
   }
 
   std::ranges::sort(pool, [](const auto lhs, const auto rhs) {

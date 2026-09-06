@@ -481,6 +481,13 @@ else()
       "ruby not found and no Docker/Podman runtime found; required for Fairlanes content generation")
   endif()
 
+  # Declaration changes can add/remove translation units, so refresh the source
+  # manifest at configure time as well as regenerating their contents at build time.
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
+    "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+    ${FAIRLANES_CONTENT_RUBY_SOURCES})
+
   execute_process(
     COMMAND ${FAIRLANES_RUBY_COMMAND}
             "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"

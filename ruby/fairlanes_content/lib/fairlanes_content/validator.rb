@@ -13,7 +13,7 @@ module FairlanesContent
   end
 
   class Validator
-    VALID_POOLS = Set[:common_woodland, :rare_woodland].freeze
+    VALID_POOLS = Set[:common_woodland, :rare_woodland, :raid].freeze
     VALID_EXECUTIONS = Set[
       :thump_like, :eviscerate, :poison, :cold_snap, :flame_strike,
       :flame_wave, :decal_strike, :damage_strike, :group_damage,
@@ -113,6 +113,9 @@ module FairlanesContent
             errors << "skill #{skill.id} has invalid consumed status"
           end
           errors << "skill #{skill.id} requires positive effect damage" unless positive_integer?(skill.effect_damage)
+        elsif skill.execution == :group_damage
+          errors << "skill #{skill.id} has invalid group damage" unless non_negative_integer?(skill.effect_damage)
+          errors << "skill #{skill.id} has consumed status without detonation execution" if skill.consumes_status
         elsif skill.consumes_status || skill.effect_damage != 0
           errors << "skill #{skill.id} has detonation metadata without detonation execution"
         end

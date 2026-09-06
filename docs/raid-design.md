@@ -410,3 +410,13 @@ roll the ordinary loot table. Raid reward grants are the next integration step.
 Flee cannot extract combatants from this shared encounter: raids end only through
 the collective outcome rules. Automatic Visitor timing and the screen are not
 wired yet in this slice.
+
+### Initial Visitor content
+
+Ruby declares Visitor's Herald in a raid-only monster pool, excluded from normal
+and chaos farming. Its initial 10,000 HP and Visitor Fall (80 physical damage per
+living opponent, staggered across the encounter roster) are deliberately rough
+first-pass values for exercising raid presentation. Damage and the boss definition
+are generated from Ruby. The attack is covered against all 25 account members.
+CMake refreshes its generated source manifest when declarations or generator code
+change, so adding content does not require a manual reconfigure.

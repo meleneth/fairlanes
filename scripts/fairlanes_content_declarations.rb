@@ -205,7 +205,16 @@ skill :cinderburst,
       tags: %i[fire spell enemy damage],
       declarative_shape: :generated_runtime_behavior
 
+skill :visitor_fall,
+      learn_chance_percent: 1,
+      execution: :group_damage,
+      effect_damage: 80,
+      visual: :starfire,
+      tags: %i[physical celestial area all_enemies damage],
+      declarative_shape: :generated_runtime_behavior
+
 random_combat_skills(
+  :visitor_fall,
   :cinderburst,
   :flee,
   :thump,
@@ -463,6 +472,15 @@ end
 
 
 
+monster :visitor_herald,
+        display: "Visitor's Herald",
+        cycle: :origin,
+        hp: 10000,
+        level: 40,
+        known_skills: %i[visitor_fall],
+        pool: :raid,
+        description: "The first shadow cast by the Visitor walks before the falling sky. It has come for every banner in the account."
+
 # Bestiary flavor is revealed on encounter; skill discovery remains separate.
 {
   field_mouse: "A field mouse with dusty paws and absolute faith in the power of a good thump. Most adventuring careers begin with an argument over its grain.",
@@ -555,14 +573,15 @@ skills.each do |entry|
 end
 
 {
+  visitor_fall: "Deal 80 physical damage to every living enemy before mitigation, independent of rank. Targets are staggered by 3 beats: the first hit is at beat 12, then 15, 18, and so on. No status effect. The turn finishes 1 beat after the last scheduled hit. Only targets still eligible when the hit lands take damage.",
   rocks_fall: "Deal 1-5 physical damage. Hits only 1 enemy despite its area tags.",
   sour_breath: "Deal 1-5 physical damage. Hits only 1 enemy; applies no Poison or disease.",
   blood_bloom: "Deal 1-5 physical damage. Hits only 1 enemy; causes no bleeding and heals nobody.",
   gravity_sigh: "Deal 1-5 physical damage. Hits only 1 enemy; applies no control effect.",
   reboot_pulse: "Restore 4 HP to each living ally, capped at maximum HP. Does not cleanse statuses.",
   cinderburst: "Detonate an existing burn on one enemy for 8 fire damage, consuming the burn. Requires the burn to still be present when the blast lands.",
-  observe: "Spend 12 beats observing, dealing 0 damage. Equipping Observe enables learning from other combatants; its rank caps learnable skill ranks. Observe itself is learned in order, at most 1 rank above the equipped rank, without a chance roll. Combat learning is kept on victory and lost on a party wipe.",
-  flee: "Attempt to leave combat. The escape attempt has a 65% success chance.",
+  observe: "Spend 12 beats observing, dealing 0 damage. Equipping Observe enables learning from other combatants; its rank caps learnable skill ranks. Observe itself is learned in order, at most 1 rank above the equipped rank, without a chance roll. Combat learning is kept on victory or raid summoning. Learning acquired during a raid is kept on shared victory, even for wiped parties, and lost on shared defeat. Other combat learning is lost on a party wipe.",
+  flee: "Attempt to leave combat. The escape attempt has a 65% success chance outside raids and 0% in raids.",
   thump: "Deal 1-5 physical damage to 1 enemy with a blunt attack at rank 1, plus 3 damage per additional rank. Hit at beat 26 + 2 x (rank - 1); finish at beat 31 + 3 x (rank - 1). Higher ranks hit harder but take longer.",
   eviscerate: "Inflict Dire Bleed on 1 enemy: they bleed to death unless it is stopped. Every 3 seconds, starting 3 seconds after application, deal physical damage equal to 10% of their maximum HP at application (rounded down, minimum 1). No timeout and no initial hit. Cleanse, target death or leaving combat clears it; source death or removal stops it at the next tick. Reapplication replaces the bleed and restarts its timer.",
   poison: "Poison 1 enemy for 1 magical damage every 3 seconds: 9 ticks over 27 seconds, starting 3 seconds after application (9 total base damage). No initial hit. Cleanse, target death or leaving combat clears it; source death or removal stops further ticks. Reapplication replaces the poison and restarts its timer.",

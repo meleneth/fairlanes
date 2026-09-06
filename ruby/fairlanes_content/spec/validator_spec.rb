@@ -177,4 +177,15 @@ RSpec.describe FairlanesContent::Validator do
     end
   end
 
+  it "accepts raid-only monsters and validates configured group damage" do
+    declarations = build(:declaration_set)
+    declarations.monsters.first.pool = :raid
+    skill = declarations.skills.first
+    skill.execution = :group_damage
+    skill.effect_damage = 80
+    expect(described_class.new(declarations).validate).to be_empty
+    skill.effect_damage = -1
+    expect(described_class.new(declarations).validate).to include("skill thump has invalid group damage")
+  end
+
 end

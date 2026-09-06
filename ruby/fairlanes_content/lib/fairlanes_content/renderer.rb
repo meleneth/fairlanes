@@ -111,6 +111,7 @@ module FairlanesContent
         enum class Pool {
           CommonWoodland,
           RareWoodland,
+          Raid,
         };
 
         struct ExpectedSkill {
@@ -294,6 +295,13 @@ module FairlanesContent
               const auto pool = fl::primitives::EncounterBuilder::rare_woodland();
               REQUIRE(std::find(pool.begin(), pool.end(), expected.monster) !=
                       pool.end());
+            } else if (expected.pool == Pool::Raid) {
+              const auto pool = fl::monster::generated_content::raid_bosses();
+              REQUIRE(std::find(pool.begin(), pool.end(), expected.monster) != pool.end());
+              const auto common = fl::primitives::EncounterBuilder::common_woodland();
+              const auto rare = fl::primitives::EncounterBuilder::rare_woodland();
+              REQUIRE(std::find(common.begin(), common.end(), expected.monster) == common.end());
+              REQUIRE(std::find(rare.begin(), rare.end(), expected.monster) == rare.end());
             } else {
               const auto pool = fl::primitives::EncounterBuilder::common_woodland();
               REQUIRE(std::find(pool.begin(), pool.end(), expected.monster) !=
@@ -554,6 +562,7 @@ module FairlanesContent
         std::span<const fl::skills::SkillId> known_skills(MonsterKind kind) noexcept;
         std::span<const MonsterKind> common_woodland() noexcept;
         std::span<const MonsterKind> rare_woodland() noexcept;
+        std::span<const MonsterKind> raid_bosses() noexcept;
 
         } // namespace fl::monster::generated_content
       CPP
@@ -603,6 +612,10 @@ module FairlanesContent
         "    #{monster_cpp(monster)},"
       end.join("\n")
 
+      raid_rows = monsters.select { |monster| monster.pool == :raid }.map do |monster|
+        "    #{monster_cpp(monster)},"
+      end.join("\n")
+
       rule_data = monsters.map do |monster|
         conditions = monster.decision_rules.each_with_index.map do |rule, index|
           rows = rule.fetch(:conditions, []).map do |condition|
@@ -640,6 +653,10 @@ module FairlanesContent
         #{common_rows}
         }};
 
+        constexpr std::array<MonsterKind, #{monsters.count { |monster| monster.pool == :raid }}> kRaidBosses{{
+        #{raid_rows}
+        }};
+
         constexpr std::array<MonsterKind, #{monsters.count { |monster| monster.pool == :rare_woodland }}> kRareWoodland{{
         #{rare_rows}
         }};
@@ -669,6 +686,10 @@ module FairlanesContent
 
         std::span<const MonsterKind> common_woodland() noexcept {
           return {kCommonWoodland.data(), kCommonWoodland.size()};
+        }
+
+        std::span<const MonsterKind> raid_bosses() noexcept {
+          return kRaidBosses;
         }
 
         std::span<const MonsterKind> rare_woodland() noexcept {
@@ -1108,7 +1129,7 @@ module FairlanesContent
     end
 
     def pool_cpp(pool)
-      pool == :rare_woodland ? "RareWoodland" : "CommonWoodland"
+      { common_woodland: "CommonWoodland", rare_woodland: "RareWoodland", raid: "Raid" }.fetch(pool)
     end
 
     def monsters_by_skill_map

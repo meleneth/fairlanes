@@ -1,10 +1,14 @@
 #include <array>
+#include <ranges>
+#include "fl/primitives/encounter_builder.hpp"
+#include "fl/skills/skill_sequence.hpp"
 #include <catch2/catch_test_macros.hpp>
 
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
 #include "fl/fsm/party_loop_machine.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/generated/monster_content.hpp"
 #include "fl/primitives/raid_data.hpp"
 #include "fl/skills/skill_learning.hpp"
 
@@ -114,4 +118,28 @@ TEST_CASE("A wiped raid party keeps newly observed skills if the account wins",
   raid.tick();
   REQUIRE(account.party(0).members().front().grimoire().knows(
       fl::skills::SkillId::Thump));
+}
+
+TEST_CASE("Visitor boss content stays out of farming and its declared damage reaches all parties", "[raid][content]") {
+  fl::GrandCentral gc{1, 5, 5};
+  auto ctx = gc.account_context(0);
+  const auto bosses = fl::monster::generated_content::raid_bosses();
+  REQUIRE(bosses.size() == 1);
+  const auto chaos = fl::primitives::EncounterBuilder::chaos_attractor_monster_pool();
+  REQUIRE(std::ranges::find(chaos, bosses.front()) == chaos.end());
+  REQUIRE(ctx.account_data().start_raid(ctx, bosses));
+  auto &encounter = ctx.account_data().raid()->encounter();
+  const auto boss = encounter.attackers().members().front();
+  for (auto target : encounter.defenders()) {
+    auto &stats = gc.reg().get<fl::ecs::components::Stats>(target);
+    stats.hp_ = stats.max_hp_ = 100;
+  }
+  bool finished = false;
+  fl::skills::SkillSequencer sequence{encounter.context(), encounter.atb_engine().scheduler(),
+      [&](entt::entity) { finished = true; }};
+  sequence.schedule(boss, encounter.defenders().members().front(), fl::skills::SkillId::VisitorFall);
+  for (int i = 0; i < 100; ++i) encounter.atb_engine().scheduler().on_beat();
+  for (auto target : encounter.defenders())
+    REQUIRE(gc.reg().get<fl::ecs::components::Stats>(target).hp_ == 20);
+  REQUIRE(finished);
 }

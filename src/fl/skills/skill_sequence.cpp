@@ -104,9 +104,16 @@ int apply_damage_skill(fl::context::EncounterCtx &party_ctx, entt::entity attack
                        entt::entity target, SkillKey skill) {
   if (!eligible_target(party_ctx, attacker, target, false) ||
       !target_meets_skill_requirements(party_ctx.reg(), target, skill)) return 0;
-  fl::skills::Thump thump;
-  const int damage = thump.thump(
-      fl::context::AttackCtx::make_attack(party_ctx, attacker, target), skill);
+  int damage = 0;
+  if (definition(skill).effect_damage > 0) {
+    auto attack = fl::context::AttackCtx::make_attack(party_ctx, attacker, target);
+    attack.damage().physical = definition(skill).effect_damage;
+    damage = fl::ecs::systems::TakeDamage::commit(attack);
+  } else {
+    fl::skills::Thump thump;
+    damage = thump.thump(
+        fl::context::AttackCtx::make_attack(party_ctx, attacker, target), skill);
+  }
   if (damage > 0 && party_ctx.reg().valid(target)) {
     party_ctx.encounter().combatant_bus(target).emit(
         fl::events::CombatantEvent{
@@ -1055,13 +1062,13 @@ void SkillSequencer::schedule_placeholder_effect(entt::entity attacker,
 void SkillSequencer::schedule_flee(entt::entity attacker, SkillKey skill) {
   ZoneScopedN("SkillSequencer::schedule_flee");
   const auto &skill_definition = definition(skill);
-  const int flee_chance =
+  const int flee_chance = party_ctx_.encounter().is_raid() ? 0 :
       std::clamp(skill_definition.flee_success_percent, 0, 100);
   const auto sub_seq =
       static_cast<std::underlying_type_t<entt::entity>>(attacker);
   auto rs = party_ctx_.rng().stream("encounter/skill/flee", sub_seq);
   const int roll = rs.uniform_int<int>(1, 100);
-  const bool success = !party_ctx_.encounter().is_raid() && roll <= flee_chance;
+  const bool success = roll <= flee_chance;
 
   scheduler_.schedule_smelly_in_beats(
       1, "flee: resolve",

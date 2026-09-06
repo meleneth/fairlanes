@@ -14,7 +14,7 @@ This is review metadata for the handwritten decal renderer and generated skill m
 | BloodBloom | Blood Bloom | Gorecap Sprout, Mosquito Choir, Briar Hexling, Rotcap Elder, Carrion Dragonfly, Neon Orchid | bleed, healing, area, group, damage | decal_strike |
 | FrostCrack | Ice Splitter | Rimefang Hare, Berg Wyrm, Orbital Yeti | cold, piercing, projectile, enemy, damage | decal_strike |
 | VoidRipple | Gravity Sigh | Null Mote, Starfire Anomaly | gravity, control, area, group, damage | decal_strike |
-| Starfire | Starblaze | Starfire Anomaly | fire, arcane, spell, enemy, damage | decal_strike |
+| Starfire | Starblaze, Visitor Fall | Starfire Anomaly, Visitor's Herald | fire, arcane, spell, enemy, damage, physical, celestial, area, all_enemies | decal_strike, generated_runtime_behavior |
 | Observe | Observe |  | observe, utility | handwritten_behavior |
 
 ## Skill Entries
@@ -33,3 +33,4 @@ This is review metadata for the handwritten decal renderer and generated skill m
 | Gravity Sigh | VoidRipple | decal_strike | Null Mote, Starfire Anomaly | gravity, control, area, group, damage |
 | Starblaze | Starfire | decal_strike | Starfire Anomaly | fire, arcane, spell, enemy, damage |
 | Cinderburst | FlameWave | status_detonation | Salamander | fire, spell, enemy, damage |
+| Visitor Fall | Starfire | group_damage | Visitor's Herald | physical, celestial, area, all_enemies, damage |
