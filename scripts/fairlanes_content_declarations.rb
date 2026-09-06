@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-# Declarative content source for generated C++ metadata, parity tests, and
-# review docs. Handwritten C++ remains the authority for behavior.
+# Authoritative content declarations for generated C++ runtime definitions,
+# tests, and review docs. Handwritten C++ implements the execution mechanics
+# selected and configured by these declarations.
 
 visual :flame_wave
 visual :shock
