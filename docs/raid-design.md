@@ -183,9 +183,10 @@ Consequences to preserve when implementing this direction:
 
 Still clarify whether "pause time progression" also freezes recovery, crafting,
 other account timers, and offline accrual, and whether overdrive should continue
-to shorten the raid calendar interval. The current global clock advances both
-calendar time and the beats forwarded to parties; it cannot provide this
-account-specific pause as-is.
+to shorten the raid calendar interval. The world clock supplies beats and speed, while each account now owns its own
+calendar and chooses between raid combat and ordinary party progression.
+Existing party recovery consequently pauses during raids; future offline/crafting
+systems must define their timer policy explicitly.
 
 ## Confirmed targeting abstraction
 
@@ -408,8 +409,8 @@ town recovery penalty afterward; there is no instant revival. Account-scoped
 Normal kill loot/XP is suppressed inside raids so a boss cannot accidentally
 roll the ordinary loot table. Raid reward grants are the next integration step.
 Flee cannot extract combatants from this shared encounter: raids end only through
-the collective outcome rules. Automatic Visitor timing and the screen are not
-wired yet in this slice.
+the collective outcome rules. Automatic Visitor timing is now wired; the dedicated screen remains the next
+presentation slice.
 
 ### Initial Visitor content
 
@@ -420,3 +421,13 @@ first-pass values for exercising raid presentation. Damage and the boss definiti
 are generated from Ruby. The attack is covered against all 25 account members.
 CMake refreshes its generated source manifest when declarations or generator code
 change, so adding content does not require a manual reconfigure.
+
+### Automatic Visitor progression
+
+Normal gameplay subscribes accounts to global beats. Each account starts the day
+zero Visitor immediately on initialization, consumes that arrival, and advances
+only its shared combat while raiding. After resolution ordinary party progression
+and the account calendar resume. The next arrival occurs after 952,560 calendar
+beats (22h 3m at 1x), with no retry at the previous boundary. Attract mode explicitly
+disables Visitor arrivals. Account calendars have stable unique-pointer ownership;
+the account's beat subscription disconnects before its calendar and parties die.

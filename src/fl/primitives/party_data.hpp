@@ -83,6 +83,7 @@ public:
     return has_encounter() && !encounter_data().is_over();
   }
   // ---- behavior ----
+  void advance_beat();
   void hook_to_beat(seerin::BeatBus &gc_beat_bus);
 
   bool needs_town();

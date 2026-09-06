@@ -347,14 +347,10 @@ void GrandCentral::bootstrap_logs() {
   logger_.warn("No encounters loaded yet.");
 }
 
-void GrandCentral::innervate_event_system() {
-  // Parties hook to main beat (accounts do not).
-  // logger_.info("[spell_name](innervate) event system.");
-
+void GrandCentral::innervate_event_system(bool enable_visitors) {
   for (auto &account : accounts_) {
-    for (auto &party : account.parties()) {
-      party.hook_to_beat(gc_beat_bus_);
-    }
+    account.hook_to_beat(account_context(account), gc_beat_bus_, world_clock_,
+                         enable_visitors);
   }
 }
 

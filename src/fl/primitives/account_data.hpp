@@ -10,6 +10,7 @@
 #include "fl/widgets/fancy_log.hpp"
 #include "party_data.hpp"
 #include "fl/primitives/raid_data.hpp"
+#include "fl/primitives/moon_calendar.hpp"
 
 namespace fl::primitives {
 
@@ -37,6 +38,18 @@ public:
     return true;
   }
 
+  static constexpr std::uint64_t kVisitorPeriodBeats =
+      MoonCalendar::kVisitorCycleDays * WorldClock::kBeatsPerCalendarDay;
+  WorldClock &calendar() { return *calendar_; }
+  const WorldClock &calendar() const { return *calendar_; }
+  std::uint64_t beats_until_visitor() const {
+    return next_visitor_beat_ > calendar_->elapsed_beats()
+               ? next_visitor_beat_ - calendar_->elapsed_beats() : 0;
+  }
+  void hook_to_beat(fl::context::AccountCtx ctx, seerin::BeatBus &beats,
+                    WorldClock &world_clock, bool enable_visitors = true);
+  void advance_beat(fl::context::AccountCtx ctx, bool enable_visitors = true);
+
   // --- capability-style accessors ---
   entt::entity account_id() const { return account_id_; }
 
@@ -58,6 +71,10 @@ private:
   std::deque<PartyData> parties_{}; // owned parties
   std::unique_ptr<fl::events::RaidBus> raid_bus_{std::make_unique<fl::events::RaidBus>()};
   std::uint64_t raid_id_{0};
+  std::unique_ptr<WorldClock> calendar_{std::make_unique<WorldClock>()};
+  std::uint64_t next_visitor_beat_{0};
+  seerin::BeatSub progression_sub_{};
+  bool try_start_visitor(fl::context::AccountCtx ctx);
   std::unique_ptr<RaidData> raid_; // destroyed before participants and event bus
 };
 

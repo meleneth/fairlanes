@@ -567,3 +567,12 @@ borrow its encounter while their loops pause. RaidStarted/RaidResolved use the
 account RaidBus. Shared outcomes are decided after a complete beat; partial party
 wipes do not clear scheduled work or provisional skills. Normal kill loot is
 suppressed in raids. Visitor scheduling and the dedicated view are pending.
+
+## Account raid progression
+
+`AccountData` subscribes to world beats and owns an independent `WorldClock`
+calendar. It advances either its shared `RaidData` combat or ordinary party loops.
+Visitor arrivals start immediately on day zero and consume the occurrence; account
+calendar and party recovery pause until collective resolution. Attract mode calls
+`innervate_event_system(false)` to exclude Visitors. Do not separately hook normal
+parties to the global beat bus: the account now controls forwarding order.

@@ -80,7 +80,7 @@ public:
   fl::context::AccountCtx account_context(fl::primitives::AccountData &account);
 
   ftxui::Component root_component();
-  void innervate_event_system();
+  void innervate_event_system(bool enable_visitors = true);
   void advance_beat();
   void resolve_visuals_for_render();
   void main_loop(GrandCentralRunOptions opts = {});

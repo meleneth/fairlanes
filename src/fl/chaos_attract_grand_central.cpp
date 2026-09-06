@@ -19,7 +19,7 @@ namespace fl {
 
 ChaosAttractGrandCentral::ChaosAttractGrandCentral()
     : attract_game_(std::make_unique<GrandCentral>(8, 5, 5, false)) {
-  attract_game_->innervate_event_system();
+  attract_game_->innervate_event_system(false);
   auto battle_surface = ftxui::Make<fl::widgets::AllAccountBattleScreen>(
       attract_game_->reg(), attract_game_->accounts());
   root_component_ =

@@ -47,12 +47,14 @@ PartyData::~PartyData() {
 void PartyData::hook_to_beat(seerin::BeatBus &gc_beat_bus) {
   gc_forward_sub_ =
       gc_beat_bus.subscribe<seerin::Beat>([this](const seerin::Beat &) {
-        // Beat{} on both sides, as requested:
-        // log_->append_markup("PartyData received beat");
-        if (in_raid()) return;
-        party_beat_bus_.emit(seerin::Beat{});
-        party_loop_machine_->beat_event();
+        advance_beat();
       });
+}
+
+void PartyData::advance_beat() {
+  if (in_raid()) return;
+  party_beat_bus_.emit(seerin::Beat{});
+  party_loop_machine_->beat_event();
 }
 
 bool PartyData::needs_town() {
