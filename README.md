@@ -122,6 +122,9 @@ Skill learning is still one of the central images: a party member sees a creatur
 
 Longer-term lore and item ideas, including Cycles, filigree armor, and Darrin-mark, live in the docs and brainstorm files until the code promotes them into runtime systems.
 
+The evolving [account raid design](docs/raid-design.md) records shared five-party
+battles, celestial timing, exclusive rewards, and progression gates.
+
 ## Contributing Notes
 
 Keep UI widgets as projections. Gameplay authority belongs in systems, state machines, context-scoped logic, and data models.

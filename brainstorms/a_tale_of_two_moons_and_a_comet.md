@@ -1,3 +1,5 @@
+> Raid mechanics and real-time cadence are tracked in [the account raid design](../docs/raid-design.md). This file remains the celestial lore reference.
+
 Alright, let’s build a sky that historians fear and geologists drink about 🌒🌕☄️
 
 # The Three Cycles

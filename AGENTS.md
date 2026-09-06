@@ -504,3 +504,16 @@ Monster declarations require explicit cycle membership (`origin`, `resonance`,
 the manifest includes membership and the content balance report includes all four
 cycle counts. These are content-planning assignments, not encounter gating.
 See `docs/tour/development.md` for the contract.
+
+## Planned Account Raids
+
+`docs/raid-design.md` is the evolving raid requirements reference. Raids are
+planned shared encounters for all five account parties. One party wiping does
+not end them: all enemies dead means account-wide victory (including wiped
+parties); all characters dead means defeat. Simultaneous extinction is unsettled.
+Start victory loot planning at two raid-exclusive drops per participating party
+(ten for five parties), with trinkets a tentative item category. Raids also gate
+progression Cycles in addition to recurring celestial encounters. Account-calendar
+pause during raids is a design direction; cadence, entry, targeting, retries,
+and reward distribution remain open. Update this document as decisions settle;
+do not treat proposed policies as implemented behavior.
