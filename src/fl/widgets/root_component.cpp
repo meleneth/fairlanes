@@ -29,6 +29,13 @@ RootComponent::RootComponent(
     : ctx_(std::move(ctx)), accounts_(&accounts), console_log_(&console_log),
       world_clock_(&world_clock), commands_(accounts, console_log, world_clock),
       discoveries_(discoveries) {
+  quit_cancel_ = ftxui::Button("Cancel", [this] {
+    quit_confirmation_open_ = false;
+    active_screen_->TakeFocus();
+  });
+  auto quit = ftxui::Button("Quit", [this] { quit_requested_ = true; });
+  quit_confirmation_ = ftxui::Container::Horizontal({quit_cancel_, quit});
+  Add(quit_confirmation_);
   console_overlay_ = ftxui::Make<ConsoleOverlay>(console_log_);
   commands_.set_show_account_view([this](std::size_t account_index) {
     show_account_battle(account_index);
@@ -51,11 +58,24 @@ RootComponent::RootComponent(
 }
 
 ftxui::Component RootComponent::ActiveChild() {
+  if (quit_confirmation_open_) {
+    return quit_confirmation_;
+  }
   return console_overlay()->open() ? console_overlay_ : active_screen_;
 }
 
 bool RootComponent::OnEvent(ftxui::Event event) {
   auto *overlay = console_overlay();
+
+  if (quit_confirmation_open_) {
+    if (event == ftxui::Event::Escape) {
+      quit_confirmation_open_ = false;
+      active_screen_->TakeFocus();
+    } else {
+      quit_confirmation_->OnEvent(event);
+    }
+    return true;
+  }
 
   if (keybind_help_open_) {
     if (event == ftxui::Event::Character("h") ||
@@ -113,6 +133,13 @@ bool RootComponent::OnEvent(ftxui::Event event) {
     // Keep the view alive if its link callback replaces the current screen.
     auto screen = active_screen_;
     return screen->OnEvent(event);
+  }
+
+  if (event == ftxui::Event::Escape ||
+      event == ftxui::Event::Character("q")) {
+    quit_confirmation_open_ = true;
+    quit_cancel_->TakeFocus();
+    return true;
   }
 
   if (event == ftxui::Event::Character("h") &&
@@ -217,6 +244,14 @@ ftxui::Element RootComponent::Render() {
         content,
         console_overlay_->Render(),
     });
+  }
+
+  if (quit_confirmation_open_) {
+    auto panel = window(text("Quit Fairlanes?") | bold,
+                        vbox({text("Progress is not saved and will be lost."),
+                              separator(), quit_confirmation_->Render()})) |
+                 bgcolor(fl::lospec500::color_at(0)) | clear_under;
+    content = dbox({content, panel | center});
   }
 
   return content;
@@ -458,7 +493,9 @@ ftxui::Element RootComponent::render_keybind_help() const {
   lines.push_back(text("h        close this help") | chrome);
   lines.push_back(text("`        open command console") | chrome);
   lines.push_back(text("l / b    open libram / bestiary") | chrome);
-  lines.push_back(text("q / Esc  quit") | chrome);
+  lines.push_back(text("q / Esc  back, or confirm quit from gameplay") | chrome);
+
+  lines.push_back(text("Ctrl-C   quit immediately") | chrome);
 
   if (active_screen_kind_ == ActiveScreen::effect_gallery) {
     lines.push_back(separator() | chrome);

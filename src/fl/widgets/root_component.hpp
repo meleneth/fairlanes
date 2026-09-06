@@ -29,6 +29,8 @@ public:
   ftxui::Element Render() override;
   ftxui::Component ActiveChild() override;
 
+  bool quit_requested() const { return quit_requested_; }
+
   void toggle_console();
   void set_full_open();
 
@@ -68,12 +70,16 @@ private:
   std::optional<fl::monster::MonsterKind> return_monster_;
   ActiveScreen active_screen_kind_{ActiveScreen::account_battle};
   bool keybind_help_open_{false};
+  bool quit_confirmation_open_{false};
+  bool quit_requested_{false};
   bool fps_initialized_{false};
   int fps_frame_count_{0};
   int displayed_fps_{0};
   std::uint64_t render_frames_{0};
   std::chrono::steady_clock::time_point fps_window_start_{};
 
+  ftxui::Component quit_cancel_;
+  ftxui::Component quit_confirmation_;
   ftxui::Component active_screen_;
   ftxui::Component console_overlay_;
 };

@@ -79,3 +79,62 @@ TEST_CASE("Shell follows bestiary links and returns to the monster",
   REQUIRE(render(root).find("Bestiary") != std::string::npos);
   REQUIRE(render(root).find("Scaredy Cat") != std::string::npos);
 }
+
+TEST_CASE("Gameplay quit requires an explicit selection and defaults to cancel",
+          "[widgets][root][quit]") {
+  fl::GrandCentral game{1, 1, 1};
+  fl::widgets::RootComponent root{game.account_context(0), game.accounts(),
+                                  game.game_log(), game.world_clock(),
+                                  &game.discoveries()};
+  for (const auto &key : {ftxui::Event::Escape, ftxui::Event::Character("q")}) {
+    REQUIRE(root.OnEvent(key));
+    REQUIRE(render(root).find("Quit Fairlanes?") != std::string::npos);
+    REQUIRE(render(root).find("Progress is not saved") != std::string::npos);
+    REQUIRE_FALSE(root.quit_requested());
+    REQUIRE(root.OnEvent(ftxui::Event::Return));
+    REQUIRE_FALSE(root.quit_requested());
+    REQUIRE(render(root).find("Quit Fairlanes?") == std::string::npos);
+  }
+
+  root.OnEvent(ftxui::Event::Escape);
+  root.OnEvent(ftxui::Event::Tab);
+  root.OnEvent(ftxui::Event::Escape);
+  REQUIRE_FALSE(root.quit_requested());
+  root.OnEvent(ftxui::Event::Escape);
+  root.OnEvent(ftxui::Event::Return);
+  REQUIRE_FALSE(root.quit_requested()); // Reopening resets selection to Cancel.
+
+  root.OnEvent(ftxui::Event::Escape);
+  root.OnEvent(ftxui::Event::Character("b"));
+  REQUIRE(render(root).find("Quit Fairlanes?") != std::string::npos);
+  root.OnEvent(ftxui::Event::Tab);
+  root.OnEvent(ftxui::Event::Return);
+  REQUIRE(root.quit_requested());
+}
+
+TEST_CASE("Back leaves reference screens and overlays without requesting quit",
+          "[discovery][widgets][root][quit]") {
+  fl::GrandCentral game{1, 1, 1};
+  fl::widgets::RootComponent root{game.account_context(0), game.accounts(),
+                                  game.game_log(), game.world_clock(),
+                                  &game.discoveries()};
+  for (const auto &key : {ftxui::Event::Escape, ftxui::Event::Character("q")}) {
+    for (const auto &open : {"l", "b"}) {
+      root.OnEvent(ftxui::Event::Character(open));
+      REQUIRE(root.OnEvent(key));
+      REQUIRE_FALSE(root.quit_requested());
+      REQUIRE(render(root).find("Quit Fairlanes?") == std::string::npos);
+      REQUIRE(render(root).find("Esc: back") == std::string::npos);
+    }
+  }
+  for (const auto &open : {"h", "`"}) {
+    root.OnEvent(ftxui::Event::Character(open));
+    REQUIRE(root.OnEvent(ftxui::Event::Escape));
+    REQUIRE_FALSE(root.quit_requested());
+    REQUIRE(render(root).find("Quit Fairlanes?") == std::string::npos);
+  }
+  root.show_effect_gallery();
+  REQUIRE(root.OnEvent(ftxui::Event::Escape));
+  REQUIRE_FALSE(root.quit_requested());
+  REQUIRE(render(root).find("Quit Fairlanes?") == std::string::npos);
+}

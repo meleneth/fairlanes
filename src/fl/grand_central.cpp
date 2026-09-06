@@ -269,12 +269,15 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
     return root_component()->Render();
   });
 
+  auto *root = dynamic_cast<fl::widgets::RootComponent *>(root_component().get());
   ui = CatchEvent(ui, [&](Event e) {
-    if (e == Event::Character('q') || e == Event::Escape) {
+    std::scoped_lock lock(frame_mutex_);
+    root->OnEvent(e);
+    if (root->quit_requested()) {
       screen.Exit();
-      return true;
     }
-    return false;
+    // Events are routed exactly once, including those the root does not handle.
+    return true;
   });
 
   std::atomic<bool> running = true;
