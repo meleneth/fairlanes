@@ -6,6 +6,7 @@ option(fairlanes_ENABLE_LTO "Enable link-time optimization" OFF)
 option(BUILD_SHARED_LIBS "Build shared libs (if any)" OFF)
 option(FL_BUILD_TESTS "Build tests" ON)
 option(FL_ENABLE_ASSERTS "Enable runtime asserts" ON)
+option(FAIRLANES_ENABLE_ENGINE_PCH "Precompile stable engine dependencies on native GCC/Clang" ON)
 option(ENABLE_COVERAGE "Build with coverage instrumentation" OFF)
 set(FAIRLANES_CONTENT_PREGENERATED_DIR "" CACHE PATH
     "Use an existing generated Fairlanes content tree instead of running Ruby code generation")
@@ -732,6 +733,25 @@ if(EMSCRIPTEN)
 endif()
 endforeach()
 
+# Only stable third-party headers: changing game/content headers must not rebuild
+# the PCH. All five engine libraries above have matching flags and definitions.
+# Generated metadata is deliberately light and does not benefit from this PCH.
+if(FAIRLANES_ENABLE_ENGINE_PCH AND NOT EMSCRIPTEN AND
+   CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  set(FAIRLANES_ENGINE_PCH_HEADERS
+    <chrono>
+    <entt/entity/registry.hpp>
+    <ftxui/component/component.hpp>
+    <boost/sml.hpp>
+  )
+  target_precompile_headers(fl_core PRIVATE ${FAIRLANES_ENGINE_PCH_HEADERS})
+  foreach(fairlanes_lib IN ITEMS fl_skills fl_monsters fl_widgets fl)
+    target_precompile_headers(${fairlanes_lib} REUSE_FROM fl_core)
+  endforeach()
+  set_source_files_properties(${FAIRLANES_CONTENT_GENERATED_FL_SOURCES}
+    PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+endif()
+
 file(GLOB_RECURSE SEERIN_SOURCES CONFIGURE_DEPENDS
   ${CMAKE_SOURCE_DIR}/src/sr/*.cpp
 )
@@ -849,6 +869,7 @@ if(FL_BUILD_TESTS)
   target_precompile_headers(fairlanes_tests PRIVATE
     <catch2/catch_test_macros.hpp>
     <catch2/matchers/catch_matchers_floating_point.hpp>
+    ${FAIRLANES_ENGINE_PCH_HEADERS}
   )
 
   target_link_libraries(fairlanes_tests

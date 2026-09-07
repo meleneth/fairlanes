@@ -592,3 +592,19 @@ Collective victory calls `RaidLootSystem` once, granting two exclusive collectib
 `RaidTrinket` entities per participating party before `RaidLootAwarded`. Wiped
 parties receive the same allocation. These items currently have no equipment slot
 or combat bonus. Definitions/effects and progression-gate rules remain open.
+
+## Compile-time dependencies
+
+Use specific EnTT headers: `entity/entity.hpp` for IDs/null, `entity/fwd.hpp`
+for declared registry/handle references, `entity/registry.hpp` for registry
+operations, and `entity/handle.hpp` for constructed handles. Avoid the umbrella
+`entt/entt.hpp`. Keep content identifier enums separate from ECS/status/rendering
+implementations so generated metadata remains cheap to compile.
+
+Native GCC/Clang builds default to `FAIRLANES_ENABLE_ENGINE_PCH=ON`. The shared
+engine PCH contains only stable third-party headers; generated metadata skips it.
+Keep direct includes complete and never add game headers to this PCH. Libraries
+using `REUSE_FROM fl_core` must retain matching compiler flags and definitions.
+Use `FAIRLANES_ENABLE_ENGINE_PCH=OFF` to check engine includes without it, or
+`CMAKE_DISABLE_PRECOMPILE_HEADERS=ON` to disable the existing test PCH too.
+See `docs/compile-time-profile.md` for measured costs and profiling controls.

@@ -33,6 +33,7 @@ def main():
     parser.add_argument('--database', type=Path, default=Path('build-linux-debug/compile_commands.json'))
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--compiler', required=True)
+    parser.add_argument('--without-pch', action='store_true', help='Disable CMake PCH use to measure full parsing cost')
     parser.add_argument('--summarize-only', action='store_true', help='Re-read an existing capture without compiling')
     parser.add_argument('--mode', choices=['clang', 'gcc'], default='clang')
     parser.add_argument('--file', action='append', required=True, help='Source path suffix; repeat or use ALL for project sources')
@@ -58,9 +59,17 @@ def main():
         original = entry.get('arguments') or shlex.split(entry['command'])
         command = [args.compiler]
         skip = False
-        for argument in original[1:]:
+        for argument_index, argument in enumerate(original[1:], start=1):
             if skip:
                 skip = False
+                continue
+            if (argument in ['-include', '-include-pch'] and
+                    argument_index + 1 < len(original) and
+                    'cmake_pch' in original[argument_index + 1] and
+                    (args.without_pch or (args.mode == 'clang' and 'clang' not in original[0]))):
+                # A GCC PCH cannot be consumed by Clang. Full parsing is also
+                # useful for apples-to-apples header dependency measurements.
+                skip = True
                 continue
             if argument in ['-o', '-MF', '-MT', '-MQ']:
                 skip = True
@@ -104,7 +113,9 @@ def main():
                     phases[name] += duration
     lines = ['# Compile-time capture', '',
              f'Compiler: `{args.compiler}`; mode: {args.mode}; sequential compilation.',
-             'Warnings are retained but do not fail profiling. No normal build outputs are overwritten.', '',
+             'Warnings are retained but do not fail profiling. No normal build outputs are overwritten.',
+             'PCH follows build configuration unless --without-pch or cross-compiler replay disables it.',
+             'PCH creation is not included in these per-source timings; measure it separately for clean builds.', '',
              'These are measured compilation costs, not predicted savings. Header and template',
              'durations are inclusive, overlap, and must not be added together. Clang costs',
              'are not GCC costs. Traces omit events below 500 microseconds.', '',

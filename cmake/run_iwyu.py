@@ -33,7 +33,21 @@ def iwyu_command(entry: dict, iwyu: str) -> list[str]:
         raise RuntimeError(f"empty compile command for {entry.get('file', '<unknown>')}")
 
     args[0] = iwyu
-    return [arg for arg in args if arg not in UNSUPPORTED_IWYU_FLAGS]
+    command = []
+    skip = False
+    for index, arg in enumerate(args):
+        if skip:
+            skip = False
+            continue
+        if (arg in {'-include', '-include-pch'} and index + 1 < len(args)
+                and 'cmake_pch' in args[index + 1]):
+            # Include analysis must see direct dependencies, not a forced PCH;
+            # GCC's serialized headers are also unreadable by Clang-based IWYU.
+            skip = True
+            continue
+        if arg not in UNSUPPORTED_IWYU_FLAGS:
+            command.append(arg)
+    return command
 
 
 def main() -> int:

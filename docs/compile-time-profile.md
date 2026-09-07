@@ -139,3 +139,78 @@ These temporary artifacts are not committed and may disappear on cleanup.
 Tool references: [Clang time tracing](https://clang.llvm.org/docs/UsersManual.html#cmdoption-ftime-trace),
 [GCC phase reports](https://gcc.gnu.org/onlinedocs/gcc-15.1.0/gcc/Developer-Options.html),
 [include-cleaner](https://clang.llvm.org/extra/clang-tidy/checks/misc/include-cleaner.html).
+
+## Implemented improvements (2026-09-06)
+
+The baseline above is retained for comparison. Two dependency cleanups and an
+optional native GCC/Clang engine PCH are now implemented, with no gameplay,
+ownership, container, or ECS API changes.
+
+- Status and decal identifiers have small dedicated headers. Generated skill
+  definitions no longer include status components and rendering implementation.
+- EnTT umbrella includes are replaced by specific registry, entity, handle, or
+  forward-declaration headers. Data-only Stats now includes only what it uses.
+- CMake shares one stable third-party PCH across the five engine libraries.
+  It contains `<chrono>`, EnTT registry, FTXUI component, and SML headers.
+  Generated metadata skips this PCH entirely. The pre-existing Catch2 test PCH
+  is extended with the same stable headers; it has its own build because test
+  compiler flags differ from engine-library flags.
+
+### Fresh compilation measurements
+
+The same eight GCC translation units were recompiled into new temporary objects,
+with the same sequential profiling method. A separate PCH probe measured creation
+from scratch plus all seven engine compilations; generated metadata remained
+unprecompiled. These are clean **compilation-work** measurements, not a claim of
+a measured full clean parallel-build wall-time improvement.
+
+| Source | Original | Narrow includes, no engine PCH | With engine PCH |
+| --- | ---: | ---: | ---: |
+| `context.cpp` | 9.10s | 5.63s | 3.46s |
+| `visual_resolver.cpp` | 11.83s | 7.30s | 5.16s |
+| `encounter_data.cpp` | 13.64s | 8.85s | 6.53s |
+| `party_data.cpp` | 18.12s | 12.13s | 10.05s |
+| `skill_sequence.cpp` | 20.25s | 12.73s | 10.62s |
+| `visitor_fall.cpp` | 4.20s | 0.88s | 0.88s |
+| `root_component.cpp` | 10.68s | 6.56s | 4.45s |
+| `grand_central.cpp` | 16.91s | 10.75s | 8.53s |
+| PCH creation | — | — | 4.61s |
+| **Total, including PCH creation** | **104.73s** | **64.82s** | **54.28s** |
+
+The dependency cleanup reduced sampled work by 38%; including the PCH reduced
+it by 48% from the original. PCH itself saves another 16% even after creation
+cost in this small sample. No link or unchanged-file cache was involved.
+Larger builds amortize creation differently, and host/cache variation still applies.
+
+### Validation and controls
+
+- GCC normal builds and all 285 C++ tests pass both before enabling the
+  engine PCH and afterward. The existing Catch2-only PCH was present in the
+  earlier run; no engine or game dependencies were precompiled there.
+- Clang 22.1.6 successfully creates the same third-party PCH and compiles
+  all seven sampled engine files against it. This is targeted Clang
+  compatibility coverage, not a full Clang game/test-suite build.
+- Six Python tests cover profiler spans and IWYU argument handling.
+  IWYU strips CMake PCH injection so analysis sees actual includes.
+- `FAIRLANES_ENABLE_ENGINE_PCH=OFF` disables the added engine PCH.
+  `CMAKE_DISABLE_PRECOMPILE_HEADERS=ON` disables all CMake-managed PCHs,
+  including the previously existing Catch2 PCH. Emscripten and compilers
+  outside GNU/Clang do not enable this engine PCH path.
+- PCH contains no Fairlanes headers. Keep direct includes correct; never
+  rely on PCH for declarations. Libraries sharing it must retain matching
+  flags and defines, as required by CMake REUSE_FROM.
+- Profiling `--without-pch` forces full parsing for header comparisons.
+  Clang replay of a GCC compilation database automatically strips CMake
+  PCH injection because the serialized formats are incompatible.
+  Normal per-source profiling does not include PCH creation; count it
+  separately when assessing clean builds.
+
+Additional local captures: `/tmp/fairlanes-gcc-narrow-headers`,
+`/tmp/fairlanes-pch-probe`, `/tmp/fairlanes-pch-probe-clang`.
+
+Further account/ATB ownership refactors were deliberately deferred: these
+changes already remove substantial work without altering implementation
+boundaries or adding opaque wrapper layers.
+
+PCH references: [CMake](https://cmake.org/cmake/help/latest/command/target_precompile_headers.html),
+[GCC](https://gcc.gnu.org/onlinedocs/gcc/Precompiled-Headers.html).

@@ -247,3 +247,16 @@ cybernetic/cosmic themes respectively. They are content-planning assignments,
 independent of level and encounter pool; they do not gate encounters by cycle.
 New content must declare its cycle explicitly rather than infer it from skills
 or level. Review the per-cycle counts when planning further content generation.
+
+### Compile-time dependencies and precompiled headers
+
+Native GCC/Clang engine libraries share a CMake-managed PCH of stable third-party
+headers. Generated metadata bypasses it; the test target extends its existing
+Catch2 PCH separately. Game headers remain ordinary direct includes. This reduces
+repeated parsing during clean builds without changing gameplay structure.
+
+Configure with `-DFAIRLANES_ENABLE_ENGINE_PCH=OFF` to disable the added engine PCH,
+or `-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON` to disable every CMake PCH. Keep source
+includes correct with PCH off. When profiling actual header cost, use
+`scripts/profile_compile_times.py --without-pch`; per-source PCH timings exclude
+its creation cost. See [the measured report](../compile-time-profile.md).
