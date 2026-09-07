@@ -1,3 +1,4 @@
+#include <entt/entity/handle.hpp>
 #include "party_loop.hpp"
 
 #include "fl/ecs/components/encounter.hpp"

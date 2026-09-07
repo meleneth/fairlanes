@@ -1,7 +1,7 @@
 #include <array>
 #include <catch2/catch_test_macros.hpp>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/loot/equipment_builder.hpp"

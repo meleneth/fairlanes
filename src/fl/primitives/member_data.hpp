@@ -4,7 +4,7 @@
 #include <string>
 #include <utility>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 
 #include "fl/events/party_bus.hpp"
 #include "fl/skills/grimoire.hpp"

@@ -1,7 +1,8 @@
+#include <entt/entity/handle.hpp>
 // tests/test_grand_central.cpp
 
 #include <catch2/catch_test_macros.hpp>
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/closet.hpp"
@@ -13,7 +14,7 @@
 #include "fl/primitives/party_data.hpp"
 
 #include <catch2/catch_test_macros.hpp>
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 
 namespace Catch {
 template <> struct StringMaker<entt::entity> {

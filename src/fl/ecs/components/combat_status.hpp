@@ -1,7 +1,7 @@
 #pragma once
 #include "fl/ecs/components/combat_status_kind.hpp"
 
-#include <entt/entt.hpp>
+#include <entt/entity/entity.hpp>
 
 #include <string>
 #include <vector>

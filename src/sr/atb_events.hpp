@@ -1,6 +1,6 @@
 // atb_events.hpp
 #pragma once
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 #include <variant>
 
 namespace seerin {

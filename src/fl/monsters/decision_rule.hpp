@@ -3,7 +3,7 @@
 #include "fl/skills/skill.hpp"
 #include "fl/targeting/possible_targets.hpp"
 #include "fl/targeting/target_status.hpp"
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 #include <functional>
 #include <optional>
 #include <span>

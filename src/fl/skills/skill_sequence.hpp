@@ -3,7 +3,7 @@
 #include <functional>
 #include <string_view>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 #include <ftxui/screen/color.hpp>
 
 #include "fl/context.hpp"

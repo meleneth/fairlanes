@@ -1,6 +1,6 @@
 // tests/test_entity_builder.cpp
 #include <catch2/catch_test_macros.hpp>
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 #include <nlohmann/json.hpp>
 
 #include "fl/context.hpp"

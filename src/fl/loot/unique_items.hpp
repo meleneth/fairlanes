@@ -3,7 +3,7 @@
 #include <span>
 #include <string_view>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 
 #include "fl/ecs/components/equipment.hpp"
 

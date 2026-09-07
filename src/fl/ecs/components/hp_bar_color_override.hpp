@@ -1,6 +1,6 @@
 #pragma once
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 #include <ftxui/component/component.hpp>
 
 #include "fl/ecs/components/visual_effects.hpp"

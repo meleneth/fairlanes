@@ -1,5 +1,6 @@
 #pragma once
-#include <entt/entt.hpp>
+#include <entt/entity/fwd.hpp>
+#include <entt/entity/entity.hpp>
 
 #include "fl/context.hpp"
 

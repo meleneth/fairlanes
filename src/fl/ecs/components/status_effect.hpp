@@ -1,6 +1,6 @@
 #pragma once
 
-#include <entt/entt.hpp>
+#include <entt/entity/entity.hpp>
 
 #include "fl/events/party_bus.hpp"
 

@@ -1,3 +1,4 @@
+#include <entt/entity/handle.hpp>
 #include "fl/ecs/systems/dire_bleed_system.hpp"
 
 #include <algorithm>

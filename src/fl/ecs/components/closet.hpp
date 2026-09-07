@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <optional>
 
-#include <entt/entt.hpp>
+#include <entt/entity/entity.hpp>
 
 #include "fl/skills/skill.hpp"
 

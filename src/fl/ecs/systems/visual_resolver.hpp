@@ -2,7 +2,7 @@
 
 #include <optional>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 #include <ftxui/screen/color.hpp>
 
 #include "sr/uWu.hpp"

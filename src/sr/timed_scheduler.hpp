@@ -8,7 +8,7 @@
 #include <variant>
 #include <vector>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 
 #include "uWu.hpp"
 

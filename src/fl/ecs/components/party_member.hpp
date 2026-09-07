@@ -1,5 +1,6 @@
 #pragma once
-#include <entt/entt.hpp>
+#include <entt/entity/handle.hpp>
+#include <entt/entity/registry.hpp>
 #include <string>
 
 #include "fl/context.hpp"
@@ -8,7 +9,7 @@
 
 #pragma once
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 #include <string>
 #include <utility>
 

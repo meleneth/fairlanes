@@ -1,6 +1,6 @@
 #include "party_member.hpp"
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 #include <ranges>
 #include <string>
 

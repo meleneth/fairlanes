@@ -4,7 +4,7 @@
 #include <memory>
 #include <utility>
 
-#include <entt/entt.hpp>
+#include <entt/entity/entity.hpp>
 
 #include "fl/primitives/encounter_data.hpp" // path to your EncounterData/InEncounter decl
 

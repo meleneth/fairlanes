@@ -5,7 +5,7 @@
 #include <string_view>
 #include <utility>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/status_effect.hpp"

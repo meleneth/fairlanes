@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 
-#include <entt/entt.hpp>
+#include <entt/entity/entity.hpp>
 
 #include "fl/fwd.hpp"
 

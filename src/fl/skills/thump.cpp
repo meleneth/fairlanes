@@ -1,3 +1,4 @@
+#include <entt/entity/handle.hpp>
 #include <algorithm>
 #include <cmath>
 #include <random>

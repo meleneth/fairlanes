@@ -1,3 +1,4 @@
+#include <entt/entity/handle.hpp>
 #include "fl/skills/skill_sequence.hpp"
 
 #include <fmt/format.h>

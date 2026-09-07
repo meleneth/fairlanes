@@ -5,7 +5,7 @@
 #include <array>
 #include <ranges>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 
 #include "fl/ecs/components/combat_status.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"

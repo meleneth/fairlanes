@@ -1,3 +1,4 @@
+#include <entt/entity/handle.hpp>
 #include "fl/ecs/systems/combat_status_system.hpp"
 
 #include <algorithm>

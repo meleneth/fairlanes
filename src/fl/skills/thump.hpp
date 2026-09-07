@@ -2,7 +2,7 @@
 #include <cmath>
 #include <random>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 #include <exprtk.hpp>
 
 #include "fl/skills/skill.hpp"

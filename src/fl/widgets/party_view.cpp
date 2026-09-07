@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>

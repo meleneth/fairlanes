@@ -2,7 +2,7 @@
 
 #include <chrono>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 #include <ftxui/screen/color.hpp>
 
 #include "fl/ecs/components/stats.hpp"

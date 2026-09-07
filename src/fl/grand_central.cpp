@@ -8,7 +8,7 @@
 #include <string>
 
 #include "fl/tracy_shim.hpp"
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>

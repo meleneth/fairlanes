@@ -1,7 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <deque>
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 #include <memory>
 #include <vector>
 

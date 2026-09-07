@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 
 #include "fl/ecs/components/combat_status.hpp"
 #include "fl/ecs/components/monster_identity.hpp"

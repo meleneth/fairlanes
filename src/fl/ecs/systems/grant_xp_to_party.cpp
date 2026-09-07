@@ -1,3 +1,4 @@
+#include <entt/entity/handle.hpp>
 #include "fmt/format.h"
 
 #include "fl/ecs/components/party_member.hpp"

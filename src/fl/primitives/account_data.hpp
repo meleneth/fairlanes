@@ -4,7 +4,7 @@
 #include <deque>
 #include <memory>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 
 #include "fl/fwd.hpp"
 #include "fl/widgets/fancy_log.hpp"

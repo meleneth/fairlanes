@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 
 #include "fl/ecs/components/atb_charge.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"

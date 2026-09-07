@@ -1,11 +1,13 @@
 #pragma once
+#include <entt/entity/fwd.hpp>
 #include <deque>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
 
-#include <entt/entt.hpp>
+#include <entt/entity/entity.hpp>
+#include <entt/entity/fwd.hpp>
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
 

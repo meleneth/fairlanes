@@ -5,7 +5,7 @@
 #include <vector>
 
 #include <boost/sml.hpp>
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 
 #include "atb_events.hpp"
 #include "atb_fsm.hpp"

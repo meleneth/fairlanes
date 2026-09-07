@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 #include <ftxui/component/component.hpp>
 
 #include "fl/ecs/components/hp_bar_color_override.hpp"

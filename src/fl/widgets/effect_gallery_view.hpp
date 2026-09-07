@@ -6,7 +6,7 @@
 #include <string_view>
 #include <vector>
 
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 #include <ftxui/component/component.hpp>
 
 #include "fl/primitives/random_hub.hpp"

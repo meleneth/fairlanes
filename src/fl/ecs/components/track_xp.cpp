@@ -1,3 +1,4 @@
+#include <entt/entity/handle.hpp>
 #include <fmt/core.h>
 
 #include "fl/context.hpp"

@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include <entt/entt.hpp>
+#include <entt/entity/entity.hpp>
 
 namespace fl::ecs::components {
 // Raid-exclusive collectible; equipment slots and combat bonuses are undecided.

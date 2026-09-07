@@ -1,6 +1,6 @@
 // party_status.hpp
 #pragma once
-#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/dom/elements.hpp>
 

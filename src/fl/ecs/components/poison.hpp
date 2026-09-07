@@ -1,6 +1,6 @@
 #pragma once
 
-#include <entt/entt.hpp>
+#include <entt/entity/entity.hpp>
 
 #include "fl/ecs/components/status_effect.hpp"
 
