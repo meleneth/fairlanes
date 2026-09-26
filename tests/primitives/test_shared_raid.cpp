@@ -95,6 +95,30 @@ TEST_CASE(
   }
 }
 
+TEST_CASE("Resolved raids stop writing to the account log", "[raid][logging]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto ctx = gc.account_context(0);
+  auto &account = ctx.account_data();
+  const std::array enemies{fl::monster::MonsterKind::FieldMouse};
+  REQUIRE(account.start_raid(ctx, enemies));
+
+  auto &raid = *account.raid();
+  const auto entries_before_resolution = account.log().size();
+  for (const auto enemy : raid.encounter().attackers())
+    gc.reg().get<fl::ecs::components::Stats>(enemy).hp_ = 0;
+
+  raid.tick();
+
+  REQUIRE(raid.result() == fl::events::RaidResult::Victory);
+  REQUIRE(account.log().size() == entries_before_resolution + 1);
+  const auto entries_after_resolution = account.log().size();
+
+  for (int beat = 0; beat < 3; ++beat)
+    account.advance_beat(ctx, false);
+
+  REQUIRE(account.log().size() == entries_after_resolution);
+}
+
 TEST_CASE("A wiped raid party keeps newly observed skills if the account wins",
           "[raid][learning]") {
   fl::GrandCentral gc{1, 2, 1};

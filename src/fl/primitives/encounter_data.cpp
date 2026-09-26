@@ -185,17 +185,9 @@ entt::entity EncounterData::target_for_skill(entt::entity actor,
 }
 
 void EncounterData::finalize() {
-  context_.log().append_markup(
-      fmt::format("Finalizing encounter with {} entities to clean up",
-                  life_.entities_to_cleanup_.size()));
-
   for (auto e_cleanup : life_.entities_to_cleanup_) {
     if (context_.reg().valid(e_cleanup)) context_.reg().destroy(e_cleanup);
   }
-
-  context_.log().append_markup(
-      fmt::format("Encounter {} finalized and cleaned up",
-                  int(entt::to_integral(context_.self()))));
 }
 
 void EncounterData::clear_pending_events() { rt_.atb_.clear_pending_events(); }
