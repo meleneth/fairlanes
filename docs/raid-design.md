@@ -306,8 +306,11 @@ requirement. A wiped party remains visible as part of the shared encounter.
 
 Root/shell owns navigation; the raid view projects encounter state and reuses
 combatant/party widgets where practical. Starting a raid must not depend on the
-user opening its screen. Auto-focus for the selected account, simultaneous raids
-in other accounts, logs, adds, and minimum terminal dimensions need design work.
+user opening its screen. While the encounter is active, root navigation is
+locked to the raid screen; ordinary screen toggles, reference views, and
+command-driven navigation cannot replace it. Auto-focus for the selected
+account, simultaneous raids in other accounts, logs, adds, and minimum terminal
+dimensions need design work.
 At small sizes, define a compact layout or a supported minimum size explicitly;
 do not silently violate the all-parties-visible requirement.
 
@@ -431,9 +434,10 @@ Returning to account battle while a raid is active also opens that shared view.
 The upper third shows the boss and a simple beat-driven celestial animation;
 the lower two thirds show all five parties using two-line compact `Combatant`
 widgets, retaining attack decals and combat colors. Render tests cover 80x24
-(including the account countdown chrome) and 120x40 terminals. Tab returns to
-party presentation. Results remain visible until navigation, while the account
-resumes normal progression. The raid view explicitly labels account time paused
+(including the account countdown chrome) and 120x40 terminals. Normal navigation
+can return to party presentation only after the encounter resolves. Results
+remain visible until navigation, while the account resumes normal progression.
+The raid view explicitly labels account time paused
 and shows the consumed-arrival-aware countdown to the next Visitor.
 
 Root moon chrome reads the selected account calendar and shows a real-time

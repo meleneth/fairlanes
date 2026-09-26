@@ -79,3 +79,43 @@ TEST_CASE(
   ftxui::Render(screen, root.Render());
   REQUIRE(screen.ToString().find("VISITOR RAID") == std::string::npos);
 }
+
+TEST_CASE("Active raids lock the root to the raid screen",
+          "[raid][widgets][navigation]") {
+  fl::GrandCentral gc{1, 5, 5};
+  gc.innervate_event_system();
+  auto ctx = gc.account_context(0);
+  fl::widgets::RootComponent root{ctx, gc.accounts(), gc.game_log(),
+                                  gc.world_clock(), &gc.discoveries()};
+
+  auto render = [&] {
+    auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(120),
+                                        ftxui::Dimension::Fixed(37));
+    ftxui::Render(screen, root.Render());
+    return screen.ToString();
+  };
+
+  REQUIRE(ctx.account_data().raid()->active());
+  REQUIRE(render().find("VISITOR RAID") != std::string::npos);
+
+  for (const auto &event : {ftxui::Event::Character("/"),
+                            ftxui::Event::Character(" "),
+                            ftxui::Event::Character("l"),
+                            ftxui::Event::Character("b")}) {
+    REQUIRE(root.OnEvent(event));
+    REQUIRE(render().find("VISITOR RAID") != std::string::npos);
+  }
+
+  root.show_party(0, 0);
+  REQUIRE(render().find("VISITOR RAID") != std::string::npos);
+  root.show_party_battle(0, 0);
+  REQUIRE(render().find("VISITOR RAID") != std::string::npos);
+  root.show_account_battle(0);
+  REQUIRE(render().find("VISITOR RAID") != std::string::npos);
+  root.show_effect_gallery();
+  REQUIRE(render().find("VISITOR RAID") != std::string::npos);
+  root.show_libram();
+  REQUIRE(render().find("VISITOR RAID") != std::string::npos);
+  root.show_bestiary();
+  REQUIRE(render().find("VISITOR RAID") != std::string::npos);
+}

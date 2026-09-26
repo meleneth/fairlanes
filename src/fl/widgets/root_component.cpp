@@ -306,6 +306,9 @@ void RootComponent::toggle_console() {
 void RootComponent::set_full_open() { console_overlay()->set_full_open(); }
 
 void RootComponent::show_account_battle(std::size_t account_index) {
+  if (raid_screen_locked()) {
+    return;
+  }
   ctx_ = make_context(account_index);
   if (auto *raid = ctx_.account_data().raid(); raid && raid->active()) {
     shown_raid_ = std::pair{ctx_.account_data().account_id(), raid->id()};
@@ -319,6 +322,9 @@ void RootComponent::show_account_battle(std::size_t account_index) {
 
 void RootComponent::show_party_battle(std::size_t account_index,
                                       std::size_t party_index) {
+  if (raid_screen_locked()) {
+    return;
+  }
   ctx_ = make_context(account_index);
   auto &parties = ctx_.account_data().parties();
   if (!parties.empty()) {
@@ -333,6 +339,9 @@ void RootComponent::show_party_battle(std::size_t account_index,
 
 void RootComponent::show_party(std::size_t account_index,
                                std::size_t party_index) {
+  if (raid_screen_locked()) {
+    return;
+  }
   ctx_ = make_context(account_index);
   auto &parties = ctx_.account_data().parties();
   if (!parties.empty()) {
@@ -346,6 +355,9 @@ void RootComponent::show_party(std::size_t account_index,
 }
 
 void RootComponent::show_effect_gallery() {
+  if (raid_screen_locked()) {
+    return;
+  }
   active_screen_kind_ = ActiveScreen::effect_gallery;
   replace_screen(ftxui::Make<EffectGalleryView>());
 }
@@ -359,7 +371,18 @@ void RootComponent::replace_screen(ftxui::Component screen) {
   active_screen_->TakeFocus();
 }
 
+bool RootComponent::raid_screen_locked() const noexcept {
+  if (active_screen_kind_ != ActiveScreen::raid) {
+    return false;
+  }
+  const auto *raid = ctx_.account_data().raid();
+  return raid != nullptr && raid->active();
+}
+
 void RootComponent::show_libram(std::optional<fl::skills::SkillId> skill) {
+  if (raid_screen_locked()) {
+    return;
+  }
   if (!discoveries_)
     return;
   active_screen_kind_ = ActiveScreen::libram;
@@ -368,6 +391,9 @@ void RootComponent::show_libram(std::optional<fl::skills::SkillId> skill) {
 
 void RootComponent::show_bestiary(
     std::optional<fl::monster::MonsterKind> monster) {
+  if (raid_screen_locked()) {
+    return;
+  }
   if (!discoveries_)
     return;
   active_screen_kind_ = ActiveScreen::bestiary;
@@ -383,6 +409,9 @@ void RootComponent::show_bestiary(
 void RootComponent::toggle_active_screen() {
   switch (active_screen_kind_) {
   case ActiveScreen::raid:
+    if (raid_screen_locked()) {
+      return;
+    }
     show_party(commands_.account_index(), commands_.party_index());
     return;
   case ActiveScreen::party:
@@ -403,6 +432,9 @@ void RootComponent::toggle_active_screen() {
 void RootComponent::toggle_party_battle_screen() {
   switch (active_screen_kind_) {
   case ActiveScreen::raid:
+    if (raid_screen_locked()) {
+      return;
+    }
     show_party(commands_.account_index(), commands_.party_index());
     return;
   case ActiveScreen::account_battle:
@@ -442,6 +474,11 @@ void RootComponent::refresh_selected_account(std::size_t account_index,
                                              std::size_t party_index) {
   switch (active_screen_kind_) {
   case ActiveScreen::raid:
+    if (raid_screen_locked()) {
+      return;
+    }
+    show_account_battle(account_index);
+    return;
   case ActiveScreen::account_battle:
     show_account_battle(account_index);
     return;

@@ -54,6 +54,7 @@ private:
   };
 
   void replace_screen(ftxui::Component screen);
+  bool raid_screen_locked() const noexcept;
   ConsoleOverlay *console_overlay();
   fl::context::AccountCtx make_context(std::size_t account_index);
   void toggle_active_screen();
