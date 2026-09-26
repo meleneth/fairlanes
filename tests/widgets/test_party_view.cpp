@@ -10,6 +10,7 @@
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/loot/equipment_builder.hpp"
+#include "fl/skills/skill_definition.hpp"
 #include "fl/widgets/battle_render_budget.hpp"
 #include "fl/widgets/party_view.hpp"
 
@@ -79,6 +80,33 @@ TEST_CASE("Party player pane cycles members with left and right arrows",
   REQUIRE(render_party_view(view).find("Member 1/5") != std::string::npos);
   REQUIRE(view.OnEvent(ftxui::Event::ArrowRight));
   REQUIRE(render_party_view(view).find("Member 2/5") != std::string::npos);
+}
+
+TEST_CASE("Party player skill selection replaces inventory with skill details",
+          "[widgets][party][player][skills]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto account_ctx = gc.account_context(0);
+  auto &party = account_ctx.account_data().party(0);
+  const auto member = party.members().front().member_id();
+  auto &closet =
+      account_ctx.reg().get<fl::ecs::components::PartyMember>(member).closet();
+  closet.skill_slots[1] = fl::skills::SkillId::Thump;
+  fl::widgets::PartyView view{account_ctx, 0};
+
+  REQUIRE(view.OnEvent(ftxui::Event::Tab));
+  REQUIRE(view.OnEvent(ftxui::Event::ArrowDown));
+  const auto skill_details = render_party_view(view);
+  REQUIRE(skill_details.find("Skill information") != std::string::npos);
+  REQUIRE(skill_details.find("Thump") != std::string::npos);
+  REQUIRE(skill_details.find("Rank 1") != std::string::npos);
+  REQUIRE(skill_details.find("Deal 1-5 physical damage") != std::string::npos);
+
+  for (int i = 0; i < fl::ecs::components::Closet::kSkillSlotCount - 1; ++i) {
+    REQUIRE(view.OnEvent(ftxui::Event::ArrowDown));
+  }
+  const auto inventory = render_party_view(view);
+  REQUIRE(inventory.find("Skill information") == std::string::npos);
+  REQUIRE(inventory.find("Inventory") != std::string::npos);
 }
 
 TEST_CASE("Party player inventory equips filtered gear through party events",

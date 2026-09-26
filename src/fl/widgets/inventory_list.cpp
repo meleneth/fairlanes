@@ -9,6 +9,7 @@
 #include "fl/ecs/components/raid_trinket.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/events/party_bus.hpp"
+#include "fl/skills/skill_definition.hpp"
 #include "fl/widgets/equipment_label.hpp"
 
 namespace fl::widgets {
@@ -33,6 +34,14 @@ InventoryList::InventoryList(entt::registry &reg,
     : reg_(reg), party_(party) {}
 
 bool InventoryList::OnEvent(ftxui::Event event) {
+  if (mode_ == Mode::skill_information) {
+    if (event == ftxui::Event::Backspace || event == ftxui::Event::ArrowLeft) {
+      hide_skill_information();
+      return true;
+    }
+    return false;
+  }
+
   if (mode_ == Mode::equipment_slots) {
     const int slot_count = static_cast<int>(fl::loot::kEquipmentSlots.size());
     slot_cursor_ = std::clamp(slot_cursor_, 0, slot_count - 1);
@@ -130,6 +139,8 @@ ftxui::Element InventoryList::Render() {
     return render_equipment_slots();
   case Mode::filtered_items:
     return render_filtered_items();
+  case Mode::skill_information:
+    return render_skill_information();
   }
   return ftxui::text("");
 }
@@ -234,6 +245,24 @@ ftxui::Element InventoryList::render_filtered_items() {
                 vbox(std::move(lines)) | yframe | vscroll_indicator | flex);
 }
 
+ftxui::Element InventoryList::render_skill_information() {
+  using namespace ftxui;
+
+  auto title = text("Skill information") | bold;
+  if (!selected_skill_.has_value()) {
+    return window(title, text("No selected skill."));
+  }
+
+  const auto skill = *selected_skill_;
+  const auto &definition = fl::skills::definition(skill);
+  return window(
+      title,
+      vbox({text(fl::skills::display_name(skill)) | bold,
+            text("Rank " + std::to_string(skill.rank.value())) | dim,
+            separator(), paragraph(std::string{definition.description})}) |
+          yframe | vscroll_indicator | flex);
+}
+
 std::vector<entt::entity> InventoryList::filtered_items() const {
   std::vector<entt::entity> matches;
   const auto slot = selected_slot();
@@ -265,9 +294,23 @@ bool InventoryList::selected_member_is_valid() const {
 
 void InventoryList::show_equipment_slots(entt::entity member) noexcept {
   selected_member_ = member;
+  selected_skill_.reset();
   slot_cursor_ = 0;
   item_cursor_ = 0;
   mode_ = Mode::equipment_slots;
+}
+
+void InventoryList::show_skill_information(
+    fl::skills::SkillKey skill) noexcept {
+  selected_skill_ = skill;
+  mode_ = Mode::skill_information;
+}
+
+void InventoryList::hide_skill_information() noexcept {
+  if (mode_ == Mode::skill_information) {
+    selected_skill_.reset();
+    mode_ = Mode::party_inventory;
+  }
 }
 
 void InventoryList::set_focused(bool focused) noexcept { focused_ = focused; }

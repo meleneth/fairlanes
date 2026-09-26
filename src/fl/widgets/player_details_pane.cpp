@@ -7,8 +7,8 @@
 #include <type_traits>
 #include <utility>
 
-#include "fl/ecs/components/closet.hpp"
 #include "fl/ecs/components/casting_skill.hpp"
+#include "fl/ecs/components/closet.hpp"
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
@@ -42,9 +42,11 @@ ftxui::Element equipment_label(entt::registry &reg, entt::entity equipment_id) {
 
 PlayerDetailsPane::PlayerDetailsPane(entt::registry &reg,
                                      fl::primitives::PartyData &party,
-                                     InventorySelected on_inventory_selected)
+                                     InventorySelected on_inventory_selected,
+                                     SkillSelected on_skill_selected)
     : reg_(reg), party_(party),
-      on_inventory_selected_(std::move(on_inventory_selected)) {}
+      on_inventory_selected_(std::move(on_inventory_selected)),
+      on_skill_selected_(std::move(on_skill_selected)) {}
 
 bool PlayerDetailsPane::OnEvent(ftxui::Event event) {
   const int member_count = static_cast<int>(party_.members().size());
@@ -60,6 +62,7 @@ bool PlayerDetailsPane::OnEvent(ftxui::Event event) {
     cursor_ = (cursor_ + 1) % member_count;
     selection_cursor_ = 0;
     scroll_cursor_ = 0;
+    notify_skill_selection();
     return true;
   }
 
@@ -68,6 +71,7 @@ bool PlayerDetailsPane::OnEvent(ftxui::Event event) {
     cursor_ = (cursor_ + member_count - 1) % member_count;
     selection_cursor_ = 0;
     scroll_cursor_ = 0;
+    notify_skill_selection();
     return true;
   }
 
@@ -80,6 +84,7 @@ bool PlayerDetailsPane::OnEvent(ftxui::Event event) {
         selection_cursor_ < fl::ecs::components::Closet::kSkillSlotCount
             ? 7 + selection_cursor_
             : std::numeric_limits<int>::max();
+    notify_skill_selection();
     return true;
   }
 
@@ -92,6 +97,7 @@ bool PlayerDetailsPane::OnEvent(ftxui::Event event) {
         selection_cursor_ < fl::ecs::components::Closet::kSkillSlotCount
             ? 7 + selection_cursor_
             : std::numeric_limits<int>::max();
+    notify_skill_selection();
     return true;
   }
 
@@ -107,8 +113,12 @@ bool PlayerDetailsPane::OnEvent(ftxui::Event event) {
       selection_cursor_ < fl::ecs::components::Closet::kSkillSlotCount) {
     const auto member =
         party_.members()[static_cast<std::size_t>(cursor_)].member_id();
-    return party_.drop_skill(member,
-                             static_cast<std::size_t>(selection_cursor_));
+    const bool dropped =
+        party_.drop_skill(member, static_cast<std::size_t>(selection_cursor_));
+    if (dropped) {
+      notify_skill_selection();
+    }
+    return dropped;
   }
 
   if (event == ftxui::Event::PageDown) {
@@ -183,7 +193,7 @@ ftxui::Element PlayerDetailsPane::Render() {
           std::move(skill_name),
       });
       if (focused_ && i == selection_cursor_) {
-        line = line | inverted | focusPosition(0, 7 + i);
+        line = line | inverted;
       }
       lines.push_back(std::move(line));
     }
@@ -211,28 +221,51 @@ ftxui::Element PlayerDetailsPane::Render() {
   }
 
   lines.push_back(separator());
-  const int inventory_row = static_cast<int>(lines.size());
-  auto inventory = text("Inventory") | bold;
+  auto inventory = hbox({text("Inventory") | bold, filler()});
   if (focused_ &&
       selection_cursor_ == fl::ecs::components::Closet::kSkillSlotCount) {
-    inventory = inventory | inverted | focusPosition(0, inventory_row);
+    inventory = inventory | inverted;
   }
   lines.push_back(std::move(inventory));
 
   scroll_cursor_ = std::clamp(scroll_cursor_, 0,
                               std::max(0, static_cast<int>(lines.size()) - 1));
-  if (!lines.empty()) {
-    lines[static_cast<std::size_t>(scroll_cursor_)] =
-        lines[static_cast<std::size_t>(scroll_cursor_)] |
-        focusPosition(0, scroll_cursor_);
+  auto content = vbox(std::move(lines));
+  if (focused_) {
+    content = content | focusPosition(0, scroll_cursor_);
   }
 
-  return window(title,
-                vbox(std::move(lines)) | yframe | vscroll_indicator | flex);
+  return window(title, std::move(content) | yframe | vscroll_indicator | flex);
 }
 
-void PlayerDetailsPane::set_focused(bool focused) noexcept {
+void PlayerDetailsPane::set_focused(bool focused) {
   focused_ = focused;
+  notify_skill_selection();
+}
+
+void PlayerDetailsPane::notify_skill_selection() {
+  if (!on_skill_selected_) {
+    return;
+  }
+  if (!focused_ || selection_cursor_ < 0 ||
+      selection_cursor_ >= fl::ecs::components::Closet::kSkillSlotCount ||
+      cursor_ < 0 || cursor_ >= static_cast<int>(party_.members().size())) {
+    on_skill_selected_(std::nullopt);
+    return;
+  }
+
+  const auto member =
+      party_.members()[static_cast<std::size_t>(cursor_)].member_id();
+  const auto *party_member =
+      reg_.try_get<fl::ecs::components::PartyMember>(member);
+  if (party_member == nullptr) {
+    on_skill_selected_(std::nullopt);
+    return;
+  }
+
+  on_skill_selected_(
+      party_member->closet()
+          .skill_slots[static_cast<std::size_t>(selection_cursor_)]);
 }
 
 } // namespace fl::widgets

@@ -1,3 +1,7 @@
+#include <optional>
+#include <string>
+#include <string_view>
+
 #include <catch2/catch_test_macros.hpp>
 #include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
@@ -9,6 +13,30 @@
 #include "fl/lospec500.hpp"
 #include "fl/skills/skill.hpp"
 #include "fl/widgets/player_details_pane.hpp"
+
+namespace {
+
+std::optional<ftxui::Box> find_text(const ftxui::Screen &screen,
+                                    std::string_view text) {
+  for (int y = 0; y < screen.dimy(); ++y) {
+    for (int x = 0; x + static_cast<int>(text.size()) <= screen.dimx(); ++x) {
+      bool matches = true;
+      for (std::size_t i = 0; i < text.size(); ++i) {
+        if (screen.PixelAt(x + static_cast<int>(i), y).character !=
+            std::string(1, text[i])) {
+          matches = false;
+          break;
+        }
+      }
+      if (matches) {
+        return ftxui::Box{x, x + static_cast<int>(text.size()) - 1, y, y};
+      }
+    }
+  }
+  return std::nullopt;
+}
+
+} // namespace
 
 TEST_CASE("Player details selects and drops equipped skills",
           "[widgets][player][skills]") {
@@ -64,4 +92,25 @@ TEST_CASE("Player details highlights the skill currently being cast",
     }
   }
   REQUIRE(found_highlight);
+}
+
+TEST_CASE("Player details scrolls to and highlights the Inventory action",
+          "[widgets][player][inventory][selection]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto party_ctx = gc.account_context(0).party_context(0);
+  fl::widgets::PlayerDetailsPane pane{party_ctx.reg(), party_ctx.party_data()};
+  pane.set_focused(true);
+  for (int i = 0; i < fl::ecs::components::Closet::kSkillSlotCount; ++i) {
+    REQUIRE(pane.OnEvent(ftxui::Event::ArrowDown));
+  }
+
+  auto element = pane.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 40) |
+                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 12);
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(40),
+                                      ftxui::Dimension::Fixed(12));
+  ftxui::Render(screen, element);
+
+  const auto inventory = find_text(screen, "Inventory");
+  REQUIRE(inventory.has_value());
+  REQUIRE(screen.PixelAt(inventory->x_min, inventory->y_min).inverted);
 }

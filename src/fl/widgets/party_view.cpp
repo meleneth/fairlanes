@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -148,10 +149,21 @@ PartyView::PartyView(fl::context::AccountCtx context, std::size_t party_index)
       ftxui::Make<FarmingChoiceView>(party, party.grimoire_discipline());
   inventory_list_ = ftxui::Make<InventoryList>(ctx_.reg(), party);
   player_details_ = ftxui::Make<PlayerDetailsPane>(
-      ctx_.reg(), party, [this](entt::entity member) {
+      ctx_.reg(), party,
+      [this](entt::entity member) {
         if (inventory_list_) {
           inventory_list_->show_equipment_slots(member);
           set_focus(FocusPane::inventory);
+        }
+      },
+      [this](std::optional<fl::skills::SkillKey> skill) {
+        if (!inventory_list_) {
+          return;
+        }
+        if (skill.has_value()) {
+          inventory_list_->show_skill_information(*skill);
+        } else {
+          inventory_list_->hide_skill_information();
         }
       });
   Add(farming_choice_);
