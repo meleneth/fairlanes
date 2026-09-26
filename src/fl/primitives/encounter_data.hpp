@@ -127,6 +127,8 @@ private:
       fl::events::ScopedCombatantListener freeze_apply_;
       fl::events::ScopedCombatantListener freeze_started_;
       fl::events::ScopedCombatantListener freeze_ended_;
+      fl::events::ScopedCombatantListener cast_started_;
+      fl::events::ScopedCombatantListener cast_finished_;
     };
 
     fl::events::ScopedPartyListener party_beat_;

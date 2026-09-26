@@ -92,6 +92,13 @@ struct SkillHitLanded {
   fl::skills::SkillKey skill{fl::skills::SkillId::Observe};
   int damage{0};
 };
+struct SkillCastStarted {
+  entt::entity caster{entt::null};
+  fl::skills::SkillKey skill{fl::skills::SkillId::Observe};
+};
+struct SkillCastFinished {
+  entt::entity caster{entt::null};
+};
 struct FleeAttempted {
   entt::entity source{entt::null};
   int chance_percent{0};
@@ -108,7 +115,8 @@ struct PlayerDied {
 
 using CombatantEvent =
     std::variant<PoisonApplied, FreezeApplied, FreezeStarted, FreezeEnded,
-                 SkillHitLanded, FleeAttempted, CombatantFled, PlayerDied>;
+                 SkillHitLanded, SkillCastStarted, SkillCastFinished,
+                 FleeAttempted, CombatantFled, PlayerDied>;
 
 using CombatantBus = seerin::VariantBus<CombatantEvent>;
 

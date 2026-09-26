@@ -8,9 +8,11 @@
 #include <utility>
 
 #include "fl/ecs/components/closet.hpp"
+#include "fl/ecs/components/casting_skill.hpp"
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/lospec500.hpp"
 #include "fl/skills/skill.hpp"
 #include "fl/widgets/equipment_label.hpp"
 
@@ -165,13 +167,20 @@ ftxui::Element PlayerDetailsPane::Render() {
       reg_.all_of<fl::ecs::components::Closet>(
           party_member->closet_entity_id())) {
     const auto &skill_slots = party_member->closet().skill_slots;
+    const auto *casting =
+        reg_.try_get<fl::ecs::components::CastingSkill>(member_id);
     for (int i = 0; i < fl::ecs::components::Closet::kSkillSlotCount; ++i) {
       const auto &slot = skill_slots[static_cast<std::size_t>(i)];
+      auto skill_name = text(slot.has_value() ? fl::skills::display_name(*slot)
+                                              : std::string{"-"}) |
+                        flex;
+      if (slot.has_value() && casting != nullptr && casting->skill == *slot) {
+        skill_name = skill_name | bgcolor(fl::lospec500::color_at(14)) |
+                     color(fl::lospec500::color_at(0)) | bold;
+      }
       auto line = hbox({
           text(std::to_string(i + 1) + ": ") | dim,
-          text(slot.has_value() ? fl::skills::display_name(*slot)
-                                : std::string{"-"}) |
-              flex,
+          std::move(skill_name),
       });
       if (focused_ && i == selection_cursor_) {
         line = line | inverted | focusPosition(0, 7 + i);

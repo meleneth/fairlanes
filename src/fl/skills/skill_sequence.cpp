@@ -507,11 +507,19 @@ int apply_healing(fl::context::EncounterCtx &party_ctx, entt::entity healer,
 SkillSequencer::SkillSequencer(fl::context::EncounterCtx &party_ctx,
                                Scheduler &scheduler, FinishTurnFn finish_turn)
     : party_ctx_(party_ctx), scheduler_(scheduler),
-      finish_turn_(std::move(finish_turn)) {}
+      finish_turn_([&party_ctx,
+                    finish_turn = std::move(finish_turn)](entt::entity caster) {
+        party_ctx.encounter().combatant_bus(caster).emit(
+            fl::events::CombatantEvent{fl::events::SkillCastFinished{caster}});
+        finish_turn(caster);
+      }) {}
 
 void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
                               SkillKey skill) {
   ZoneScopedN("SkillSequencer::schedule");
+  party_ctx_.encounter().combatant_bus(attacker).emit(
+      fl::events::CombatantEvent{
+          fl::events::SkillCastStarted{attacker, skill}});
   const auto &skill_definition = definition(skill);
   if (skill_definition.consumes_status &&
       !target_meets_skill_requirements(party_ctx_.reg(), target, skill)) {

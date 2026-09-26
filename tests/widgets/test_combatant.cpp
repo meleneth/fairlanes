@@ -5,6 +5,7 @@
 #include <ftxui/screen/screen.hpp>
 
 #include "fl/ecs/components/atb_charge.hpp"
+#include "fl/ecs/components/casting_skill.hpp"
 #include "fl/ecs/components/combat_status.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"
 #include "fl/ecs/components/freeze.hpp"
@@ -14,6 +15,8 @@
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/lospec500.hpp"
+#include "fl/primitives/encounter_builder.hpp"
 #include "fl/skills/skill.hpp"
 #include "fl/widgets/combatant.hpp"
 #include "fl/widgets/effects/decal.hpp"
@@ -87,6 +90,40 @@ TEST_CASE("Combatant renders skill slots when allocated at least nine lines",
   REQUIRE(rendered.find("Observe") != std::string::npos);
   REQUIRE(rendered.find("Thump") != std::string::npos);
   REQUIRE(rendered.find("--") != std::string::npos);
+}
+
+TEST_CASE("Combatant highlights the skill currently being cast",
+          "[widgets][combatant][skills][casting]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto party_ctx = gc.account_context(0).party_context(0);
+  auto &encounter = fl::primitives::EncounterBuilder{party_ctx}.thump_it_out();
+  const auto entity = encounter.defenders().members().front();
+  auto &party_member =
+      party_ctx.reg().get<fl::ecs::components::PartyMember>(entity);
+  party_member.closet().skill_slots[1] = fl::skills::SkillId::Thump;
+
+  encounter.combatant_bus(entity).emit(fl::events::CombatantEvent{
+      fl::events::SkillCastStarted{entity, fl::skills::SkillId::Thump}});
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::CastingSkill>(entity));
+
+  fl::widgets::Combatant combatant{party_ctx.reg(), entity, true};
+  auto element = combatant.Render() |
+                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 48) |
+                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 9);
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(48),
+                                      ftxui::Dimension::Fixed(9));
+  ftxui::Render(screen, element);
+
+  const auto &highlighted = screen.PixelAt(2, 4);
+  REQUIRE(highlighted.character == "T");
+  REQUIRE(highlighted.background_color == fl::lospec500::color_at(14));
+  REQUIRE(highlighted.foreground_color == fl::lospec500::color_at(0));
+  REQUIRE(highlighted.bold);
+
+  encounter.combatant_bus(entity).emit(
+      fl::events::CombatantEvent{fl::events::SkillCastFinished{entity}});
+  REQUIRE_FALSE(
+      party_ctx.reg().any_of<fl::ecs::components::CastingSkill>(entity));
 }
 
 TEST_CASE("Combatant renders unknown skill slots without aborting",

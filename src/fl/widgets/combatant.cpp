@@ -3,6 +3,7 @@
 #include "fill_bar.hpp"
 
 #include "fl/ecs/components/atb_charge.hpp"
+#include "fl/ecs/components/casting_skill.hpp"
 #include "fl/ecs/components/closet.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"
 #include "fl/ecs/components/freeze.hpp"
@@ -288,8 +289,12 @@ std::string fixed_width_level(int level) {
 
 class SkillRowsNode : public ftxui::Node {
 public:
-  SkillRowsNode(ftxui::Element child,
-                std::array<std::string, kSkillRowsCount> skills)
+  struct Row {
+    std::string text;
+    bool casting{false};
+  };
+
+  SkillRowsNode(ftxui::Element child, std::array<Row, kSkillRowsCount> skills)
       : ftxui::Node(ftxui::Elements{std::move(child)}),
         skills_(std::move(skills)) {}
 
@@ -321,8 +326,9 @@ public:
         continue;
       }
 
-      const auto &line = skills_[static_cast<std::size_t>(row)];
-      const int count = std::min(max_width, static_cast<int>(line.size()));
+      const auto &skill = skills_[static_cast<std::size_t>(row)];
+      const int count =
+          std::min(max_width, static_cast<int>(skill.text.size()));
       for (int x = 0; x < count; ++x) {
         const int screen_x = x_start + x;
         if (screen_x < 0 || screen_x >= screen.dimx() ||
@@ -330,27 +336,41 @@ public:
           continue;
         }
         auto &pixel = screen.PixelAt(screen_x, y);
-        pixel.character = std::string(1, line[static_cast<std::size_t>(x)]);
-        pixel.foreground_color = fl::lospec500::color_at(32);
+        pixel.character =
+            std::string(1, skill.text[static_cast<std::size_t>(x)]);
+        pixel.foreground_color = skill.casting ? fl::lospec500::color_at(0)
+                                               : fl::lospec500::color_at(32);
+        if (skill.casting) {
+          pixel.background_color = fl::lospec500::color_at(14);
+          pixel.bold = true;
+        }
       }
     }
   }
 
 private:
-  std::array<std::string, kSkillRowsCount> skills_;
+  std::array<Row, kSkillRowsCount> skills_;
 };
 
-std::array<std::string, kSkillRowsCount> skill_rows_for(entt::registry &reg,
-                                                        entt::entity entity) {
-  std::array<std::string, kSkillRowsCount> rows;
-  rows.fill("--");
+using SkillRow = SkillRowsNode::Row;
+
+std::array<SkillRow, kSkillRowsCount> skill_rows_for(entt::registry &reg,
+                                                     entt::entity entity) {
+  std::array<SkillRow, kSkillRowsCount> rows;
+  rows.fill(SkillRow{"--", false});
+  const auto *casting = reg.try_get<fl::ecs::components::CastingSkill>(entity);
+
+  auto set_row = [casting](SkillRow &row, fl::skills::SkillKey skill) {
+    row.text = fl::skills::display_name(skill);
+    row.casting = casting != nullptr && casting->skill == skill;
+  };
 
   if (const auto *member =
           reg.try_get<fl::ecs::components::PartyMember>(entity)) {
     const auto &skill_slots = member->closet().skill_slots;
     for (std::size_t i = 0; i < rows.size(); ++i) {
       if (skill_slots[i].has_value()) {
-        rows[i] = fl::skills::display_name(*skill_slots[i]);
+        set_row(rows[i], *skill_slots[i]);
       }
     }
     return rows;
@@ -363,7 +383,7 @@ std::array<std::string, kSkillRowsCount> skill_rows_for(entt::registry &reg,
 
   for (std::size_t i = 0; i < rows.size(); ++i) {
     if (slots->slots[i].has_value()) {
-      rows[i] = fl::skills::display_name(*slots->slots[i]);
+      set_row(rows[i], *slots->slots[i]);
     }
   }
 
@@ -467,7 +487,7 @@ underlay_decals_for(entt::registry &reg, entt::entity entity) {
 }
 
 ftxui::Element skill_rows(ftxui::Element child,
-                          std::array<std::string, kSkillRowsCount> rows) {
+                          std::array<SkillRow, kSkillRowsCount> rows) {
   return std::make_shared<SkillRowsNode>(std::move(child), std::move(rows));
 }
 

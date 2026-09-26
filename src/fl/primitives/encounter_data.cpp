@@ -15,6 +15,7 @@
 #include "fl/ecs/components/poison.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/systems/combat_status_system.hpp"
+#include "fl/ecs/systems/casting_skill_system.hpp"
 #include "fl/ecs/systems/freeze_system.hpp"
 #include "fl/ecs/systems/poison_system.hpp"
 #include "fl/generated/monster_content.hpp"
@@ -185,6 +186,17 @@ entt::entity EncounterData::target_for_skill(entt::entity actor,
 }
 
 void EncounterData::finalize() {
+  auto finish_casts = [this](const auto &team) {
+    for (const auto combatant : team.members()) {
+      if (context_.reg().valid(combatant)) {
+        combatant_bus(combatant).emit(fl::events::CombatantEvent{
+            fl::events::SkillCastFinished{combatant}});
+      }
+    }
+  };
+  finish_casts(attackers());
+  finish_casts(defenders());
+
   // RaidData remains alive after resolution so the result screen can render.
   // Disconnect encounter-owned listeners now; otherwise its account-scoped
   // Poison/Freeze handlers remain attached to persistent member buses and also
@@ -195,7 +207,8 @@ void EncounterData::finalize() {
   wire_.wired_combatants_.clear();
 
   for (auto e_cleanup : life_.entities_to_cleanup_) {
-    if (context_.reg().valid(e_cleanup)) context_.reg().destroy(e_cleanup);
+    if (context_.reg().valid(e_cleanup))
+      context_.reg().destroy(e_cleanup);
   }
 }
 
@@ -203,6 +216,10 @@ void EncounterData::clear_pending_events() { rt_.atb_.clear_pending_events(); }
 
 void EncounterData::clear_active_turn_for(entt::entity id) {
   ZoneScopedN("EncounterData::clear_active_turn_for");
+  if (context_.reg().valid(id)) {
+    combatant_bus(id).emit(
+        fl::events::CombatantEvent{fl::events::SkillCastFinished{id}});
+  }
   rt_.atb_.clear_active_turn_for(id);
 }
 
@@ -291,6 +308,13 @@ void EncounterData::bind_combatant_bus(
 
   wiring.freeze_apply_ = fl::ecs::systems::FreezeSystem::bind_apply_listener(
       context_, combatant_bus, rt_.atb_.scheduler());
+
+  wiring.cast_started_ =
+      fl::ecs::systems::CastingSkillSystem::bind_started_listener(
+          context_.reg(), combatant_bus);
+  wiring.cast_finished_ =
+      fl::ecs::systems::CastingSkillSystem::bind_finished_listener(
+          context_.reg(), combatant_bus);
 
   wiring.freeze_started_ = fl::events::ScopedCombatantListener{
       combatant_bus, std::in_place_type<fl::events::FreezeStarted>,

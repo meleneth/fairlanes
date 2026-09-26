@@ -5,6 +5,7 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/atb_charge.hpp"
+#include "fl/ecs/components/casting_skill.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"
 #include "fl/ecs/components/freeze.hpp"
 #include "fl/ecs/components/monster_identity.hpp"
@@ -112,6 +113,36 @@ TEST_CASE("EncounterBuilder::thump_it_out enrolls party members as defenders",
   auto &encounter = builder.thump_it_out();
 
   REQUIRE(encounter.defenders().members().size() == 3);
+}
+
+TEST_CASE("Skill sequencing publishes casting state until the turn finishes",
+          "[encounter][skills][casting][events]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto party_ctx = gc.account_context(0).party_context(0);
+  auto &encounter = fl::primitives::EncounterBuilder{party_ctx}.thump_it_out();
+  const auto caster = encounter.defenders().members().front();
+  const auto target = encounter.attackers().members().front();
+  bool finished = false;
+  fl::skills::SkillSequencer sequencer{
+      encounter.context(), encounter.atb_engine().scheduler(),
+      [&finished](entt::entity) { finished = true; }};
+
+  sequencer.schedule(caster, target, fl::skills::SkillId::Thump);
+
+  const auto *casting =
+      party_ctx.reg().try_get<fl::ecs::components::CastingSkill>(caster);
+  REQUIRE(casting != nullptr);
+  REQUIRE(casting->skill == fl::skills::SkillId::Thump);
+  REQUIRE_FALSE(finished);
+
+  tick_party(party_ctx, 30);
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::CastingSkill>(caster));
+  REQUIRE_FALSE(finished);
+
+  tick_party(party_ctx, 1);
+  REQUIRE_FALSE(
+      party_ctx.reg().any_of<fl::ecs::components::CastingSkill>(caster));
+  REQUIRE(finished);
 }
 
 TEST_CASE("EncounterBuilder::thump_it_out adds a full enemy party",

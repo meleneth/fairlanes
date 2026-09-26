@@ -122,6 +122,13 @@ Emitted by `SkillSequencer::schedule_cold_snap(...)`. Observed by `FreezeSystem:
 
 Emitted by `FreezeSystem`. Observed by `EncounterData`, which forwards them to ATB as `seerin::Frozen` and `seerin::Thawed`.
 
+### `fl::events::SkillCastStarted` and `SkillCastFinished`
+
+Emitted by `SkillSequencer` around the timed action sequence. Observed by
+`CastingSkillSystem`, which owns the transient `CastingSkill` component used by
+party-level skill-list projections. Encounter interruption and finalization
+also emit `SkillCastFinished` so presentation state cannot leak past combat.
+
 ### `fl::events::FleeAttempted` and `CombatantFled`
 
 Emitted by `SkillSequencer::schedule_flee(...)`. Tests currently assert them; production gameplay behavior is mostly performed in the emitting callback.

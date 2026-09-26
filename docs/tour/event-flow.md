@@ -32,7 +32,10 @@ Concrete source trail:
 
 ## Status And Cleanup Branches
 
-Skill scheduling can emit combatant events such as `PoisonApplied`, `FreezeApplied`, `FleeAttempted`, and `CombatantFled` through per-combatant buses. `PoisonSystem` and `FreezeSystem` listen to their apply events and own the ECS status changes.
+Skill scheduling emits `SkillCastStarted` and `SkillCastFinished` around each
+timed action and can emit effect events such as `PoisonApplied`, `FreezeApplied`,
+`FleeAttempted`, and `CombatantFled` through per-combatant buses.
+`CastingSkillSystem` projects the action lifecycle into transient ECS state for
+the UI; `PoisonSystem` and `FreezeSystem` own their respective status changes.
 
 Damage resolution is still mostly direct: skills call `TakeDamage::commit(...)`. When damage kills a party member, `TakeDamage` emits `PlayerDied`; if the whole party is down, it emits `PartyWiped`. Status lifetimes listen to `PlayerDied`, `PartyLeftCombat`, and `PartyWiped` for cleanup.
-
