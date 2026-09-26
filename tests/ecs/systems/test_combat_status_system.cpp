@@ -85,6 +85,18 @@ TEST_CASE("Shield reduces incoming damage through the shared damage path",
   REQUIRE(hp(h.party_ctx, h.defender()) == 90);
 }
 
+TEST_CASE("Percentage mitigation cannot erase landed positive damage",
+          "[combat-status][damage][regression]") {
+  BuiltEncounter h;
+  set_hp(h.party_ctx, h.defender(), 1, 100);
+  auto &stats =
+      h.party_ctx.reg().get<fl::ecs::components::Stats>(h.defender());
+  stats.resistances_.physical = 50;
+
+  REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 1) == 1);
+  REQUIRE(hp(h.party_ctx, h.defender()) == 0);
+}
+
 TEST_CASE("Blind can force attacks to miss through shared accuracy checks",
           "[combat-status][blind]") {
   BuiltEncounter h;

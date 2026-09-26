@@ -12,7 +12,6 @@ struct AttackCtx;
 };
 
 namespace fl::skills {
-using fl::fsm::PartyLoopCtx;
 class Thump {
 public:
   Thump();

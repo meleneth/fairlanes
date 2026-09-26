@@ -372,6 +372,36 @@ TEST_CASE(
   REQUIRE(stats.hp_ == 90);
 }
 
+TEST_CASE("Dire Bleed kills a one-HP target through percentage mitigation",
+          "[encounter][skills][bleed][damage][regression]") {
+  fl::GrandCentral gc{1, 1, 2};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &encounter = party.create_encounter();
+
+  const auto defender = party.members().front().member_id();
+  encounter.defenders().members().push_back(defender);
+  encounter.add_party_combatant_bus(defender);
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
+
+  const auto honey_badger = add_honey_badger(party_ctx, encounter);
+  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+  stats.max_hp_ = 10;
+  stats.hp_ = 1;
+  stats.resistances_.physical = 50;
+
+  fl::skills::SkillSequencer sequencer{
+      party_ctx, encounter.atb_engine().scheduler(), [](entt::entity) {}};
+  sequencer.schedule(honey_badger, defender, fl::skills::SkillId::Eviscerate);
+  tick_party(party_ctx, 24);
+  REQUIRE(party_ctx.reg().all_of<fl::ecs::components::DireBleed>(defender));
+
+  tick_party(party_ctx, 36);
+  REQUIRE(stats.hp_ == 0);
+}
+
 TEST_CASE("Dire Bleed releases the active combatant when the effect is applied",
           "[encounter][skills][bleed][atb]") {
   fl::GrandCentral gc{1, 1, 1};

@@ -274,6 +274,34 @@ TEST_CASE("Thump ranks produce distinct damage bands",
   REQUIRE(damage_iii < damage_v);
 }
 
+TEST_CASE("Thump applies mitigation before resolving lethal overkill",
+          "[encounter][skills][thump][damage][regression]") {
+  fl::GrandCentral gc{1, 1, 1};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  auto &encounter = builder.thump_it_out();
+
+  const entt::entity attacker = encounter.attackers().members().front();
+  const entt::entity target = encounter.defenders().members().front();
+  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(target);
+  stats.hp_ = 1;
+  stats.max_hp_ = 100;
+  stats.resistances_.physical = 50;
+
+  fl::skills::Thump thump;
+  const auto thump_v = fl::skills::SkillKey{fl::skills::SkillId::Thump,
+                                            fl::skills::SkillRank::require(5)};
+  const int damage = thump.thump(
+      fl::context::AttackCtx::make_attack(party_ctx, attacker, target),
+      thump_v);
+
+  REQUIRE(damage >= 6);
+  REQUIRE(damage <= 8);
+  REQUIRE(stats.hp_ == 0);
+}
+
 TEST_CASE("Thump ranks pay distinct tempo costs",
           "[encounter][timing][rank][thump]") {
   auto run_rank = [](fl::skills::SkillKey skill, int damage_beat,

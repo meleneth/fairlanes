@@ -6,7 +6,6 @@
 #include "fmt/format.h"
 
 #include "fl/context.hpp"
-#include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
 #include "fl/primitives/damage.hpp"
 #include "fl/widgets/fancy_log.hpp"
@@ -81,9 +80,6 @@ Thump::Thump() : rng_(std::random_device{}()) {
 }
 
 int Thump::thump(fl::context::AttackCtx &&ctx, SkillKey skill) {
-  using fl::ecs::components::Stats;
-  auto &dst = ctx.reg().get<Stats>(ctx.defender());
-
   // Weapon range (placeholder values; wire to your actual weapon data)
   wd_min_ = 1.0;
   wd_max_ = 5.0;
@@ -101,10 +97,9 @@ int Thump::thump(fl::context::AttackCtx &&ctx, SkillKey skill) {
   // Evaluate expression
   double dealt = expr_.value() + thump_rank_damage_bonus(skill);
 
-  // Clamp and round: never deal more than current HP, never negative
-  int hp_now = dst.hp_;
+  // Round the raw packet before the shared damage path applies mitigation.
   int dmg = static_cast<int>(std::floor(dealt + 0.5));
-  dmg = std::clamp(dmg, 0, hp_now);
+  dmg = std::max(0, dmg);
   ctx.damage().physical = dmg;
   entt::handle attacker_h{ctx.reg(), ctx.attacker()};
   entt::handle defender_h{ctx.reg(), ctx.defender()};

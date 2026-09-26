@@ -32,11 +32,17 @@ int TakeDamage::commit(fl::context::AttackCtx &ctx,
     return 0;
   }
 
+  const int incoming_total = ctx.damage().physical + ctx.damage().magical +
+                             ctx.damage().fire + ctx.damage().ice +
+                             ctx.damage().lightning;
   auto adjusted = fl::primitives::apply_resistance(ctx.damage(),
                                                    defender_stats.resistances_);
   fl::ecs::systems::CombatStatusSystem::apply_damage_modifiers(ctx, adjusted);
   int total = adjusted.physical + adjusted.magical + adjusted.fire +
               adjusted.ice + adjusted.lightning;
+  if (incoming_total > 0) {
+    total = std::max(1, total);
+  }
   auto &attacker_stats = ctx.reg().get<Stats>(ctx.attacker());
 
   auto was_alive = defender_stats.is_alive();
