@@ -697,11 +697,22 @@ TEST_CASE("Poison releases the active combatant when the effect is applied",
   REQUIRE(stats.hp_ == 99);
 }
 
-TEST_CASE("Normal Poison and Cold Snap combat stays in the party log",
-          "[encounter][skills][logging][context]") {
+TEST_CASE(
+    "Normal Poison and Cold Snap combat stays in the party log after a raid",
+    "[encounter][skills][logging][context][raid]") {
   fl::GrandCentral gc{1, 1, 2};
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
+  auto &account = account_ctx.account_data();
+
+  const std::array raid_enemies{fl::monster::MonsterKind::FieldMouse};
+  REQUIRE(account.start_raid(account_ctx, raid_enemies));
+  for (const auto enemy : account.raid()->encounter().attackers()) {
+    gc.reg().get<fl::ecs::components::Stats>(enemy).hp_ = 0;
+  }
+  account.raid()->tick();
+  REQUIRE_FALSE(account.in_raid());
+
   fl::primitives::EncounterBuilder builder{party_ctx};
   auto &encounter = builder.thump_it_out();
 

@@ -185,6 +185,15 @@ entt::entity EncounterData::target_for_skill(entt::entity actor,
 }
 
 void EncounterData::finalize() {
+  // RaidData remains alive after resolution so the result screen can render.
+  // Disconnect encounter-owned listeners now; otherwise its account-scoped
+  // Poison/Freeze handlers remain attached to persistent member buses and also
+  // observe attacks from the party's next ordinary encounter.
+  wire_.atb_active_.reset();
+  wire_.party_beat_.reset();
+  wire_.combatant_wiring_.clear();
+  wire_.wired_combatants_.clear();
+
   for (auto e_cleanup : life_.entities_to_cleanup_) {
     if (context_.reg().valid(e_cleanup)) context_.reg().destroy(e_cleanup);
   }
