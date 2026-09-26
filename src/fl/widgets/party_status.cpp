@@ -70,33 +70,11 @@ ftxui::Element PartyStatus::Render() {
         " / " + std::string{fl::primitives::display_name(plan.reward_class)};
   }
 
-  // Keep the dead status aligned with the three-line Combatant widgets by
-  // using the frame title instead of spending a content row on the label.
-  if (show_dead_status) {
-    return ftxui::window(ftxui::text(status_text) | ftxui::bold,
-                         ftxui::text(detail_text) | ftxui::center) |
-           ftxui::color(status_color) | ftxui::xflex;
-  }
-
-  // Build the display element with outline matching Combatant widget
-  ftxui::Element content;
-  if (detail_text.empty()) {
-    content = ftxui::vbox({
-        ftxui::text(status_text) | ftxui::center | ftxui::bold,
-        ftxui::filler(),
-    });
-  } else {
-    content = ftxui::vbox({
-        ftxui::text(status_text) | ftxui::center | ftxui::bold,
-        ftxui::text(detail_text) | ftxui::center,
-        ftxui::filler(),
-    });
-  }
-
-  ftxui::Element bordered =
-      ftxui::window(ftxui::text(""), content) | ftxui::color(status_color);
-
-  return bordered | ftxui::xflex;
+  // Every party state uses the frame title so the status projection always
+  // has the same three-line footprint as a Combatant.
+  return ftxui::window(ftxui::text(status_text) | ftxui::bold,
+                       ftxui::text(detail_text) | ftxui::center) |
+         ftxui::color(status_color) | ftxui::xflex;
 }
 
 } // namespace fl::widgets

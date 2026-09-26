@@ -225,6 +225,44 @@ TEST_CASE("Account battle combatants keep fixed twenty-percent widths",
   }
 }
 
+TEST_CASE("Account battle rows stay fixed across encounter transitions",
+          "[widgets][account-battle][layout]") {
+  constexpr int width = 140;
+  constexpr int height = 40;
+  fl::GrandCentral gc{1, 2, 5};
+  auto account_ctx = gc.account_context(0);
+  fl::widgets::AccountBattleView view{account_ctx};
+  const auto anchor = account_ctx.reg()
+                          .get<fl::ecs::components::Stats>(
+                              account_ctx.account_data()
+                                  .party(1)
+                                  .members()
+                                  .front()
+                                  .member_id())
+                          .name_;
+
+  auto render_view = [&] {
+    auto element = view.Render() |
+                   ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width) |
+                   ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, height);
+    auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(width),
+                                        ftxui::Dimension::Fixed(height));
+    ftxui::Render(screen, element);
+    return screen.ToString();
+  };
+
+  fl::widgets::force_battle_render_target(
+      fl::widgets::BattleLayoutProfile::Standard);
+  const auto before = find_line_containing(render_view(), anchor);
+  account_ctx.account_data().party(0).create_encounter();
+  const auto during = find_line_containing(render_view(), anchor);
+  fl::widgets::clear_forced_battle_render_target();
+
+  REQUIRE(before.has_value());
+  REQUIRE(during.has_value());
+  REQUIRE(*before == *during);
+}
+
 TEST_CASE("Normal gameplay collapses and expands the metrics overlay",
           "[widgets][root][presentation]") {
   fl::GrandCentral gc{1, 1, 1};

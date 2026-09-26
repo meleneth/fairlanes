@@ -8,6 +8,22 @@
 #include "fl/grand_central.hpp"
 #include "fl/widgets/party_status.hpp"
 
+TEST_CASE("PartyStatus keeps every noncombat state to three lines",
+          "[widgets][party_status][layout]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto party_ctx = gc.account_context(0).party_context(0);
+  auto &party = party_ctx.party_data();
+
+  fl::widgets::PartyStatus idle_status{party};
+  auto idle = idle_status.Render();
+  REQUIRE(ftxui::Dimension::Fit(idle).dimy == 3);
+
+  party.start_town_penalty();
+  fl::widgets::PartyStatus fixing_status{party};
+  auto fixing = fixing_status.Render();
+  REQUIRE(ftxui::Dimension::Fit(fixing).dimy == 3);
+}
+
 TEST_CASE("Dead PartyStatus keeps its label in a three-line frame",
           "[widgets][party_status]") {
   fl::GrandCentral gc{1, 1, 1};
