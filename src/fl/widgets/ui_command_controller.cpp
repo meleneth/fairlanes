@@ -272,8 +272,8 @@ void UiCommandController::set_account_selected(AccountSelected callback) {
   account_selected_ = std::move(callback);
 }
 
-void UiCommandController::set_start_raid(StartRaid callback) {
-  start_raid_ = std::move(callback);
+void UiCommandController::set_spawn_visitor(SpawnVisitor callback) {
+  spawn_visitor_ = std::move(callback);
 }
 
 void UiCommandController::handle(std::string_view command) {
@@ -361,7 +361,12 @@ void UiCommandController::handle(std::string_view command) {
   }
 
   if (verb == "raid") {
-    start_raid();
+    if (words.size() == 2 && words[1] == "spawn") {
+      spawn_visitor();
+      return;
+    }
+    write("usage: raid spawn");
+    write("try: help raid");
     return;
   }
 
@@ -545,7 +550,7 @@ void UiCommandController::show_help(std::string_view topic) {
   }
 
   if (topic == "raid") {
-    write("raid: immediately start a Visitor raid for the selected account");
+    write("raid spawn: summon a new Visitor for the selected account");
     return;
   }
 
@@ -688,25 +693,25 @@ void UiCommandController::debug_party() {
   }
 }
 
-void UiCommandController::start_raid() {
+void UiCommandController::spawn_visitor() {
   if (!accounts_ || account_index_ >= accounts_->size()) {
     write("No selected account.");
     return;
   }
 
-  if (!start_raid_) {
-    write("Raid command is unavailable.");
+  if (!spawn_visitor_) {
+    write("Visitor spawning is unavailable.");
     return;
   }
 
-  if (start_raid_(account_index_)) {
-    write("Started Visitor raid for account " +
+  if (spawn_visitor_(account_index_)) {
+    write("Summoned a new Visitor for account " +
           std::to_string(account_index_) + ".");
     return;
   }
 
-  write("Could not start raid for account " + std::to_string(account_index_) +
-        ".");
+  write("Could not summon a Visitor for account " +
+        std::to_string(account_index_) + ".");
 }
 
 void UiCommandController::set_overdrive(std::string_view multiplier) {

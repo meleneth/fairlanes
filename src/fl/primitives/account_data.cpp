@@ -17,11 +17,15 @@ void AccountData::hook_to_beat(fl::context::AccountCtx ctx,
 
 bool AccountData::try_start_visitor(fl::context::AccountCtx ctx) {
   if (in_raid() || calendar_->elapsed_beats() < next_visitor_beat_) return false;
-  if (!start_raid(ctx, fl::monster::generated_content::raid_bosses())) return false;
+  if (!spawn_visitor(ctx)) return false;
   // Consume this occurrence; elapsed arrivals never become banked attempts.
   next_visitor_beat_ =
       (calendar_->elapsed_beats() / kVisitorPeriodBeats + 1) * kVisitorPeriodBeats;
   return true;
+}
+
+bool AccountData::spawn_visitor(fl::context::AccountCtx ctx) {
+  return start_raid(ctx, fl::monster::generated_content::raid_bosses());
 }
 
 void AccountData::advance_beat(fl::context::AccountCtx ctx, bool enable_visitors) {

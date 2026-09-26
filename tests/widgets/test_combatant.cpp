@@ -11,6 +11,7 @@
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/poison.hpp"
 #include "fl/ecs/components/skill_slots.hpp"
+#include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/skills/skill.hpp"
@@ -38,6 +39,27 @@ TEST_CASE("Combatant renders ATB from ECS AtbCharge", "[widgets][combatant]") {
   REQUIRE(rendered.find(" HP: [") != std::string::npos);
   REQUIRE(rendered.find("ATB: [") != std::string::npos);
   REQUIRE(rendered.find("160/4800") != std::string::npos);
+}
+
+TEST_CASE("Combatant level digits do not change fitted widget width",
+          "[widgets][combatant][level]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto party_ctx = gc.account_context(0).party_context(0);
+  const auto entity = party_ctx.party_data().members().front().member_id();
+  auto &xp = party_ctx.reg().get<fl::ecs::components::TrackXP>(entity);
+
+  xp.level_ = 9;
+  fl::widgets::Combatant single_digit{party_ctx.reg(), entity, true};
+  auto single_digit_element = single_digit.Render();
+  const auto single_digit_width =
+      ftxui::Dimension::Fit(single_digit_element).dimx;
+
+  xp.level_ = 1234;
+  fl::widgets::Combatant four_digits{party_ctx.reg(), entity, true};
+  auto four_digit_element = four_digits.Render();
+  const auto four_digit_width = ftxui::Dimension::Fit(four_digit_element).dimx;
+
+  REQUIRE(four_digit_width == single_digit_width);
 }
 
 TEST_CASE("Combatant renders skill slots when allocated at least nine lines",

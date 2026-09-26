@@ -40,6 +40,7 @@ public:
     raid_->announce_started();
     return true;
   }
+  bool spawn_visitor(fl::context::AccountCtx ctx);
 
   static constexpr std::uint64_t kVisitorPeriodBeats =
       MoonCalendar::kVisitorCycleDays * WorldClock::kBeatsPerCalendarDay;

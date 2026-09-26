@@ -273,6 +273,18 @@ constexpr int kSkillRowsVisibleHeight = 9;
 constexpr int kSkillRowsCount = fl::ecs::components::Closet::kSkillSlotCount;
 constexpr int kDebuffRowsVisibleHeight = 9;
 constexpr int kDebuffRowsVisibleWidth = 42;
+constexpr int kLevelIndicatorWidth = 4;
+
+std::string fixed_width_level(int level) {
+  auto label = std::to_string(level);
+  if (label.size() > static_cast<std::size_t>(kLevelIndicatorWidth)) {
+    return std::string(static_cast<std::size_t>(kLevelIndicatorWidth), '+');
+  }
+  label.insert(label.begin(),
+               static_cast<std::size_t>(kLevelIndicatorWidth) - label.size(),
+               ' ');
+  return label;
+}
 
 class SkillRowsNode : public ftxui::Node {
 public:
@@ -538,7 +550,7 @@ ftxui::Element Combatant::Render() {
       ftxui::filler(),
       ftxui::text("[") | ftxui::bgcolor(fl::lospec500::color_at(1)) | ftxui::color(fl::lospec500::color_at(32)),
      
-      ftxui::text(std::to_string(level.level_)) | ftxui::bgcolor(fl::lospec500::color_at(9)) | ftxui::color(fl::lospec500::color_at(15)),
+      ftxui::text(fixed_width_level(level.level_)) | ftxui::bgcolor(fl::lospec500::color_at(9)) | ftxui::color(fl::lospec500::color_at(15)),
       ftxui::text("]") | ftxui::bgcolor(fl::lospec500::color_at(1)) | ftxui::color(fl::lospec500::color_at(32))
     }),
     ftxui::vbox(std::move(content_lines))

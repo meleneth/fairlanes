@@ -9,7 +9,10 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
 
+#include "fl/ecs/components/monster_identity.hpp"
+#include "fl/events/raid_bus.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/monsters/monster_kind.hpp"
 #include "fl/primitives/encounter_builder.hpp"
 #include "fl/widgets/all_account_battle_screen.hpp"
 #include "fl/widgets/battle_render_budget.hpp"
@@ -210,16 +213,25 @@ TEST_CASE("Account commands preserve the selected gameplay screen",
   REQUIRE(rendered.find("Ashen Vanguard") != std::string::npos);
 }
 
-TEST_CASE("Raid console command starts a raid for the selected account",
+TEST_CASE("Raid spawn console command summons a new Visitor",
           "[widgets][root][commands][raid]") {
   fl::GrandCentral gc{1, 1, 1};
   auto root = make_gameplay_root(gc);
+  auto &account = gc.accounts().front();
+  bool announced = false;
+  auto started_sub = account.raid_bus().subscribe<fl::events::RaidStarted>(
+      [&](const auto &) { announced = true; });
 
-  REQUIRE_FALSE(gc.accounts().front().in_raid());
+  REQUIRE_FALSE(account.in_raid());
   REQUIRE(root.OnEvent(ftxui::Event::Character("`")));
-  REQUIRE(root.OnEvent(ftxui::Event::Character("raid")));
+  REQUIRE(root.OnEvent(ftxui::Event::Character("raid spawn")));
   REQUIRE(root.OnEvent(ftxui::Event::Return));
-  REQUIRE(gc.accounts().front().in_raid());
+  REQUIRE(account.in_raid());
+  REQUIRE(announced);
+  REQUIRE(account.raid()->encounter().attackers().members().size() == 1);
+  const auto visitor = account.raid()->encounter().attackers().members().front();
+  REQUIRE(gc.reg().get<fl::ecs::components::MonsterIdentity>(visitor).kind ==
+          fl::monster::MonsterKind::VisitorHerald);
 }
 
 TEST_CASE("Chaos Attract hides the normal key manifest",

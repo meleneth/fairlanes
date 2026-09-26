@@ -13,7 +13,6 @@
 #include "bestiary_view.hpp"
 #include "console_overlay.hpp"
 #include "effect_gallery_view.hpp"
-#include "fl/generated/monster_content.hpp"
 #include "fl/lospec500.hpp"
 #include "libram_view.hpp"
 #include "party_battle_screen.hpp"
@@ -56,10 +55,9 @@ RootComponent::RootComponent(
       [this](std::size_t account_index, std::size_t party_index) {
         refresh_selected_account(account_index, party_index);
       });
-  commands_.set_start_raid([this](std::size_t account_index) {
+  commands_.set_spawn_visitor([this](std::size_t account_index) {
     auto context = make_context(account_index);
-    return context.account_data().start_raid(
-        context, fl::monster::generated_content::raid_bosses());
+    return context.account_data().spawn_visitor(context);
   });
   console_overlay()->set_on_command(
       [this](std::string_view command) { commands_.handle(command); });
