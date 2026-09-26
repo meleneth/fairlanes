@@ -147,7 +147,13 @@ PartyView::PartyView(fl::context::AccountCtx context, std::size_t party_index)
   farming_choice_ =
       ftxui::Make<FarmingChoiceView>(party, party.grimoire_discipline());
   inventory_list_ = ftxui::Make<InventoryList>(ctx_.reg(), party);
-  player_details_ = ftxui::Make<PlayerDetailsPane>(ctx_.reg(), party);
+  player_details_ = ftxui::Make<PlayerDetailsPane>(
+      ctx_.reg(), party, [this](entt::entity member) {
+        if (inventory_list_) {
+          inventory_list_->show_equipment_slots(member);
+          set_focus(FocusPane::inventory);
+        }
+      });
   Add(farming_choice_);
   Add(inventory_list_);
   Add(player_details_);

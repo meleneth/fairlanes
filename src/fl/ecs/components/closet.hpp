@@ -6,6 +6,7 @@
 
 #include <entt/entity/entity.hpp>
 
+#include "fl/loot/equipment_slot.hpp"
 #include "fl/skills/skill.hpp"
 
 namespace fl::ecs::components {
@@ -40,6 +41,10 @@ struct Closet {
   [[nodiscard]] bool has_open_skill_slot() const noexcept;
   bool equip_skill(fl::skills::SkillKey skill) noexcept;
   bool unequip_skill(fl::skills::SkillKey skill) noexcept;
+
+  [[nodiscard]] entt::entity
+  equipped_item(fl::loot::EquipmentSlot slot) const noexcept;
+  [[nodiscard]] entt::entity &equipped_item(fl::loot::EquipmentSlot slot);
 
   bool empty() const;
 };

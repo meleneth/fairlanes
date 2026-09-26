@@ -7,7 +7,9 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
 
+#include "fl/ecs/components/party_member.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/loot/equipment_builder.hpp"
 #include "fl/widgets/battle_render_budget.hpp"
 #include "fl/widgets/party_view.hpp"
 
@@ -77,4 +79,58 @@ TEST_CASE("Party player pane cycles members with left and right arrows",
   REQUIRE(render_party_view(view).find("Member 1/5") != std::string::npos);
   REQUIRE(view.OnEvent(ftxui::Event::ArrowRight));
   REQUIRE(render_party_view(view).find("Member 2/5") != std::string::npos);
+}
+
+TEST_CASE("Party player inventory equips filtered gear through party events",
+          "[widgets][party][player][equipment]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto account_ctx = gc.account_context(0);
+  auto &party = account_ctx.account_data().party(0);
+  auto &reg = account_ctx.reg();
+  party.replace_items({});
+
+  const auto chest =
+      fl::loot::EquipmentBuilder{
+          .slot = fl::loot::EquipmentSlot::chest,
+          .armor_kind = fl::loot::ArmorKind::cloth,
+          .tier = fl::loot::Tier::fine,
+          .name = "UI Chest",
+      }
+          .create(reg);
+  const auto helm =
+      fl::loot::EquipmentBuilder{
+          .slot = fl::loot::EquipmentSlot::helm,
+          .armor_kind = fl::loot::ArmorKind::cloth,
+          .tier = fl::loot::Tier::fine,
+          .name = "UI Helm",
+      }
+          .create(reg);
+  party.add_item(chest);
+  party.add_item(helm);
+
+  const auto member = party.members().front().member_id();
+  auto &closet = reg.get<fl::ecs::components::PartyMember>(member).closet();
+  fl::widgets::PartyView view{account_ctx, 0};
+
+  REQUIRE(view.OnEvent(ftxui::Event::Tab));
+  for (int i = 0; i < fl::ecs::components::Closet::kSkillSlotCount; ++i) {
+    REQUIRE(view.OnEvent(ftxui::Event::ArrowDown));
+  }
+  REQUIRE(view.OnEvent(ftxui::Event::Return));
+  REQUIRE(render_party_view(view).find("Equipment slots") != std::string::npos);
+
+  REQUIRE(view.OnEvent(ftxui::Event::ArrowDown));
+  REQUIRE(view.OnEvent(ftxui::Event::ArrowDown));
+  REQUIRE(view.OnEvent(ftxui::Event::Return));
+  const auto filtered = render_party_view(view);
+  REQUIRE(filtered.find("chest items") != std::string::npos);
+  REQUIRE(filtered.find("UI Chest") != std::string::npos);
+  REQUIRE(filtered.find("UI Helm") == std::string::npos);
+
+  REQUIRE(view.OnEvent(ftxui::Event::Return));
+  REQUIRE(closet.chest == chest);
+  REQUIRE(std::find(party.items().begin(), party.items().end(), chest) ==
+          party.items().end());
+  REQUIRE(std::find(party.items().begin(), party.items().end(), helm) !=
+          party.items().end());
 }

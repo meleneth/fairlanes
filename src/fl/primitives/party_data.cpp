@@ -9,6 +9,7 @@
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/ecs/components/color_override.hpp"
 #include "fl/ecs/systems/loot_drop.hpp"
+#include "fl/ecs/systems/manual_equipment.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/fsm/party_loop_machine.hpp"
 #include "fl/primitives/account_data.hpp"
@@ -36,6 +37,8 @@ PartyData::PartyData(entt::entity party_id,
         revitalize_members();
       }};
   loot_drop_sub_ = fl::ecs::systems::LootDropSystem::bind_listener(party_ctx_);
+  manual_equipment_sub_ =
+      fl::ecs::systems::ManualEquipmentSystem::bind_listener(party_ctx_);
 }
 
 PartyData::~PartyData() {

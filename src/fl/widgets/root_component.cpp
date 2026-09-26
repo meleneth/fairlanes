@@ -592,6 +592,10 @@ ftxui::Element RootComponent::render_keybind_help() const {
                     chrome);
     lines.push_back(text("Left/Right cycle player when Player is focused") |
                     chrome);
+    lines.push_back(text("Enter    open player inventory / slot / item") |
+                    chrome);
+    lines.push_back(text("Left/Backspace return from equipment selection") |
+                    chrome);
     lines.push_back(text("Del      drop the selected player skill") | chrome);
     lines.push_back(text("PgUp/PgDn move inventory by pages") | chrome);
   } else {

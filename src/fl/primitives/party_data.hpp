@@ -177,6 +177,7 @@ private:
   seerin::BeatSub gc_forward_sub_{};
   fl::events::ScopedPartyListener town_revitalize_sub_{};
   fl::events::ScopedPartyListener loot_drop_sub_{};
+  fl::events::ScopedPartyListener manual_equipment_sub_{};
   int town_penalty_beats_remaining_{0};
 
   struct PendingLearnedSkill {

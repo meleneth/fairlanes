@@ -7,6 +7,7 @@
 #include <utility>
 #include <variant>
 
+#include "fl/loot/equipment_slot.hpp"
 #include "fl/monsters/monster_kind.hpp"
 #include "fl/skills/skill.hpp"
 #include "sr/variant_bus.hpp"
@@ -47,12 +48,24 @@ struct SkillWitnessed {
   entt::entity user{entt::null};
   fl::skills::SkillKey skill{fl::skills::SkillId::Observe};
 };
+struct EquipmentEquipRequested {
+  entt::entity member{entt::null};
+  fl::loot::EquipmentSlot slot{fl::loot::EquipmentSlot::chest};
+  entt::entity item{entt::null};
+};
+struct EquipmentEquipped {
+  entt::entity member{entt::null};
+  fl::loot::EquipmentSlot slot{fl::loot::EquipmentSlot::chest};
+  entt::entity item{entt::null};
+  entt::entity previous{entt::null};
+};
 
 using PartyEvent =
     std::variant<PartyCreated, MemberJoined, PartyWiped, PartyVictory,
                  PartyLeftCombat, PartySummonedToRaid, PartyRaidResolved, PartyGainedXP, PartyGainedLevel, PartyHealed,
                  PartyRevitalizeRequested, LootDropRequested, PartyTick,
-                 MonsterEncountered, SkillWitnessed>;
+                 MonsterEncountered, SkillWitnessed, EquipmentEquipRequested,
+                 EquipmentEquipped>;
 
 using PartyBus = seerin::VariantBus<PartyEvent>;
 

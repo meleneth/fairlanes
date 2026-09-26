@@ -62,73 +62,11 @@ constexpr std::array<ArmorKind, 4> kUpgradableKinds{
 };
 
 entt::entity &slot_ref(Closet &closet, EquipmentSlot slot) {
-  switch (slot) {
-  case EquipmentSlot::chest:
-    return closet.chest;
-  case EquipmentSlot::helm:
-    return closet.helm;
-  case EquipmentSlot::pants:
-    return closet.pants;
-  case EquipmentSlot::belt:
-    return closet.belt;
-  case EquipmentSlot::boots:
-    return closet.boots;
-  case EquipmentSlot::gloves:
-    return closet.gloves;
-  case EquipmentSlot::sleeves:
-    return closet.sleeves;
-  case EquipmentSlot::cape:
-    return closet.cape;
-  case EquipmentSlot::necklace:
-    return closet.necklace;
-  case EquipmentSlot::ring_1:
-    return closet.ring_1;
-  case EquipmentSlot::ring_2:
-    return closet.ring_2;
-  case EquipmentSlot::mainhand:
-    return closet.mainhand;
-  case EquipmentSlot::offhand:
-    return closet.offhand;
-  case EquipmentSlot::knife:
-    return closet.knife;
-  }
-
-  return closet.chest;
+  return closet.equipped_item(slot);
 }
 
 entt::entity slot_value(const Closet &closet, EquipmentSlot slot) {
-  switch (slot) {
-  case EquipmentSlot::chest:
-    return closet.chest;
-  case EquipmentSlot::helm:
-    return closet.helm;
-  case EquipmentSlot::pants:
-    return closet.pants;
-  case EquipmentSlot::belt:
-    return closet.belt;
-  case EquipmentSlot::boots:
-    return closet.boots;
-  case EquipmentSlot::gloves:
-    return closet.gloves;
-  case EquipmentSlot::sleeves:
-    return closet.sleeves;
-  case EquipmentSlot::cape:
-    return closet.cape;
-  case EquipmentSlot::necklace:
-    return closet.necklace;
-  case EquipmentSlot::ring_1:
-    return closet.ring_1;
-  case EquipmentSlot::ring_2:
-    return closet.ring_2;
-  case EquipmentSlot::mainhand:
-    return closet.mainhand;
-  case EquipmentSlot::offhand:
-    return closet.offhand;
-  case EquipmentSlot::knife:
-    return closet.knife;
-  }
-
-  return entt::null;
+  return closet.equipped_item(slot);
 }
 
 int tier_rank(Tier tier) {

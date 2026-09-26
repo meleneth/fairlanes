@@ -1,7 +1,7 @@
 #include "player_details_pane.hpp"
 
 #include <algorithm>
-#include <array>
+#include <limits>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -39,8 +39,10 @@ ftxui::Element equipment_label(entt::registry &reg, entt::entity equipment_id) {
 } // namespace
 
 PlayerDetailsPane::PlayerDetailsPane(entt::registry &reg,
-                                     fl::primitives::PartyData &party)
-    : reg_(reg), party_(party) {}
+                                     fl::primitives::PartyData &party,
+                                     InventorySelected on_inventory_selected)
+    : reg_(reg), party_(party),
+      on_inventory_selected_(std::move(on_inventory_selected)) {}
 
 bool PlayerDetailsPane::OnEvent(ftxui::Event event) {
   const int member_count = static_cast<int>(party_.members().size());
@@ -54,7 +56,7 @@ bool PlayerDetailsPane::OnEvent(ftxui::Event event) {
   if (event == ftxui::Event::ArrowRight ||
       event == ftxui::Event::Character("]")) {
     cursor_ = (cursor_ + 1) % member_count;
-    skill_cursor_ = 0;
+    selection_cursor_ = 0;
     scroll_cursor_ = 0;
     return true;
   }
@@ -62,29 +64,49 @@ bool PlayerDetailsPane::OnEvent(ftxui::Event event) {
   if (event == ftxui::Event::ArrowLeft ||
       event == ftxui::Event::Character("[")) {
     cursor_ = (cursor_ + member_count - 1) % member_count;
-    skill_cursor_ = 0;
+    selection_cursor_ = 0;
     scroll_cursor_ = 0;
     return true;
   }
 
   if (event == ftxui::Event::ArrowDown ||
       event == ftxui::Event::Character("j")) {
-    skill_cursor_ = std::min(
-        skill_cursor_ + 1, fl::ecs::components::Closet::kSkillSlotCount - 1);
-    scroll_cursor_ = 7 + skill_cursor_;
+    constexpr int selection_count =
+        fl::ecs::components::Closet::kSkillSlotCount + 1;
+    selection_cursor_ = (selection_cursor_ + 1) % selection_count;
+    scroll_cursor_ =
+        selection_cursor_ < fl::ecs::components::Closet::kSkillSlotCount
+            ? 7 + selection_cursor_
+            : std::numeric_limits<int>::max();
     return true;
   }
 
   if (event == ftxui::Event::ArrowUp || event == ftxui::Event::Character("k")) {
-    skill_cursor_ = std::max(skill_cursor_ - 1, 0);
-    scroll_cursor_ = 7 + skill_cursor_;
+    constexpr int selection_count =
+        fl::ecs::components::Closet::kSkillSlotCount + 1;
+    selection_cursor_ =
+        (selection_cursor_ + selection_count - 1) % selection_count;
+    scroll_cursor_ =
+        selection_cursor_ < fl::ecs::components::Closet::kSkillSlotCount
+            ? 7 + selection_cursor_
+            : std::numeric_limits<int>::max();
     return true;
   }
 
-  if (event == ftxui::Event::Delete) {
+  if (event == ftxui::Event::Return &&
+      selection_cursor_ == fl::ecs::components::Closet::kSkillSlotCount &&
+      on_inventory_selected_) {
+    on_inventory_selected_(
+        party_.members()[static_cast<std::size_t>(cursor_)].member_id());
+    return true;
+  }
+
+  if (event == ftxui::Event::Delete &&
+      selection_cursor_ < fl::ecs::components::Closet::kSkillSlotCount) {
     const auto member =
         party_.members()[static_cast<std::size_t>(cursor_)].member_id();
-    return party_.drop_skill(member, static_cast<std::size_t>(skill_cursor_));
+    return party_.drop_skill(member,
+                             static_cast<std::size_t>(selection_cursor_));
   }
 
   if (event == ftxui::Event::PageDown) {
@@ -151,7 +173,7 @@ ftxui::Element PlayerDetailsPane::Render() {
                                 : std::string{"-"}) |
               flex,
       });
-      if (focused_ && i == skill_cursor_) {
+      if (focused_ && i == selection_cursor_) {
         line = line | inverted | focusPosition(0, 7 + i);
       }
       lines.push_back(std::move(line));
@@ -163,45 +185,30 @@ ftxui::Element PlayerDetailsPane::Render() {
   lines.push_back(separator());
   lines.push_back(text("Gear") | bold);
 
-  if (!party_member || party_member->closet_entity_id() == entt::null ||
-      !reg_.all_of<fl::ecs::components::Closet>(
-          party_member->closet_entity_id())) {
+  const bool has_closet = party_member &&
+                          party_member->closet_entity_id() != entt::null &&
+                          reg_.all_of<fl::ecs::components::Closet>(
+                              party_member->closet_entity_id());
+  if (!has_closet) {
     lines.push_back(text("No gear data."));
-    scroll_cursor_ = std::clamp(
-        scroll_cursor_, 0, std::max(0, static_cast<int>(lines.size()) - 1));
-    if (!lines.empty()) {
-      lines[static_cast<std::size_t>(scroll_cursor_)] =
-          lines[static_cast<std::size_t>(scroll_cursor_)] |
-          focusPosition(0, scroll_cursor_);
+  } else {
+    const auto &closet = party_member->closet();
+    for (const auto slot : fl::loot::kEquipmentSlots) {
+      lines.push_back(hbox({
+          text(std::string(fl::ecs::components::to_string(slot)) + ": ") | dim,
+          equipment_label(reg_, closet.equipped_item(slot)) | flex,
+      }));
     }
-    return window(title,
-                  vbox(std::move(lines)) | yframe | vscroll_indicator | flex);
   }
 
-  const auto &closet = party_member->closet();
-  const std::array<std::pair<std::string_view, entt::entity>, 14> gear{{
-      {"mainhand", closet.mainhand},
-      {"offhand", closet.offhand},
-      {"chest", closet.chest},
-      {"helm", closet.helm},
-      {"pants", closet.pants},
-      {"boots", closet.boots},
-      {"gloves", closet.gloves},
-      {"sleeves", closet.sleeves},
-      {"belt", closet.belt},
-      {"cape", closet.cape},
-      {"necklace", closet.necklace},
-      {"ring_1", closet.ring_1},
-      {"ring_2", closet.ring_2},
-      {"knife", closet.knife},
-  }};
-
-  for (const auto &[slot, equipment_id] : gear) {
-    lines.push_back(hbox({
-        text(std::string(slot) + ": ") | dim,
-        equipment_label(reg_, equipment_id) | flex,
-    }));
+  lines.push_back(separator());
+  const int inventory_row = static_cast<int>(lines.size());
+  auto inventory = text("Inventory") | bold;
+  if (focused_ &&
+      selection_cursor_ == fl::ecs::components::Closet::kSkillSlotCount) {
+    inventory = inventory | inverted | focusPosition(0, inventory_row);
   }
+  lines.push_back(std::move(inventory));
 
   scroll_cursor_ = std::clamp(scroll_cursor_, 0,
                               std::max(0, static_cast<int>(lines.size()) - 1));
