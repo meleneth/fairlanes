@@ -697,6 +697,36 @@ TEST_CASE("Poison releases the active combatant when the effect is applied",
   REQUIRE(stats.hp_ == 99);
 }
 
+TEST_CASE("Normal Poison and Cold Snap combat stays in the party log",
+          "[encounter][skills][logging][context]") {
+  fl::GrandCentral gc{1, 1, 2};
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  fl::primitives::EncounterBuilder builder{party_ctx};
+  auto &encounter = builder.thump_it_out();
+
+  const auto attacker = encounter.attackers().members().front();
+  const auto target = encounter.defenders().members().front();
+  REQUIRE(&encounter.context().log() == &party_ctx.log());
+  REQUIRE(&encounter.context().log() != &account_ctx.log());
+
+  const auto account_entries = account_ctx.log().size();
+  auto party_entries = party_ctx.log().size();
+  fl::skills::SkillSequencer sequencer{
+      party_ctx, encounter.atb_engine().scheduler(), [](entt::entity) {}};
+
+  sequencer.schedule(attacker, target, fl::skills::SkillId::Poison);
+  tick_party(party_ctx, 24);
+  REQUIRE(account_ctx.log().size() == account_entries);
+  REQUIRE(party_ctx.log().size() > party_entries);
+
+  party_entries = party_ctx.log().size();
+  sequencer.schedule(attacker, target, fl::skills::SkillId::ColdSnap);
+  tick_party(party_ctx, 24);
+  REQUIRE(account_ctx.log().size() == account_entries);
+  REQUIRE(party_ctx.log().size() > party_entries);
+}
+
 TEST_CASE("Poison is applied by event and clears when combat ends",
           "[encounter][skills][poison][cleanup]") {
   fl::GrandCentral gc{1, 1, 1};
