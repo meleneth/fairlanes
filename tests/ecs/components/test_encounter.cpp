@@ -1420,6 +1420,49 @@ TEST_CASE("Skills learned this combat are rolled back on party wipe",
   REQUIRE(party.log().size() > log_size_before_wipe);
 }
 
+TEST_CASE("Returning to town rolls back provisional skills and restores Observe",
+          "[encounter][skills][learning][town]") {
+  fl::GrandCentral gc{1, 1, 2};
+
+  auto account_ctx = gc.account_context(0);
+  auto party_ctx = account_ctx.party_context(0);
+  auto &party = party_ctx.party_data();
+  auto &members = party.members();
+
+  fl::primitives::EncounterBuilder builder(party_ctx);
+  (void)builder.thump_it_out();
+
+  const auto user = members.front().member_id();
+  const auto observer = members.back().member_id();
+  auto &observer_member =
+      party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
+
+  REQUIRE(fl::skills::learn_observed_skill_with_roll(
+      party_ctx, observer, user, fl::skills::SkillId::Thump, 1));
+  REQUIRE(members.back().grimoire().learn(fl::skills::SkillId::Flee));
+  REQUIRE(observer_member.equip_known_skill(fl::skills::SkillId::Flee));
+  REQUIRE(party.drop_skill(observer, 0));
+  REQUIRE_FALSE(observer_member.closet().skill_slots[0].has_value());
+  int victory_count = 0;
+  auto victory_sub = party.party_bus().subscribe<fl::events::PartyVictory>(
+      [&](const auto &) { ++victory_count; });
+
+  party.party_bus().emit(
+      fl::events::PartyEvent{fl::events::PartyReturnToTownRequested{}});
+
+  REQUIRE_FALSE(party.has_encounter());
+  REQUIRE(victory_count == 0);
+  REQUIRE_FALSE(
+      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
+  REQUIRE_FALSE(members.back().grimoire().knows(fl::skills::SkillId::Thump));
+  REQUIRE(observer_member.closet().has_equipped_skill(
+      fl::skills::SkillId::Flee));
+  REQUIRE(members.back().grimoire().knows(fl::skills::SkillId::Flee));
+  REQUIRE(observer_member.closet().skill_slots[0] ==
+          fl::skills::SkillKey{fl::skills::SkillId::Observe});
+  REQUIRE(members.back().grimoire().knows(fl::skills::SkillId::Observe));
+}
+
 TEST_CASE("Skills learned this combat persist after successful combat exit",
           "[encounter][skills][learning][victory]") {
   fl::GrandCentral gc{1, 1, 2};

@@ -13,6 +13,7 @@ struct PartyLoopMachine::Impl {
   fl::context::PartyCtx *ctx{};
   boost::sml::sm<fl::fsm::PartyLoop> sm_;
   fl::events::ScopedPartyListener party_wiped_sub_;
+  fl::events::ScopedPartyListener return_to_town_sub_;
   bool processing_beat_{false};
   bool party_wipe_pending_{false};
 
@@ -20,7 +21,18 @@ struct PartyLoopMachine::Impl {
       : ctx(&c), sm_(c),
         party_wiped_sub_(
             c.bus(), std::in_place_type<fl::events::PartyWiped>,
-            [this](const fl::events::PartyWiped &) { on_party_wiped(); }) {}
+            [this](const fl::events::PartyWiped &) { on_party_wiped(); }),
+        return_to_town_sub_(
+            c.bus(),
+            std::in_place_type<fl::events::PartyReturnToTownRequested>,
+            [this](const fl::events::PartyReturnToTownRequested &) {
+              on_return_to_town();
+            }) {}
+
+  void on_return_to_town() {
+    if (ctx->party_data().in_raid()) return;
+    sm_.process_event(fl::fsm::ReturnToTownEvent{});
+  }
 
   void on_party_wiped() {
     if (ctx->party_data().in_raid()) return;

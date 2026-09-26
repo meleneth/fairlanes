@@ -58,6 +58,7 @@ private:
   fl::context::AccountCtx make_context(std::size_t account_index);
   void toggle_active_screen();
   void toggle_party_battle_screen();
+  bool return_selected_party_to_town();
   void refresh_selected_account(std::size_t account_index,
                                 std::size_t party_index);
   void update_fps_counter();

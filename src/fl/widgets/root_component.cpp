@@ -13,6 +13,7 @@
 #include "bestiary_view.hpp"
 #include "console_overlay.hpp"
 #include "effect_gallery_view.hpp"
+#include "fl/events/party_bus.hpp"
 #include "fl/lospec500.hpp"
 #include "libram_view.hpp"
 #include "party_battle_screen.hpp"
@@ -172,6 +173,11 @@ bool RootComponent::OnEvent(ftxui::Event event) {
   if (event == ftxui::Event::Character("h") &&
       active_screen_kind_ != ActiveScreen::effect_gallery) {
     keybind_help_open_ = true;
+    return true;
+  }
+
+  if (event == ftxui::Event::Character("r") &&
+      return_selected_party_to_town()) {
     return true;
   }
 
@@ -415,6 +421,23 @@ void RootComponent::toggle_party_battle_screen() {
   }
 }
 
+bool RootComponent::return_selected_party_to_town() {
+  if (active_screen_kind_ != ActiveScreen::party &&
+      active_screen_kind_ != ActiveScreen::party_battle) {
+    return false;
+  }
+
+  auto &parties = ctx_.account_data().parties();
+  if (parties.empty()) {
+    return false;
+  }
+
+  const auto party_index = std::min(commands_.party_index(), parties.size() - 1);
+  parties[party_index].party_bus().emit(
+      fl::events::PartyEvent{fl::events::PartyReturnToTownRequested{}});
+  return true;
+}
+
 void RootComponent::refresh_selected_account(std::size_t account_index,
                                              std::size_t party_index) {
   switch (active_screen_kind_) {
@@ -584,6 +607,7 @@ ftxui::Element RootComponent::render_keybind_help() const {
     lines.push_back(text("+ / -    change overdrive level") | chrome);
     lines.push_back(text("[ / ]    switch selected party") | chrome);
     lines.push_back(text("{ / }    switch selected account") | chrome);
+    lines.push_back(text("r        return selected party to town") | chrome);
     lines.push_back(text("Tab      switch inventory / player details focus") |
                     chrome);
     lines.push_back(text("Up/Down  select inventory item or player skill") |
@@ -604,6 +628,9 @@ ftxui::Element RootComponent::render_keybind_help() const {
     lines.push_back(text("+ / -    change overdrive level") | chrome);
     lines.push_back(text("[ / ]    switch selected party") | chrome);
     lines.push_back(text("{ / }    switch selected account") | chrome);
+    if (active_screen_kind_ == ActiveScreen::party_battle) {
+      lines.push_back(text("r        return selected party to town") | chrome);
+    }
     lines.push_back(text("Use the console for account and party navigation") |
                     chrome);
   }

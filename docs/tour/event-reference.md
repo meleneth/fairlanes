@@ -82,6 +82,18 @@ Emitted by `TakeDamage::commit(...)` when the final living party member dies. Ob
 
 Emitted by `PartyData::leave_combat()` when combat ends and party members are still alive. Observed by pending-skill retention logic.
 
+### `fl::events::PartyReturnToTownRequested`
+
+Emitted by the root input router when `r` is pressed on either selected-party
+screen. Observed by `PartyLoopMachine`, which routes the request through its
+named return-to-town transition.
+
+### `fl::events::PartyReturnedToTown`
+
+Emitted by `PartyData::return_to_town()` before interrupted encounter cleanup.
+Pending skills learned during that combat are rolled back; permanent skills are
+unchanged. Members whose first skill slot is empty relearn and equip Observe I.
+
 ### `fl::events::PartySummonedToRaid`
 
 Emitted by `PartyData::summon_to_raid()` before leaving the interrupted combat.

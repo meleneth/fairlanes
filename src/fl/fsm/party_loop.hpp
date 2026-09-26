@@ -8,6 +8,7 @@ namespace sml = boost::sml;
 
 struct NextEvent {};
 struct PartyWipedEvent {};
+struct ReturnToTownEvent {};
 
 struct PartyLoop {
   // Put all behavior in a ctx-only “ops” namespace/struct.
@@ -19,6 +20,7 @@ struct PartyLoop {
     static void enter_fixing(fl::context::PartyCtx &ctx);
     static void exit_fixing(fl::context::PartyCtx &ctx);
     static void enter_gearing(fl::context::PartyCtx &ctx);
+    static void return_to_town(fl::context::PartyCtx &ctx);
     static void fixing_tick(fl::context::PartyCtx &ctx);
 
     static void combat_tick(fl::context::PartyCtx &ctx);
@@ -55,6 +57,11 @@ struct PartyLoop {
   struct EnterGearing {
     void operator()(fl::context::PartyCtx &ctx) const {
       Ops::enter_gearing(ctx);
+    }
+  };
+  struct ReturnToTown {
+    void operator()(fl::context::PartyCtx &ctx) const {
+      Ops::return_to_town(ctx);
     }
   };
   struct CombatTick {
@@ -97,6 +104,13 @@ struct PartyLoop {
         state<Fixing> + event<PartyWipedEvent> = state<Dead>,
         state<Gearing> + event<PartyWipedEvent> = state<Dead>,
         state<Dead> + event<PartyWipedEvent> = state<Dead>,
+        state<Idle> + event<ReturnToTownEvent> / ReturnToTown{},
+        state<Farming> + event<ReturnToTownEvent> / ReturnToTown{} =
+            state<CombatIdle>,
+        state<CombatIdle> + event<ReturnToTownEvent> / ReturnToTown{},
+        state<Dead> + event<ReturnToTownEvent> / ReturnToTown{},
+        state<Fixing> + event<ReturnToTownEvent> / ReturnToTown{},
+        state<Gearing> + event<ReturnToTownEvent> / ReturnToTown{},
         state<Farming> + event<NextEvent>[InCombat{}] / CombatTick{},
         state<Farming> + event<NextEvent> / ExitFarming{} = state<CombatIdle>,
         state<CombatIdle> + event<NextEvent> = state<Gearing>,

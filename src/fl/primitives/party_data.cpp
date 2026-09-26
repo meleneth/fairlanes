@@ -113,6 +113,38 @@ void PartyData::leave_combat() {
   leaving_combat_ = false;
 }
 
+void PartyData::return_to_town() {
+  if (in_raid() || leaving_combat_) {
+    return;
+  }
+  leaving_combat_ = true;
+
+  party_bus_.emit(fl::events::PartyEvent{fl::events::PartyReturnedToTown{}});
+  if (encounter_data_) {
+    cleanup_encounter();
+  }
+  restore_observe_to_open_first_slots();
+  log_->append_plain("Returned to town.");
+
+  leaving_combat_ = false;
+}
+
+void PartyData::restore_observe_to_open_first_slots() {
+  using fl::ecs::components::PartyMember;
+
+  const fl::skills::SkillKey observe{fl::skills::SkillId::Observe};
+  for (auto &member : members_) {
+    auto *party_member =
+        party_ctx_.reg().try_get<PartyMember>(member.member_id());
+    if (party_member == nullptr ||
+        party_member->closet().skill_slots[0].has_value()) {
+      continue;
+    }
+    member.grimoire().learn(observe);
+    party_member->closet().skill_slots[0] = observe;
+  }
+}
+
 void PartyData::summon_to_raid() {
   if (in_raid() || !encounter_data_ || leaving_combat_) return;
   leaving_combat_ = true;
@@ -194,6 +226,12 @@ void PartyData::watch_skill_learned_this_combat(entt::entity member,
       [this, it](const fl::events::PartyVictory &) {
         resolve_pending_learned_skill(it, true);
       }};
+
+  it->returned_to_town_sub = fl::events::ScopedPartyListener{
+      party_bus_, std::in_place_type<fl::events::PartyReturnedToTown>,
+      [this, it](const fl::events::PartyReturnedToTown &) {
+        resolve_pending_learned_skill(it, false);
+      }};
 }
 
 bool PartyData::drop_skill(entt::entity member, std::size_t slot_index) {
@@ -230,6 +268,7 @@ void PartyData::resolve_pending_learned_skill(
 
   it->wipe_sub.reset();
   it->victory_sub.reset();
+  it->returned_to_town_sub.reset();
   it->summoned_sub.reset();
   it->raid_resolved_sub.reset();
   pending_learned_skills_.erase(it);

@@ -327,6 +327,24 @@ TEST_CASE("Normal gameplay collapses and expands the metrics overlay",
   REQUIRE(render_to_string(root).find("FPS ") != std::string::npos);
 }
 
+TEST_CASE("Party screens dispatch return-to-town requests with r",
+          "[widgets][root][party][town]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto root = make_gameplay_root(gc);
+  auto &party = gc.accounts().front().party(0);
+  int request_count = 0;
+  auto request_sub =
+      party.party_bus().subscribe<fl::events::PartyReturnToTownRequested>(
+          [&](const auto &) { ++request_count; });
+
+  SECTION("party battle") {}
+
+  SECTION("player and inventory") { root.show_party(0, 0); }
+
+  REQUIRE(root.OnEvent(ftxui::Event::Character("r")));
+  REQUIRE(request_count == 1);
+}
+
 TEST_CASE("Account commands preserve the selected gameplay screen",
           "[widgets][root][commands]") {
   fl::GrandCentral gc{2, 1, 1};

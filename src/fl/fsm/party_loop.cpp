@@ -89,6 +89,11 @@ void PartyLoop::Ops::enter_gearing(fl::context::PartyCtx &ctx) {
   fl::ecs::systems::PartyGearing::commit(ctx);
 }
 
+void PartyLoop::Ops::return_to_town(fl::context::PartyCtx &ctx) {
+  ZoneScopedN("PartyLoop::return_to_town");
+  ctx.party_data().return_to_town();
+}
+
 void PartyLoop::Ops::fixing_tick(fl::context::PartyCtx &ctx) {
   ZoneScopedN("PartyLoop::fixing_tick");
   ctx.party_data().tick_town_penalty();
