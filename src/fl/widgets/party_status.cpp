@@ -14,12 +14,15 @@ ftxui::Element PartyStatus::Render() {
   std::string status_text;
   ftxui::Color status_color;
   std::string detail_text;
+  const bool has_encounter = party_data_.has_encounter();
+  const bool show_dead_status =
+      !has_encounter && party_data_.all_members_dead();
 
-  if (party_data_.has_encounter()) {
+  if (has_encounter) {
     status_text = "FIGHTING";
     status_color = fl::lospec500::color_at(20); // Bright green
     detail_text = "";
-  } else if (party_data_.all_members_dead()) {
+  } else if (show_dead_status) {
     status_text = "DEAD";
     status_color = fl::lospec500::color_at(6); // Dead color (red/dark)
     detail_text = "";
@@ -65,6 +68,14 @@ ftxui::Element PartyStatus::Render() {
     detail_text =
         "Farm: " + std::string{fl::primitives::display_name(plan.focus)} +
         " / " + std::string{fl::primitives::display_name(plan.reward_class)};
+  }
+
+  // Keep the dead status aligned with the three-line Combatant widgets by
+  // using the frame title instead of spending a content row on the label.
+  if (show_dead_status) {
+    return ftxui::window(ftxui::text(status_text) | ftxui::bold,
+                         ftxui::text(detail_text) | ftxui::center) |
+           ftxui::color(status_color) | ftxui::xflex;
   }
 
   // Build the display element with outline matching Combatant widget
