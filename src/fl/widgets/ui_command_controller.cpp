@@ -268,6 +268,14 @@ void UiCommandController::set_show_effect_gallery(ShowEffectGallery callback) {
   show_effect_gallery_ = std::move(callback);
 }
 
+void UiCommandController::set_account_selected(AccountSelected callback) {
+  account_selected_ = std::move(callback);
+}
+
+void UiCommandController::set_start_raid(StartRaid callback) {
+  start_raid_ = std::move(callback);
+}
+
 void UiCommandController::handle(std::string_view command) {
   const auto owned = trim_copy(command);
   const auto words = split_words(owned);
@@ -349,6 +357,11 @@ void UiCommandController::handle(std::string_view command) {
 
     write("usage: debug party");
     write("try: help debug");
+    return;
+  }
+
+  if (verb == "raid") {
+    start_raid();
     return;
   }
 
@@ -490,8 +503,8 @@ void UiCommandController::show_help(std::string_view topic) {
   if (topic.empty()) {
     write("current account: " + std::to_string(account_index_));
     write("current party: " + std::to_string(party_index_));
-    write("commands: screen, list, debug, account, party, render, overdrive, "
-          "help");
+    write("commands: screen, list, debug, raid, account, party, render, "
+          "overdrive, help");
     write("try: screen effects for the visual effect gallery");
     write("try: help <command>");
     return;
@@ -528,6 +541,11 @@ void UiCommandController::show_help(std::string_view topic) {
   if (topic == "debug" || topic == "dbg" || topic == "ready") {
     write("debug party: show current party combat/ATB state");
     write("ready: shortcut for debug party");
+    return;
+  }
+
+  if (topic == "raid") {
+    write("raid: immediately start a Visitor raid for the selected account");
     return;
   }
 
@@ -670,6 +688,27 @@ void UiCommandController::debug_party() {
   }
 }
 
+void UiCommandController::start_raid() {
+  if (!accounts_ || account_index_ >= accounts_->size()) {
+    write("No selected account.");
+    return;
+  }
+
+  if (!start_raid_) {
+    write("Raid command is unavailable.");
+    return;
+  }
+
+  if (start_raid_(account_index_)) {
+    write("Started Visitor raid for account " +
+          std::to_string(account_index_) + ".");
+    return;
+  }
+
+  write("Could not start raid for account " + std::to_string(account_index_) +
+        ".");
+}
+
 void UiCommandController::set_overdrive(std::string_view multiplier) {
   std::size_t value = 0;
   if (!parse_index(multiplier, value) || value == 0) {
@@ -692,8 +731,8 @@ void UiCommandController::select_account(std::size_t account_index) {
 
   account_index_ = account_index;
   party_index_ = 0;
-  if (show_party_view_) {
-    show_party_view_(account_index_, party_index_);
+  if (account_selected_) {
+    account_selected_(account_index_, party_index_);
   }
   write("selected account " + std::to_string(account_index_));
 }

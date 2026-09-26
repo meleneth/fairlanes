@@ -13,6 +13,7 @@
 #include "bestiary_view.hpp"
 #include "console_overlay.hpp"
 #include "effect_gallery_view.hpp"
+#include "fl/generated/monster_content.hpp"
 #include "fl/lospec500.hpp"
 #include "libram_view.hpp"
 #include "party_battle_screen.hpp"
@@ -51,6 +52,15 @@ RootComponent::RootComponent(
     show_libram();
   });
   commands_.set_show_bestiary([this] { show_bestiary(); });
+  commands_.set_account_selected(
+      [this](std::size_t account_index, std::size_t party_index) {
+        refresh_selected_account(account_index, party_index);
+      });
+  commands_.set_start_raid([this](std::size_t account_index) {
+    auto context = make_context(account_index);
+    return context.account_data().start_raid(
+        context, fl::monster::generated_content::raid_bosses());
+  });
   console_overlay()->set_on_command(
       [this](std::string_view command) { commands_.handle(command); });
   Add(console_overlay_);
@@ -95,6 +105,16 @@ bool RootComponent::OnEvent(ftxui::Event event) {
 
   if (overlay->open()) {
     return console_overlay_->OnEvent(event);
+  }
+
+  if (event == ftxui::Event::Character(">")) {
+    help_hint_collapsed_ = true;
+    return true;
+  }
+
+  if (event == ftxui::Event::Character("<")) {
+    help_hint_collapsed_ = false;
+    return true;
   }
 
   if (active_screen_kind_ == ActiveScreen::raid && event == ftxui::Event::Return) {
@@ -198,22 +218,12 @@ bool RootComponent::OnEvent(ftxui::Event event) {
   }
 
   if (event == ftxui::Event::Character("{")) {
-    const bool stay_on_party_battle =
-        active_screen_kind_ == ActiveScreen::party_battle;
     commands_.select_account_relative(-1);
-    if (stay_on_party_battle) {
-      show_party_battle(commands_.account_index(), commands_.party_index());
-    }
     return true;
   }
 
   if (event == ftxui::Event::Character("}")) {
-    const bool stay_on_party_battle =
-        active_screen_kind_ == ActiveScreen::party_battle;
     commands_.select_account_relative(1);
-    if (stay_on_party_battle) {
-      show_party_battle(commands_.account_index(), commands_.party_index());
-    }
     return true;
   }
 
@@ -407,6 +417,27 @@ void RootComponent::toggle_party_battle_screen() {
   }
 }
 
+void RootComponent::refresh_selected_account(std::size_t account_index,
+                                             std::size_t party_index) {
+  switch (active_screen_kind_) {
+  case ActiveScreen::raid:
+  case ActiveScreen::account_battle:
+    show_account_battle(account_index);
+    return;
+  case ActiveScreen::party_battle:
+    show_party_battle(account_index, party_index);
+    return;
+  case ActiveScreen::party:
+    show_party(account_index, party_index);
+    return;
+  case ActiveScreen::effect_gallery:
+  case ActiveScreen::libram:
+  case ActiveScreen::bestiary:
+    ctx_ = make_context(account_index);
+    return;
+  }
+}
+
 fl::context::AccountCtx RootComponent::make_context(std::size_t account_index) {
   return fl::context::AccountCtx{ctx_.reg(), ctx_.rng(),
                                  accounts_->at(account_index)};
@@ -455,6 +486,12 @@ ftxui::Element RootComponent::render_help_hint() const {
   const auto edge = color(fl::lospec500::color_at(15));
   const auto muted = color(fl::lospec500::color_at(24));
 
+  if (help_hint_collapsed_) {
+    auto handle =
+        vbox({text("┌"), text("<"), text("└")}) | edge | clear_under;
+    return vbox({filler(), hbox({filler(), std::move(handle)}), text("")});
+  }
+
   auto chunk = [](std::string name, std::string value_text,
                   Decorator label_style, Decorator value_style) {
     return hbox({
@@ -500,7 +537,9 @@ ftxui::Element RootComponent::render_help_hint() const {
       text("Space") | key,
       text(" party battle  ") | muted,
       text("h") | key,
-      text(" help") | muted,
+      text(" help  ") | muted,
+      text(">") | key,
+      text(" hide") | muted,
   });
 
   auto panel = vbox({metrics, controls}) | border | edge | clear_under;
@@ -527,6 +566,7 @@ ftxui::Element RootComponent::render_keybind_help() const {
   lines.push_back(separator() | chrome);
   lines.push_back(text("h        close this help") | chrome);
   lines.push_back(text("`        open command console") | chrome);
+  lines.push_back(text("> / <    collapse / expand metrics") | chrome);
   lines.push_back(text("l / b    open libram / bestiary") | chrome);
   lines.push_back(text("q / Esc  back, or confirm quit from gameplay") | chrome);
 
@@ -548,8 +588,9 @@ ftxui::Element RootComponent::render_keybind_help() const {
     lines.push_back(text("{ / }    switch selected account") | chrome);
     lines.push_back(text("Tab      switch inventory / player details focus") |
                     chrome);
-    lines.push_back(text("j / Down move inventory selection down") | chrome);
-    lines.push_back(text("k / Up   move inventory selection up") | chrome);
+    lines.push_back(text("Up/Down  select inventory item or player skill") |
+                    chrome);
+    lines.push_back(text("Del      drop the selected player skill") | chrome);
     lines.push_back(text("PgUp/PgDn move inventory by pages") | chrome);
   } else {
     lines.push_back(separator() | chrome);

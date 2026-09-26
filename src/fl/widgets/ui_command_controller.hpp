@@ -18,6 +18,9 @@ public:
   using ShowPartyView =
       std::function<void(std::size_t account_index, std::size_t party_index)>;
   using ShowEffectGallery = std::function<void()>;
+  using AccountSelected = std::function<void(
+      std::size_t account_index, std::size_t party_index)>;
+  using StartRaid = std::function<bool(std::size_t account_index)>;
 
   explicit UiCommandController(
       std::deque<fl::primitives::AccountData> &accounts, FancyLog &output_log,
@@ -28,6 +31,8 @@ public:
   void set_show_effect_gallery(ShowEffectGallery callback);
   void set_show_libram(ShowEffectGallery callback);
   void set_show_bestiary(ShowEffectGallery callback);
+  void set_account_selected(AccountSelected callback);
+  void set_start_raid(StartRaid callback);
 
   void handle(std::string_view command);
 
@@ -46,6 +51,7 @@ private:
   void list_accounts();
   void list_parties();
   void debug_party();
+  void start_raid();
   void set_overdrive(std::string_view multiplier);
   void select_account(std::size_t account_index);
   void select_party(std::size_t party_index);
@@ -62,6 +68,8 @@ private:
   ShowEffectGallery show_effect_gallery_;
   ShowEffectGallery show_libram_;
   ShowEffectGallery show_bestiary_;
+  AccountSelected account_selected_;
+  StartRaid start_raid_;
 };
 
 } // namespace fl::widgets

@@ -176,6 +176,52 @@ TEST_CASE("Normal gameplay renders the normal key manifest",
   REQUIRE(rendered.find("help") != std::string::npos);
 }
 
+TEST_CASE("Normal gameplay collapses and expands the metrics overlay",
+          "[widgets][root][presentation]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto root = make_gameplay_root(gc);
+
+  REQUIRE(render_to_string(root).find("FPS ") != std::string::npos);
+  REQUIRE(root.OnEvent(ftxui::Event::Character(">")));
+  const auto collapsed = render_to_string(root);
+  REQUIRE(collapsed.find("FPS ") == std::string::npos);
+  REQUIRE(collapsed.find("┌") != std::string::npos);
+  REQUIRE(collapsed.find("<") != std::string::npos);
+  REQUIRE(collapsed.find("└") != std::string::npos);
+
+  REQUIRE(root.OnEvent(ftxui::Event::Character("<")));
+  REQUIRE(render_to_string(root).find("FPS ") != std::string::npos);
+}
+
+TEST_CASE("Account commands preserve the selected gameplay screen",
+          "[widgets][root][commands]") {
+  fl::GrandCentral gc{2, 1, 1};
+  auto root = make_gameplay_root(gc);
+
+  REQUIRE(root.OnEvent(ftxui::Event::Character("/")));
+  REQUIRE(render_to_string(root).find("Inventory") != std::string::npos);
+  REQUIRE(root.OnEvent(ftxui::Event::Character("`")));
+  REQUIRE(root.OnEvent(ftxui::Event::Character("account 1")));
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  REQUIRE(root.OnEvent(ftxui::Event::Escape));
+
+  const auto rendered = render_to_string(root);
+  REQUIRE(rendered.find("Inventory") != std::string::npos);
+  REQUIRE(rendered.find("Ashen Vanguard") != std::string::npos);
+}
+
+TEST_CASE("Raid console command starts a raid for the selected account",
+          "[widgets][root][commands][raid]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto root = make_gameplay_root(gc);
+
+  REQUIRE_FALSE(gc.accounts().front().in_raid());
+  REQUIRE(root.OnEvent(ftxui::Event::Character("`")));
+  REQUIRE(root.OnEvent(ftxui::Event::Character("raid")));
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  REQUIRE(gc.accounts().front().in_raid());
+}
+
 TEST_CASE("Chaos Attract hides the normal key manifest",
           "[widgets][root][presentation]") {
   fl::GrandCentral attract_gc{8, 5, 5};

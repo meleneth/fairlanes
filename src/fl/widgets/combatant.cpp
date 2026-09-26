@@ -506,7 +506,7 @@ ftxui::Element Combatant::Render() {
           ? static_cast<float>(stats.hp_) / static_cast<float>(stats.max_hp_)
           : 0.0f;
   ftxui::Element hp_line = labeled_fill_bar(
-      "HP", clamp_fill(hp_fill), bar_width,
+      " HP", clamp_fill(hp_fill), bar_width,
       std::to_string(stats.hp_) + "/" + std::to_string(stats.max_hp_));
   if (auto *hp_color = reg.try_get<HPBarColorOverride>(entity);
       hp_color != nullptr && stats.is_alive()) {

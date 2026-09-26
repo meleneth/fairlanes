@@ -35,6 +35,7 @@ TEST_CASE("Combatant renders ATB from ECS AtbCharge", "[widgets][combatant]") {
   ftxui::Render(screen, element);
 
   const std::string rendered = screen.ToString();
+  REQUIRE(rendered.find(" HP: [") != std::string::npos);
   REQUIRE(rendered.find("ATB: [") != std::string::npos);
   REQUIRE(rendered.find("160/4800") != std::string::npos);
 }

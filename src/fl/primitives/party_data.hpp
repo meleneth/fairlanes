@@ -1,6 +1,7 @@
 // party_data.hpp
 #pragma once
 
+#include <cstddef>
 #include <deque>
 #include <functional> // std::invoke
 #include <list>
@@ -99,6 +100,7 @@ public:
   void detach_raid() noexcept { raid_encounter_ = nullptr; }
   void watch_skill_learned_this_combat(entt::entity member,
                                        fl::skills::SkillKey skill);
+  bool drop_skill(entt::entity member, std::size_t slot_index);
 
   GrimoireDiscipline grimoire_discipline() const noexcept {
     return grimoire_discipline_;

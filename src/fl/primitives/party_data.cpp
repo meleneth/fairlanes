@@ -193,6 +193,29 @@ void PartyData::watch_skill_learned_this_combat(entt::entity member,
       }};
 }
 
+bool PartyData::drop_skill(entt::entity member, std::size_t slot_index) {
+  using fl::ecs::components::PartyMember;
+
+  auto *party_member = party_ctx_.reg().try_get<PartyMember>(member);
+  if (party_member == nullptr ||
+      slot_index >= party_member->closet().skill_slots.size()) {
+    return false;
+  }
+
+  auto &slot = party_member->closet().skill_slots[slot_index];
+  if (!slot.has_value()) {
+    return false;
+  }
+
+  const auto skill = *slot;
+  slot.reset();
+  party_member->member_data().grimoire().unlearn(skill);
+  log_->append_markup(fmt::format(
+      "[player_name]({}) dropped [ability]({}).",
+      party_member->member_data().name(), fl::skills::display_name(skill)));
+  return true;
+}
+
 void PartyData::resolve_pending_learned_skill(
     std::list<PendingLearnedSkill>::iterator it, bool keep_skill) {
   if (it == pending_learned_skills_.end()) {

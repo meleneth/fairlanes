@@ -63,11 +63,10 @@ PartyViewLayout current_layout(const BattleRenderBudget &budget,
                                          kRootChromeHeight);
 
   const int preferred_inventory = std::clamp(
-      layout.screen_width / 3, kMinInventoryWidth, kMaxInventoryWidth);
+      layout.screen_width / 4, kMinInventoryWidth, kMaxInventoryWidth);
   layout.inventory_width =
       std::min(preferred_inventory, std::max(1, layout.screen_width - 1));
-  layout.battle_width = std::max(
-      1, layout.screen_width - layout.inventory_width - kSeparatorWidth);
+  layout.battle_width = layout.screen_width;
 
   const int fixed_height = layout.title_height + kSeparatorHeight;
   const int variable_height = std::max(1, layout.active_height - fixed_height);
@@ -85,12 +84,13 @@ PartyViewLayout current_layout(const BattleRenderBudget &budget,
   layout.bottom_height = std::max(
       1, layout.active_height - fixed_height - layout.stage_height);
 
-  layout.details_width = std::clamp(layout.battle_width / 3, kMinDetailsWidth,
+  layout.details_width = std::clamp(layout.battle_width / 4, kMinDetailsWidth,
                                     kMaxDetailsWidth);
   layout.details_width =
       std::min(layout.details_width, std::max(1, layout.battle_width - 1));
-  layout.log_width =
-      std::max(1, layout.battle_width - layout.details_width - kSeparatorWidth);
+  layout.log_width = std::max(
+      1, layout.battle_width - layout.details_width - layout.inventory_width -
+             2 * kSeparatorWidth);
   return layout;
 }
 
@@ -230,24 +230,10 @@ ftxui::Element PartyView::Render() {
   }
 
   const auto budget = current_battle_render_budget();
-  auto &party = parties[party_index_];
-  const int stage_rows = party.has_encounter() ? 2 : 2;
+  constexpr int stage_rows = 2;
   const auto layout = current_layout(budget, stage_rows);
 
-  auto inventory = inventory_list_ ? inventory_list_->Render()
-                                   : text("No inventory.");
-  inventory = std::move(inventory) |
-              size(WIDTH, EQUAL, layout.inventory_width) |
-              size(HEIGHT, EQUAL, layout.active_height);
-
-  return hbox({
-             render_party(layout, budget) |
-                 size(WIDTH, EQUAL, layout.battle_width) |
-                 size(HEIGHT, EQUAL, layout.active_height),
-             separator() | size(WIDTH, EQUAL, kSeparatorWidth) |
-                 size(HEIGHT, EQUAL, layout.active_height),
-             std::move(inventory),
-         }) |
+  return render_party(layout, budget) |
          size(WIDTH, EQUAL, layout.screen_width) |
          size(HEIGHT, EQUAL, layout.active_height) |
          bgcolor(fl::lospec500::color_at(0)) |
@@ -364,11 +350,19 @@ ftxui::Element PartyView::render_party(const PartyViewLayout &layout,
                                  : text("No player details.");
   details = std::move(details) | size(WIDTH, EQUAL, layout.details_width) |
             size(HEIGHT, EQUAL, layout.bottom_height);
+  auto inventory = inventory_list_ ? inventory_list_->Render()
+                                   : text("No inventory.");
+  inventory = std::move(inventory) |
+              size(WIDTH, EQUAL, layout.inventory_width) |
+              size(HEIGHT, EQUAL, layout.bottom_height);
   rows.push_back(hbox({
                      std::move(party_log),
                      separator() | size(WIDTH, EQUAL, kSeparatorWidth) |
                          size(HEIGHT, EQUAL, layout.bottom_height),
                      std::move(details),
+                     separator() | size(WIDTH, EQUAL, kSeparatorWidth) |
+                         size(HEIGHT, EQUAL, layout.bottom_height),
+                     std::move(inventory),
                  }) |
                  size(WIDTH, EQUAL, layout.battle_width) |
                  size(HEIGHT, EQUAL, layout.bottom_height));

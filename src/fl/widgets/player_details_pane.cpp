@@ -5,6 +5,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 
 #include "fl/ecs/components/closet.hpp"
 #include "fl/ecs/components/equipment.hpp"
@@ -52,25 +53,36 @@ bool PlayerDetailsPane::OnEvent(ftxui::Event event) {
 
   if (event == ftxui::Event::Character("]")) {
     cursor_ = (cursor_ + 1) % member_count;
+    skill_cursor_ = 0;
     scroll_cursor_ = 0;
     return true;
   }
 
   if (event == ftxui::Event::Character("[")) {
     cursor_ = (cursor_ + member_count - 1) % member_count;
+    skill_cursor_ = 0;
     scroll_cursor_ = 0;
     return true;
   }
 
   if (event == ftxui::Event::ArrowDown ||
       event == ftxui::Event::Character("j")) {
-    ++scroll_cursor_;
+    skill_cursor_ = std::min(
+        skill_cursor_ + 1, fl::ecs::components::Closet::kSkillSlotCount - 1);
+    scroll_cursor_ = 7 + skill_cursor_;
     return true;
   }
 
   if (event == ftxui::Event::ArrowUp || event == ftxui::Event::Character("k")) {
-    scroll_cursor_ = std::max(scroll_cursor_ - 1, 0);
+    skill_cursor_ = std::max(skill_cursor_ - 1, 0);
+    scroll_cursor_ = 7 + skill_cursor_;
     return true;
+  }
+
+  if (event == ftxui::Event::Delete) {
+    const auto member =
+        party_.members()[static_cast<std::size_t>(cursor_)].member_id();
+    return party_.drop_skill(member, static_cast<std::size_t>(skill_cursor_));
   }
 
   if (event == ftxui::Event::PageDown) {
@@ -131,12 +143,16 @@ ftxui::Element PlayerDetailsPane::Render() {
     const auto &skill_slots = party_member->closet().skill_slots;
     for (int i = 0; i < fl::ecs::components::Closet::kSkillSlotCount; ++i) {
       const auto &slot = skill_slots[static_cast<std::size_t>(i)];
-      lines.push_back(hbox({
+      auto line = hbox({
           text(std::to_string(i + 1) + ": ") | dim,
           text(slot.has_value() ? fl::skills::display_name(*slot)
                                 : std::string{"-"}) |
               flex,
-      }));
+      });
+      if (focused_ && i == skill_cursor_) {
+        line = line | inverted | focusPosition(0, 7 + i);
+      }
+      lines.push_back(std::move(line));
     }
   } else {
     lines.push_back(text("No skill data."));

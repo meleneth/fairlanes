@@ -58,6 +58,8 @@ private:
   fl::context::AccountCtx make_context(std::size_t account_index);
   void toggle_active_screen();
   void toggle_party_battle_screen();
+  void refresh_selected_account(std::size_t account_index,
+                                std::size_t party_index);
   void update_fps_counter();
   ftxui::Element render_help_hint() const;
   ftxui::Element render_keybind_help() const;
@@ -74,6 +76,7 @@ private:
   bool keybind_help_open_{false};
   bool quit_confirmation_open_{false};
   bool quit_requested_{false};
+  bool help_hint_collapsed_{false};
   bool fps_initialized_{false};
   int fps_frame_count_{0};
   int displayed_fps_{0};
