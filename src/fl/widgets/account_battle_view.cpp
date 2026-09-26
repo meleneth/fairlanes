@@ -212,21 +212,36 @@ ftxui::Element AccountBattleView::Render() {
   }
 
   std::vector<ftxui::Element> log_panes;
-  log_panes.reserve(parties.size() + 1);
+  const std::size_t log_pane_count = parties.size() + 1;
+  const int base_log_width =
+      account_width / static_cast<int>(log_pane_count);
+  const int extra_log_columns =
+      account_width % static_cast<int>(log_pane_count);
+  auto log_width = [&](std::size_t pane) {
+    return base_log_width +
+           (pane < static_cast<std::size_t>(extra_log_columns) ? 1 : 0);
+  };
+  log_panes.reserve(log_pane_count);
 
   is_account.account_data().log().set_focused(focused_log_ == 0);
-  log_panes.push_back(is_account.account_data().log().Render() | ftxui::frame |
-                      ftxui::vscroll_indicator | ftxui::flex);
+  log_panes.push_back(
+      is_account.account_data().log().Render() | ftxui::frame |
+      ftxui::vscroll_indicator | ftxui::yflex |
+      ftxui::size(ftxui::WIDTH, ftxui::EQUAL, log_width(0)));
 
   for (std::size_t i = 0; i < parties.size(); ++i) {
     auto &party = parties[i];
     party.log().set_focused(focused_log_ == static_cast<int>(i + 1));
-    log_panes.push_back(party.log().Render() | ftxui::frame |
-                        ftxui::vscroll_indicator | ftxui::flex);
+    log_panes.push_back(
+        party.log().Render() | ftxui::frame | ftxui::vscroll_indicator |
+        ftxui::yflex |
+        ftxui::size(ftxui::WIDTH, ftxui::EQUAL, log_width(i + 1)));
   }
 
   if (!log_panes.empty()) {
-    rows.push_back(ftxui::hbox(std::move(log_panes)) | ftxui::flex);
+    rows.push_back(
+        ftxui::hbox(std::move(log_panes)) |
+        ftxui::size(ftxui::WIDTH, ftxui::EQUAL, account_width) | ftxui::yflex);
   }
 
   return ftxui::vbox(std::move(rows)) |

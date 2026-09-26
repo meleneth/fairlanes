@@ -1,3 +1,4 @@
+#include <array>
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -261,6 +262,52 @@ TEST_CASE("Account battle rows stay fixed across encounter transitions",
   REQUIRE(before.has_value());
   REQUIRE(during.has_value());
   REQUIRE(*before == *during);
+}
+
+TEST_CASE("Account battle log panes keep fixed fractional widths",
+          "[widgets][account-battle][layout][log]") {
+  constexpr int width = 140;
+  constexpr int height = 40;
+  constexpr std::array pane_starts{0, 24, 48, 71, 94, 117};
+  constexpr std::array pane_markers{'A', 'B', 'C', 'D', 'E', 'F'};
+  fl::GrandCentral gc{1, 5, 5};
+  auto account_ctx = gc.account_context(0);
+  auto &account = account_ctx.account_data();
+  account.log().clear();
+  account.log().append_plain(std::string(100, pane_markers.front()));
+  for (std::size_t i = 0; i < account.parties().size(); ++i) {
+    account.parties()[i].log().clear();
+    account.parties()[i].log().append_plain(
+        std::string(i + 1, pane_markers[i + 1]));
+  }
+  fl::widgets::AccountBattleView view{account_ctx};
+
+  fl::widgets::force_battle_render_target(
+      fl::widgets::BattleLayoutProfile::Standard);
+  auto element = view.Render() |
+                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width) |
+                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, height);
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(width),
+                                      ftxui::Dimension::Fixed(height));
+  ftxui::Render(screen, element);
+  fl::widgets::clear_forced_battle_render_target();
+
+  int marker_row = -1;
+  for (int y = 0; y < height && marker_row < 0; ++y) {
+    bool matches = true;
+    for (std::size_t pane = 0; pane < pane_starts.size(); ++pane) {
+      if (screen.PixelAt(pane_starts[pane], y).character !=
+          std::string(1, pane_markers[pane])) {
+        matches = false;
+        break;
+      }
+    }
+    if (matches) {
+      marker_row = y;
+    }
+  }
+
+  REQUIRE(marker_row >= 0);
 }
 
 TEST_CASE("Normal gameplay collapses and expands the metrics overlay",
