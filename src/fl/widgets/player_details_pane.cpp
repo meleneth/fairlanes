@@ -51,14 +51,16 @@ bool PlayerDetailsPane::OnEvent(ftxui::Event event) {
 
   cursor_ = std::clamp(cursor_, 0, member_count - 1);
 
-  if (event == ftxui::Event::Character("]")) {
+  if (event == ftxui::Event::ArrowRight ||
+      event == ftxui::Event::Character("]")) {
     cursor_ = (cursor_ + 1) % member_count;
     skill_cursor_ = 0;
     scroll_cursor_ = 0;
     return true;
   }
 
-  if (event == ftxui::Event::Character("[")) {
+  if (event == ftxui::Event::ArrowLeft ||
+      event == ftxui::Event::Character("[")) {
     cursor_ = (cursor_ + member_count - 1) % member_count;
     skill_cursor_ = 0;
     scroll_cursor_ = 0;

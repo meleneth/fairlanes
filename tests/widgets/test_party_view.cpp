@@ -3,6 +3,7 @@
 #include <string_view>
 
 #include <catch2/catch_test_macros.hpp>
+#include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
 
@@ -28,6 +29,18 @@ std::optional<std::string> line_containing(const std::string &rendered,
   return std::nullopt;
 }
 
+std::string render_party_view(fl::widgets::PartyView &view) {
+  fl::widgets::force_battle_render_target(
+      fl::widgets::BattleLayoutProfile::Wide);
+  auto element = view.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 180) |
+                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 48);
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(180),
+                                      ftxui::Dimension::Fixed(48));
+  ftxui::Render(screen, element);
+  fl::widgets::clear_forced_battle_render_target();
+  return screen.ToString();
+}
+
 } // namespace
 
 TEST_CASE("Party inventory shares only the bottom row with player details",
@@ -46,4 +59,22 @@ TEST_CASE("Party inventory shares only the bottom row with player details",
   const auto inventory_line = line_containing(screen.ToString(), "Inventory");
   REQUIRE(inventory_line.has_value());
   REQUIRE(inventory_line->find("Player") != std::string::npos);
+}
+
+TEST_CASE("Party player pane cycles members with left and right arrows",
+          "[widgets][party][player]") {
+  fl::GrandCentral gc{1, 1, 5};
+  fl::widgets::PartyView view{gc.account_context(0), 0};
+
+  REQUIRE_FALSE(view.OnEvent(ftxui::Event::ArrowRight));
+  REQUIRE(render_party_view(view).find("Member 1/5") != std::string::npos);
+
+  REQUIRE(view.OnEvent(ftxui::Event::Tab));
+  REQUIRE(view.OnEvent(ftxui::Event::ArrowLeft));
+  REQUIRE(render_party_view(view).find("Member 5/5") != std::string::npos);
+
+  REQUIRE(view.OnEvent(ftxui::Event::ArrowRight));
+  REQUIRE(render_party_view(view).find("Member 1/5") != std::string::npos);
+  REQUIRE(view.OnEvent(ftxui::Event::ArrowRight));
+  REQUIRE(render_party_view(view).find("Member 2/5") != std::string::npos);
 }
