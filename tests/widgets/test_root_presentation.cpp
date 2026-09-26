@@ -10,10 +10,12 @@
 #include <ftxui/screen/screen.hpp>
 
 #include "fl/ecs/components/monster_identity.hpp"
+#include "fl/ecs/components/stats.hpp"
 #include "fl/events/raid_bus.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/monsters/monster_kind.hpp"
 #include "fl/primitives/encounter_builder.hpp"
+#include "fl/widgets/account_battle_view.hpp"
 #include "fl/widgets/all_account_battle_screen.hpp"
 #include "fl/widgets/battle_render_budget.hpp"
 #include "fl/widgets/chaos_attract_root.hpp"
@@ -177,6 +179,50 @@ TEST_CASE("Normal gameplay renders the normal key manifest",
   REQUIRE(rendered.find("+/-") != std::string::npos);
   REQUIRE(rendered.find("overdrive") != std::string::npos);
   REQUIRE(rendered.find("help") != std::string::npos);
+}
+
+TEST_CASE("Account battle combatants keep fixed twenty-percent widths",
+          "[widgets][account-battle][layout]") {
+  constexpr int width = 140;
+  constexpr int height = 40;
+  constexpr int column_width = width / 5;
+  fl::GrandCentral gc{1, 1, 5};
+  auto account_ctx = gc.account_context(0);
+  auto &members = account_ctx.account_data().party(0).members();
+  account_ctx.reg().get<fl::ecs::components::Stats>(members.front().member_id())
+      .name_ = std::string(60, 'X');
+  fl::widgets::AccountBattleView view{account_ctx};
+
+  fl::widgets::force_battle_render_target(
+      fl::widgets::BattleLayoutProfile::Standard);
+  auto element = view.Render() |
+                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width) |
+                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, height);
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(width),
+                                      ftxui::Dimension::Fixed(height));
+  ftxui::Render(screen, element);
+  fl::widgets::clear_forced_battle_render_target();
+
+  int hp_row = -1;
+  for (int y = 0; y < height && hp_row < 0; ++y) {
+    int hp_labels = 0;
+    for (int x = 0; x + 1 < width; ++x) {
+      if (screen.PixelAt(x, y).character == "H" &&
+          screen.PixelAt(x + 1, y).character == "P") {
+        ++hp_labels;
+      }
+    }
+    if (hp_labels == 5) {
+      hp_row = y;
+    }
+  }
+
+  REQUIRE(hp_row >= 0);
+  for (int column = 0; column < 5; ++column) {
+    REQUIRE(screen.PixelAt(column * column_width, hp_row).character == "│");
+    REQUIRE(screen.PixelAt((column + 1) * column_width - 1, hp_row).character ==
+            "│");
+  }
 }
 
 TEST_CASE("Normal gameplay collapses and expands the metrics overlay",

@@ -14,6 +14,7 @@
 #include "fl/lospec500.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/team.hpp"
+#include "fl/widgets/battle_render_budget.hpp"
 #include "fl/widgets/combatant.hpp"
 #include "fl/widgets/farming_choice_view.hpp"
 #include "fl/widgets/party_status.hpp"
@@ -101,40 +102,64 @@ ftxui::Element AccountBattleView::Render() {
   auto &parties = is_account.account_data().parties();
   focused_log_ = std::clamp(focused_log_, 0,
                             std::max(0, static_cast<int>(parties.size())));
+  constexpr std::size_t column_count = 5;
+  const int account_width = std::max(
+      static_cast<int>(column_count),
+      current_battle_render_budget().requested_width);
+  const int base_column_width =
+      account_width / static_cast<int>(column_count);
+  const int extra_columns = account_width % static_cast<int>(column_count);
+  auto column_width = [&](std::size_t column) {
+    return base_column_width +
+           (column < static_cast<std::size_t>(extra_columns) ? 1 : 0);
+  };
 
   auto render_entity_row_5 = [&](const std::vector<entt::entity> &ents) {
     std::vector<ftxui::Element> row;
-    row.reserve(5);
+    row.reserve(column_count);
 
-    for (std::size_t i = 0; i < ents.size() && row.size() < 5; ++i) {
+    for (std::size_t i = 0;
+         i < ents.size() && row.size() < column_count; ++i) {
       fl::widgets::Combatant combatant{ctx_.reg(), ents[i]};
-      row.push_back(combatant.Render() | ftxui::xflex);
+      row.push_back(combatant.Render() |
+                    ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
+                                column_width(row.size())));
     }
 
-    while (row.size() < 5)
-      row.push_back(ftxui::filler() | ftxui::xflex);
+    while (row.size() < column_count) {
+      row.push_back(ftxui::filler() |
+                    ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
+                                column_width(row.size())));
+    }
 
-    return ftxui::hbox(std::move(row));
+    return ftxui::hbox(std::move(row)) |
+           ftxui::size(ftxui::WIDTH, ftxui::EQUAL, account_width);
   };
 
   auto render_memberdata_row_5 =
       [&](const std::deque<fl::primitives::MemberData> &members) {
         std::vector<ftxui::Element> row;
-        row.reserve(5);
+        row.reserve(column_count);
 
         std::size_t n = 0;
         for (const auto &m : members) {
-          if (n++ >= 5)
+          if (n++ >= column_count)
             break;
 
           fl::widgets::Combatant combatant{ctx_.reg(), m.member_id()};
-          row.push_back(combatant.Render() | ftxui::xflex);
+          row.push_back(combatant.Render() |
+                        ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
+                                    column_width(row.size())));
         }
 
-        while (row.size() < 5)
-          row.push_back(ftxui::filler() | ftxui::xflex);
+        while (row.size() < column_count) {
+          row.push_back(ftxui::filler() |
+                        ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
+                                    column_width(row.size())));
+        }
 
-        return ftxui::hbox(std::move(row));
+        return ftxui::hbox(std::move(row)) |
+               ftxui::size(ftxui::WIDTH, ftxui::EQUAL, account_width);
       };
 
   for (std::size_t i = 0; i < parties.size(); ++i) {
@@ -150,10 +175,17 @@ ftxui::Element AccountBattleView::Render() {
       // No encounter: party status row + still render players.
       fl::widgets::PartyStatus party_status{party};
       std::vector<ftxui::Element> status_row;
-      status_row.push_back(party_status.Render() | ftxui::xflex);
-      while (status_row.size() < 5)
-        status_row.push_back(ftxui::filler() | ftxui::xflex);
-      rows.push_back(ftxui::hbox(std::move(status_row)));
+      status_row.push_back(
+          party_status.Render() |
+          ftxui::size(ftxui::WIDTH, ftxui::EQUAL, column_width(0)));
+      while (status_row.size() < column_count) {
+        status_row.push_back(
+            ftxui::filler() |
+            ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
+                        column_width(status_row.size())));
+      }
+      rows.push_back(ftxui::hbox(std::move(status_row)) |
+                     ftxui::size(ftxui::WIDTH, ftxui::EQUAL, account_width));
       rows.push_back(render_memberdata_row_5(party.members()));
     }
   }
@@ -181,6 +213,7 @@ ftxui::Element AccountBattleView::Render() {
   }
 
   return ftxui::vbox(std::move(rows)) |
+         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, account_width) |
          ftxui::bgcolor(fl::lospec500::color_at(0)) |
          ftxui::color(fl::lospec500::color_at(32));
 }
