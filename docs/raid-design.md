@@ -478,10 +478,15 @@ The Visitor's celestial portrait fills the entire upper third of the content
 allocation, below moon chrome and its separator. Labels and the boss health card
 are overlaid on this scalable, beat-animated terminal rendering. Raid results are
 published to the game-wide log by scoped `RaidResolved` listeners at the root.
-After a wipe (including mutual destruction), results close five real minutes after
+After a wipe (including mutual destruction), results close at most five real minutes after
 resolution, independent of overdrive or account calendar time. Enter dismisses any
 resolved raid immediately. Both paths return to the selected individual party's
-combat screen; Enter does not interrupt a live raid.
+combat screen; Enter does not interrupt a live raid. A fully populated normal
+encounter emits `PartyCombatStarted`. The root owns scoped listeners for these
+party events and closes the selected account's raid results on the next frame
+when any of its parties resumes normal combat. Other accounts' combat cannot
+dismiss the results, and this event cannot dismiss a live raid. Result display
+does not pause recovery or ordinary party progression.
 
 The next-Visitor countdown belongs at the end of the moon-status line, with no
 separate countdown row in chrome or raid content. Future research will unlock this

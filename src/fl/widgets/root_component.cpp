@@ -63,6 +63,15 @@ RootComponent::RootComponent(
   console_overlay()->set_on_command(
       [this](std::string_view command) { commands_.handle(command); });
   Add(console_overlay_);
+  for (auto &account : accounts) {
+    for (auto &party : account.parties()) {
+      combat_started_subs_.emplace_back(
+          party.party_bus(), std::in_place_type<fl::events::PartyCombatStarted>,
+          [this, account_id = account.account_id()](const auto &) {
+            on_party_combat_started(account_id);
+          });
+    }
+  }
 
   show_party_battle(commands_.account_index(), commands_.party_index());
 }
@@ -261,8 +270,9 @@ ftxui::Element RootComponent::Render() {
       replace_screen(ftxui::Make<RaidView>(ctx_));
     }
   }
-  if (active_screen_kind_ == ActiveScreen::raid && account.raid() &&
-      account.raid()->result_expired())
+  if (active_screen_kind_ == ActiveScreen::raid && !account.in_raid() &&
+      (normal_combat_resumed_ ||
+       (account.raid() && account.raid()->result_expired())))
     show_party_battle(commands_.account_index(), commands_.party_index());
   Element content = active_screen_ ? active_screen_->Render() : text("");
   content = render_root_chrome(account.calendar(), std::move(content),
@@ -368,12 +378,22 @@ void RootComponent::show_effect_gallery() {
 }
 
 void RootComponent::replace_screen(ftxui::Component screen) {
+  normal_combat_resumed_ = false;
   if (active_screen_) {
     active_screen_->Detach();
   }
   active_screen_ = std::move(screen);
   Add(active_screen_);
   active_screen_->TakeFocus();
+}
+
+void RootComponent::on_party_combat_started(entt::entity account) {
+  if (active_screen_kind_ == ActiveScreen::raid &&
+      ctx_.account_data().account_id() == account &&
+      !ctx_.account_data().in_raid()) {
+    // Apply navigation on the next frame, outside the gameplay event dispatch.
+    normal_combat_resumed_ = true;
+  }
 }
 
 bool RootComponent::raid_screen_locked() const noexcept {

@@ -1,8 +1,10 @@
 #include "fl/ecs/components/stats.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/primitives/encounter_builder.hpp"
 #include "fl/widgets/raid_view.hpp"
 #include "fl/widgets/root_component.hpp"
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
 
@@ -118,4 +120,73 @@ TEST_CASE("Active raids lock the root to the raid screen",
   REQUIRE(render().find("VISITOR RAID") != std::string::npos);
   root.show_bestiary();
   REQUIRE(render().find("VISITOR RAID") != std::string::npos);
+}
+
+TEST_CASE("Raid results yield to normal combat for the selected account",
+          "[raid][widgets][navigation][events]") {
+  using fl::events::RaidResult;
+  const auto result = GENERATE(RaidResult::Victory, RaidResult::Defeat,
+                               RaidResult::MutualDestruction);
+  fl::GrandCentral gc{2, 2, 1};
+  auto ctx = gc.account_context(0);
+  auto &account = ctx.account_data();
+  REQUIRE(account.spawn_visitor(ctx));
+  fl::widgets::RootComponent root{ctx, gc.accounts(), gc.game_log(),
+                                  gc.world_clock()};
+  auto render = [&] {
+    auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(120),
+                                        ftxui::Dimension::Fixed(37));
+    ftxui::Render(screen, root.Render());
+    return screen.ToString();
+  };
+  REQUIRE(render().find("VISITOR RAID") != std::string::npos);
+
+  auto &raid = *account.raid();
+  // On victory the selected party is wiped: another party resuming must still
+  // return the screen to the selected party's ordinary recovery/combat view.
+  gc.reg()
+      .get<fl::ecs::components::Stats>(
+          account.party(0).members().front().member_id())
+      .hp_ = 0;
+  if (result != RaidResult::Victory) {
+    for (auto member : raid.encounter().defenders())
+      gc.reg().get<fl::ecs::components::Stats>(member).hp_ = 0;
+  }
+  if (result != RaidResult::Defeat) {
+    for (auto enemy : raid.encounter().attackers())
+      gc.reg().get<fl::ecs::components::Stats>(enemy).hp_ = 0;
+  }
+  account.advance_beat(ctx, false);
+  REQUIRE(raid.result() == result);
+  REQUIRE(render().find("VISITOR RAID") != std::string::npos);
+
+  auto other_party = gc.account_context(1).party_context(0);
+  fl::primitives::EncounterBuilder{other_party}.thump_it_out();
+  REQUIRE(render().find("VISITOR RAID") != std::string::npos);
+
+  int starts = 0;
+  auto started =
+      account.party(1).party_bus().subscribe<fl::events::PartyCombatStarted>(
+          [&](const auto &) { ++starts; });
+  for (int beat = 0;
+       starts == 0 && beat < fl::primitives::PartyData::kTownPenaltyBeats + 10;
+       ++beat) {
+    account.advance_beat(ctx, false);
+    if (starts == 0)
+      REQUIRE(render().find("VISITOR RAID") != std::string::npos);
+  }
+  REQUIRE(starts == 1);
+  REQUIRE(account.party(1).in_combat());
+  SECTION("Normal combat replaces results and later arrivals still take over") {
+    REQUIRE(render().find("VISITOR RAID") == std::string::npos);
+    REQUIRE(render().find("FPS ") != std::string::npos);
+    REQUIRE(account.spawn_visitor(ctx));
+    REQUIRE(render().find("VISITOR RAID") != std::string::npos);
+    REQUIRE(account.in_raid());
+  }
+  SECTION("A new raid supersedes a return queued before the next frame") {
+    REQUIRE(account.spawn_visitor(ctx));
+    REQUIRE(render().find("VISITOR RAID") != std::string::npos);
+    REQUIRE(account.in_raid());
+  }
 }

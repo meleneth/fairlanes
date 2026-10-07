@@ -69,8 +69,20 @@ TEST_CASE("EncounterBuilder::thump_it_out returns the created EncounterData",
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
 
+  int starts = 0;
+  auto started = party_ctx.bus().subscribe<fl::events::PartyCombatStarted>(
+      [&](const auto &) {
+        ++starts;
+        const auto &ready = party_ctx.party_data().encounter_data();
+        REQUIRE(party_ctx.party_data().in_combat());
+        REQUIRE(ready.attackers().members().size() ==
+                fl::primitives::EncounterBuilder::kEnemyPartySize);
+        REQUIRE(ready.defenders().members().size() == 3);
+      });
+
   fl::primitives::EncounterBuilder builder(party_ctx);
   auto &encounter = builder.thump_it_out();
+  REQUIRE(starts == 1);
 
   REQUIRE(&encounter == &party_ctx.party_data().encounter_data());
 }

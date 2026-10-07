@@ -113,8 +113,11 @@ ftxui::Element RaidView::Render() {
     rows.push_back(hbox(std::move(members)) | size(HEIGHT, EQUAL, 2));
     rows.push_back(filler());
   }
-  rows.push_back(text(raid->active() ? "h: help" :
-      "Enter: return to party combat | Wipe results close after 5 minutes | h: help") | dim);
+  rows.push_back(text(raid->active()
+                          ? "h: help"
+                          : "Enter: return | Results close when combat resumes "
+                            "| Wipe timeout: 5 min | h: help") |
+                 dim);
   Element boss = vbox(std::move(boss_rows));
   if (raid->active()) boss = std::make_shared<VisitorPortrait>(std::move(boss), raid->combat_beats());
   return std::make_shared<RaidLayout>(std::move(boss), vbox(std::move(rows)));

@@ -588,6 +588,12 @@ Raid records are event-driven: `RaidStarted` / `RaidResolved` update account
 `AchievementUnlocked`. These are session records pending persistence design.
 Attract construction separately disables progress subscriptions.
 
+Normal encounter construction emits `PartyCombatStarted` after both teams are
+populated. Root-owned scoped listeners dismiss the selected account's resolved
+raid screen when any of its parties resumes normal combat; navigation is applied
+on the next frame. Other accounts and live raids cannot trigger this dismissal.
+Enter and the five-minute wipe-result timeout remain available during recovery.
+
 Collective victory calls `RaidLootSystem` once, granting two exclusive collectible
 `RaidTrinket` entities per participating party before `RaidLootAwarded`. Wiped
 parties receive the same allocation. These items currently have no equipment slot

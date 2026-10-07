@@ -3,10 +3,12 @@
 #include <chrono>
 #include <cstddef>
 #include <deque>
+#include <vector>
 
 #include <ftxui/component/component.hpp>
 
 #include "fl/context.hpp"
+#include "fl/events/party_bus.hpp"
 #include "fl/fwd.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/discovery_journal.hpp"
@@ -54,6 +56,7 @@ private:
   };
 
   void replace_screen(ftxui::Component screen);
+  void on_party_combat_started(entt::entity account);
   bool raid_screen_locked() const noexcept;
   ConsoleOverlay *console_overlay();
   fl::context::AccountCtx make_context(std::size_t account_index);
@@ -79,6 +82,7 @@ private:
   bool quit_confirmation_open_{false};
   bool quit_requested_{false};
   bool help_hint_collapsed_{false};
+  bool normal_combat_resumed_{false};
   bool fps_initialized_{false};
   int fps_frame_count_{0};
   int displayed_fps_{0};
@@ -89,6 +93,8 @@ private:
   ftxui::Component quit_confirmation_;
   ftxui::Component active_screen_;
   ftxui::Component console_overlay_;
+  // Account/party buses outlive the root; disconnect before its state dies.
+  std::vector<fl::events::ScopedPartyListener> combat_started_subs_;
 };
 
 } // namespace fl::widgets

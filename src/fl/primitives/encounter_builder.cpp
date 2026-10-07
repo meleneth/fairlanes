@@ -71,6 +71,7 @@ EncounterData &EncounterBuilder::thump_it_out() {
     encounter_data.atb_in().emit(
         seerin::AtbInEvent{seerin::AddCombatant{member}});
   });
+  ctx_.bus().emit(fl::events::PartyEvent{fl::events::PartyCombatStarted{}});
   return encounter_data;
 }
 

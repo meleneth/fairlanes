@@ -20,6 +20,8 @@ struct MemberJoined {
 };
 struct PartyWiped {};
 struct PartyVictory {};
+// A normal encounter is fully populated and ready for combat ticks.
+struct PartyCombatStarted {};
 struct PartyLeftCombat {};
 struct PartyReturnToTownRequested {};
 struct PartyReturnedToTown {};
@@ -64,12 +66,12 @@ struct EquipmentEquipped {
 
 using PartyEvent =
     std::variant<PartyCreated, MemberJoined, PartyWiped, PartyVictory,
-                 PartyLeftCombat, PartyReturnToTownRequested,
-                 PartyReturnedToTown, PartySummonedToRaid, PartyRaidResolved,
-                 PartyGainedXP, PartyGainedLevel, PartyHealed,
-                 PartyRevitalizeRequested, LootDropRequested, PartyTick,
-                 MonsterEncountered, SkillWitnessed, EquipmentEquipRequested,
-                 EquipmentEquipped>;
+                 PartyCombatStarted, PartyLeftCombat,
+                 PartyReturnToTownRequested, PartyReturnedToTown,
+                 PartySummonedToRaid, PartyRaidResolved, PartyGainedXP,
+                 PartyGainedLevel, PartyHealed, PartyRevitalizeRequested,
+                 LootDropRequested, PartyTick, MonsterEncountered,
+                 SkillWitnessed, EquipmentEquipRequested, EquipmentEquipped>;
 
 using PartyBus = seerin::VariantBus<PartyEvent>;
 
