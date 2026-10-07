@@ -1,8 +1,10 @@
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 
 #include <catch2/catch_test_macros.hpp>
@@ -289,6 +291,52 @@ TEST_CASE("Account battle rows stay fixed across encounter transitions",
   REQUIRE(before.has_value());
   REQUIRE(during.has_value());
   REQUIRE(*before == *during);
+}
+
+TEST_CASE("Account battle reveals ATB when the roster has vertical space",
+          "[widgets][account-battle][layout][atb]") {
+  using fl::widgets::BattleLayoutProfile;
+  const auto scenario = GENERATE(
+      std::tuple{BattleLayoutProfile::Standard, 5, false},
+      std::tuple{BattleLayoutProfile::Wide, 5, true},
+      std::tuple{BattleLayoutProfile::Showcase, 5, true},
+      // Three parties occupy exactly two-thirds below Compact's moon chrome.
+      std::tuple{BattleLayoutProfile::Compact, 3, false},
+      std::tuple{BattleLayoutProfile::Compact, 2, true});
+  const auto [profile, party_count, shows_atb] = scenario;
+  const auto target = fl::widgets::battle_render_target_spec(profile);
+  fl::GrandCentral gc{1, static_cast<std::uint8_t>(party_count), 5};
+  auto ctx = gc.account_context(0);
+  int hero = 0;
+  for (auto &party : ctx.account_data().parties()) {
+    for (auto &member : party.members()) {
+      gc.reg().get<fl::ecs::components::Stats>(member.member_id()).name_ =
+          "Hero" + std::to_string(++hero) + "!";
+    }
+    fl::primitives::EncounterBuilder{party.party_ctx()}.thump_it_out();
+  }
+  fl::widgets::AccountBattleView view{ctx};
+  fl::widgets::force_battle_render_target(profile);
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(target.width),
+                                      ftxui::Dimension::Fixed(target.height));
+  ftxui::Render(screen, fl::widgets::render_root_chrome(
+                            ctx.account_data().calendar(), view.Render()));
+  fl::widgets::clear_forced_battle_render_target();
+
+  int atb_bars = 0;
+  for (int y = 0; y < screen.dimy(); ++y) {
+    for (int x = 0; x + 2 < screen.dimx(); ++x) {
+      if (screen.PixelAt(x, y).character == "A" &&
+          screen.PixelAt(x + 1, y).character == "T" &&
+          screen.PixelAt(x + 2, y).character == "B")
+        ++atb_bars;
+    }
+  }
+  REQUIRE(atb_bars == (shows_atb ? party_count * 10 : 0));
+  const auto rendered = screen_text(screen);
+  for (int i = 1; i <= party_count * 5; ++i)
+    REQUIRE(rendered.find("Hero" + std::to_string(i) + "!") !=
+            std::string::npos);
 }
 
 TEST_CASE("Account battle log panes keep fixed fractional widths",

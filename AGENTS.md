@@ -319,6 +319,9 @@ FTXUI deserves explicit care. This repo's UI is not just a debug afterthought:
 
 - `RootComponent` owns screen switching and the console overlay.
 - `AccountBattleView` renders party combat rows and account/party log panes.
+- Its roster rows grow from three to four lines and show ATB when the full
+  two-row-per-party roster uses less than two-thirds of the height below moon
+  chrome. Keep enemy, player, and recovery row heights aligned.
 - `LogWall` renders the master log plus account and party logs together.
 - `ConsoleOverlay` writes commands into the currently selected `FancyLog`.
 - `Combatant` is a compact projection of ECS state.

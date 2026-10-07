@@ -24,6 +24,11 @@ It pulls together:
 - It consumes ECS data and event output rather than owning gameplay logic
 - It sits on top of systems like Seerin and the event buses
 - Most of the game becomes visible here
+- Combatants use three-line rows. When the full two-row-per-party roster uses
+  less than two-thirds of the terminal height below the three-line moon header,
+  every row grows to four lines and combatants show their ATB charge. Enemy,
+  player, and recovery rows keep the same height across encounter transitions;
+  the logs use the remaining space.
 
 ## Why it matters
 

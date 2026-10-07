@@ -103,10 +103,18 @@ ftxui::Element AccountBattleView::Render() {
   focused_log_ = std::clamp(focused_log_, 0,
                             std::max(0, static_cast<int>(parties.size())));
   constexpr std::size_t column_count = 5;
-  constexpr int combatant_row_height = 3;
-  const int account_width = std::max(
-      static_cast<int>(column_count),
-      current_battle_render_budget().requested_width);
+  constexpr int base_combatant_row_height = 3;
+  constexpr int root_chrome_height = 3;
+  const auto budget = current_battle_render_budget();
+  const int available_height =
+      std::max(1, budget.requested_height - root_chrome_height);
+  const int roster_height =
+      static_cast<int>(parties.size()) * 2 * base_combatant_row_height;
+  const bool show_atb = roster_height * 3 < available_height * 2;
+  const int combatant_row_height =
+      base_combatant_row_height + (show_atb ? 1 : 0);
+  const int account_width =
+      std::max(static_cast<int>(column_count), budget.requested_width);
   const int base_column_width =
       account_width / static_cast<int>(column_count);
   const int extra_columns = account_width % static_cast<int>(column_count);
@@ -121,7 +129,7 @@ ftxui::Element AccountBattleView::Render() {
 
     for (std::size_t i = 0;
          i < ents.size() && row.size() < column_count; ++i) {
-      fl::widgets::Combatant combatant{ctx_.reg(), ents[i]};
+      fl::widgets::Combatant combatant{ctx_.reg(), ents[i], show_atb};
       row.push_back(combatant.Render() |
                     ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
                                 column_width(row.size())) |
@@ -152,7 +160,7 @@ ftxui::Element AccountBattleView::Render() {
           if (n++ >= column_count)
             break;
 
-          fl::widgets::Combatant combatant{ctx_.reg(), m.member_id()};
+          fl::widgets::Combatant combatant{ctx_.reg(), m.member_id(), show_atb};
           row.push_back(combatant.Render() |
                         ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
                                     column_width(row.size())) |
