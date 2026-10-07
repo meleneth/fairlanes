@@ -6,6 +6,7 @@
 #include <utility>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
@@ -28,6 +29,19 @@ namespace {
 constexpr int kRenderWidth = 120;
 constexpr int kRenderHeight = 40;
 
+std::string screen_text(const ftxui::Screen &screen) {
+  std::string result;
+  for (int y = 0; y < screen.dimy(); ++y) {
+    if (y != 0) {
+      result += '\n';
+    }
+    for (int x = 0; x < screen.dimx(); ++x) {
+      result += screen.PixelAt(x, y).character;
+    }
+  }
+  return result;
+}
+
 std::string render_to_string(fl::widgets::RootComponent &root) {
   auto element = root.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
                                              kRenderWidth) |
@@ -35,7 +49,7 @@ std::string render_to_string(fl::widgets::RootComponent &root) {
   auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(kRenderWidth),
                                       ftxui::Dimension::Fixed(kRenderHeight));
   ftxui::Render(screen, element);
-  return screen.ToString();
+  return screen_text(screen);
 }
 
 std::string render_to_string(fl::widgets::ChaosAttractRoot &root) {
@@ -45,7 +59,7 @@ std::string render_to_string(fl::widgets::ChaosAttractRoot &root) {
   auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(kRenderWidth),
                                       ftxui::Dimension::Fixed(kRenderHeight));
   ftxui::Render(screen, element);
-  return screen.ToString();
+  return screen_text(screen);
 }
 
 std::string render_to_string(fl::widgets::ChaosAttractRoot &root,
@@ -58,7 +72,7 @@ std::string render_to_string(fl::widgets::ChaosAttractRoot &root,
   auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(width),
                                       ftxui::Dimension::Fixed(height));
   ftxui::Render(screen, element);
-  return screen.ToString();
+  return screen_text(screen);
 }
 
 std::optional<ftxui::Pixel>
@@ -173,13 +187,26 @@ ftxui::Component make_all_account_surface(fl::GrandCentral &gc) {
 
 TEST_CASE("Normal gameplay renders the normal key manifest",
           "[widgets][root][presentation]") {
-  fl::GrandCentral gc{1, 1, 1};
+  fl::GrandCentral gc{2, 3, 1};
   auto root = make_gameplay_root(gc);
 
   const auto rendered = render_to_string(root);
-  REQUIRE(rendered.find("+/-") != std::string::npos);
+  REQUIRE(rendered.find("=/-") != std::string::npos);
   REQUIRE(rendered.find("overdrive") != std::string::npos);
   REQUIRE(rendered.find("help") != std::string::npos);
+
+  const auto initial_overdrive = gc.world_clock().beat_rate_multiplier();
+  REQUIRE(root.OnEvent(ftxui::Event::Character("=")));
+  REQUIRE(gc.world_clock().beat_rate_multiplier() > initial_overdrive);
+  REQUIRE(root.OnEvent(ftxui::Event::Character("-")));
+  REQUIRE(gc.world_clock().beat_rate_multiplier() == initial_overdrive);
+
+  REQUIRE(root.OnEvent(ftxui::Event::Character("'")));
+  REQUIRE(render_to_string(root).find("2/2") != std::string::npos);
+  REQUIRE(root.OnEvent(ftxui::Event::Character("]")));
+  REQUIRE(render_to_string(root).find("2/3") != std::string::npos);
+  REQUIRE(root.OnEvent(ftxui::Event::Character(";")));
+  REQUIRE(render_to_string(root).find("1/2") != std::string::npos);
 }
 
 TEST_CASE("Account battle combatants keep fixed twenty-percent widths",
@@ -249,7 +276,7 @@ TEST_CASE("Account battle rows stay fixed across encounter transitions",
     auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(width),
                                         ftxui::Dimension::Fixed(height));
     ftxui::Render(screen, element);
-    return screen.ToString();
+    return screen_text(screen);
   };
 
   fl::widgets::force_battle_render_target(
@@ -316,14 +343,16 @@ TEST_CASE("Normal gameplay collapses and expands the metrics overlay",
   auto root = make_gameplay_root(gc);
 
   REQUIRE(render_to_string(root).find("FPS ") != std::string::npos);
-  REQUIRE(root.OnEvent(ftxui::Event::Character(">")));
+  const auto collapse = GENERATE(">", ".");
+  const auto expand = GENERATE("<", ",");
+  REQUIRE(root.OnEvent(ftxui::Event::Character(collapse)));
   const auto collapsed = render_to_string(root);
   REQUIRE(collapsed.find("FPS ") == std::string::npos);
   REQUIRE(collapsed.find("┌") != std::string::npos);
-  REQUIRE(collapsed.find("<") != std::string::npos);
+  REQUIRE(collapsed.find(",") != std::string::npos);
   REQUIRE(collapsed.find("└") != std::string::npos);
 
-  REQUIRE(root.OnEvent(ftxui::Event::Character("<")));
+  REQUIRE(root.OnEvent(ftxui::Event::Character(expand)));
   REQUIRE(render_to_string(root).find("FPS ") != std::string::npos);
 }
 
@@ -389,7 +418,7 @@ TEST_CASE("Chaos Attract hides the normal key manifest",
   fl::widgets::ChaosAttractRoot root{make_all_account_surface(attract_gc)};
 
   const auto rendered = render_to_string(root, attract_gc.world_clock());
-  REQUIRE(rendered.find("+/-") == std::string::npos);
+  REQUIRE(rendered.find("=/-") == std::string::npos);
   REQUIRE(rendered.find("overdrive") == std::string::npos);
   REQUIRE(rendered.find("help") == std::string::npos);
   REQUIRE(rendered.find("A1 P1") != std::string::npos);

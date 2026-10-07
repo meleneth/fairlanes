@@ -8,6 +8,7 @@
 #include <ftxui/dom/elements.hpp>
 
 #include "fl/lospec500.hpp"
+#include "root_chrome.hpp"
 
 namespace fl::widgets {
 
@@ -93,12 +94,12 @@ ftxui::Element ChaosAttractRoot::render_help_panel() const {
   auto lines = vbox({
       text("Chaos Attract") | bold | accent,
       separator() | chrome,
-      text("h         close this help") | chrome,
-      text("Up / Down select party") | chrome,
-      text("k / j     select party") | chrome,
-      text("[ / ]     select party") | chrome,
-      text("Enter     begin normal game") | chrome,
-      text("q / Esc   quit") | chrome,
+      render_help_line("h", "         close this help"),
+      render_help_line("Up / Down", " select party"),
+      render_help_line("k / j", "     select party"),
+      render_help_line("[ / ]", "     select party"),
+      render_help_line("Enter", "     begin normal game"),
+      render_help_line("q / Esc", "   quit"),
   });
 
   auto panel = window(text("Help") | accent, lines | bg) | chrome | bg |

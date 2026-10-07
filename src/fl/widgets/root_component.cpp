@@ -106,12 +106,14 @@ bool RootComponent::OnEvent(ftxui::Event event) {
     return console_overlay_->OnEvent(event);
   }
 
-  if (event == ftxui::Event::Character(">")) {
+  if (event == ftxui::Event::Character(">") ||
+      event == ftxui::Event::Character(".")) {
     help_hint_collapsed_ = true;
     return true;
   }
 
-  if (event == ftxui::Event::Character("<")) {
+  if (event == ftxui::Event::Character("<") ||
+      event == ftxui::Event::Character(",")) {
     help_hint_collapsed_ = false;
     return true;
   }
@@ -191,7 +193,8 @@ bool RootComponent::OnEvent(ftxui::Event event) {
     return true;
   }
 
-  if (event == ftxui::Event::Character("+")) {
+  if (event == ftxui::Event::Character("+") ||
+      event == ftxui::Event::Character("=")) {
     commands_.adjust_overdrive(1);
     return true;
   }
@@ -221,12 +224,14 @@ bool RootComponent::OnEvent(ftxui::Event event) {
     return true;
   }
 
-  if (event == ftxui::Event::Character("{")) {
+  if (event == ftxui::Event::Character("{") ||
+      event == ftxui::Event::Character(";")) {
     commands_.select_account_relative(-1);
     return true;
   }
 
-  if (event == ftxui::Event::Character("}")) {
+  if (event == ftxui::Event::Character("}") ||
+      event == ftxui::Event::Character("'")) {
     commands_.select_account_relative(1);
     return true;
   }
@@ -540,13 +545,13 @@ ftxui::Element RootComponent::render_help_hint() const {
 
   const auto label = color(fl::lospec500::color_at(14));
   const auto value = color(fl::lospec500::color_at(28)) | bold;
-  const auto key = color(fl::lospec500::color_at(22)) | bold;
+  const auto key = color(fl::lospec500::color_at(15)) | bold;
   const auto edge = color(fl::lospec500::color_at(15));
   const auto muted = color(fl::lospec500::color_at(24));
 
   if (help_hint_collapsed_) {
     auto handle =
-        vbox({text("┌"), text("<"), text("└")}) | edge | clear_under;
+        vbox({text("┌"), text(",") | key, text("└")}) | edge | clear_under;
     return vbox({filler(), hbox({filler(), std::move(handle)}), text("")});
   }
 
@@ -584,11 +589,11 @@ ftxui::Element RootComponent::render_help_hint() const {
   });
 
   auto controls = hbox({
-      text("+/-") | key,
+      render_help_keys("=/-"),
       text(" overdrive  ") | muted,
-      text("[/]") | key,
+      render_help_keys("[/]"),
       text(" party  ") | muted,
-      text("{/}") | key,
+      render_help_keys(";/'"),
       text(" account  ") | muted,
       text("/") | key,
       text(" screen  ") | muted,
@@ -596,7 +601,7 @@ ftxui::Element RootComponent::render_help_hint() const {
       text(" party battle  ") | muted,
       text("h") | key,
       text(" help  ") | muted,
-      text(">") | key,
+      text(".") | key,
       text(" hide") | muted,
   });
 
@@ -622,51 +627,61 @@ ftxui::Element RootComponent::render_keybind_help() const {
   std::vector<Element> lines;
   lines.push_back(text("Keybinds") | bold | accent);
   lines.push_back(separator() | chrome);
-  lines.push_back(text("h        close this help") | chrome);
-  lines.push_back(text("`        open command console") | chrome);
-  lines.push_back(text("> / <    collapse / expand metrics") | chrome);
-  lines.push_back(text("l / b    open libram / bestiary") | chrome);
-  lines.push_back(text("q / Esc  back, or confirm quit from gameplay") | chrome);
+  lines.push_back(render_help_line("h", "        close this help"));
+  lines.push_back(render_help_line("`", "        open command console"));
+  lines.push_back(render_help_line(". / ,", "    collapse / expand metrics"));
+  lines.push_back(render_help_line("l / b", "    open libram / bestiary"));
+  lines.push_back(
+      render_help_line("q / Esc", "  back, or confirm quit from gameplay"));
 
-  lines.push_back(text("Ctrl-C   quit immediately") | chrome);
+  lines.push_back(render_help_line("Ctrl-C", "   quit immediately"));
 
   if (active_screen_kind_ == ActiveScreen::effect_gallery) {
     lines.push_back(separator() | chrome);
     lines.push_back(text("Effect Gallery") | bold | accent);
-    lines.push_back(text("Left/Right or h/l/[ / ] cycle effects") | chrome);
-    lines.push_back(text("Up/Down or k/j cycle backgrounds") | chrome);
-    lines.push_back(text("1-6      set rendered combatant count") | chrome);
-    lines.push_back(text("q / Esc  return to normal battle screen") | chrome);
+    lines.push_back(
+        render_help_line("Left/Right or h/l/[ / ]", " cycle effects"));
+    lines.push_back(render_help_line("Up/Down or k/j", " cycle backgrounds"));
+    lines.push_back(
+        render_help_line("1-6", "      set rendered combatant count"));
+    lines.push_back(
+        render_help_line("q / Esc", "  return to normal battle screen"));
   } else if (active_screen_kind_ == ActiveScreen::party) {
     lines.push_back(separator() | chrome);
     lines.push_back(text("Party") | bold | accent);
-    lines.push_back(text("/        toggle account / party screen") | chrome);
-    lines.push_back(text("+ / -    change overdrive level") | chrome);
-    lines.push_back(text("[ / ]    switch selected party") | chrome);
-    lines.push_back(text("{ / }    switch selected account") | chrome);
-    lines.push_back(text("r        return selected party to town") | chrome);
-    lines.push_back(text("Tab      switch inventory / player details focus") |
-                    chrome);
-    lines.push_back(text("Up/Down  select inventory item or player skill") |
-                    chrome);
-    lines.push_back(text("Left/Right cycle player when Player is focused") |
-                    chrome);
-    lines.push_back(text("Enter    open player inventory / slot / item") |
-                    chrome);
-    lines.push_back(text("Left/Backspace return from equipment selection") |
-                    chrome);
-    lines.push_back(text("Del      drop the selected player skill") | chrome);
-    lines.push_back(text("PgUp/PgDn move inventory by pages") | chrome);
+    lines.push_back(
+        render_help_line("/", "        toggle account / party screen"));
+    lines.push_back(render_help_line("= / -", "    change overdrive level"));
+    lines.push_back(render_help_line("[ / ]", "    switch selected party"));
+    lines.push_back(render_help_line("; / '", "    switch selected account"));
+    lines.push_back(
+        render_help_line("r", "        return selected party to town"));
+    lines.push_back(render_help_line(
+        "Tab", "      switch inventory / player details focus"));
+    lines.push_back(
+        render_help_line("Up/Down", "  select inventory item or player skill"));
+    lines.push_back(
+        render_help_line("Left/Right", " cycle player when Player is focused"));
+    lines.push_back(
+        render_help_line("Enter", "    open player inventory / slot / item"));
+    lines.push_back(
+        render_help_line("Left/Backspace", " return from equipment selection"));
+    lines.push_back(
+        render_help_line("Del", "      drop the selected player skill"));
+    lines.push_back(render_help_line("PgUp/PgDn", " move inventory by pages"));
   } else {
     lines.push_back(separator() | chrome);
     lines.push_back(text("Account") | bold | accent);
-    lines.push_back(text("/        toggle account / party screen") | chrome);
-    lines.push_back(text("Space    toggle account / party battle") | chrome);
-    lines.push_back(text("+ / -    change overdrive level") | chrome);
-    lines.push_back(text("[ / ]    switch selected party") | chrome);
-    lines.push_back(text("{ / }    switch selected account") | chrome);
+    lines.push_back(
+        render_help_line("/", "        toggle account / party screen"));
+    lines.push_back(
+        render_help_line("Space", "    toggle account / party battle"));
+    lines.push_back(render_help_line("= / -", "    change overdrive level"));
+    lines.push_back(render_help_line("[ / ]", "    switch selected party"));
+    lines.push_back(render_help_line("; / '", "    switch selected account"));
     if (active_screen_kind_ == ActiveScreen::party_battle) {
-      lines.push_back(text("r        return selected party to town") | chrome);
+      lines.push_back(
+          render_help_line("r", "        return selected party to town"));
     }
     lines.push_back(text("Use the console for account and party navigation") |
                     chrome);
