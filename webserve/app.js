@@ -8,8 +8,9 @@
   window.ENV.COLUMNS = window.ENV.COLUMNS || "120";
   window.ENV.LINES = window.ENV.LINES || "40";
 
-  Module.locateFile = (path) => "/fairlanes/" + path;
-  Module.mainScriptUrlOrBlob = "/fairlanes/fairlanes.js";
+  const assetBaseUrl = new URL("./", document.currentScript.src);
+  Module.locateFile = (path) => new URL(path, assetBaseUrl).href;
+  Module.mainScriptUrlOrBlob = new URL("fairlanes.js", assetBaseUrl).href;
 
   let runtimeReady = false;
   let pendingResize = {
