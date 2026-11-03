@@ -4,7 +4,8 @@ require "fairlanes_content/models"
 
 module FairlanesContent
   class DeclarationSet
-    attr_reader :visuals, :skills, :random_combat_skills, :monsters, :statuses
+    attr_reader :visuals, :skills, :random_combat_skills, :monsters, :statuses,
+                :gears, :encounter_pools, :biomes
 
     def self.load_file(path)
       new.tap { |set| set.load_file(path) }
@@ -16,6 +17,9 @@ module FairlanesContent
       @random_combat_skills = []
       @monsters = []
       @statuses = []
+      @gears = []
+      @encounter_pools = []
+      @biomes = []
     end
 
     def load_file(path)
@@ -106,6 +110,24 @@ module FairlanesContent
       )
     end
 
+    def gear(id, display:, slot:, armor_kind:, tier:, weight:, modifiers: {})
+      gears << Gear.new(id: id, display: display, slot: slot,
+                        armor_kind: armor_kind, tier: tier, weight: weight,
+                        modifiers: modifiers)
+    end
+
+    def encounter_pool(id, lineups:)
+      encounter_pools << EncounterPool.new(id: id, lineups: lineups)
+    end
+
+    def biome(id, display:, floors:, bands:, overrides: [])
+      biomes << Biome.new(
+        id: id, display: display, floors: floors,
+        bands: bands.map { |entry| FloorBand.new(**entry) },
+        overrides: overrides.map { |entry| FloorOverride.new(**entry) }
+      )
+    end
+
     private
 
     def cpp_name(id)
@@ -125,6 +147,12 @@ module FairlanesContent
       monsters.freeze
       statuses.each(&:freeze)
       statuses.freeze
+      gears.each(&:freeze)
+      gears.freeze
+      encounter_pools.each(&:freeze)
+      encounter_pools.freeze
+      biomes.each(&:freeze)
+      biomes.freeze
     end
   end
 end

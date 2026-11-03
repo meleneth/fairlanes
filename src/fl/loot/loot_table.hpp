@@ -3,6 +3,7 @@
 #include <cassert>
 #include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -41,6 +42,10 @@ public:
         weapon_slots_(std::move(weapon_slots)),
         jewelry_slots_(std::move(jewelry_slots)), tiers_(std::move(tiers)),
         specials_(std::move(specials)) {}
+
+  [[nodiscard]] std::span<const SpecialItem> special_items() const noexcept {
+    return specials_;
+  }
 
   template <fl::context::WorldCoreCtx Ctx>
   [[nodiscard]] std::optional<EquipmentBuilder>

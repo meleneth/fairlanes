@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
+require "fairlanes_content/floor_resolver"
 
 module FairlanesContent
   class Renderer
@@ -13,6 +14,102 @@ module FairlanesContent
     def statuses = declarations.statuses
     def visuals = declarations.visuals
     def random_combat_skills = declarations.random_combat_skills
+    def gears = declarations.gears
+    def encounter_pools = declarations.encounter_pools
+    def biomes = declarations.biomes
+
+    def gear_content_hpp
+      rows = gears.map do |gear|
+        <<~CPP
+          SpecialItem{Weight{#{gear.weight}}, EquipmentBuilder{
+              .slot = EquipmentSlot::#{gear.slot},
+              .armor_kind = ArmorKind::#{gear.armor_kind},
+              .tier = Tier::#{gear.tier},
+              .name = #{cpp_string(gear.display)},
+              .unique_id = #{cpp_string(gear.id.to_s)},
+          }},
+        CPP
+      end.join
+      ids = gears.map { |gear| "  #{camel(gear.id)}," }.join("\n")
+      <<~CPP
+        #pragma once
+        #include <array>
+        #include <cstddef>
+        #include <vector>
+        #include "fl/loot/special_item.hpp"
+
+        namespace fl::loot::generated_content {
+        enum class GearId {
+        #{ids}
+        };
+
+        inline const std::array<SpecialItem, #{gears.size}> kSpecialItems{{
+        #{rows}
+        }};
+
+        inline const SpecialItem &definition(GearId id) {
+          return kSpecialItems.at(static_cast<std::size_t>(id));
+        }
+
+        inline std::vector<SpecialItem> special_items() {
+          return {kSpecialItems.begin(), kSpecialItems.end()};
+        }
+        } // namespace fl::loot::generated_content
+      CPP
+    end
+
+    def floor_content_hpp
+      tables = biomes.map do |biome|
+        rows = resolved_floors(biome).map do |floor|
+          kinds = floor[:lineup].map { |id| "fl::monster::MonsterKind::#{monster_by_id(id).cpp_id}" }.join(", ")
+          "  FloorLineup{#{floor[:floor]}, #{cpp_string(floor[:id])}, {#{kinds}}},"
+        end.join("\n")
+        <<~CPP
+          inline constexpr std::array<FloorLineup, #{biome.floors}> k#{camel(biome.id)}{{
+          #{rows}
+          }};
+        CPP
+      end.join("\n")
+      lookup = biomes.map do |biome|
+        "  if (biome_id == #{cpp_string(biome.id.to_s)}) return &k#{camel(biome.id)}[static_cast<std::size_t>(floor - 1)];"
+      end.join("\n")
+      <<~CPP
+        #pragma once
+        #include <array>
+        #include <cstddef>
+        #include <string_view>
+        #include "fl/monsters/monster_kind.hpp"
+
+        namespace fl::primitives::generated_content {
+        struct FloorLineup {
+          int floor;
+          std::string_view id;
+          std::array<fl::monster::MonsterKind, 5> monsters;
+        };
+
+        #{tables}
+        inline const FloorLineup *floor_lineup(std::string_view biome_id, int floor) {
+          if (floor < 1 || floor > 100) return nullptr;
+        #{lookup}
+          return nullptr;
+        }
+        } // namespace fl::primitives::generated_content
+      CPP
+    end
+
+    def floor_manifest
+      lines = ["# Resolved tower floors", "", "Generated from scripts/fairlanes_content_declarations.rb.", ""]
+      biomes.each do |biome|
+        lines.concat(["## #{biome.display} (`#{biome.id}`)", "",
+                      "| Floor ID | Source | Lineup |", "| --- | --- | --- |"])
+        resolved_floors(biome).each do |floor|
+          lines << "| `#{floor[:id]}` | #{floor[:source]} | #{floor[:lineup].join(', ')} |"
+        end
+        lines << ""
+      end
+      lines.pop if lines.last == ""
+      "#{lines.join("\n")}\n"
+    end
 
     def test_cpp
       skill_rows = skills.map do |skill|
@@ -971,7 +1068,7 @@ module FairlanesContent
       {
         "schema_version" => 1,
         "source" => "scripts/fairlanes_content_declarations.rb",
-        "runtime_authority" => "Ruby DSL generated C++ skill metadata, status metadata, monster known-skill metadata, encounter pool tables, and monster registration glue; handwritten C++ skill/status behavior and monster construction primitives",
+        "runtime_authority" => "Ruby DSL generated C++ skill, status, monster, gear, and resolved tower floor data; handwritten C++ combat and equipment behavior",
         "visuals" => visuals.map do |id, cpp_id|
           { "id" => id.to_s, "cpp_id" => cpp_id }
         end,
@@ -1013,6 +1110,24 @@ module FairlanesContent
             "known_skills" => monster.known_skills.map(&:to_s),
             "pool" => monster.pool.to_s
           }
+        end,
+        "gear" => gears.map do |gear|
+          { "id" => gear.id.to_s, "display" => gear.display,
+            "slot" => gear.slot.to_s, "armor_kind" => gear.armor_kind.to_s,
+            "tier" => gear.tier.to_s, "weight" => gear.weight,
+            "modifiers" => gear.modifiers }
+        end,
+        "encounter_pools" => encounter_pools.map do |pool|
+          { "id" => pool.id.to_s, "lineups" => pool.lineups.map { |lineup| lineup.map(&:to_s) } }
+        end,
+        "biomes" => biomes.map do |biome|
+          { "id" => biome.id.to_s, "display" => biome.display, "floors" => biome.floors,
+            "bands" => biome.bands.map { |band| { "from" => band.from, "to" => band.to, "pool" => band.pool.to_s } },
+            "overrides" => biome.overrides.map { |entry| { "floor" => entry.floor, "lineup" => entry.lineup.map(&:to_s) } },
+            "resolved_floors" => resolved_floors(biome).map do |floor|
+              { "id" => floor[:id], "floor" => floor[:floor], "source" => floor[:source],
+                "lineup" => floor[:lineup].map(&:to_s) }
+            end }
         end
       }.then { |data| "#{JSON.pretty_generate(data)}\n" }
     end
@@ -1027,7 +1142,7 @@ module FairlanesContent
         "title" => "Fairlanes Generated Content Manifest",
         "type" => "object",
         "additionalProperties" => false,
-        "required" => %w[schema_version source runtime_authority visuals statuses skills random_combat_skills monsters],
+        "required" => %w[schema_version source runtime_authority visuals statuses skills random_combat_skills monsters gear encounter_pools biomes],
         "properties" => {
           "schema_version" => { "const" => 1 },
           "source" => string_type,
@@ -1074,7 +1189,26 @@ module FairlanesContent
               "known_skills" => { "type" => "array", "minItems" => 1, "items" => string_type },
               "pool" => string_type
             }
-          )
+          ),
+          "gear" => array_schema(%w[id display slot armor_kind tier weight modifiers], {
+            "id" => string_type, "display" => string_type, "slot" => string_type,
+            "armor_kind" => string_type, "tier" => string_type,
+            "weight" => { "type" => "integer", "minimum" => 1 },
+            "modifiers" => { "type" => "object", "maxProperties" => 0 }
+          }),
+          "encounter_pools" => array_schema(%w[id lineups], {
+            "id" => string_type,
+            "lineups" => { "type" => "array", "minItems" => 1,
+                           "items" => { "type" => "array", "minItems" => 5, "maxItems" => 5,
+                                        "items" => string_type } }
+          }),
+          "biomes" => array_schema(%w[id display floors bands overrides resolved_floors], {
+            "id" => string_type, "display" => string_type, "floors" => { "const" => 100 },
+            "bands" => { "type" => "array", "items" => { "type" => "object" } },
+            "overrides" => { "type" => "array", "items" => { "type" => "object" } },
+            "resolved_floors" => { "type" => "array", "minItems" => 100, "maxItems" => 100,
+                                    "items" => { "type" => "object" } }
+          })
         }
       }
 
@@ -1084,6 +1218,14 @@ module FairlanesContent
     private
 
     attr_reader :declarations
+
+    def resolved_floors(biome)
+      FloorResolver.new(declarations).resolve(biome)
+    end
+
+    def monster_by_id(id)
+      monsters.find { |monster| monster.id == id }
+    end
 
     def camel(value)
       value.to_s.split("_").map(&:capitalize).join

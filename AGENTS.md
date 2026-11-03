@@ -604,6 +604,12 @@ or combat bonus. Definitions/effects and progression-gate rules remain open.
 
 ## Compile-time dependencies
 
+Generated content also includes special gear and resolved 100-floor tower data.
+Gear declarations currently map only to supported `EquipmentBuilder` fields;
+numeric stat modifiers are unsupported. An explicit tower floor goes through
+`EncounterBuilder` while ordinary spawn selection remains unchanged. The
+generated floor manifest is `docs/tour/generated/floor-manifest.md`.
+
 Use specific EnTT headers: `entity/entity.hpp` for IDs/null, `entity/fwd.hpp`
 for declared registry/handle references, `entity/registry.hpp` for registry
 operations, and `entity/handle.hpp` for constructed handles. Avoid the umbrella

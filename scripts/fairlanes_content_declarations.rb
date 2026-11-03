@@ -650,3 +650,28 @@ monster_rules :salamander,
   {skill: :cinderburst, conditions: [{predicate: :has_status, status: :burn}]},
   {skill: :kindle_wound, conditions: [{predicate: :missing_status, status: :burn}]},
   {skill: :flame_strike}
+
+# Existing special drops. Equipment currently carries tier and armor kind but
+# has no numeric stat modifier component or application path.
+gear :boots_of_damp_authority, display: "Boots of Damp Authority",
+     slot: :boots, armor_kind: :leather, tier: :excellent, weight: 20
+gear :mouse_nibbled_cape, display: "Mouse-Nibbled Cape",
+     slot: :cape, armor_kind: :cloth, tier: :fine, weight: 10
+
+encounter_pool :woodland_opening, lineups: [
+  %i[field_mouse field_mouse bumpkin_hare scaredy_cat mire_squish],
+  %i[field_mouse bumpkin_hare bumpkin_hare mire_squish bark_smack]
+]
+encounter_pool :woodland_deep, lineups: [
+  %i[mire_squish bark_smack poison_toad bumpkin_hare field_mouse],
+  %i[bark_smack poison_toad mire_squish scaredy_cat field_mouse]
+]
+
+biome :origin_woodland_tower, display: "Origin Woodland Tower", floors: 100,
+      bands: [
+        {from: 1, to: 49, pool: :woodland_opening},
+        {from: 50, to: 100, pool: :woodland_deep}
+      ],
+      overrides: [
+        {floor: 10, lineup: %i[honey_badger field_mouse field_mouse field_mouse field_mouse]}
+      ]

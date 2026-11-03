@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <type_traits>
+#include <stdexcept>
 #include <vector>
 
 #include <fmt/format.h>
@@ -10,6 +11,7 @@
 #include "fl/ecs/components/encounter.hpp"
 #include "fl/ecs/components/monster_identity.hpp"
 #include "fl/generated/monster_content.hpp"
+#include "fl/generated/floor_content.hpp"
 #include "fl/monsters/monster_kind.hpp"
 #include "fl/monsters/monster_registry.hpp"
 #include "fl/primitives/encounter_data.hpp"
@@ -51,6 +53,13 @@ EncounterBuilder::rare_woodland() noexcept {
 }
 
 EncounterData &EncounterBuilder::thump_it_out() {
+  const auto *floor = tower_floor_
+                          ? fl::primitives::generated_content::floor_lineup(
+                                tower_floor_->biome_id, tower_floor_->floor)
+                          : nullptr;
+  if (tower_floor_ && floor == nullptr) {
+    throw std::invalid_argument("unknown tower floor");
+  }
   if (mode_ == EncounterMode::HeroesJourney) {
     const auto &plan = ctx_.party_data().farming_plan();
     ctx_.log().append_markup(fmt::format(
@@ -62,7 +71,11 @@ EncounterData &EncounterBuilder::thump_it_out() {
   auto &encounter_data = ctx_.party_data().create_encounter();
 
   for (int i = 0; i < kEnemyPartySize; ++i) {
-    add_random_enemy();
+    if (floor) {
+      add_enemy_kind(floor->monsters[static_cast<std::size_t>(i)]);
+    } else {
+      add_random_enemy();
+    }
   }
 
   ctx_.party_data().for_each_member([&](entt::entity member) {
@@ -101,6 +114,10 @@ void EncounterBuilder::add_random_enemy() {
     return fl::monster::MonsterKind::FieldMouse;
   }();
 
+  add_enemy_kind(kind);
+}
+
+void EncounterBuilder::add_enemy_kind(fl::monster::MonsterKind kind) {
   auto context = ctx_.build_context();
   entt::entity ent = EntityBuilder(context).monster(kind).build();
   add_to_enemy_team(ent);

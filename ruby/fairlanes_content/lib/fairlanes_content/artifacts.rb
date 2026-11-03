@@ -45,7 +45,10 @@ module FairlanesContent
         "fl/generated/monster_content.cpp" => renderer.monster_content_cpp,
         "fl/generated/monster_registration.hpp" => renderer.monster_registration_hpp,
         "fl/generated/monster_registration.cpp" => renderer.monster_registration_cpp,
+        "fl/generated/gear_content.hpp" => renderer.gear_content_hpp,
+        "fl/generated/floor_content.hpp" => renderer.floor_content_hpp,
         "decal_content_balance.md" => renderer.balance_report,
+        "floor_manifest.md" => renderer.floor_manifest,
         "effect_gallery.md" => renderer.effect_gallery,
         "content_manifest.json" => manifest_json,
         "content_manifest.schema.json" => renderer.manifest_schema
@@ -72,7 +75,8 @@ module FairlanesContent
     def generated_docs
       {
         "generated/content-balance.md" => renderer.balance_report,
-        "generated/effect-gallery.md" => renderer.effect_gallery
+        "generated/effect-gallery.md" => renderer.effect_gallery,
+        "generated/floor-manifest.md" => renderer.floor_manifest
       }
     end
 
@@ -162,6 +166,9 @@ module FairlanesContent
         skills
         random_combat_skills
         monsters
+        gear
+        encounter_pools
+        biomes
       ]
       required.each { |key| errors << "manifest missing #{key}" unless manifest.key?(key) }
 
@@ -173,6 +180,9 @@ module FairlanesContent
         errors << "manifest random_combat_skills must be an array"
       end
       errors << "manifest monsters must be an array" unless manifest["monsters"].is_a?(Array)
+      errors << "manifest gear must be an array" unless manifest["gear"].is_a?(Array)
+      errors << "manifest encounter_pools must be an array" unless manifest["encounter_pools"].is_a?(Array)
+      errors << "manifest biomes must be an array" unless manifest["biomes"].is_a?(Array)
 
       validate_manifest_skills(manifest, errors)
       validate_manifest_statuses(manifest, errors)

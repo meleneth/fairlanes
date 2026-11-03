@@ -2,6 +2,7 @@
 #include "global_loot_table.hpp"
 #include "item_kind.hpp"
 #include "special_item.hpp"
+#include "fl/generated/gear_content.hpp"
 #include "tier.hpp"
 #include "upgrade_table.hpp"
 
@@ -135,30 +136,7 @@ LootTable global_loot_table() {
                        {Weight{7}, Tier::masterwork},
                        {Weight{2}, Tier::mythic},
                    }},
-                   {
-                       SpecialItem{
-                           .weight = Weight{20},
-                           .item =
-                               EquipmentBuilder{
-                                   .slot = EquipmentSlot::boots,
-                                   .armor_kind = ArmorKind::leather,
-                                   .tier = Tier::excellent,
-                                   .name = "Boots of Damp Authority",
-                                   .unique_id = "boots_of_damp_authority",
-                               },
-                       },
-                       SpecialItem{
-                           .weight = Weight{10},
-                           .item =
-                               EquipmentBuilder{
-                                   .slot = EquipmentSlot::cape,
-                                   .armor_kind = ArmorKind::cloth,
-                                   .tier = Tier::fine,
-                                   .name = "Mouse-Nibbled Cape",
-                                   .unique_id = "mouse_nibbled_cape",
-                               },
-                       },
-                   }};
+                   generated_content::special_items()};
 }
 
 } // namespace fl::loot

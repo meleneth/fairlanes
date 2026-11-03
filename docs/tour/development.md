@@ -155,7 +155,7 @@ Fairlanes-specific DSL usage lives outside the gem in
 `scripts/fairlanes_content_declarations.rb`.
 
 The thin launcher, `scripts/fairlanes_content_codegen.rb`, loads the local gem,
-validates the decal skill/monster declarations, and writes build-tree artifacts
+validates the content declarations, and writes build-tree artifacts
 under:
 
 ```sh
@@ -168,7 +168,7 @@ Docker or Podman is available, CMake runs the generator through the
 CMake searches the host `PATH`, common rbenv/asdf shim directories, and standard
 host install paths for these runner tools.
 
-Run the content check target after changing decal skill or monster metadata:
+Run the content check target after changing declarations:
 
 ```sh
 cmake --build build --target fairlanes_content_check
@@ -204,6 +204,23 @@ The generated skill metadata source is compiled into `fl`. The generated Catch2
 source is compiled into `fairlanes_tests`. The generated Markdown balance report,
 effect gallery metadata, JSON manifest, and manifest schema are for review and
 tooling.
+
+Special gear declarations carry stable IDs, names, slots, armor kinds, tiers,
+and loot weights. The two migrated specials are emitted into the existing
+`global_loot_table()` special-item list, and `EquipmentBuilder` still creates
+their runtime components. Numeric stat modifiers are intentionally rejected by
+validation: `Equipment` and the current equip path have no such modifier field
+or application behavior. Tier and armor kind retain their existing behavior.
+
+Tower biomes declare exactly 100 floors. Nonoverlapping bands reference
+encounter pools of five-monster lineups; explicit floor overrides take precedence.
+Every floor must be covered. The generator resolves each band floor using a
+SHA-256 selection scoped to the biome ID and floor number, so changes to other
+bands do not shift its choice. The generated
+[floor manifest](generated/floor-manifest.md) lists every resolved lineup.
+`EncounterBuilder` can take an explicit tower floor and creates its enemies
+through the same encounter path as ordinary fights. Existing Chaos Attractor
+and Heroes Journey selection still applies when no floor is supplied.
 
 Declaration IDs default to the matching C++ enum spelling and display spelling:
 `:flame_wave` becomes `FlameWave` and `Flame Wave`. Keep explicit `cpp_id:` or

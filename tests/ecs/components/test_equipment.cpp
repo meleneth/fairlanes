@@ -6,6 +6,8 @@
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/loot/equipment_builder.hpp"
 #include "fl/loot/unique_items.hpp"
+#include "fl/loot/global_loot_table.hpp"
+#include "fl/generated/gear_content.hpp"
 
 TEST_CASE("Equipment derives its Lospec palette index from tier",
           "[ecs][components][equipment]") {
@@ -66,4 +68,34 @@ TEST_CASE("Unique item helper detects existing party inventory uniques",
                                               "boots_of_damp_authority"));
   REQUIRE_FALSE(fl::loot::inventory_has_unique_item(reg, inventory,
                                                     "mouse_nibbled_cape"));
+}
+
+TEST_CASE("Generated special gear uses the existing EquipmentBuilder fields",
+          "[generated][content][gear]") {
+  using fl::loot::generated_content::GearId;
+  const auto table = fl::loot::global_loot_table();
+  const auto specials = table.special_items();
+  REQUIRE(specials.size() == 2);
+
+  const auto &boots = fl::loot::generated_content::definition(GearId::BootsOfDampAuthority);
+  const auto &cape = fl::loot::generated_content::definition(GearId::MouseNibbledCape);
+  REQUIRE(boots.weight.value == 20);
+  REQUIRE(cape.weight.value == 10);
+  REQUIRE(specials[0].item.unique_id == boots.item.unique_id);
+  REQUIRE(specials[1].item.unique_id == cape.item.unique_id);
+  entt::registry reg;
+  const auto boot_entity = boots.item.create(reg);
+  const auto cape_entity = cape.item.create(reg);
+  const auto &boot = reg.get<fl::ecs::components::Equipment>(boot_entity);
+  const auto &cloak = reg.get<fl::ecs::components::Equipment>(cape_entity);
+  REQUIRE(boot.unique_id() == "boots_of_damp_authority");
+  REQUIRE(boot.name() == "Boots of Damp Authority");
+  REQUIRE(boot.slot() == fl::loot::EquipmentSlot::boots);
+  REQUIRE(boot.armor_kind() == fl::loot::ArmorKind::leather);
+  REQUIRE(boot.tier() == fl::loot::Tier::excellent);
+  REQUIRE(cloak.unique_id() == "mouse_nibbled_cape");
+  REQUIRE(cloak.name() == "Mouse-Nibbled Cape");
+  REQUIRE(cloak.slot() == fl::loot::EquipmentSlot::cape);
+  REQUIRE(cloak.armor_kind() == fl::loot::ArmorKind::cloth);
+  REQUIRE(cloak.tier() == fl::loot::Tier::fine);
 }

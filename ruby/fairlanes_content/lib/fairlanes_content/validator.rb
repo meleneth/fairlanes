@@ -14,6 +14,12 @@ module FairlanesContent
 
   class Validator
     VALID_POOLS = Set[:common_woodland, :rare_woodland, :raid].freeze
+    GEAR_SLOTS = Set[:mainhand, :offhand, :chest, :helm, :pants, :boots,
+                     :gloves, :sleeves, :belt, :cape, :necklace, :ring_1,
+                     :ring_2, :knife].freeze
+    ARMOR_KINDS = Set[:none, :cloth, :leather, :plate].freeze
+    GEAR_TIERS = Set[:worn, :plain, :sturdy, :fine, :excellent,
+                     :masterwork, :mythic].freeze
     VALID_EXECUTIONS = Set[
       :thump_like, :eviscerate, :poison, :cold_snap, :flame_strike,
       :flame_wave, :decal_strike, :damage_strike, :group_damage,
@@ -66,6 +72,8 @@ module FairlanesContent
       validate_random_combat_skills(errors)
       validate_monsters(errors)
       validate_decision_rules(errors)
+      validate_gear(errors)
+      validate_floor_content(errors)
       errors
     end
 
@@ -86,6 +94,87 @@ module FairlanesContent
       errors << "duplicate skill C++ ids" unless skill_cpp_ids.uniq.size == skill_cpp_ids.size
       errors << "duplicate monster C++ ids" unless monster_cpp_ids.uniq.size == monster_cpp_ids.size
       errors << "duplicate status C++ ids" unless status_cpp_ids.uniq.size == status_cpp_ids.size
+      errors << "duplicate gear ids" unless declarations.gears.map(&:id).uniq.size == declarations.gears.size
+      errors << "duplicate encounter pool ids" unless declarations.encounter_pools.map(&:id).uniq.size == declarations.encounter_pools.size
+      errors << "duplicate biome ids" unless declarations.biomes.map(&:id).uniq.size == declarations.biomes.size
+    end
+
+    def validate_gear(errors)
+      declarations.gears.each do |gear|
+        prefix = "gear #{gear.id}"
+        errors << "#{prefix} has invalid stable id" unless stable_id?(gear.id)
+        errors << "#{prefix} has no display name" if gear.display.to_s.empty?
+        errors << "#{prefix} has invalid slot #{gear.slot}" unless GEAR_SLOTS.include?(gear.slot)
+        errors << "#{prefix} has invalid armor kind #{gear.armor_kind}" unless ARMOR_KINDS.include?(gear.armor_kind)
+        errors << "#{prefix} has invalid tier #{gear.tier}" unless GEAR_TIERS.include?(gear.tier)
+        errors << "#{prefix} has invalid weight #{gear.weight}" unless positive_integer?(gear.weight)
+        errors << "#{prefix} has unsupported stat modifiers" unless gear.modifiers == {}
+      end
+    end
+
+    def validate_floor_content(errors)
+      monsters = declarations.monsters.map(&:id).to_set
+      pools = declarations.encounter_pools.map(&:id).to_set
+      declarations.encounter_pools.each do |pool|
+        errors << "encounter pool #{pool.id} has invalid stable id" unless stable_id?(pool.id)
+        unless pool.lineups.is_a?(Array) && !pool.lineups.empty?
+          errors << "encounter pool #{pool.id} has no lineups"
+          next
+        end
+        pool.lineups.each_with_index do |lineup, index|
+          validate_lineup(lineup, "encounter pool #{pool.id} lineup #{index}", monsters, errors)
+        end
+      end
+      declarations.biomes.each do |biome|
+        prefix = "biome #{biome.id}"
+        errors << "#{prefix} has invalid stable id" unless stable_id?(biome.id)
+        errors << "#{prefix} has no display name" if biome.display.to_s.empty?
+        errors << "#{prefix} must have 100 floors" unless biome.floors == 100
+        next unless biome.floors.is_a?(Integer) && biome.floors.positive?
+
+        covered = Array.new(biome.floors + 1, false)
+        biome.bands.each do |band|
+          unless valid_floor?(band.from, biome.floors) && valid_floor?(band.to, biome.floors) && band.from <= band.to
+            errors << "#{prefix} has out-of-range band #{band.from}..#{band.to}"
+            next
+          end
+          errors << "#{prefix} references unknown pool #{band.pool}" unless pools.include?(band.pool)
+          (band.from..band.to).each do |number|
+            errors << "#{prefix} has overlapping bands at floor #{number}" if covered[number]
+            covered[number] = true
+          end
+        end
+        seen_overrides = Set.new
+        biome.overrides.each do |override|
+          unless valid_floor?(override.floor, biome.floors)
+            errors << "#{prefix} has out-of-range override #{override.floor}"
+            next
+          end
+          errors << "#{prefix} has duplicate override #{override.floor}" unless seen_overrides.add?(override.floor)
+          covered[override.floor] = true
+          validate_lineup(override.lineup, "#{prefix} override #{override.floor}", monsters, errors)
+        end
+        missing = (1..biome.floors).reject { |number| covered[number] }
+        errors << "#{prefix} is missing floor coverage: #{missing.join(', ')}" unless missing.empty?
+      end
+    end
+
+    def validate_lineup(lineup, prefix, monsters, errors)
+      unless lineup.is_a?(Array) && lineup.size == 5
+        errors << "#{prefix} must contain five monsters"
+        return
+      end
+      lineup.each do |monster|
+        errors << "#{prefix} references unknown monster #{monster}" unless monsters.include?(monster)
+      end
+    end
+
+    def stable_id?(id)
+      id.is_a?(Symbol) && id.to_s.match?(/\A[a-z][a-z0-9_]*\z/)
+    end
+
+    def valid_floor?(number, count)
+      number.is_a?(Integer) && (1..count).cover?(number)
     end
 
     def validate_visuals(errors)

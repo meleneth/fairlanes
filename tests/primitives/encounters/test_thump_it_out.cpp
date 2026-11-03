@@ -17,6 +17,7 @@
 #include "fl/ecs/systems/visual_resolver.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/generated/floor_content.hpp"
 #include "fl/lospec500.hpp"
 #include "fl/monsters/monster_registry.hpp"
 #include "fl/primitives/encounter_builder.hpp"
@@ -141,6 +142,32 @@ TEST_CASE("HeroesJourney encounter mode keeps the woodland spawn pools",
              contains_monster(fl::primitives::EncounterBuilder::rare_woodland(),
                               kind)));
   }
+}
+
+TEST_CASE("Declared tower floors use the normal encounter construction path",
+          "[generated][content][floors][encounter_builder]") {
+  using fl::primitives::EncounterBuilder;
+  for (const int floor : {1, 10}) {
+    fl::GrandCentral gc{1, 1, 3};
+    auto party = gc.account_context(0).party_context(0);
+    const auto *declared = fl::primitives::generated_content::floor_lineup(
+        "origin_woodland_tower", floor);
+    REQUIRE(declared != nullptr);
+    REQUIRE(declared->id == (floor == 10 ? "origin_woodland_tower/010"
+                                         : "origin_woodland_tower/001"));
+    EncounterBuilder builder{
+        party, fl::primitives::EncounterMode::HeroesJourney,
+        EncounterBuilder::TowerFloor{"origin_woodland_tower", floor}};
+    auto &encounter = builder.thump_it_out();
+    const auto actual = monster_kinds_for(encounter.attackers().members(), party.reg());
+    REQUIRE(std::ranges::equal(actual, declared->monsters));
+    REQUIRE(encounter.defenders().members().size() == 3);
+    if (floor == 10) {
+      REQUIRE(actual.front() == fl::monster::MonsterKind::HoneyBadger);
+    }
+  }
+  REQUIRE(fl::primitives::generated_content::floor_lineup("origin_woodland_tower", 101) == nullptr);
+  REQUIRE(fl::primitives::generated_content::floor_lineup("unknown", 1) == nullptr);
 }
 
 TEST_CASE("EncounterBuilder::thump_it_out wires encounter teams and members",
