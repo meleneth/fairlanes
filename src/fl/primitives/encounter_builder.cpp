@@ -88,6 +88,19 @@ EncounterData &EncounterBuilder::thump_it_out() {
   return encounter_data;
 }
 
+EncounterData &EncounterBuilder::one_on_one(fl::monster::MonsterKind enemy) {
+  auto &encounter = ctx_.party_data().create_encounter();
+  add_enemy_kind(enemy);
+  ctx_.party_data().for_each_member([&](entt::entity member) {
+    encounter.defenders().members().push_back(member);
+    encounter.add_party_combatant_bus(member);
+    encounter.atb_in().emit(
+        seerin::AtbInEvent{seerin::AddCombatant{member}});
+  });
+  ctx_.bus().emit(fl::events::PartyEvent{fl::events::PartyCombatStarted{}});
+  return encounter;
+}
+
 void EncounterBuilder::add_random_enemy() {
   using namespace fl::ecs::components;
 

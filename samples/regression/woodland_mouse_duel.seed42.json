@@ -1,0 +1,228 @@
+{
+  "beat_cap": 1200,
+  "build": {
+    "revision": "50b2248eab6bea2aa541d3687a294d2e075117cc",
+    "source_dirty": true,
+    "version": "0.1.0"
+  },
+  "content_sha256": "5a7fabee2b4c869179214dbd3547fa03448fc93446c7ef825c5b38842825568e",
+  "events": [
+    {
+      "actor": "hero",
+      "seq": 0,
+      "skill": "thump/1",
+      "target": "mouse",
+      "type": "action",
+      "uwu": 4800
+    },
+    {
+      "actor": "hero",
+      "seq": 1,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 4800
+    },
+    {
+      "actor": "hero",
+      "damage": 7,
+      "hp_after": 1,
+      "seq": 2,
+      "skill": "thump/1",
+      "target": "mouse",
+      "type": "hit",
+      "uwu": 6880
+    },
+    {
+      "actor": "mouse",
+      "after": {
+        "hp": 1,
+        "statuses": []
+      },
+      "before": {
+        "hp": 8,
+        "statuses": []
+      },
+      "seq": 3,
+      "type": "state",
+      "uwu": 6880
+    },
+    {
+      "actor": "hero",
+      "seq": 4,
+      "type": "cast_finish",
+      "uwu": 7280
+    },
+    {
+      "actor": "mouse",
+      "seq": 5,
+      "skill": "thump/1",
+      "target": "hero",
+      "type": "action",
+      "uwu": 7280
+    },
+    {
+      "actor": "mouse",
+      "seq": 6,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 7280
+    },
+    {
+      "actor": "mouse",
+      "damage": 3,
+      "hp_after": 17,
+      "seq": 7,
+      "skill": "thump/1",
+      "target": "hero",
+      "type": "hit",
+      "uwu": 9360
+    },
+    {
+      "actor": "hero",
+      "after": {
+        "hp": 17,
+        "statuses": []
+      },
+      "before": {
+        "hp": 20,
+        "statuses": []
+      },
+      "seq": 8,
+      "type": "state",
+      "uwu": 9360
+    },
+    {
+      "actor": "mouse",
+      "seq": 9,
+      "type": "cast_finish",
+      "uwu": 9760
+    },
+    {
+      "actor": "hero",
+      "seq": 10,
+      "skill": "thump/1",
+      "target": "mouse",
+      "type": "action",
+      "uwu": 14400
+    },
+    {
+      "actor": "hero",
+      "seq": 11,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 14400
+    },
+    {
+      "actor": "hero",
+      "damage": 4,
+      "hp_after": 0,
+      "seq": 12,
+      "skill": "thump/1",
+      "target": "mouse",
+      "type": "hit",
+      "uwu": 16480
+    },
+    {
+      "actor": "mouse",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 1,
+        "statuses": []
+      },
+      "seq": 13,
+      "type": "state",
+      "uwu": 16480
+    },
+    {
+      "outcome": "hero_victory",
+      "seq": 14,
+      "type": "end",
+      "uwu": 16480
+    }
+  ],
+  "expected_outcome": "hero_victory",
+  "external_inputs": [],
+  "fixture": "woodland_mouse_duel",
+  "format": "fairlanes-combat-recording",
+  "gameplay_seed": 42,
+  "gameplay_sequence": 0,
+  "initial_state": [
+    {
+      "action_policy": "single_equipped_skill",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "hero",
+      "kind": "player",
+      "known_skills": [
+        "observe/1",
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ],
+      "name": "Regression Hero",
+      "stats": {
+        "armor": 0,
+        "attack": 2,
+        "hp": 20,
+        "max_hp": 20,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    },
+    {
+      "action_policy": "single_known_skill",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "mouse",
+      "kind": "field_mouse",
+      "known_skills": [
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ],
+      "name": "Field Mouse",
+      "stats": {
+        "armor": 0,
+        "attack": 0,
+        "hp": 8,
+        "max_hp": 8,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    }
+  ],
+  "result": {
+    "beats": 207,
+    "outcome": "hero_victory",
+    "simulated_seconds": 17.25,
+    "uwu": 16480
+  },
+  "starting_uwu": 0,
+  "starting_world_beat": 0,
+  "version": 1
+}

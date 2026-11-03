@@ -644,13 +644,13 @@ set(FAIRLANES_MONSTER_SOURCES ${FAIRLANES_SOURCES})
 list(FILTER FAIRLANES_MONSTER_SOURCES INCLUDE REGEX "/src/fl/monsters/")
 
 set(FAIRLANES_APP_SOURCES ${FAIRLANES_SOURCES})
-list(FILTER FAIRLANES_APP_SOURCES INCLUDE REGEX "/src/fl/(grand_central|chaos_attract_grand_central|web_screen_bridge)\\.cpp$")
+list(FILTER FAIRLANES_APP_SOURCES INCLUDE REGEX "/src/fl/(grand_central|chaos_attract_grand_central|web_screen_bridge|regression/.*)\\.cpp$")
 
 set(FAIRLANES_CORE_SOURCES ${FAIRLANES_SOURCES})
 list(FILTER FAIRLANES_CORE_SOURCES EXCLUDE REGEX "/src/fl/widgets/")
 list(FILTER FAIRLANES_CORE_SOURCES EXCLUDE REGEX "/src/fl/skills/")
 list(FILTER FAIRLANES_CORE_SOURCES EXCLUDE REGEX "/src/fl/monsters/")
-list(FILTER FAIRLANES_CORE_SOURCES EXCLUDE REGEX "/src/fl/(grand_central|chaos_attract_grand_central|web_screen_bridge)\\.cpp$")
+list(FILTER FAIRLANES_CORE_SOURCES EXCLUDE REGEX "/src/fl/(grand_central|chaos_attract_grand_central|web_screen_bridge|regression/.*)\\.cpp$")
 
 set(FAIRLANES_GENERATED_SKILL_SOURCES ${FAIRLANES_CONTENT_GENERATED_FL_SOURCES})
 list(FILTER FAIRLANES_GENERATED_SKILL_SOURCES INCLUDE REGEX "/fl/generated/(skills/|skill_content\\.cpp$)")
@@ -680,6 +680,39 @@ add_library(fl_widgets STATIC ${FAIRLANES_WIDGET_SOURCES})
 
 add_library(fl STATIC ${FAIRLANES_APP_SOURCES})
 target_link_libraries(fl PUBLIC fl_core fl_skills fl_monsters fl_widgets)
+set(FAIRLANES_CONTENT_ID_SOURCES
+  "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
+  "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
+  ${FAIRLANES_CONTENT_RUBY_SOURCES})
+list(SORT FAIRLANES_CONTENT_ID_SOURCES)
+set(FAIRLANES_CONTENT_ID_INPUT "")
+foreach(FAIRLANES_CONTENT_SOURCE IN LISTS FAIRLANES_CONTENT_ID_SOURCES)
+  file(SHA256 "${FAIRLANES_CONTENT_SOURCE}" FAIRLANES_CONTENT_SOURCE_SHA256)
+  file(RELATIVE_PATH FAIRLANES_CONTENT_RELATIVE_PATH
+    "${CMAKE_SOURCE_DIR}" "${FAIRLANES_CONTENT_SOURCE}")
+  string(APPEND FAIRLANES_CONTENT_ID_INPUT
+    "${FAIRLANES_CONTENT_RELATIVE_PATH}:${FAIRLANES_CONTENT_SOURCE_SHA256};")
+endforeach()
+string(SHA256 FAIRLANES_CONTENT_SHA256 "${FAIRLANES_CONTENT_ID_INPUT}")
+execute_process(COMMAND git rev-parse HEAD
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+  OUTPUT_VARIABLE FAIRLANES_BUILD_REVISION
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_QUIET)
+execute_process(COMMAND git status --porcelain --untracked-files=no
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+  OUTPUT_VARIABLE FAIRLANES_SOURCE_CHANGES
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_QUIET)
+if(FAIRLANES_SOURCE_CHANGES)
+  set(FAIRLANES_BUILD_DIRTY "true")
+else()
+  set(FAIRLANES_BUILD_DIRTY "false")
+endif()
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/generated/fl")
+configure_file(
+  "${CMAKE_SOURCE_DIR}/cmake/fairlanes_build_identity.hpp.in"
+  "${CMAKE_BINARY_DIR}/generated/fl/build_identity.hpp" @ONLY)
 
 set(FAIRLANES_STATIC_LINK_LIBRARIES fl fl_widgets fl_monsters fl_skills fl_core sr)
 if(CMAKE_CXX_LINK_GROUP_USING_RESCAN_SUPPORTED)
@@ -697,6 +730,7 @@ foreach(fairlanes_lib IN ITEMS fl_core fl_skills fl_monsters fl_widgets fl)
 target_include_directories(${fairlanes_lib}
   PUBLIC
     ${PROJECT_SOURCE_DIR}/src
+    ${CMAKE_BINARY_DIR}/generated
     ${FAIRLANES_CONTENT_GENERATED_DIR}
   PRIVATE
     ${entt_SOURCE_DIR}/single_include
@@ -791,6 +825,15 @@ if(EMSCRIPTEN)
 endif()
 
 add_executable(fairlanes ${CMAKE_SOURCE_DIR}/src/fairlanes.cpp)
+
+if(NOT EMSCRIPTEN)
+  add_executable(fairlanes_regression
+    ${CMAKE_SOURCE_DIR}/src/fairlanes_regression.cpp)
+  target_link_libraries(fairlanes_regression PRIVATE
+    ${FAIRLANES_STATIC_LINK_LIBRARIES} CLI11 nlohmann_json::nlohmann_json)
+  fairlanes_set_warnings(fairlanes_regression)
+  target_compile_features(fairlanes_regression PRIVATE cxx_std_20)
+endif()
 
 target_include_directories(fairlanes
   PRIVATE

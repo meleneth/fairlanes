@@ -124,10 +124,12 @@ void GrandCentral::_create_initial_accounts() {
 GrandCentral::GrandCentral(uint8_t num_accounts,
                            uint8_t num_parties_per_account,
                            uint8_t num_members_per_party,
-                           bool record_discoveries, bool record_progress)
+                           bool record_discoveries, bool record_progress,
+                           std::optional<std::uint64_t> gameplay_seed)
     : record_progress_(record_progress), num_accounts_(num_accounts),
       num_parties_per_account_(num_parties_per_account),
-      num_members_per_party_(num_members_per_party), reg_(), rng_(), log_bus_(),
+      num_members_per_party_(num_members_per_party), reg_(),
+      rng_(gameplay_seed), log_bus_(),
       logger_{log_bus_}, game_log_(std::make_unique<fl::widgets::FancyLog>()),
       fancy_log_sink_(std::make_unique<fl::primitives::FancyLogSink>(
           log_bus_, *game_log_, fl::primitives::LogLevel::trace)) {
@@ -298,6 +300,7 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
   });
 
   std::atomic<bool> running = true;
+  std::atomic<bool> beats_enabled = true;
 
   std::jthread render_ticker([&](std::stop_token st) {
     using namespace std::chrono_literals;
@@ -316,6 +319,11 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
 
     while (!st.stop_requested() && running.load(std::memory_order_relaxed)) {
       ZoneScopedN("FrameTick");
+
+      if (!beats_enabled.load(std::memory_order_relaxed)) {
+        std::this_thread::sleep_for(std::chrono::milliseconds{33});
+        continue;
+      }
 
       if (cutoff_reached()) {
         running.store(false, std::memory_order_relaxed);
@@ -337,6 +345,9 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
         world_clock_.advance_beat();
         ++elapsed_beats;
         gc_beat_bus_.emit(seerin::Beat{});
+        if (opts.after_beat && !opts.after_beat()) {
+          beats_enabled.store(false, std::memory_order_relaxed);
+        }
       }
 
       next_tick += frame_dt;

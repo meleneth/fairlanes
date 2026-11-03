@@ -88,6 +88,9 @@ void EncounterData::innervate_event_system() {
           return;
         }
 
+        combatant_bus(attacker).emit(fl::events::CombatantEvent{
+            fl::events::SkillActionSelected{attacker, target, decision->skill}});
+
         fl::skills::SkillSequencer sequencer{
             context_, rt_.atb_.scheduler(), [this](entt::entity entity) {
               atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{entity}});

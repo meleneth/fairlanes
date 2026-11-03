@@ -29,6 +29,9 @@ void PartyLoop::Ops::enter_farming(fl::context::PartyCtx &ctx) {
   // Also set the label for the party tied to this FSM (nice for local UI)
   // ctx.log().append_markup("[cyan](PartyLoop) Entering farming state.");
 
+  // Regression fixtures construct their encounter before the first world beat.
+  if (ctx.party_data().has_encounter()) return;
+
   if (ctx.party_data().needs_farm_focus_choice()) {
     if (ctx.party_data().progression_control_mode() ==
         fl::primitives::ProgressionControlMode::Auto) {

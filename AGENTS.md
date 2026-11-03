@@ -612,6 +612,11 @@ or combat bonus. Definitions/effects and progression-gate rules remain open.
 
 ## Compile-time dependencies
 
+The first combat regression fixture is `woodland_mouse_duel`. The separate
+`fairlanes_regression` executable advances production world beats without wall
+time; `fairlanes --replay` re-simulates a versioned recording in the existing
+party combat view and checks ordered events. See `docs/combat-regression.md`.
+
 Generated content also includes special gear and resolved 100-floor tower data.
 Gear declarations support per-channel resistance percentage modifiers through
 `EquipmentBuilder`; other numeric stat modifiers remain unsupported. An explicit tower floor goes through

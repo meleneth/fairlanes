@@ -1,0 +1,8 @@
+#pragma once
+
+namespace fl::build_identity {
+inline constexpr char version[] = "@PROJECT_VERSION@";
+inline constexpr char revision[] = "@FAIRLANES_BUILD_REVISION@";
+inline constexpr bool source_dirty = @FAIRLANES_BUILD_DIRTY@;
+inline constexpr char content_sha256[] = "@FAIRLANES_CONTENT_SHA256@";
+} // namespace fl::build_identity

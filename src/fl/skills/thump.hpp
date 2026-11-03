@@ -1,6 +1,5 @@
 #pragma once
 #include <cmath>
-#include <random>
 
 #include <entt/entity/registry.hpp>
 #include <exprtk.hpp>
@@ -39,8 +38,5 @@ private:
   // double one_handed_mod_;
   double damage_;
 
-  // RNG – swap for PCG if you prefer
-  std::mt19937_64 rng_;
-  std::uniform_real_distribution<double> uni_{0.0, 1.0};
 };
 } // namespace fl::skills

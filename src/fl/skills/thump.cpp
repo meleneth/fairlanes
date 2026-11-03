@@ -9,6 +9,7 @@
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
 #include "fl/primitives/damage.hpp"
+#include "fl/primitives/random_hub.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "thump.hpp"
 
@@ -53,7 +54,7 @@ std::string exprtk_error_report(const exprtk::parser<T> &parser,
   return report;
 }
 
-Thump::Thump() : rng_(std::random_device{}()) {
+Thump::Thump() {
   // Bind variables to the symbol table
   sym_.add_variable("wd_min", wd_min_);
   sym_.add_variable("wd_max", wd_max_);
@@ -91,9 +92,10 @@ int Thump::thump(fl::context::AttackCtx &&ctx, SkillKey skill) {
   skill_mult_ = 1.00; // no extra multiplier
 
   // Random uniforms in [0,1)
-  u_roll_ = uni_(rng_);
-  u_hit_ = uni_(rng_);
-  u_crit_ = uni_(rng_);
+  auto random = ctx.rng().stream("combat/thump", entt::to_integral(ctx.attacker()));
+  u_roll_ = std::generate_canonical<double, 53>(random.eng());
+  u_hit_ = std::generate_canonical<double, 53>(random.eng());
+  u_crit_ = std::generate_canonical<double, 53>(random.eng());
 
   // Evaluate expression
   double dealt = expr_.value() + thump_rank_damage_bonus(skill);

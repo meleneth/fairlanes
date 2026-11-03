@@ -55,7 +55,9 @@ struct PartyLoopMachine::Impl {
 
     if (party_wipe_pending_) {
       party_wipe_pending_ = false;
-      sm_.process_event(fl::fsm::PartyWipedEvent{});
+      if (!ctx->party_data().preserves_terminal_encounter()) {
+        sm_.process_event(fl::fsm::PartyWipedEvent{});
+      }
     }
   }
 };

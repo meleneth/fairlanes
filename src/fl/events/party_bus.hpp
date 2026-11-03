@@ -102,6 +102,11 @@ struct SkillCastStarted {
   entt::entity caster{entt::null};
   fl::skills::SkillKey skill{fl::skills::SkillId::Observe};
 };
+struct SkillActionSelected {
+  entt::entity actor{entt::null};
+  entt::entity target{entt::null};
+  fl::skills::SkillKey skill{fl::skills::SkillId::Observe};
+};
 struct SkillCastFinished {
   entt::entity caster{entt::null};
 };
@@ -121,7 +126,7 @@ struct PlayerDied {
 
 using CombatantEvent =
     std::variant<PoisonApplied, FreezeApplied, FreezeStarted, FreezeEnded,
-                 SkillHitLanded, SkillCastStarted, SkillCastFinished,
+    SkillHitLanded, SkillCastStarted, SkillActionSelected, SkillCastFinished,
                  FleeAttempted, CombatantFled, PlayerDied>;
 
 using CombatantBus = seerin::VariantBus<CombatantEvent>;

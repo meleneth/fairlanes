@@ -31,6 +31,7 @@ struct EncounterBuilder {
   chaos_attractor_monster_pool();
 
   EncounterData &thump_it_out();
+  EncounterData &one_on_one(fl::monster::MonsterKind enemy);
 
   void add_random_enemy();
 

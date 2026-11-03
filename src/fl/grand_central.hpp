@@ -4,8 +4,10 @@
 
 #include <cstdint>
 #include <deque>
+#include <functional>
 #include <memory>
 #include <mutex>
+#include <optional>
 
 #include <entt/entity/registry.hpp>
 #include <ftxui/component/component.hpp>
@@ -25,12 +27,16 @@ struct GrandCentralRunOptions {
   bool no_ui{false};
   int overdrive{1};
   std::optional<double> cutoff_seconds;
+  // Return false to freeze gameplay beats while leaving the client view open.
+  std::function<bool()> after_beat;
 };
 
 class GrandCentral {
 public:
   GrandCentral(uint8_t num_accounts, uint8_t num_parties_per_account,
-               uint8_t num_members_per_party, bool record_discoveries = true, bool record_progress = true);
+               uint8_t num_members_per_party, bool record_discoveries = true,
+               bool record_progress = true,
+               std::optional<std::uint64_t> gameplay_seed = std::nullopt);
   ~GrandCentral();
 
   fl::primitives::RaidMilestones &raid_milestones() { return raid_milestones_; }

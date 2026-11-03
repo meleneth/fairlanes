@@ -83,6 +83,12 @@ public:
   bool in_combat() const noexcept {
     return has_encounter() && !encounter_data().is_over();
   }
+  void preserve_terminal_encounter(bool enabled) noexcept {
+    preserve_terminal_encounter_ = enabled;
+  }
+  bool preserves_terminal_encounter() const noexcept {
+    return preserve_terminal_encounter_;
+  }
   // ---- behavior ----
   void advance_beat();
   void hook_to_beat(seerin::BeatBus &gc_beat_bus);
@@ -193,6 +199,7 @@ private:
 
   std::list<PendingLearnedSkill> pending_learned_skills_;
   bool leaving_combat_{false};
+  bool preserve_terminal_encounter_{false};
   void cleanup_encounter();
   void clear_combat_visuals();
   void restore_observe_to_open_first_slots();
