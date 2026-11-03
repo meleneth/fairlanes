@@ -48,6 +48,7 @@ module FairlanesContent
         "fl/generated/gear_content.hpp" => renderer.gear_content_hpp,
         "fl/generated/floor_content.hpp" => renderer.floor_content_hpp,
         "fl/generated/regression_content.hpp" => renderer.regression_content_hpp,
+        "fl/generated/story_content.hpp" => renderer.story_content_hpp,
         "decal_content_balance.md" => renderer.balance_report,
         "floor_manifest.md" => renderer.floor_manifest,
         "effect_gallery.md" => renderer.effect_gallery,
@@ -77,7 +78,8 @@ module FairlanesContent
       {
         "generated/content-balance.md" => renderer.balance_report,
         "generated/effect-gallery.md" => renderer.effect_gallery,
-        "generated/floor-manifest.md" => renderer.floor_manifest
+        "generated/floor-manifest.md" => renderer.floor_manifest,
+        "generated/story-events.md" => renderer.story_event_doc
       }
     end
 
@@ -192,6 +194,10 @@ module FairlanesContent
         encounter_pools
         biomes
         biome_plans
+        story_events
+        objectives
+        dialogues
+        autoplay_routes
         regressions
       ]
       required.each { |key| errors << "manifest missing #{key}" unless manifest.key?(key) }
@@ -208,6 +214,10 @@ module FairlanesContent
       errors << "manifest encounter_pools must be an array" unless manifest["encounter_pools"].is_a?(Array)
       errors << "manifest biomes must be an array" unless manifest["biomes"].is_a?(Array)
       errors << "manifest biome_plans must be an array" unless manifest["biome_plans"].is_a?(Array)
+      errors << "manifest story_events must be an array" unless manifest["story_events"].is_a?(Array)
+      errors << "manifest objectives must be an array" unless manifest["objectives"].is_a?(Array)
+      errors << "manifest dialogues must be an array" unless manifest["dialogues"].is_a?(Array)
+      errors << "manifest autoplay_routes must be an array" unless manifest["autoplay_routes"].is_a?(Array)
       errors << "manifest regressions must be an array" unless manifest["regressions"].is_a?(Array)
 
       validate_manifest_skills(manifest, errors)

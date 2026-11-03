@@ -664,6 +664,9 @@ gear :woodland_stick, display: "Woodland Stick",
 gear :stitched_hide, display: "Stitched Hide",
      slot: :chest, armor_kind: :leather, tier: :plain, weight: 20,
      modifiers: {armor: 2}
+gear :village_guard_hide, display: "Village Guard Hide",
+     slot: :chest, armor_kind: :leather, tier: :plain, weight: 0,
+     modifiers: {armor: 1}
 gear :hearty_locket, display: "Hearty Locket",
      slot: :necklace, armor_kind: :none, tier: :plain, weight: 20,
      modifiers: {max_hp: 5}

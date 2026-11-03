@@ -25,6 +25,7 @@
 #include "fl/widgets/chaos_attract_root.hpp"
 #include "fl/widgets/root_chrome.hpp"
 #include "fl/widgets/root_component.hpp"
+#include "fl/widgets/story_start_picker.hpp"
 #include "fl/widgets/important_notice_overlay.hpp"
 
 namespace {
@@ -238,6 +239,33 @@ TEST_CASE("Important notices rise from bottom right and wait for acknowledgement
   REQUIRE_FALSE(notices.active());
 }
 
+TEST_CASE("Autoplay acknowledges each achievement-style notice after sixty seconds",
+          "[widgets][root][notice]") {
+  using Overlay = fl::widgets::ImportantNoticeOverlay;
+  const Overlay::Clock::time_point start{};
+  Overlay notices;
+  notices.set_auto_acknowledge(true);
+  notices.enqueue({"ACHIEVEMENT UNLOCKED", "First", 14}, start);
+  notices.enqueue({"OBJECTIVE REVEALED", "Second", 27}, start);
+  notices.tick(start + std::chrono::seconds{59});
+  REQUIRE(notices.active());
+  notices.tick(start + std::chrono::seconds{60});
+  REQUIRE(notices.active());
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(80),
+                                      ftxui::Dimension::Fixed(24));
+  ftxui::Render(screen, notices.render(24, start + std::chrono::seconds{60}));
+  REQUIRE(screen_text(screen).find("Second") != std::string::npos);
+  notices.tick(start + std::chrono::seconds{119});
+  REQUIRE(notices.active());
+  notices.tick(start + std::chrono::seconds{120});
+  REQUIRE_FALSE(notices.active());
+
+  Overlay manual;
+  manual.enqueue({"ACHIEVEMENT UNLOCKED", "Keep reading", 14}, start);
+  manual.tick(start + std::chrono::minutes{2});
+  REQUIRE(manual.active());
+}
+
 TEST_CASE("Root queues milestone events and consumes the acknowledging key",
           "[widgets][root][notice]") {
   fl::GrandCentral gc{1, 1, 1};
@@ -264,6 +292,95 @@ TEST_CASE("Root queues milestone events and consumes the acknowledging key",
   REQUIRE(render_to_string(root) == baseline);
   REQUIRE(root.OnEvent(ftxui::Event::Character(" ")));
   REQUIRE(render_to_string(root) != baseline);
+}
+
+TEST_CASE("Story keys lead from the Visitor defeat to pub recruitment",
+          "[widgets][root][story]") {
+  fl::GrandCentral game{1, 1, 0, true, true, 42, true};
+  auto root = fl::widgets::RootComponent{
+      game.account_context(0), game.accounts(), game.game_log(),
+      game.world_clock(), &game.discoveries(),
+      &game.raid_milestones().bus(), game.objectives()};
+  game.innervate_event_system();
+  game.advance_beat();
+  REQUIRE(render_to_string(root).find("OBJECTIVE REVEALED") != std::string::npos);
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  REQUIRE(root.OnEvent(ftxui::Event::Character("o")));
+  REQUIRE(render_to_string(root).find("Recruit a hero") != std::string::npos);
+  REQUIRE(root.OnEvent(ftxui::Event::Character("v")));
+  REQUIRE(render_to_string(root).find("Village") != std::string::npos);
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  REQUIRE(render_to_string(root).find("Village Pub") != std::string::npos);
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  REQUIRE(render_to_string(root).find("Then fight beside me") != std::string::npos);
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  REQUIRE(game.accounts().front().parties().front().members().size() == 1);
+  REQUIRE(game.objectives()->completed("recruit_first_hero"));
+}
+
+TEST_CASE("Sandbox console switch warns that story cannot be recovered",
+          "[widgets][root][story]") {
+  fl::GrandCentral game{1, 1, 0, true, true, 42, true};
+  auto root = fl::widgets::RootComponent{
+      game.account_context(0), game.accounts(), game.game_log(),
+      game.world_clock(), nullptr, nullptr, game.objectives()};
+  REQUIRE(root.OnEvent(ftxui::Event::Character("`")));
+  for (char character : std::string{"sandbox"})
+    REQUIRE(root.OnEvent(ftxui::Event::Character(std::string(1, character))));
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  REQUIRE(render_to_string(root).find("cannot be recovered") != std::string::npos);
+  REQUIRE_FALSE(root.sandbox_requested());
+  REQUIRE(root.OnEvent(ftxui::Event::Character("n")));
+  REQUIRE_FALSE(root.sandbox_requested());
+  // The same command can be issued again after cancelling.
+  for (char character : std::string{"sandbox"})
+    REQUIRE(root.OnEvent(ftxui::Event::Character(std::string(1, character))));
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  REQUIRE(root.sandbox_requested());
+}
+
+TEST_CASE("Attract exit picker offers manual story and autoplay with a toggle hint",
+          "[widgets][story][start]") {
+  bool finished = false;
+  fl::widgets::StoryStartPicker picker{[&] { finished = true; }};
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(100),
+                                      ftxui::Dimension::Fixed(24));
+  ftxui::Render(screen, picker.Render());
+  const auto displayed = screen_text(screen);
+  REQUIRE(displayed.find("Manual story") != std::string::npos);
+  REQUIRE(displayed.find("Autoplay") != std::string::npos);
+  REQUIRE(displayed.find("toggle autoplay at any time") != std::string::npos);
+  REQUIRE(picker.OnEvent(ftxui::Event::ArrowDown));
+  REQUIRE(picker.OnEvent(ftxui::Event::Return));
+  REQUIRE_FALSE(finished);
+  REQUIRE(picker.mode() == fl::widgets::StoryStartMode::Cancel);
+  REQUIRE(picker.OnEvent(ftxui::Event::Escape));
+  REQUIRE_FALSE(finished);
+  REQUIRE(picker.OnEvent(ftxui::Event::Return));
+  REQUIRE_FALSE(finished);
+  REQUIRE(picker.OnEvent(ftxui::Event::Return));
+  REQUIRE(finished);
+  REQUIRE(picker.mode() == fl::widgets::StoryStartMode::Autoplay);
+}
+
+TEST_CASE("Story autoplay requires confirmation when enabled from the root",
+          "[widgets][root][story]") {
+  fl::GrandCentral game{1, 1, 0, true, true, 42, true};
+  auto root = fl::widgets::RootComponent{
+      game.account_context(0), game.accounts(), game.game_log(),
+      game.world_clock(), nullptr, nullptr, game.objectives()};
+  REQUIRE_FALSE(game.objectives()->autoplay_enabled());
+  REQUIRE(root.OnEvent(ftxui::Event::Character("a")));
+  REQUIRE(render_to_string(root).find("Enable story autoplay") != std::string::npos);
+  REQUIRE_FALSE(game.objectives()->autoplay_enabled());
+  REQUIRE(root.OnEvent(ftxui::Event::Character("n")));
+  REQUIRE_FALSE(game.objectives()->autoplay_enabled());
+  REQUIRE(root.OnEvent(ftxui::Event::Character("a")));
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  REQUIRE(game.objectives()->autoplay_enabled());
+  REQUIRE(root.OnEvent(ftxui::Event::Character("a")));
+  REQUIRE_FALSE(game.objectives()->autoplay_enabled());
 }
 
 TEST_CASE("Account battle combatants keep fixed twenty-percent widths",

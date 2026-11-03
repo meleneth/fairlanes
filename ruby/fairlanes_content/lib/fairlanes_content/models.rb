@@ -27,4 +27,8 @@ module FairlanesContent
   RegressionScenario = Struct.new(:id, :encounter, :party, :seeds, :beat_cap,
                                   :variants, keyword_init: true)
   BiomePlan = Struct.new(:id, :cycle, :order, :monsters, keyword_init: true)
+  StoryEvent = Struct.new(:id, :handled, keyword_init: true)
+  Objective = Struct.new(:id, :title, :description, :revealed_by, :completed_by, keyword_init: true)
+  Dialogue = Struct.new(:id, :location, :npc, :start, :nodes, keyword_init: true)
+  AutoplayRoute = Struct.new(:id, :steps, keyword_init: true)
 end

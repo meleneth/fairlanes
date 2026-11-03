@@ -20,6 +20,7 @@
 #include "party_view.hpp"
 #include "root_chrome.hpp"
 #include "raid_view.hpp"
+#include "story_screen.hpp"
 
 namespace fl::widgets {
 
@@ -28,10 +29,13 @@ RootComponent::RootComponent(
     std::deque<fl::primitives::AccountData> &accounts, FancyLog &console_log,
     fl::primitives::WorldClock &world_clock,
     const fl::primitives::DiscoveryJournal *discoveries,
-    fl::events::AchievementBus *achievements)
+    fl::events::AchievementBus *achievements,
+    fl::primitives::ObjectiveSystem *objectives)
     : ctx_(std::move(ctx)), accounts_(&accounts), console_log_(&console_log),
       world_clock_(&world_clock), commands_(accounts, console_log, world_clock),
-      discoveries_(discoveries) {
+      discoveries_(discoveries), objectives_(objectives) {
+  important_notices_.set_auto_acknowledge(
+      objectives_ && objectives_->autoplay_enabled());
   quit_cancel_ = ftxui::Button("Cancel", [this] {
     quit_confirmation_open_ = false;
     active_screen_->TakeFocus();
@@ -61,6 +65,8 @@ RootComponent::RootComponent(
     auto context = make_context(account_index);
     return context.account_data().spawn_visitor(context);
   });
+  if (objectives_)
+    commands_.set_start_sandbox([this] { sandbox_confirmation_open_ = true; });
   console_overlay()->set_on_command(
       [this](std::string_view command) { commands_.handle(command); });
   Add(console_overlay_);
@@ -104,6 +110,24 @@ RootComponent::RootComponent(
           }
         }};
   }
+  if (objectives_) {
+    objective_sub_ = fl::events::ScopedStoryListener{
+        objectives_->bus(), std::in_place_type<fl::events::ObjectiveRevealed>,
+        [this](const fl::events::ObjectiveRevealed &event) {
+          for (const auto &objective : fl::story::generated_content::kObjectives)
+            if (objective.id == event.id)
+              important_notices_.enqueue(
+                  {"OBJECTIVE REVEALED", std::string(objective.title), 27});
+        }};
+    autoplay_sub_ = fl::events::ScopedStoryListener{
+        objectives_->bus(), std::in_place_type<fl::events::AutoplayChanged>,
+        [this](const fl::events::AutoplayChanged &event) {
+          important_notices_.set_auto_acknowledge(event.enabled);
+          console_log_->append_plain(event.enabled
+                                         ? "Story autoplay enabled."
+                                         : "Story autoplay paused.");
+        }};
+  }
 
   show_party_battle(commands_.account_index(), commands_.party_index());
 }
@@ -117,6 +141,25 @@ ftxui::Component RootComponent::ActiveChild() {
 
 bool RootComponent::OnEvent(ftxui::Event event) {
   auto *overlay = console_overlay();
+
+  if (sandbox_confirmation_open_) {
+    if (event == ftxui::Event::Return || event == ftxui::Event::Character("y")) {
+      sandbox_requested_ = true;
+      quit_requested_ = true;
+    } else if (event == ftxui::Event::Escape || event == ftxui::Event::Character("n")) {
+      sandbox_confirmation_open_ = false;
+    }
+    return true;
+  }
+  if (autoplay_confirmation_open_) {
+    if (event == ftxui::Event::Return || event == ftxui::Event::Character("y")) {
+      objectives_->request_autoplay(true);
+      autoplay_confirmation_open_ = false;
+    } else if (event == ftxui::Event::Escape || event == ftxui::Event::Character("n")) {
+      autoplay_confirmation_open_ = false;
+    }
+    return true;
+  }
 
   if (important_notices_.active() &&
       (event == ftxui::Event::Character(" ") ||
@@ -152,6 +195,29 @@ bool RootComponent::OnEvent(ftxui::Event event) {
 
   if (overlay->open()) {
     return console_overlay_->OnEvent(event);
+  }
+
+  if (objectives_ && event == ftxui::Event::Character("a")) {
+    if (objectives_->autoplay_enabled())
+      objectives_->request_autoplay(false);
+    else
+      autoplay_confirmation_open_ = true;
+    return true;
+  }
+
+  if (objectives_ && event == ftxui::Event::Character("o")) {
+    show_objectives();
+    return true;
+  }
+  if (objectives_ && event == ftxui::Event::Character("v")) {
+    show_village();
+    return true;
+  }
+  if (active_screen_kind_ == ActiveScreen::story) {
+    if (active_screen_ && active_screen_->OnEvent(event)) return true;
+    if (event == ftxui::Event::Escape || event == ftxui::Event::Character("q"))
+      show_party_battle(commands_.account_index(), commands_.party_index());
+    return true;
   }
 
   if (event == ftxui::Event::Character(">") ||
@@ -298,6 +364,7 @@ ftxui::Element RootComponent::Render() {
 
   auto *overlay = console_overlay();
   overlay->tick();
+  important_notices_.tick();
   update_fps_counter();
 
   auto &account = ctx_.account_data();
@@ -340,12 +407,28 @@ ftxui::Element RootComponent::Render() {
                  bgcolor(fl::lospec500::color_at(0)) | clear_under;
     content = dbox({content, panel | center});
   }
+  if (sandbox_confirmation_open_) {
+    content = dbox({content,
+                    window(text("Switch to full roster?"),
+                           vbox({paragraph("The current story session cannot be recovered after switching."),
+                                 text("Enter/y: switch   Esc/n: stay")})) |
+                        center | bgcolor(fl::lospec500::color_at(0)) |
+                        clear_under});
+  }
 
   if (important_notices_.active()) {
     const int height = viewport_box_.y_max > viewport_box_.y_min
                            ? viewport_box_.y_max - viewport_box_.y_min + 1
                            : 24;
     content = dbox({content, important_notices_.render(height)});
+  }
+  if (autoplay_confirmation_open_) {
+    content = dbox({content,
+                    window(text("Enable story autoplay?"),
+                           vbox({paragraph("Autoplay will make dialogue, town, and purchase decisions for the opening story."),
+                                 text("Enter/y: enable   Esc/n: stay manual")})) |
+                        center | bgcolor(fl::lospec500::color_at(0)) |
+                        clear_under});
   }
 
   return content | reflect(viewport_box_);
@@ -473,6 +556,24 @@ void RootComponent::show_bestiary(
       monster));
 }
 
+void RootComponent::show_objectives() {
+  if (!objectives_ || raid_screen_locked()) return;
+  active_screen_kind_ = ActiveScreen::story;
+  replace_screen(ftxui::Make<StoryScreen>(
+      *objectives_, [this](std::string_view id) { objectives_->emit(id); },
+      [this] { objectives_->request_purchase("village_guard_hide"); },
+      StoryScreen::Start::Objectives));
+}
+
+void RootComponent::show_village() {
+  if (!objectives_ || raid_screen_locked()) return;
+  active_screen_kind_ = ActiveScreen::story;
+  replace_screen(ftxui::Make<StoryScreen>(
+      *objectives_, [this](std::string_view id) { objectives_->emit(id); },
+      [this] { objectives_->request_purchase("village_guard_hide"); },
+      StoryScreen::Start::Village));
+}
+
 void RootComponent::toggle_active_screen() {
   switch (active_screen_kind_) {
   case ActiveScreen::raid:
@@ -491,6 +592,7 @@ void RootComponent::toggle_active_screen() {
   case ActiveScreen::libram:
   case ActiveScreen::bestiary:
   case ActiveScreen::effect_gallery:
+  case ActiveScreen::story:
     show_party_battle(commands_.account_index(), commands_.party_index());
     return;
   }
@@ -515,6 +617,7 @@ void RootComponent::toggle_party_battle_screen() {
   case ActiveScreen::libram:
   case ActiveScreen::bestiary:
   case ActiveScreen::effect_gallery:
+  case ActiveScreen::story:
     show_party_battle(commands_.account_index(), commands_.party_index());
     return;
   }
@@ -558,6 +661,7 @@ void RootComponent::refresh_selected_account(std::size_t account_index,
   case ActiveScreen::effect_gallery:
   case ActiveScreen::libram:
   case ActiveScreen::bestiary:
+  case ActiveScreen::story:
     ctx_ = make_context(account_index);
     return;
   }
@@ -663,6 +767,12 @@ ftxui::Element RootComponent::render_help_hint() const {
       text(" party battle  ") | muted,
       text("h") | key,
       text(" help  ") | muted,
+      text(objectives_ ? "o" : "") | key,
+      text(objectives_ ? " objectives  " : "") | muted,
+      text(objectives_ ? "v" : "") | key,
+      text(objectives_ ? " village  " : "") | muted,
+      text(objectives_ ? "a" : "") | key,
+      text(objectives_ ? " autoplay  " : "") | muted,
       text(".") | key,
       text(" hide") | muted,
   });
@@ -693,6 +803,12 @@ ftxui::Element RootComponent::render_keybind_help() const {
   lines.push_back(render_help_line("`", "        open command console"));
   lines.push_back(render_help_line(". / ,", "    collapse / expand metrics"));
   lines.push_back(render_help_line("l / b", "    open libram / bestiary"));
+  if (objectives_) {
+    lines.push_back(render_help_line("o", "        open objectives"));
+    lines.push_back(render_help_line("v", "        visit village"));
+    lines.push_back(render_help_line("a", "        toggle story autoplay at any time"));
+    lines.push_back(render_help_line("` sandbox", " switch to full-roster sandbox (story cannot be recovered)"));
+  }
   lines.push_back(
       render_help_line("q / Esc", "  back, or confirm quit from gameplay"));
 

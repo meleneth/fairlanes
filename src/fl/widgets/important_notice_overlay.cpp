@@ -19,6 +19,12 @@ void ImportantNoticeOverlay::dismiss(Clock::time_point now) {
   if (!queue_.empty()) shown_at_ = now;
 }
 
+void ImportantNoticeOverlay::tick(Clock::time_point now) {
+  if (auto_acknowledge_ && !queue_.empty() &&
+      now - shown_at_ >= kAutoAcknowledgeDelay)
+    dismiss(now);
+}
+
 ftxui::Element ImportantNoticeOverlay::render(int viewport_height,
                                                Clock::time_point now) const {
   using namespace ftxui;

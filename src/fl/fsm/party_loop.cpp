@@ -31,6 +31,13 @@ void PartyLoop::Ops::enter_farming(fl::context::PartyCtx &ctx) {
 
   // Regression fixtures construct their encounter before the first world beat.
   if (ctx.party_data().has_encounter()) return;
+  if (ctx.party_data().members().empty()) return;
+  if (ctx.party_data().story_shop_pending()) return;
+  if (ctx.party_data().story_starter_fights_remaining() > 0) {
+    fl::primitives::EncounterBuilder{ctx, ctx.party_data().encounter_mode()}
+        .one_on_one(fl::monster::MonsterKind::FieldMouse);
+    return;
+  }
 
   // The floor-nine unlock is a real choice: wait here until the player picks
   // Plains or explicitly continues Woodland, before floor ten is constructed.

@@ -6,8 +6,10 @@
 #include "fl/context.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/ecs/components/color_override.hpp"
+#include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/systems/loot_drop.hpp"
 #include "fl/ecs/systems/manual_equipment.hpp"
 #include "fl/ecs/systems/effective_combat_stats.hpp"
@@ -67,6 +69,14 @@ PartyData::PartyData(entt::entity party_id,
         // effective HP without adding HP when an item is equipped mid-fight.
         revitalize_members();
       }};
+  story_starter_sub_ = fl::events::ScopedPartyListener{
+      party_bus_, std::in_place_type<fl::events::PartyVictory>,
+      [this](const fl::events::PartyVictory &) {
+        if (story_starter_fights_remaining_ <= 0 || in_raid()) return;
+        --story_starter_fights_remaining_;
+        darrin_marks_ += 5;
+        if (story_starter_fights_remaining_ == 0) story_shop_pending_ = true;
+      }};
 }
 
 std::optional<PartyData::TowerRoute> PartyData::tower_route() const noexcept {
@@ -84,6 +94,22 @@ bool PartyData::select_tower(std::string_view biome_id) {
   tower_biome_ = biome_id;
   tower_choice_pending_ = false;
   return true;
+}
+
+entt::entity PartyData::recruit_member(std::string name) {
+  if (members_.size() >= 5) return entt::null;
+  auto &reg = party_ctx_.reg();
+  auto &member = members_.emplace_back(reg.create(), std::move(name));
+  const auto id = member.member_id();
+  reg.emplace<fl::ecs::components::Stats>(id, member.name());
+  member.hook_level_progression(reg);
+  reg.emplace<fl::ecs::components::TrackXP>(
+      id, party_ctx_.entity_context(id), 0);
+  reg.emplace<fl::ecs::components::PartyMember>(
+      id, party_ctx_.entity_context(id), member.name(), party_id_, member);
+  party_bus_.emit(fl::events::PartyEvent{fl::events::MemberJoined{id}});
+  log_->append_plain(std::string(member.name()) + " joined the party.");
+  return id;
 }
 
 PartyData::~PartyData() {

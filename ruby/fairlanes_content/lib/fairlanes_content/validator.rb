@@ -21,6 +21,7 @@ module FairlanesContent
     GEAR_TIERS = Set[:worn, :plain, :sturdy, :fine, :excellent,
                      :masterwork, :mythic].freeze
     RESISTANCE_CHANNELS = Set[:physical, :magical, :fire, :ice, :lightning].freeze
+    STORY_LOCATIONS = Set[:pub, :village].freeze
     VALID_EXECUTIONS = Set[
       :thump_like, :eviscerate, :poison, :cold_snap, :flame_strike,
       :flame_wave, :decal_strike, :damage_strike, :group_damage,
@@ -77,12 +78,89 @@ module FairlanesContent
       validate_floor_content(errors)
       validate_regressions(errors)
       validate_biome_plans(errors)
+      validate_story(errors)
       errors
     end
 
     private
 
     attr_reader :declarations
+
+    def validate_story(errors)
+      events = declarations.story_events.map(&:id)
+      errors << "duplicate story event ids" unless events.uniq == events
+      declarations.story_events.each do |event|
+        errors << "story event #{event.id} has invalid id" unless stable_id?(event.id)
+        errors << "story event #{event.id} has invalid handled flag" unless [true, false].include?(event.handled)
+      end
+      objective_ids = declarations.objectives.map(&:id)
+      errors << "duplicate objective ids" unless objective_ids.uniq == objective_ids
+      declarations.objectives.each do |objective|
+        errors << "objective #{objective.id} has invalid id" unless stable_id?(objective.id)
+        errors << "objective #{objective.id} has no title or description" if objective.title.to_s.empty? || objective.description.to_s.empty?
+        %i[revealed_by completed_by].each do |field|
+          errors << "objective #{objective.id} references unknown #{field}" unless events.include?(objective.public_send(field))
+        end
+      end
+      dialogue_ids = declarations.dialogues.map(&:id)
+      errors << "duplicate dialogue ids" unless dialogue_ids.uniq == dialogue_ids
+      declarations.dialogues.each do |dialogue|
+        prefix = "dialogue #{dialogue.id}"
+        errors << "#{prefix} has invalid id" unless stable_id?(dialogue.id)
+        errors << "#{prefix} has invalid location or npc" unless STORY_LOCATIONS.include?(dialogue.location) && !dialogue.npc.to_s.empty?
+        unless dialogue.nodes.is_a?(Array) && !dialogue.nodes.empty?
+          errors << "#{prefix} has no nodes"
+          next
+        end
+        nodes = dialogue.nodes.map { |node| node[:id] }
+        errors << "#{prefix} has duplicate node ids" unless nodes.uniq == nodes
+        errors << "#{prefix} has unknown start node" unless nodes.include?(dialogue.start)
+        dialogue.nodes.each do |node|
+          errors << "#{prefix} node #{node[:id]} has unsupported fields" unless (node.keys - %i[id speaker text choices]).empty?
+          errors << "#{prefix} node #{node[:id]} has invalid id or text" unless stable_id?(node[:id]) && !node[:text].to_s.empty? && !node[:speaker].to_s.empty?
+          unless node[:choices].is_a?(Array)
+            errors << "#{prefix} node #{node[:id]} has invalid choices"
+            next
+          end
+          ids = node[:choices].map { |choice| choice[:id] }
+          errors << "#{prefix} node #{node[:id]} has duplicate choice ids" unless ids.uniq == ids
+          node[:choices].each do |choice|
+            errors << "#{prefix} choice #{choice[:id]} has unsupported fields" unless (choice.keys - %i[id label event next]).empty?
+            errors << "#{prefix} has invalid choice" unless stable_id?(choice[:id]) && !choice[:label].to_s.empty?
+            errors << "#{prefix} choice #{choice[:id]} has unknown next node" unless choice[:next] == :exit || nodes.include?(choice[:next])
+            errors << "#{prefix} choice #{choice[:id]} emits unknown event" if choice[:event] && !events.include?(choice[:event])
+          end
+        end
+      end
+      route_ids = declarations.autoplay_routes.map(&:id)
+      errors << "duplicate autoplay route ids" unless route_ids.uniq == route_ids
+      declarations.autoplay_routes.each do |route|
+        errors << "autoplay route #{route.id} has invalid id" unless stable_id?(route.id)
+        unless route.steps.is_a?(Array) && !route.steps.empty?
+          errors << "autoplay route #{route.id} has no steps"
+          next
+        end
+        route.steps.each_with_index do |step, index|
+          prefix = "autoplay route #{route.id} step #{index}"
+          errors << "#{prefix} has unsupported fields" unless (step.keys - %i[wait_for action target choice]).empty?
+          errors << "#{prefix} waits for unknown event" unless events.include?(step[:wait_for])
+          case step[:action]
+          when :choose_dialogue
+            dialogue = declarations.dialogues.find { |entry| entry.id == step[:target] }
+            errors << "#{prefix} has unknown dialogue" unless dialogue
+            if dialogue && !dialogue.nodes.any? { |node| node[:choices].any? { |choice| choice[:id] == step[:choice] && choice[:event] } }
+              errors << "#{prefix} has unknown emitting choice"
+            end
+          when :buy_gear
+            errors << "#{prefix} has unknown gear" unless declarations.gears.any? { |gear| gear.id == step[:target] }
+          when :return_to_town
+            errors << "#{prefix} must not name a target" if step[:target] || step[:choice]
+          else
+            errors << "#{prefix} has unknown action"
+          end
+        end
+      end
+    end
 
     def validate_duplicate_ids(errors)
       skill_ids = declarations.skills.map(&:id)

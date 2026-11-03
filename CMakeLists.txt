@@ -449,6 +449,7 @@ if(FAIRLANES_CONTENT_PREGENERATED_DIR)
         "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
         "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
         "${CMAKE_SOURCE_DIR}/scripts/fairlanes_regression_declarations.rb"
+        "${CMAKE_SOURCE_DIR}/scripts/fairlanes_story_declarations.rb"
         ${FAIRLANES_CONTENT_RUBY_SOURCES}
       COMMENT "Generating Fairlanes content docs"
       VERBATIM
@@ -462,6 +463,7 @@ if(FAIRLANES_CONTENT_PREGENERATED_DIR)
         "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
         "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
         "${CMAKE_SOURCE_DIR}/scripts/fairlanes_regression_declarations.rb"
+        "${CMAKE_SOURCE_DIR}/scripts/fairlanes_story_declarations.rb"
         ${FAIRLANES_CONTENT_RUBY_SOURCES}
       COMMENT "Checking Fairlanes generated content docs"
       VERBATIM
@@ -489,6 +491,7 @@ else()
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
     "${CMAKE_SOURCE_DIR}/scripts/fairlanes_regression_declarations.rb"
+    "${CMAKE_SOURCE_DIR}/scripts/fairlanes_story_declarations.rb"
     "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
     ${FAIRLANES_CONTENT_RUBY_SOURCES})
 
@@ -549,6 +552,7 @@ else()
       "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
       "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
       "${CMAKE_SOURCE_DIR}/scripts/fairlanes_regression_declarations.rb"
+      "${CMAKE_SOURCE_DIR}/scripts/fairlanes_story_declarations.rb"
       ${FAIRLANES_CONTENT_RUBY_SOURCES}
     COMMENT "Generating Fairlanes content artifacts"
     VERBATIM
@@ -567,6 +571,7 @@ else()
       "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
       "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
       "${CMAKE_SOURCE_DIR}/scripts/fairlanes_regression_declarations.rb"
+      "${CMAKE_SOURCE_DIR}/scripts/fairlanes_story_declarations.rb"
       ${FAIRLANES_CONTENT_RUBY_SOURCES}
     COMMENT "Generating Fairlanes content docs"
     VERBATIM
@@ -581,6 +586,7 @@ else()
       "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
       "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
       "${CMAKE_SOURCE_DIR}/scripts/fairlanes_regression_declarations.rb"
+      "${CMAKE_SOURCE_DIR}/scripts/fairlanes_story_declarations.rb"
       ${FAIRLANES_CONTENT_RUBY_SOURCES}
     COMMENT "Checking Fairlanes generated content docs"
     VERBATIM
@@ -595,6 +601,7 @@ if(FAIRLANES_RUBY_COMMAND)
     DEPENDS
       "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
       "${CMAKE_SOURCE_DIR}/scripts/fairlanes_regression_declarations.rb"
+      "${CMAKE_SOURCE_DIR}/scripts/fairlanes_story_declarations.rb"
       ${FAIRLANES_CONTENT_RUBY_SOURCES}
     VERBATIM)
   add_custom_target(fairlanes_biome_plan_check
@@ -605,6 +612,7 @@ if(FAIRLANES_RUBY_COMMAND)
     DEPENDS
       "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
       "${CMAKE_SOURCE_DIR}/scripts/fairlanes_regression_declarations.rb"
+      "${CMAKE_SOURCE_DIR}/scripts/fairlanes_story_declarations.rb"
       ${FAIRLANES_CONTENT_RUBY_SOURCES}
     VERBATIM)
 endif()
@@ -711,6 +719,7 @@ target_link_libraries(fl PUBLIC fl_core fl_skills fl_monsters fl_widgets)
 set(FAIRLANES_CONTENT_ID_SOURCES
   "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_declarations.rb"
   "${CMAKE_SOURCE_DIR}/scripts/fairlanes_regression_declarations.rb"
+  "${CMAKE_SOURCE_DIR}/scripts/fairlanes_story_declarations.rb"
   "${CMAKE_SOURCE_DIR}/scripts/fairlanes_content_codegen.rb"
   ${FAIRLANES_CONTENT_RUBY_SOURCES})
 list(SORT FAIRLANES_CONTENT_ID_SOURCES)

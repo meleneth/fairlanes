@@ -33,6 +33,7 @@ public:
   void set_show_bestiary(ShowEffectGallery callback);
   void set_account_selected(AccountSelected callback);
   void set_spawn_visitor(SpawnVisitor callback);
+  void set_start_sandbox(ShowEffectGallery callback);
 
   void handle(std::string_view command);
 
@@ -70,6 +71,7 @@ private:
   ShowEffectGallery show_bestiary_;
   AccountSelected account_selected_;
   SpawnVisitor spawn_visitor_;
+  ShowEffectGallery start_sandbox_;
 };
 
 } // namespace fl::widgets

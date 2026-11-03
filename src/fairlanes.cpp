@@ -13,6 +13,7 @@
 #include "fl/primitives/world_clock.hpp"
 #include "fl/regression/session.hpp"
 #include "fl/widgets/fancy_log.hpp"
+#include "fl/widgets/story_start_picker.hpp"
 
 int main(int argc, char **argv) {
   using fl::GrandCentral;
@@ -21,11 +22,14 @@ int main(int argc, char **argv) {
 
   fl::GrandCentralRunOptions opts;
   bool skip_chaos_attract = false;
+  bool story_autoplay = false;
   std::string replay_path;
 
   app.add_flag("--no-ui", opts.no_ui, "Run headless (no FTXUI screen)");
   app.add_flag("--skip-chaos-attract", skip_chaos_attract,
                "Start normal gameplay without the Chaos Attract screen");
+  app.add_flag("--story-autoplay", story_autoplay,
+               "Follow the Ruby-authored opening story route automatically");
   app.add_option("--replay", replay_path,
                  "Open and verify a combat recording in the client view");
 
@@ -98,12 +102,20 @@ int main(int argc, char **argv) {
       if (attract_exit != fl::ChaosAttractExit::Begin) {
         return 0;
       }
+      const auto story_mode = fl::widgets::choose_story_start_mode();
+      if (story_mode == fl::widgets::StoryStartMode::Cancel) return 0;
+      story_autoplay =
+          story_mode == fl::widgets::StoryStartMode::Autoplay;
     }
 
-    GrandCentral gc{8, 5, 5};
+    GrandCentral gc{1, 1, 0, true, true, std::nullopt, true, story_autoplay};
     gc.innervate_event_system();
-
     gc.main_loop(opts);
+    if (gc.sandbox_requested()) {
+      GrandCentral sandbox{8, 5, 5};
+      sandbox.innervate_event_system();
+      sandbox.main_loop(opts);
+    }
   } catch (const std::exception &ex) {
     std::cerr << "fairlanes: " << ex.what() << '\n';
     return 1;

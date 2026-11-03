@@ -19,6 +19,122 @@ module FairlanesContent
     def biomes = declarations.biomes
     def regressions = declarations.regressions
     def biome_plans = declarations.biome_plans
+    def story_events = declarations.story_events
+    def objectives = declarations.objectives
+    def dialogues = declarations.dialogues
+    def autoplay_routes = declarations.autoplay_routes
+
+    def story_content_hpp
+      event_rows = story_events.map { |event| "  Event{#{cpp_string(event.id.to_s)}, #{event.handled ? 'true' : 'false'}}," }.join("\n")
+      objective_rows = objectives.map do |objective|
+        "  Objective{#{cpp_string(objective.id.to_s)}, #{cpp_string(objective.title)}, #{cpp_string(objective.description)}, #{cpp_string(objective.revealed_by.to_s)}, #{cpp_string(objective.completed_by.to_s)}},"
+      end.join("\n")
+      definitions = dialogues.each_with_index.map do |dialogue, di|
+        choice_tables = dialogue.nodes.each_with_index.map do |node, ni|
+          rows = node[:choices].map do |choice|
+            "  Choice{#{cpp_string(choice[:id].to_s)}, #{cpp_string(choice[:label])}, #{cpp_string(choice.fetch(:event, '').to_s)}, #{cpp_string(choice[:next].to_s)}},"
+          end.join("\n")
+          "inline constexpr std::array<Choice, #{node[:choices].size}> kChoices#{di}_#{ni}{{\n#{rows}\n}};"
+        end.join("\n")
+        node_rows = dialogue.nodes.each_with_index.map do |node, ni|
+          "  Node{#{cpp_string(node[:id].to_s)}, #{cpp_string(node[:speaker])}, #{cpp_string(node[:text])}, kChoices#{di}_#{ni}},"
+        end.join("\n")
+        "#{choice_tables}\ninline constexpr std::array<Node, #{dialogue.nodes.size}> kNodes#{di}{{\n#{node_rows}\n}};"
+      end.join("\n")
+      dialogue_rows = dialogues.each_with_index.map do |dialogue, di|
+        "  Dialogue{#{cpp_string(dialogue.id.to_s)}, #{cpp_string(dialogue.location.to_s)}, #{cpp_string(dialogue.npc)}, #{cpp_string(dialogue.start.to_s)}, kNodes#{di}},"
+      end.join("\n")
+      autoplay_tables = autoplay_routes.each_with_index.map do |route, ri|
+        rows = route.steps.map do |step|
+          action = { choose_dialogue: "ChooseDialogue", return_to_town: "ReturnToTown", buy_gear: "BuyGear" }.fetch(step[:action])
+          "  AutoplayStep{#{cpp_string(step[:wait_for].to_s)}, AutoplayAction::#{action}, #{cpp_string(step.fetch(:target, '').to_s)}, #{cpp_string(step.fetch(:choice, '').to_s)}},"
+        end.join("\n")
+        "inline constexpr std::array<AutoplayStep, #{route.steps.size}> kAutoplaySteps#{ri}{{\n#{rows}\n}};"
+      end.join("\n")
+      autoplay_rows = autoplay_routes.each_with_index.map do |route, ri|
+        "  AutoplayRoute{#{cpp_string(route.id.to_s)}, kAutoplaySteps#{ri}},"
+      end.join("\n")
+      <<~CPP
+        #pragma once
+        #include <array>
+        #include <span>
+        #include <string_view>
+        namespace fl::story::generated_content {
+        struct Event { std::string_view id; bool handled; };
+        struct Objective {
+          std::string_view id, title, description, revealed_by, completed_by;
+        };
+        struct Choice { std::string_view id, label, event_id, next_node; };
+        struct Node { std::string_view id, speaker, text; std::span<const Choice> choices; };
+        struct Dialogue {
+          std::string_view id, location, npc, start_node;
+          std::span<const Node> nodes;
+        };
+        enum class AutoplayAction { ChooseDialogue, ReturnToTown, BuyGear };
+        struct AutoplayStep {
+          std::string_view wait_for;
+          AutoplayAction action;
+          std::string_view target, choice;
+        };
+        struct AutoplayRoute { std::string_view id; std::span<const AutoplayStep> steps; };
+        inline constexpr std::array<Event, #{story_events.size}> kEvents{{
+        #{event_rows}
+        }};
+        inline constexpr std::array<Objective, #{objectives.size}> kObjectives{{
+        #{objective_rows}
+        }};
+        #{definitions}
+        inline constexpr std::array<Dialogue, #{dialogues.size}> kDialogues{{
+        #{dialogue_rows}
+        }};
+        #{autoplay_tables}
+        inline constexpr std::array<AutoplayRoute, #{autoplay_routes.size}> kAutoplayRoutes{{
+        #{autoplay_rows}
+        }};
+        inline const Dialogue *find_dialogue(std::string_view id) {
+          for (const auto &dialogue : kDialogues) if (dialogue.id == id) return &dialogue;
+          return nullptr;
+        }
+        inline const Node *find_node(const Dialogue &dialogue, std::string_view id) {
+          for (const auto &node : dialogue.nodes) if (node.id == id) return &node;
+          return nullptr;
+        }
+        } // namespace fl::story::generated_content
+      CPP
+    end
+
+    def story_event_doc
+      lines = ["# Story events", "", "Generated from the Ruby story DSL. `Handled` entries must match the handwritten dispatcher.", "", "| Event ID | Handler | Dialogue emitter |", "| --- | --- | --- |"]
+      story_events.each do |event|
+        emitters = dialogues.flat_map do |dialogue|
+          dialogue.nodes.flat_map do |node|
+            node[:choices].filter_map { |choice| dialogue.id if choice[:event] == event.id }
+          end
+        end.uniq
+        lines << "| `#{event.id}` | #{event.handled ? 'Handled' : '**Unimplemented**'} | #{emitters.empty? ? '—' : emitters.map { |id| "`#{id}`" }.join(', ')} |"
+      end
+      lines << ""
+      lines << "## Dialogue events without handlers"
+      lines << ""
+      missing = story_events.reject(&:handled).select do |event|
+        dialogues.any? { |dialogue| dialogue.nodes.any? { |node| node[:choices].any? { |choice| choice[:event] == event.id } } }
+      end
+      lines.concat(missing.empty? ? ["None."] : missing.map { |event| "- `#{event.id}`" })
+      lines << ""
+      lines << "## Autoplay enabled routes"
+      lines << ""
+      autoplay_routes.each do |route|
+        lines << "### `#{route.id}`"
+        lines << ""
+        lines << "| Wait for fact | Action | Target | Choice |"
+        lines << "| --- | --- | --- | --- |"
+        route.steps.each do |step|
+          lines << "| `#{step[:wait_for]}` | `#{step[:action]}` | #{step[:target] ? "`#{step[:target]}`" : '—'} | #{step[:choice] ? "`#{step[:choice]}`" : '—'} |"
+        end
+        lines << ""
+      end
+      lines.join("\n")
+    end
 
     def biome_plan_doc
       lines = ["# Biome tower map", "",
@@ -1222,7 +1338,7 @@ module FairlanesContent
       {
         "schema_version" => 1,
         "source" => "scripts/fairlanes_content_declarations.rb",
-        "runtime_authority" => "Ruby DSL generated C++ skill, status, monster, gear, resolved tower floor, and regression setup data; handwritten C++ combat and equipment behavior",
+        "runtime_authority" => "Ruby DSL generated C++ skill, status, monster, gear, resolved tower floor, regression, objective, and dialogue data; handwritten C++ gameplay and story effects",
         "visuals" => visuals.map do |id, cpp_id|
           { "id" => id.to_s, "cpp_id" => cpp_id }
         end,
@@ -1287,6 +1403,31 @@ module FairlanesContent
           { "id" => plan.id.to_s, "cycle" => plan.cycle.to_s,
             "order" => plan.order, "monsters" => plan.monsters.map(&:to_s) }
         end,
+        "story_events" => story_events.map { |event| { "id" => event.id.to_s, "handled" => event.handled } },
+        "objectives" => objectives.map do |objective|
+          { "id" => objective.id.to_s, "title" => objective.title,
+            "description" => objective.description,
+            "revealed_by" => objective.revealed_by.to_s,
+            "completed_by" => objective.completed_by.to_s }
+        end,
+        "dialogues" => dialogues.map do |dialogue|
+          { "id" => dialogue.id.to_s, "location" => dialogue.location.to_s,
+            "npc" => dialogue.npc, "start" => dialogue.start.to_s,
+            "nodes" => dialogue.nodes.map do |node|
+              { "id" => node[:id].to_s, "speaker" => node[:speaker], "text" => node[:text],
+                "choices" => node[:choices].map do |choice|
+                  { "id" => choice[:id].to_s, "label" => choice[:label],
+                    "event" => choice[:event]&.to_s, "next" => choice[:next].to_s }
+                end }
+            end }
+        end,
+        "autoplay_routes" => autoplay_routes.map do |route|
+          { "id" => route.id.to_s,
+            "steps" => route.steps.map do |step|
+              { "wait_for" => step[:wait_for].to_s, "action" => step[:action].to_s,
+                "target" => step[:target]&.to_s, "choice" => step[:choice]&.to_s }
+            end }
+        end,
         "regressions" => regressions.map do |scenario|
           { "id" => scenario.id.to_s,
             "encounter" => { "biome" => scenario.encounter[:biome].to_s,
@@ -1311,7 +1452,7 @@ module FairlanesContent
         "title" => "Fairlanes Generated Content Manifest",
         "type" => "object",
         "additionalProperties" => false,
-        "required" => %w[schema_version source runtime_authority visuals statuses skills random_combat_skills monsters gear encounter_pools biomes biome_plans regressions],
+        "required" => %w[schema_version source runtime_authority visuals statuses skills random_combat_skills monsters gear encounter_pools biomes biome_plans story_events objectives dialogues autoplay_routes regressions],
         "properties" => {
           "schema_version" => { "const" => 1 },
           "source" => string_type,
@@ -1386,6 +1527,24 @@ module FairlanesContent
             "id" => string_type, "cycle" => { "enum" => CYCLES.map(&:to_s) },
             "order" => { "type" => "integer", "minimum" => 1, "maximum" => 5 },
             "monsters" => { "type" => "array", "items" => string_type }
+          }),
+          "story_events" => array_schema(%w[id handled], {
+            "id" => string_type, "handled" => { "type" => "boolean" }
+          }),
+          "objectives" => array_schema(%w[id title description revealed_by completed_by], {
+            "id" => string_type, "title" => string_type,
+            "description" => string_type, "revealed_by" => string_type,
+            "completed_by" => string_type
+          }),
+          "dialogues" => array_schema(%w[id location npc start nodes], {
+            "id" => string_type, "location" => string_type,
+            "npc" => string_type, "start" => string_type,
+            "nodes" => { "type" => "array", "items" => { "type" => "object" } }
+          }),
+          "autoplay_routes" => array_schema(%w[id steps], {
+            "id" => string_type,
+            "steps" => { "type" => "array", "minItems" => 1,
+                         "items" => { "type" => "object" } }
           }),
           "regressions" => array_schema(%w[id encounter party seeds beat_cap variants], {
             "id" => string_type, "encounter" => { "type" => "object" },

@@ -5,7 +5,8 @@ require "fairlanes_content/models"
 module FairlanesContent
   class DeclarationSet
     attr_reader :visuals, :skills, :random_combat_skills, :monsters, :statuses,
-                :gears, :encounter_pools, :biomes, :regressions, :biome_plans
+                :gears, :encounter_pools, :biomes, :regressions, :biome_plans,
+                :story_events, :objectives, :dialogues, :autoplay_routes
 
     def self.load_file(path)
       new.tap { |set| set.load_file(path) }
@@ -22,12 +23,18 @@ module FairlanesContent
       @biomes = []
       @regressions = []
       @biome_plans = []
+      @story_events = []
+      @objectives = []
+      @dialogues = []
+      @autoplay_routes = []
     end
 
     def load_file(path)
       instance_eval(File.read(path), path)
       regression_path = File.join(File.dirname(path), "fairlanes_regression_declarations.rb")
       instance_eval(File.read(regression_path), regression_path) if File.file?(regression_path)
+      story_path = File.join(File.dirname(path), "fairlanes_story_declarations.rb")
+      instance_eval(File.read(story_path), story_path) if File.file?(story_path)
       freeze_records
       self
     end
@@ -143,6 +150,24 @@ module FairlanesContent
                                   monsters: monsters)
     end
 
+    def story_event(id, handled: false)
+      story_events << StoryEvent.new(id: id, handled: handled)
+    end
+
+    def objective(id, title:, description:, revealed_by:, completed_by:)
+      objectives << Objective.new(id: id, title: title, description: description,
+                                  revealed_by: revealed_by, completed_by: completed_by)
+    end
+
+    def dialogue(id, location:, npc:, start:, nodes:)
+      dialogues << Dialogue.new(id: id, location: location, npc: npc,
+                                start: start, nodes: nodes)
+    end
+
+    def autoplay_route(id, steps:)
+      autoplay_routes << AutoplayRoute.new(id: id, steps: steps)
+    end
+
     private
 
     def cpp_name(id)
@@ -172,6 +197,14 @@ module FairlanesContent
       regressions.freeze
       biome_plans.each(&:freeze)
       biome_plans.freeze
+      story_events.each(&:freeze)
+      story_events.freeze
+      objectives.each(&:freeze)
+      objectives.freeze
+      dialogues.each(&:freeze)
+      dialogues.freeze
+      autoplay_routes.each(&:freeze)
+      autoplay_routes.freeze
     end
   end
 end

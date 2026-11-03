@@ -12,6 +12,7 @@
 #include "fl/fwd.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/discovery_journal.hpp"
+#include "fl/primitives/objective_system.hpp"
 #include "fl/primitives/raid_milestones.hpp"
 #include "fl/primitives/world_clock.hpp"
 #include "fl/widgets/important_notice_overlay.hpp"
@@ -28,13 +29,15 @@ public:
                 std::deque<fl::primitives::AccountData> &accounts,
                 FancyLog &console_log, fl::primitives::WorldClock &world_clock,
                 const fl::primitives::DiscoveryJournal *discoveries = nullptr,
-                fl::events::AchievementBus *achievements = nullptr);
+                fl::events::AchievementBus *achievements = nullptr,
+                fl::primitives::ObjectiveSystem *objectives = nullptr);
 
   bool OnEvent(ftxui::Event event) override;
   ftxui::Element Render() override;
   ftxui::Component ActiveChild() override;
 
   bool quit_requested() const { return quit_requested_; }
+  bool sandbox_requested() const { return sandbox_requested_; }
 
   void toggle_console();
   void set_full_open();
@@ -43,6 +46,8 @@ public:
   void show_party_battle(std::size_t account_index, std::size_t party_index);
   void show_party(std::size_t account_index, std::size_t party_index);
   void show_effect_gallery();
+  void show_objectives();
+  void show_village();
   void show_libram(std::optional<fl::skills::SkillId> skill = std::nullopt);
   void
   show_bestiary(std::optional<fl::monster::MonsterKind> monster = std::nullopt);
@@ -56,6 +61,7 @@ private:
     effect_gallery,
     libram,
     bestiary,
+    story,
   };
 
   void replace_screen(ftxui::Component screen);
@@ -78,12 +84,16 @@ private:
   fl::primitives::WorldClock *world_clock_{nullptr};
   UiCommandController commands_;
   const fl::primitives::DiscoveryJournal *discoveries_;
+  fl::primitives::ObjectiveSystem *objectives_{nullptr};
   std::optional<fl::monster::MonsterKind> return_monster_;
   ActiveScreen active_screen_kind_{ActiveScreen::account_battle};
   std::optional<std::pair<entt::entity, std::uint64_t>> shown_raid_;
   bool keybind_help_open_{false};
   bool quit_confirmation_open_{false};
   bool quit_requested_{false};
+  bool sandbox_confirmation_open_{false};
+  bool autoplay_confirmation_open_{false};
+  bool sandbox_requested_{false};
   bool help_hint_collapsed_{false};
   bool normal_combat_resumed_{false};
   bool fps_initialized_{false};
@@ -102,6 +112,8 @@ private:
   std::vector<fl::events::ScopedPartyListener> combat_started_subs_;
   std::vector<fl::events::ScopedPartyListener> milestone_subs_;
   fl::events::ScopedAchievementListener achievement_sub_;
+  fl::events::ScopedStoryListener objective_sub_;
+  fl::events::ScopedStoryListener autoplay_sub_;
 };
 
 } // namespace fl::widgets

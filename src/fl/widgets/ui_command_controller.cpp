@@ -276,6 +276,10 @@ void UiCommandController::set_spawn_visitor(SpawnVisitor callback) {
   spawn_visitor_ = std::move(callback);
 }
 
+void UiCommandController::set_start_sandbox(ShowEffectGallery callback) {
+  start_sandbox_ = std::move(callback);
+}
+
 void UiCommandController::handle(std::string_view command) {
   const auto owned = trim_copy(command);
   const auto words = split_words(owned);
@@ -284,6 +288,12 @@ void UiCommandController::handle(std::string_view command) {
   }
 
   const auto verb = words[0];
+
+  if (verb == "sandbox") {
+    if (start_sandbox_) start_sandbox_();
+    else write("The full-roster sandbox is already active.");
+    return;
+  }
 
   if (verb == "help") {
     show_help(words.size() >= 2 ? words[1] : std::string_view{});

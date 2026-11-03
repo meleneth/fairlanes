@@ -75,7 +75,9 @@ TEST_CASE("Generated special gear uses the existing EquipmentBuilder fields",
   using fl::loot::generated_content::GearId;
   const auto table = fl::loot::global_loot_table();
   const auto specials = table.special_items();
-  REQUIRE(specials.size() == 6);
+  REQUIRE(specials.size() == 7);
+  REQUIRE(fl::loot::generated_content::definition(GearId::VillageGuardHide)
+              .weight.value == 0);
 
   const auto &boots = fl::loot::generated_content::definition(GearId::BootsOfDampAuthority);
   const auto &cape = fl::loot::generated_content::definition(GearId::MouseNibbledCape);

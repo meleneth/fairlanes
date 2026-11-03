@@ -87,33 +87,13 @@ void GrandCentral::_create_initial_accounts() {
           ")");
 
       for (std::size_t m = 0; m < num_members_per_party_; ++m) {
-        // 3) Create the member IN the party’s owning container first
-        auto &member = party_data.members().emplace_back(
-            reg_.create(), hero_names[player_index]);
-
-        party_data.log().append_markup(
-            "[blue](Player initialized with ID " +
-            std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
-                member.member_id())) +
-            ") as [player_name](" + hero_names[player_index] + ")");
-
-        reg_.emplace<fl::ecs::components::Stats>(member.member_id(),
-                                                 hero_names[player_index]);
-        member.hook_level_progression(reg_);
-        auto ectx = party_data.loop_ctx().entity_context(member.member_id());
-        reg_.emplace<fl::ecs::components::TrackXP>(member.member_id(),
-                                                   std::move(ectx),
-                                                   /*starting_xp=*/0);
-        auto ectx2 = party_data.loop_ctx().entity_context(member.member_id());
-
-        reg_.emplace<fl::ecs::components::PartyMember>(
-            member.member_id(), std::move(ectx2), member.name(),
-            party_data.party_id(), member);
+        party_data.recruit_member(hero_names[player_index]);
         ++player_index;
       }
 
-      fl::ecs::systems::SpecialFestivalEvent::grant_starting_drops(
-          party_data.party_ctx());
+      if (!story_mode_ || !party_data.members().empty())
+        fl::ecs::systems::SpecialFestivalEvent::grant_starting_drops(
+            party_data.party_ctx());
     }
   }
 
@@ -125,8 +105,10 @@ GrandCentral::GrandCentral(uint8_t num_accounts,
                            uint8_t num_parties_per_account,
                            uint8_t num_members_per_party,
                            bool record_discoveries, bool record_progress,
-                           std::optional<std::uint64_t> gameplay_seed)
-    : record_progress_(record_progress), num_accounts_(num_accounts),
+                           std::optional<std::uint64_t> gameplay_seed,
+                           bool story_mode, bool story_autoplay)
+    : record_progress_(record_progress), story_mode_(story_mode),
+      story_autoplay_(story_autoplay), num_accounts_(num_accounts),
       num_parties_per_account_(num_parties_per_account),
       num_members_per_party_(num_members_per_party), reg_(),
       rng_(gameplay_seed), log_bus_(),
@@ -135,6 +117,10 @@ GrandCentral::GrandCentral(uint8_t num_accounts,
           log_bus_, *game_log_, fl::primitives::LogLevel::trace)) {
   fl::monster::register_all_monsters();
   _create_initial_accounts();
+  if (story_mode && !accounts_.empty())
+    objectives_ = std::make_unique<fl::primitives::ObjectiveSystem>(
+        account_context(0));
+  if (objectives_) objectives_->request_autoplay(story_autoplay_);
   if (record_progress_) {
     for (auto &account : accounts_) raid_milestones_.bind(account.raid_bus(), account.account_id());
   }
@@ -380,6 +366,9 @@ void GrandCentral::innervate_event_system(bool enable_visitors) {
     account.hook_to_beat(account_context(account), gc_beat_bus_, world_clock_,
                          enable_visitors);
   }
+  if (objectives_)
+    story_autoplay_sub_ = gc_beat_bus_.subscribe<seerin::Beat>(
+        [this](const seerin::Beat &) { objectives_->advance_autoplay(); });
 }
 
 void GrandCentral::build_ui() {
@@ -389,7 +378,13 @@ void GrandCentral::build_ui() {
 
   root_component_ = ftxui::Make<fl::widgets::RootComponent>(
       fl::context::AccountCtx{reg_, rng_, account}, accounts_, *game_log_,
-      world_clock_, &discoveries_, &raid_milestones_.bus());
+      world_clock_, &discoveries_, &raid_milestones_.bus(), objectives_.get());
+}
+
+bool GrandCentral::sandbox_requested() const {
+  const auto *root = dynamic_cast<const fl::widgets::RootComponent *>(
+      root_component_.get());
+  return root && root->sandbox_requested();
 }
 void GrandCentral::resolve_visuals_for_render() {
   ZoneScopedN("ResolveVisualsForRender");

@@ -22,15 +22,23 @@ public:
   };
 
   void enqueue(Notice notice, Clock::time_point now = Clock::now());
+  void set_auto_acknowledge(bool enabled,
+                            Clock::time_point now = Clock::now()) noexcept {
+    if (enabled && !auto_acknowledge_ && !queue_.empty()) shown_at_ = now;
+    auto_acknowledge_ = enabled;
+  }
   bool active() const noexcept { return !queue_.empty(); }
   void dismiss(Clock::time_point now = Clock::now());
+  void tick(Clock::time_point now = Clock::now());
   ftxui::Element render(int viewport_height,
                         Clock::time_point now = Clock::now()) const;
 
 private:
   static constexpr auto kRiseDuration = std::chrono::milliseconds{900};
+  static constexpr auto kAutoAcknowledgeDelay = std::chrono::seconds{60};
   std::deque<Notice> queue_;
   Clock::time_point shown_at_{};
+  bool auto_acknowledge_{false};
 };
 
 } // namespace fl::widgets

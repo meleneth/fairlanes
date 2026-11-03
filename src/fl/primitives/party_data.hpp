@@ -100,6 +100,17 @@ public:
   bool tower_choice_pending() const noexcept { return tower_choice_pending_; }
   // ---- behavior ----
   void advance_beat();
+  entt::entity recruit_member(std::string name);
+  void enable_story_starter_fights() noexcept { story_starter_fights_remaining_ = 2; }
+  int story_starter_fights_remaining() const noexcept { return story_starter_fights_remaining_; }
+  bool story_shop_pending() const noexcept { return story_shop_pending_; }
+  void finish_story_shop() noexcept { story_shop_pending_ = false; }
+  int darrin_marks() const noexcept { return darrin_marks_; }
+  bool spend_darrin_marks(int amount) noexcept {
+    if (amount < 0 || darrin_marks_ < amount) return false;
+    darrin_marks_ -= amount;
+    return true;
+  }
   void hook_to_beat(seerin::BeatBus &gc_beat_bus);
 
   bool needs_town();
@@ -194,6 +205,9 @@ private:
   int plains_floor_{1};
   bool plains_unlocked_{false};
   bool tower_choice_pending_{false};
+  int story_starter_fights_remaining_{0};
+  bool story_shop_pending_{false};
+  int darrin_marks_{0};
   bool plains_reward_awarded_{false};
 
   seerin::BeatBus party_beat_bus_{};
@@ -202,6 +216,7 @@ private:
   fl::events::ScopedPartyListener loot_drop_sub_{};
   fl::events::ScopedPartyListener manual_equipment_sub_{};
   fl::events::ScopedPartyListener tower_progress_sub_{};
+  fl::events::ScopedPartyListener story_starter_sub_{};
   int town_penalty_beats_remaining_{0};
 
   struct PendingLearnedSkill {

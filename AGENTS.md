@@ -612,6 +612,26 @@ right. Space or Enter acknowledges one notice and is consumed before normal
 input handling. The floor-9 Woodland clear currently emits `BiomeUnlocked` for
 Origin Plains; cycle unlock producers are future work.
 
+Normal client startup now uses the first story slice: a day-zero Visitor defeats
+an empty party, revealing the Ruby-authored **Recruit a hero** objective. `o`
+opens Objectives and `v` opens the Village/pub/dialogue screen when normal keys
+are active. Generated `fl/generated/story_content.hpp` holds typed objective,
+dialogue, and event tables; `docs/tour/generated/story-events.md` lists declared
+events without handlers. `ObjectiveSystem` owns session-wide facts and listens
+to raid and party events; dialogue choices emit `StoryFact` on its bus. The first
+two mouse victories fund the village hide purchase, which uses normal loot and
+equip events and reveals the second volunteer. The `sandbox` console command
+confirms a fresh 8x5x5 setup and warns that story progress cannot be recovered.
+The Ruby story DSL also emits an `origin_opening` autoplay route with typed wait
+facts and actions. `--story-autoplay` follows those steps after account beats;
+manual play remains the default. Keep the generated route aligned with the
+handwritten Objective System and test it on production beats.
+Autoplay also auto-acknowledges each queued achievement-style notice after
+60 seconds of wall time; manual Space/Enter acknowledgement remains available.
+Leaving attract mode with Enter presents a manual-story/autoplay picker with a
+toggle hint. `a` toggles story autoplay during normal input. `--replay` returns
+through its dedicated recording path before the picker or story game is built.
+
 Collective victory calls `RaidLootSystem` once, granting two exclusive collectible
 `RaidTrinket` entities per participating party before `RaidLootAwarded`. Wiped
 parties receive the same allocation. These items currently have no equipment slot
