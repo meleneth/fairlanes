@@ -8,6 +8,7 @@
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/ecs/systems/combat_status_system.hpp"
+#include "fl/ecs/systems/effective_combat_stats.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/loot/equipment_slot.hpp"
 #include "fl/lospec500.hpp"
@@ -37,29 +38,17 @@ int TakeDamage::commit(fl::context::AttackCtx &ctx,
   const int incoming_total = ctx.damage().physical + ctx.damage().magical +
                              ctx.damage().fire + ctx.damage().ice +
                              ctx.damage().lightning;
-  auto resistance = defender_stats.resistances_;
-  if (const auto *member =
-          ctx.reg().try_get<fl::ecs::components::PartyMember>(ctx.defender())) {
-    for (const auto slot : fl::loot::kEquipmentSlots) {
-      const auto item = member->closet().equipped_item(slot);
-      if (ctx.reg().valid(item)) {
-        if (const auto *equipment =
-                ctx.reg().try_get<fl::ecs::components::Equipment>(item)) {
-          resistance += equipment->resistances();
-        }
-      }
-    }
-  }
+  const auto effective = effective_combat_stats(ctx.reg(), ctx.defender());
   // Channel resistance applies first to every landed damage packet; status
   // modifiers then run, followed by flat Armor for direct physical hits.
-  auto adjusted = fl::primitives::apply_resistance(ctx.damage(), resistance);
+  auto adjusted = fl::primitives::apply_resistance(ctx.damage(), effective.resistances);
   fl::ecs::systems::CombatStatusSystem::apply_damage_modifiers(ctx, adjusted);
   // Flat Armor follows percentage status modifiers and affects only the
   // physical channel of direct hits. Scripted and periodic packets bypass it.
   if (ctx.hit_kind() == fl::primitives::HitKind::Direct &&
       adjusted.physical > 0) {
     adjusted.physical =
-        std::max(0, adjusted.physical - std::max(0, defender_stats.armor_));
+        std::max(0, adjusted.physical - std::max(0, effective.armor));
   }
   int total = adjusted.physical + adjusted.magical + adjusted.fire +
               adjusted.ice + adjusted.lightning;

@@ -12,6 +12,7 @@
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/systems/effective_combat_stats.hpp"
 #include "fl/lospec500.hpp"
 #include "fl/skills/skill.hpp"
 #include "fl/widgets/equipment_label.hpp"
@@ -160,10 +161,11 @@ ftxui::Element PlayerDetailsPane::Render() {
   lines.push_back(separator());
 
   if (stats) {
+    const auto effective = fl::ecs::systems::effective_combat_stats(reg_, member_id);
     lines.push_back(text("HP " + std::to_string(stats->hp_) + "/" +
-                         std::to_string(stats->max_hp_)));
-    lines.push_back(text("Attack " + std::to_string(stats->attack_) +
-                         "   Armor " + std::to_string(stats->armor_)));
+                         std::to_string(effective.max_hp)));
+    lines.push_back(text("Attack " + std::to_string(effective.attack) +
+                         "   Armor " + std::to_string(effective.armor)));
   } else {
     lines.push_back(text("No stats."));
   }

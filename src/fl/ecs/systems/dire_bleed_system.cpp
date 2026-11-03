@@ -8,6 +8,7 @@
 #include "fl/ecs/components/dire_bleed.hpp"
 #include "fl/ecs/components/hp_bar_color_override.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/systems/effective_combat_stats.hpp"
 #include "fl/ecs/systems/status_effect_application.hpp"
 #include "fl/ecs/systems/status_effect_lifetime.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
@@ -37,7 +38,8 @@ void DireBleedSystem::apply(fl::context::EncounterCtx &party_ctx,
     return;
   }
 
-  const int damage_per_tick = std::max(1, target_stats->max_hp_ / 10);
+  const int damage_per_tick = std::max(
+      1, effective_combat_stats(reg, target).max_hp / 10);
   replace_status_effect<fl::ecs::components::DireBleed>(
       party_ctx, target,
       [](fl::context::EncounterCtx &ctx, entt::entity status_target) {

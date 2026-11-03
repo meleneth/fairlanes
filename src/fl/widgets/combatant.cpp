@@ -12,6 +12,7 @@
 #include "fl/ecs/components/poison.hpp"
 #include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/systems/effective_combat_stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/ecs/systems/combatant_status_visuals.hpp"
@@ -530,16 +531,17 @@ ftxui::Element Combatant::Render() {
   }
 
   auto &stats = reg.get<Stats>(entity);
+  const int max_hp = fl::ecs::systems::effective_combat_stats(reg, entity).max_hp;
   auto &level = reg.get<TrackXP>(entity);
 
   constexpr int bar_width = 20;
   const float hp_fill =
-      stats.max_hp_ > 0
-          ? static_cast<float>(stats.hp_) / static_cast<float>(stats.max_hp_)
+      max_hp > 0
+          ? static_cast<float>(stats.hp_) / static_cast<float>(max_hp)
           : 0.0f;
   ftxui::Element hp_line = labeled_fill_bar(
       " HP", clamp_fill(hp_fill), bar_width,
-      std::to_string(stats.hp_) + "/" + std::to_string(stats.max_hp_));
+      std::to_string(stats.hp_) + "/" + std::to_string(max_hp));
   if (auto *hp_color = reg.try_get<HPBarColorOverride>(entity);
       hp_color != nullptr && stats.is_alive()) {
     hp_line = hp_line | ftxui::color(hp_color->color);
@@ -581,7 +583,7 @@ ftxui::Element Combatant::Render() {
     border = ftxui::vbox({
         ftxui::text(stats.name_.substr(0, 12)) | ftxui::color(ftxui::Color::BlueLight),
         ftxui::text(stats.is_alive() ? "HP " + std::to_string(stats.hp_) + "/" +
-                                         std::to_string(stats.max_hp_) : "DEAD")});
+                                         std::to_string(max_hp) : "DEAD")});
   }
 
   if (auto *co = reg.try_get<ResolvedColorOverride>(entity)) {

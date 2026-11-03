@@ -370,6 +370,34 @@ void UiCommandController::handle(std::string_view command) {
     return;
   }
 
+  if (verb == "tower") {
+    if (!accounts_ || account_index_ >= accounts_->size() ||
+        party_index_ >= accounts_->at(account_index_).parties().size()) {
+      write("No selected party.");
+      return;
+    }
+    auto &party = accounts_->at(account_index_).parties().at(party_index_);
+    if (words.size() == 1 || words[1] == "status") {
+      if (const auto route = party.tower_route())
+        write("tower " + std::string(route->biome_id) + " floor " +
+              std::to_string(route->floor));
+      else
+        write("tower route inactive");
+      write(party.plains_unlocked() ? "Plains unlocked" : "Plains unlocks after Woodland floor 9");
+      if (party.tower_choice_pending())
+        write("Choose tower plains for the detour or tower woodland for floor 10.");
+      return;
+    }
+    const auto biome = words[1] == "woodland" ? "origin_woodland_tower" :
+                       words[1] == "plains" ? "origin_plains_tower" : "";
+    if (!party.select_tower(biome)) {
+      write("unknown or locked tower; use tower woodland or tower plains after Woodland floor 9");
+      return;
+    }
+    write("selected " + std::string(biome) + " for the next encounter");
+    return;
+  }
+
   if (verb == "render" || verb == "terminal" || verb == "termsize") {
     if (words.size() < 2) {
       write(current_render_target_line());
@@ -508,7 +536,7 @@ void UiCommandController::show_help(std::string_view topic) {
   if (topic.empty()) {
     write("current account: " + std::to_string(account_index_));
     write("current party: " + std::to_string(party_index_));
-    write("commands: screen, list, debug, raid, account, party, render, "
+    write("commands: screen, list, debug, raid, tower, account, party, render, "
           "overdrive, help");
     write("try: screen effects for the visual effect gallery");
     write("try: help <command>");
@@ -551,6 +579,13 @@ void UiCommandController::show_help(std::string_view topic) {
 
   if (topic == "raid") {
     write("raid spawn: summon a new Visitor for the selected account");
+    return;
+  }
+
+  if (topic == "tower") {
+    write("tower woodland: start or return to the Woodland tower");
+    write("tower plains: enter biome 2 after clearing Woodland floor 9");
+    write("tower status: show the selected party's current tower and floor");
     return;
   }
 

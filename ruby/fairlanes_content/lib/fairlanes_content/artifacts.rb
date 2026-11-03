@@ -47,6 +47,7 @@ module FairlanesContent
         "fl/generated/monster_registration.cpp" => renderer.monster_registration_cpp,
         "fl/generated/gear_content.hpp" => renderer.gear_content_hpp,
         "fl/generated/floor_content.hpp" => renderer.floor_content_hpp,
+        "fl/generated/regression_content.hpp" => renderer.regression_content_hpp,
         "decal_content_balance.md" => renderer.balance_report,
         "floor_manifest.md" => renderer.floor_manifest,
         "effect_gallery.md" => renderer.effect_gallery,
@@ -82,6 +83,27 @@ module FairlanesContent
 
     def generated_doc_files
       generated_docs.keys
+    end
+
+    def generated_brainstorms
+      { "biome-tower-map.md" => renderer.biome_plan_doc }
+    end
+
+    def write_brainstorms!(dir)
+      FileUtils.mkdir_p(dir)
+      generated_brainstorms.each do |name, contents|
+        path = File.join(dir, name)
+        File.binwrite(path, contents) unless File.exist?(path) && File.read(path) == contents
+      end
+    end
+
+    def check_brainstorms!(dir)
+      errors = generated_brainstorms.filter_map do |name, contents|
+        path = File.join(dir, name)
+        "#{name} is missing or stale" unless File.exist?(path) && File.read(path) == contents
+      end
+      raise StaleArtifactsError, errors unless errors.empty?
+      true
     end
 
     def fl_source_files
@@ -169,6 +191,8 @@ module FairlanesContent
         gear
         encounter_pools
         biomes
+        biome_plans
+        regressions
       ]
       required.each { |key| errors << "manifest missing #{key}" unless manifest.key?(key) }
 
@@ -183,6 +207,8 @@ module FairlanesContent
       errors << "manifest gear must be an array" unless manifest["gear"].is_a?(Array)
       errors << "manifest encounter_pools must be an array" unless manifest["encounter_pools"].is_a?(Array)
       errors << "manifest biomes must be an array" unless manifest["biomes"].is_a?(Array)
+      errors << "manifest biome_plans must be an array" unless manifest["biome_plans"].is_a?(Array)
+      errors << "manifest regressions must be an array" unless manifest["regressions"].is_a?(Array)
 
       validate_manifest_skills(manifest, errors)
       validate_manifest_statuses(manifest, errors)

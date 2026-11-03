@@ -17,6 +17,129 @@ module FairlanesContent
     def gears = declarations.gears
     def encounter_pools = declarations.encounter_pools
     def biomes = declarations.biomes
+    def regressions = declarations.regressions
+    def biome_plans = declarations.biome_plans
+
+    def biome_plan_doc
+      lines = ["# Biome tower map", "",
+               "Generated from scripts/fairlanes_content_declarations.rb. Edit the Ruby DSL, then regenerate this map.",
+               "Each Cycle has five ordered 100-floor tower biomes. `Playable` means the biome has a resolved floor table; `Planned` means its tower content still needs authoring.", ""]
+      CYCLES.each do |cycle|
+        lines << "## #{cycle.to_s.capitalize}"
+        lines << ""
+        biome_plans.select { |plan| plan.cycle == cycle }.sort_by(&:order).each do |plan|
+          playable = biomes.any? { |biome| biome.id == plan.id }
+          lines << "### #{plan.order}. `#{plan.id}` — #{playable ? 'Playable' : 'Planned'}"
+          lines << ""
+          lines << "| Monster ID | Current skills | Current HP | Current runtime pool |"
+          lines << "| --- | --- | ---: | --- |"
+          plan.monsters.each do |id|
+            monster = monsters.find { |entry| entry.id == id }
+            lines << "| `#{id}` | #{monster.known_skills.map { |skill| "`#{skill}`" }.join(', ')} | #{monster.hp} | `#{monster.pool}` |"
+          end
+          lines << ""
+        end
+      end
+      lines << "## Declared monsters without a biome"
+      lines << ""
+      assigned = biome_plans.flat_map(&:monsters)
+      CYCLES.each do |cycle|
+        missing = monsters.select { |monster| monster.cycle == cycle && !assigned.include?(monster.id) }
+        lines << "### #{cycle.to_s.capitalize}"
+        lines << ""
+        lines << "| Monster ID | Current skills | Pool |"
+        lines << "| --- | --- | --- |"
+        missing.each do |monster|
+          lines << "| `#{monster.id}` | #{monster.known_skills.map { |skill| "`#{skill}`" }.join(', ')} | `#{monster.pool}` |"
+        end
+        lines << "| — | None | — |" if missing.empty?
+        lines << ""
+      end
+      lines << "## Declared skills without a monster"
+      lines << ""
+      used = monsters.flat_map(&:known_skills).uniq
+      unused = skills.reject { |skill| used.include?(skill.id) }
+      lines << (unused.empty? ? "None." : unused.map { |skill| "- `#{skill.id}`" }.join("\n"))
+      lines << ""
+      lines << "Monster skills and HP above are the current Ruby declarations, not future balance promises."
+      lines << ""
+      lines.join("\n")
+    end
+
+    def regression_content_hpp
+      definitions = regressions.each_with_index.map do |scenario, index|
+        members = scenario.party.map do |member|
+          "  MemberSetup{#{member[:hp]}, #{member[:attack]}, #{member[:armor]}, #{resistance_cpp(member.fetch(:resistances, {}))}, fl::skills::SkillId::#{skills.find { |skill| skill.id == member[:skill] }.cpp_id}, ActionPolicy::SingleEquippedSkill},"
+        end.join("\n")
+        seeds = scenario.seeds.join(", ")
+        variants = scenario.variants.map do |variant|
+          wins = variant[:expected_wins]
+          "  Variant{#{cpp_string(variant[:id].to_s)}, fl::loot::generated_content::GearId::#{camel(variant[:equipped_item])}, #{wins ? wins.begin : 0}, #{wins ? wins.end : 0}, #{wins ? 'true' : 'false'}},"
+        end.join("\n")
+        <<~CPP
+          inline constexpr std::array<MemberSetup, #{scenario.party.size}> kMembers#{index}{{
+          #{members}
+          }};
+          inline constexpr std::array<std::uint64_t, #{scenario.seeds.size}> kSeeds#{index}{{#{seeds}}};
+          inline constexpr std::array<Variant, #{scenario.variants.size}> kVariants#{index}{{
+          #{variants}
+          }};
+        CPP
+      end.join("\n")
+      rows = regressions.each_with_index.map do |scenario, index|
+        "  Scenario{#{cpp_string(scenario.id.to_s)}, #{cpp_string(scenario.encounter[:biome].to_s)}, #{scenario.encounter[:floor]}, kMembers#{index}, kSeeds#{index}, #{scenario.beat_cap}, kVariants#{index}},"
+      end.join("\n")
+      <<~CPP
+        #pragma once
+        #include <array>
+        #include <cstdint>
+        #include <span>
+        #include <string_view>
+        #include "fl/generated/gear_content.hpp"
+        #include "fl/primitives/damage.hpp"
+        #include "fl/skills/skill.hpp"
+
+        namespace fl::regression::generated_content {
+        enum class ActionPolicy { SingleEquippedSkill };
+        struct MemberSetup {
+          int hp;
+          int attack;
+          int armor;
+          fl::primitives::Resistances resistances;
+          fl::skills::SkillId skill;
+          ActionPolicy policy;
+        };
+        struct Variant {
+          std::string_view id;
+          fl::loot::generated_content::GearId equipped_item;
+          int min_wins;
+          int max_wins;
+          bool asserted;
+        };
+        struct Scenario {
+          std::string_view id;
+          std::string_view biome_id;
+          int floor;
+          std::span<const MemberSetup> party;
+          std::span<const std::uint64_t> seeds;
+          std::uint64_t beat_cap;
+          std::span<const Variant> variants;
+        };
+        #{definitions}
+        inline constexpr std::array<Scenario, #{regressions.size}> kScenarios{{
+        #{rows}
+        }};
+        inline const Scenario *find(std::string_view id) {
+          for (const auto &scenario : kScenarios) if (scenario.id == id) return &scenario;
+          return nullptr;
+        }
+        inline const Variant *find_variant(const Scenario &scenario, std::string_view id) {
+          for (const auto &variant : scenario.variants) if (variant.id == id) return &variant;
+          return nullptr;
+        }
+        } // namespace fl::regression::generated_content
+      CPP
+    end
 
     def resistance_cpp(values)
       channels = %i[physical magical fire ice lightning]
@@ -40,6 +163,9 @@ module FairlanesContent
               .name = #{cpp_string(gear.display)},
               .unique_id = #{cpp_string(gear.id.to_s)},
               .resistances = #{resistance_cpp(gear.modifiers.fetch(:resistances, {}))},
+              .attack = #{gear.modifiers.fetch(:attack, 0)},
+              .armor = #{gear.modifiers.fetch(:armor, 0)},
+              .max_hp = #{gear.modifiers.fetch(:max_hp, 0)},
           }},
         CPP
       end.join
@@ -445,16 +571,27 @@ module FairlanesContent
 
     def skill_ids_hpp
       rows = skills.map { |skill| "  #{skill.cpp_id}," }.join("\n")
+      stable_ids = skills.map do |skill|
+        "  case SkillId::#{skill.cpp_id}: return #{cpp_string(skill.id.to_s)};"
+      end.join("\n")
 
       <<~CPP
         // Generated by scripts/fairlanes_content_codegen.rb. Do not edit by hand.
         #pragma once
+        #include <string_view>
 
         namespace fl::skills {
 
         enum class SkillId {
         #{rows}
         };
+
+        inline constexpr std::string_view stable_id(SkillId id) noexcept {
+          switch (id) {
+        #{stable_ids}
+          }
+          return "unknown";
+        }
 
         } // namespace fl::skills
       CPP
@@ -1085,7 +1222,7 @@ module FairlanesContent
       {
         "schema_version" => 1,
         "source" => "scripts/fairlanes_content_declarations.rb",
-        "runtime_authority" => "Ruby DSL generated C++ skill, status, monster, gear, and resolved tower floor data; handwritten C++ combat and equipment behavior",
+        "runtime_authority" => "Ruby DSL generated C++ skill, status, monster, gear, resolved tower floor, and regression setup data; handwritten C++ combat and equipment behavior",
         "visuals" => visuals.map do |id, cpp_id|
           { "id" => id.to_s, "cpp_id" => cpp_id }
         end,
@@ -1145,6 +1282,21 @@ module FairlanesContent
               { "id" => floor[:id], "floor" => floor[:floor], "source" => floor[:source],
                 "lineup" => floor[:lineup].map(&:to_s) }
             end }
+        end,
+        "biome_plans" => biome_plans.map do |plan|
+          { "id" => plan.id.to_s, "cycle" => plan.cycle.to_s,
+            "order" => plan.order, "monsters" => plan.monsters.map(&:to_s) }
+        end,
+        "regressions" => regressions.map do |scenario|
+          { "id" => scenario.id.to_s,
+            "encounter" => { "biome" => scenario.encounter[:biome].to_s,
+                             "floor" => scenario.encounter[:floor] },
+            "party" => scenario.party.map { |member| member.transform_values { |value| value.is_a?(Symbol) ? value.to_s : value } },
+            "seeds" => scenario.seeds, "beat_cap" => scenario.beat_cap,
+            "variants" => scenario.variants.map do |variant|
+              { "id" => variant[:id].to_s, "equipped_item" => variant[:equipped_item].to_s,
+                "expected_wins" => variant[:expected_wins] && [variant[:expected_wins].begin, variant[:expected_wins].end] }
+            end }
         end
       }.then { |data| "#{JSON.pretty_generate(data)}\n" }
     end
@@ -1159,7 +1311,7 @@ module FairlanesContent
         "title" => "Fairlanes Generated Content Manifest",
         "type" => "object",
         "additionalProperties" => false,
-        "required" => %w[schema_version source runtime_authority visuals statuses skills random_combat_skills monsters gear encounter_pools biomes],
+        "required" => %w[schema_version source runtime_authority visuals statuses skills random_combat_skills monsters gear encounter_pools biomes biome_plans regressions],
         "properties" => {
           "schema_version" => { "const" => 1 },
           "source" => string_type,
@@ -1210,9 +1362,12 @@ module FairlanesContent
           "gear" => array_schema(%w[id display slot armor_kind tier weight modifiers], {
             "id" => string_type, "display" => string_type, "slot" => string_type,
             "armor_kind" => string_type, "tier" => string_type,
-            "weight" => { "type" => "integer", "minimum" => 1 },
+            "weight" => { "type" => "integer", "minimum" => 0 },
             "modifiers" => { "type" => "object", "additionalProperties" => false,
-                             "properties" => { "resistances" => resistance_schema } }
+                             "properties" => { "resistances" => resistance_schema,
+                                               "attack" => { "type" => "integer", "minimum" => 0 },
+                                               "armor" => { "type" => "integer", "minimum" => 0 },
+                                               "max_hp" => { "type" => "integer", "minimum" => 0 } } }
           }),
           "encounter_pools" => array_schema(%w[id lineups], {
             "id" => string_type,
@@ -1226,6 +1381,18 @@ module FairlanesContent
             "overrides" => { "type" => "array", "items" => { "type" => "object" } },
             "resolved_floors" => { "type" => "array", "minItems" => 100, "maxItems" => 100,
                                     "items" => { "type" => "object" } }
+          }),
+          "biome_plans" => array_schema(%w[id cycle order monsters], {
+            "id" => string_type, "cycle" => { "enum" => CYCLES.map(&:to_s) },
+            "order" => { "type" => "integer", "minimum" => 1, "maximum" => 5 },
+            "monsters" => { "type" => "array", "items" => string_type }
+          }),
+          "regressions" => array_schema(%w[id encounter party seeds beat_cap variants], {
+            "id" => string_type, "encounter" => { "type" => "object" },
+            "party" => { "type" => "array", "items" => { "type" => "object" } },
+            "seeds" => { "type" => "array", "items" => { "type" => "integer", "minimum" => 0 } },
+            "beat_cap" => { "type" => "integer", "minimum" => 1 },
+            "variants" => { "type" => "array", "items" => { "type" => "object" } }
           })
         }
       }

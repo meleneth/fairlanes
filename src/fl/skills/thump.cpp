@@ -7,6 +7,7 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/systems/effective_combat_stats.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
 #include "fl/primitives/damage.hpp"
 #include "fl/primitives/random_hub.hpp"
@@ -104,8 +105,9 @@ int Thump::thump(fl::context::AttackCtx &&ctx, SkillKey skill) {
   int dmg = static_cast<int>(std::floor(dealt + 0.5));
   dmg = std::max(0, dmg);
   if (skill.base == SkillId::Thump && dmg > 0) {
-    const auto &stats = ctx.reg().get<fl::ecs::components::Stats>(ctx.attacker());
-    dmg = std::max(0, dmg + stats.attack_);
+    dmg = std::max(0, dmg +
+                          fl::ecs::systems::effective_combat_stats(
+                              ctx.reg(), ctx.attacker()).attack);
   }
   ctx.damage().physical = dmg;
   ctx.set_hit_kind(fl::primitives::HitKind::Direct);

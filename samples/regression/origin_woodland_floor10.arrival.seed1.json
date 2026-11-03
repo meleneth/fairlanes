@@ -1,0 +1,2707 @@
+{
+  "beat_cap": 2400,
+  "build": {
+    "revision": "08b2a9ad60e23304ba376c234db6d92c7bea7169",
+    "source_dirty": true,
+    "version": "0.1.0"
+  },
+  "content_sha256": "89ffdb790da6a723cecf9929ef32507be725e19a3cd207dffa3a37d6afc91eab",
+  "events": [
+    {
+      "actor": "hero5",
+      "seq": 0,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 4800
+    },
+    {
+      "actor": "hero5",
+      "seq": 1,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 4800
+    },
+    {
+      "actor": "hero5",
+      "damage": 7,
+      "hp_after": 113,
+      "seq": 2,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 6880
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 113,
+        "statuses": []
+      },
+      "before": {
+        "hp": 120,
+        "statuses": []
+      },
+      "seq": 3,
+      "type": "state",
+      "uwu": 6880
+    },
+    {
+      "actor": "hero5",
+      "seq": 4,
+      "type": "cast_finish",
+      "uwu": 7280
+    },
+    {
+      "actor": "hero4",
+      "seq": 5,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 7280
+    },
+    {
+      "actor": "hero4",
+      "seq": 6,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 7280
+    },
+    {
+      "actor": "hero4",
+      "damage": 4,
+      "hp_after": 109,
+      "seq": 7,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 9360
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 109,
+        "statuses": []
+      },
+      "before": {
+        "hp": 113,
+        "statuses": []
+      },
+      "seq": 8,
+      "type": "state",
+      "uwu": 9360
+    },
+    {
+      "actor": "hero4",
+      "seq": 9,
+      "type": "cast_finish",
+      "uwu": 9760
+    },
+    {
+      "actor": "hero3",
+      "seq": 10,
+      "skill": "thump/1",
+      "target": "enemy2",
+      "type": "action",
+      "uwu": 9760
+    },
+    {
+      "actor": "hero3",
+      "seq": 11,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 9760
+    },
+    {
+      "actor": "hero3",
+      "damage": 6,
+      "hp_after": 0,
+      "seq": 12,
+      "skill": "thump/1",
+      "target": "enemy2",
+      "type": "hit",
+      "uwu": 11840
+    },
+    {
+      "actor": "enemy2",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 5,
+        "statuses": []
+      },
+      "seq": 13,
+      "type": "state",
+      "uwu": 11840
+    },
+    {
+      "actor": "hero3",
+      "seq": 14,
+      "type": "cast_finish",
+      "uwu": 12240
+    },
+    {
+      "actor": "hero2",
+      "seq": 15,
+      "skill": "thump/1",
+      "target": "enemy5",
+      "type": "action",
+      "uwu": 12240
+    },
+    {
+      "actor": "hero2",
+      "seq": 16,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 12240
+    },
+    {
+      "actor": "hero2",
+      "damage": 3,
+      "hp_after": 2,
+      "seq": 17,
+      "skill": "thump/1",
+      "target": "enemy5",
+      "type": "hit",
+      "uwu": 14320
+    },
+    {
+      "actor": "enemy5",
+      "after": {
+        "hp": 2,
+        "statuses": []
+      },
+      "before": {
+        "hp": 5,
+        "statuses": []
+      },
+      "seq": 18,
+      "type": "state",
+      "uwu": 14320
+    },
+    {
+      "actor": "hero2",
+      "seq": 19,
+      "type": "cast_finish",
+      "uwu": 14720
+    },
+    {
+      "actor": "hero1",
+      "seq": 20,
+      "skill": "thump/1",
+      "target": "enemy4",
+      "type": "action",
+      "uwu": 14720
+    },
+    {
+      "actor": "hero1",
+      "seq": 21,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 14720
+    },
+    {
+      "actor": "hero1",
+      "damage": 5,
+      "hp_after": 0,
+      "seq": 22,
+      "skill": "thump/1",
+      "target": "enemy4",
+      "type": "hit",
+      "uwu": 16800
+    },
+    {
+      "actor": "enemy4",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 5,
+        "statuses": []
+      },
+      "seq": 23,
+      "type": "state",
+      "uwu": 16800
+    },
+    {
+      "actor": "hero1",
+      "seq": 24,
+      "type": "cast_finish",
+      "uwu": 17200
+    },
+    {
+      "actor": "enemy5",
+      "seq": 25,
+      "skill": "thump/1",
+      "target": "hero5",
+      "type": "action",
+      "uwu": 17200
+    },
+    {
+      "actor": "enemy5",
+      "seq": 26,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 17200
+    },
+    {
+      "actor": "enemy5",
+      "damage": 2,
+      "hp_after": 18,
+      "seq": 27,
+      "skill": "thump/1",
+      "target": "hero5",
+      "type": "hit",
+      "uwu": 19280
+    },
+    {
+      "actor": "hero5",
+      "after": {
+        "hp": 18,
+        "statuses": []
+      },
+      "before": {
+        "hp": 20,
+        "statuses": []
+      },
+      "seq": 28,
+      "type": "state",
+      "uwu": 19280
+    },
+    {
+      "actor": "enemy5",
+      "seq": 29,
+      "type": "cast_finish",
+      "uwu": 19680
+    },
+    {
+      "actor": "enemy3",
+      "seq": 30,
+      "skill": "thump/1",
+      "target": "hero4",
+      "type": "action",
+      "uwu": 19680
+    },
+    {
+      "actor": "enemy3",
+      "seq": 31,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 19680
+    },
+    {
+      "actor": "enemy3",
+      "damage": 1,
+      "hp_after": 19,
+      "seq": 32,
+      "skill": "thump/1",
+      "target": "hero4",
+      "type": "hit",
+      "uwu": 21760
+    },
+    {
+      "actor": "hero4",
+      "after": {
+        "hp": 19,
+        "statuses": []
+      },
+      "before": {
+        "hp": 20,
+        "statuses": []
+      },
+      "seq": 33,
+      "type": "state",
+      "uwu": 21760
+    },
+    {
+      "actor": "enemy3",
+      "seq": 34,
+      "type": "cast_finish",
+      "uwu": 22160
+    },
+    {
+      "actor": "enemy1",
+      "seq": 35,
+      "skill": "eviscerate/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 22160
+    },
+    {
+      "actor": "enemy1",
+      "seq": 36,
+      "skill": "eviscerate/1",
+      "type": "cast_start",
+      "uwu": 22160
+    },
+    {
+      "actor": "enemy1",
+      "seq": 37,
+      "type": "cast_finish",
+      "uwu": 24080
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 20,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 20,
+        "statuses": []
+      },
+      "seq": 38,
+      "type": "state",
+      "uwu": 24080
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 18,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 20,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 39,
+      "type": "state",
+      "uwu": 26960
+    },
+    {
+      "actor": "hero5",
+      "seq": 40,
+      "skill": "thump/1",
+      "target": "enemy5",
+      "type": "action",
+      "uwu": 28240
+    },
+    {
+      "actor": "hero5",
+      "seq": 41,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 28240
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 16,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 18,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 42,
+      "type": "state",
+      "uwu": 29840
+    },
+    {
+      "actor": "hero5",
+      "damage": 6,
+      "hp_after": 0,
+      "seq": 43,
+      "skill": "thump/1",
+      "target": "enemy5",
+      "type": "hit",
+      "uwu": 30320
+    },
+    {
+      "actor": "enemy5",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 2,
+        "statuses": []
+      },
+      "seq": 44,
+      "type": "state",
+      "uwu": 30320
+    },
+    {
+      "actor": "hero5",
+      "seq": 45,
+      "type": "cast_finish",
+      "uwu": 30720
+    },
+    {
+      "actor": "hero4",
+      "seq": 46,
+      "skill": "thump/1",
+      "target": "enemy3",
+      "type": "action",
+      "uwu": 30720
+    },
+    {
+      "actor": "hero4",
+      "seq": 47,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 30720
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 14,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 16,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 48,
+      "type": "state",
+      "uwu": 32720
+    },
+    {
+      "actor": "hero4",
+      "damage": 5,
+      "hp_after": 0,
+      "seq": 49,
+      "skill": "thump/1",
+      "target": "enemy3",
+      "type": "hit",
+      "uwu": 32800
+    },
+    {
+      "actor": "enemy3",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 5,
+        "statuses": []
+      },
+      "seq": 50,
+      "type": "state",
+      "uwu": 32800
+    },
+    {
+      "actor": "hero4",
+      "seq": 51,
+      "type": "cast_finish",
+      "uwu": 33200
+    },
+    {
+      "actor": "hero3",
+      "seq": 52,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 33200
+    },
+    {
+      "actor": "hero3",
+      "seq": 53,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 33200
+    },
+    {
+      "actor": "hero3",
+      "damage": 3,
+      "hp_after": 106,
+      "seq": 54,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 35280
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 106,
+        "statuses": []
+      },
+      "before": {
+        "hp": 109,
+        "statuses": []
+      },
+      "seq": 55,
+      "type": "state",
+      "uwu": 35280
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 12,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 14,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 56,
+      "type": "state",
+      "uwu": 35600
+    },
+    {
+      "actor": "hero3",
+      "seq": 57,
+      "type": "cast_finish",
+      "uwu": 35680
+    },
+    {
+      "actor": "hero2",
+      "seq": 58,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 35680
+    },
+    {
+      "actor": "hero2",
+      "seq": 59,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 35680
+    },
+    {
+      "actor": "hero2",
+      "damage": 6,
+      "hp_after": 100,
+      "seq": 60,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 37760
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 100,
+        "statuses": []
+      },
+      "before": {
+        "hp": 106,
+        "statuses": []
+      },
+      "seq": 61,
+      "type": "state",
+      "uwu": 37760
+    },
+    {
+      "actor": "hero2",
+      "seq": 62,
+      "type": "cast_finish",
+      "uwu": 38160
+    },
+    {
+      "actor": "hero1",
+      "seq": 63,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 38160
+    },
+    {
+      "actor": "hero1",
+      "seq": 64,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 38160
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 10,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 12,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 65,
+      "type": "state",
+      "uwu": 38480
+    },
+    {
+      "actor": "hero1",
+      "damage": 6,
+      "hp_after": 94,
+      "seq": 66,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 40240
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 94,
+        "statuses": []
+      },
+      "before": {
+        "hp": 100,
+        "statuses": []
+      },
+      "seq": 67,
+      "type": "state",
+      "uwu": 40240
+    },
+    {
+      "actor": "hero1",
+      "seq": 68,
+      "type": "cast_finish",
+      "uwu": 40640
+    },
+    {
+      "actor": "enemy1",
+      "seq": 69,
+      "skill": "eviscerate/1",
+      "target": "hero2",
+      "type": "action",
+      "uwu": 40800
+    },
+    {
+      "actor": "enemy1",
+      "seq": 70,
+      "skill": "eviscerate/1",
+      "type": "cast_start",
+      "uwu": 40800
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 8,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 10,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 71,
+      "type": "state",
+      "uwu": 41360
+    },
+    {
+      "actor": "enemy1",
+      "seq": 72,
+      "type": "cast_finish",
+      "uwu": 42720
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 20,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 20,
+        "statuses": []
+      },
+      "seq": 73,
+      "type": "state",
+      "uwu": 42720
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 6,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 8,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 74,
+      "type": "state",
+      "uwu": 44240
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 18,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 20,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 75,
+      "type": "state",
+      "uwu": 45600
+    },
+    {
+      "actor": "hero5",
+      "seq": 76,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 46880
+    },
+    {
+      "actor": "hero5",
+      "seq": 77,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 46880
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 4,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 6,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 78,
+      "type": "state",
+      "uwu": 47120
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 16,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 18,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 79,
+      "type": "state",
+      "uwu": 48480
+    },
+    {
+      "actor": "hero5",
+      "damage": 7,
+      "hp_after": 87,
+      "seq": 80,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 48960
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 87,
+        "statuses": []
+      },
+      "before": {
+        "hp": 94,
+        "statuses": []
+      },
+      "seq": 81,
+      "type": "state",
+      "uwu": 48960
+    },
+    {
+      "actor": "hero5",
+      "seq": 82,
+      "type": "cast_finish",
+      "uwu": 49360
+    },
+    {
+      "actor": "hero4",
+      "seq": 83,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 49360
+    },
+    {
+      "actor": "hero4",
+      "seq": 84,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 49360
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 2,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 4,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 85,
+      "type": "state",
+      "uwu": 50000
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 14,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 16,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 86,
+      "type": "state",
+      "uwu": 51360
+    },
+    {
+      "actor": "hero4",
+      "damage": 5,
+      "hp_after": 82,
+      "seq": 87,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 51440
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 82,
+        "statuses": []
+      },
+      "before": {
+        "hp": 87,
+        "statuses": []
+      },
+      "seq": 88,
+      "type": "state",
+      "uwu": 51440
+    },
+    {
+      "actor": "hero4",
+      "seq": 89,
+      "type": "cast_finish",
+      "uwu": 51840
+    },
+    {
+      "actor": "hero3",
+      "seq": 90,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 51840
+    },
+    {
+      "actor": "hero3",
+      "seq": 91,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 51840
+    },
+    {
+      "actor": "hero1",
+      "seq": 92,
+      "type": "cast_finish",
+      "uwu": 52880
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 2,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 93,
+      "type": "state",
+      "uwu": 52880
+    },
+    {
+      "actor": "hero3",
+      "damage": 6,
+      "hp_after": 76,
+      "seq": 94,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 53920
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 76,
+        "statuses": []
+      },
+      "before": {
+        "hp": 82,
+        "statuses": []
+      },
+      "seq": 95,
+      "type": "state",
+      "uwu": 53920
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 12,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 14,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 96,
+      "type": "state",
+      "uwu": 54240
+    },
+    {
+      "actor": "hero3",
+      "seq": 97,
+      "type": "cast_finish",
+      "uwu": 54320
+    },
+    {
+      "actor": "hero2",
+      "seq": 98,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 54320
+    },
+    {
+      "actor": "hero2",
+      "seq": 99,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 54320
+    },
+    {
+      "actor": "hero2",
+      "damage": 5,
+      "hp_after": 71,
+      "seq": 100,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 56400
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 71,
+        "statuses": []
+      },
+      "before": {
+        "hp": 76,
+        "statuses": []
+      },
+      "seq": 101,
+      "type": "state",
+      "uwu": 56400
+    },
+    {
+      "actor": "hero2",
+      "seq": 102,
+      "type": "cast_finish",
+      "uwu": 56800
+    },
+    {
+      "actor": "enemy1",
+      "seq": 103,
+      "skill": "eviscerate/1",
+      "target": "hero3",
+      "type": "action",
+      "uwu": 57040
+    },
+    {
+      "actor": "enemy1",
+      "seq": 104,
+      "skill": "eviscerate/1",
+      "type": "cast_start",
+      "uwu": 57040
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 10,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 12,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 105,
+      "type": "state",
+      "uwu": 57120
+    },
+    {
+      "actor": "enemy1",
+      "seq": 106,
+      "type": "cast_finish",
+      "uwu": 58960
+    },
+    {
+      "actor": "hero3",
+      "after": {
+        "hp": 20,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 20,
+        "statuses": []
+      },
+      "seq": 107,
+      "type": "state",
+      "uwu": 58960
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 8,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 10,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 108,
+      "type": "state",
+      "uwu": 60000
+    },
+    {
+      "actor": "hero3",
+      "after": {
+        "hp": 18,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 20,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 109,
+      "type": "state",
+      "uwu": 61840
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 6,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 8,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 110,
+      "type": "state",
+      "uwu": 62880
+    },
+    {
+      "actor": "hero5",
+      "seq": 111,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 63120
+    },
+    {
+      "actor": "hero5",
+      "seq": 112,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 63120
+    },
+    {
+      "actor": "hero3",
+      "after": {
+        "hp": 16,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 18,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 113,
+      "type": "state",
+      "uwu": 64720
+    },
+    {
+      "actor": "hero5",
+      "damage": 6,
+      "hp_after": 65,
+      "seq": 114,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 65200
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 65,
+        "statuses": []
+      },
+      "before": {
+        "hp": 71,
+        "statuses": []
+      },
+      "seq": 115,
+      "type": "state",
+      "uwu": 65200
+    },
+    {
+      "actor": "hero5",
+      "seq": 116,
+      "type": "cast_finish",
+      "uwu": 65600
+    },
+    {
+      "actor": "hero4",
+      "seq": 117,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 65600
+    },
+    {
+      "actor": "hero4",
+      "seq": 118,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 65600
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 4,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 6,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 119,
+      "type": "state",
+      "uwu": 65760
+    },
+    {
+      "actor": "hero3",
+      "after": {
+        "hp": 14,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 16,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 120,
+      "type": "state",
+      "uwu": 67600
+    },
+    {
+      "actor": "hero4",
+      "damage": 5,
+      "hp_after": 60,
+      "seq": 121,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 67680
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 60,
+        "statuses": []
+      },
+      "before": {
+        "hp": 65,
+        "statuses": []
+      },
+      "seq": 122,
+      "type": "state",
+      "uwu": 67680
+    },
+    {
+      "actor": "hero4",
+      "seq": 123,
+      "type": "cast_finish",
+      "uwu": 68080
+    },
+    {
+      "actor": "hero3",
+      "seq": 124,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 68080
+    },
+    {
+      "actor": "hero3",
+      "seq": 125,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 68080
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 2,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 4,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 126,
+      "type": "state",
+      "uwu": 68640
+    },
+    {
+      "actor": "hero3",
+      "damage": 5,
+      "hp_after": 55,
+      "seq": 127,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 70160
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 55,
+        "statuses": []
+      },
+      "before": {
+        "hp": 60,
+        "statuses": []
+      },
+      "seq": 128,
+      "type": "state",
+      "uwu": 70160
+    },
+    {
+      "actor": "hero3",
+      "after": {
+        "hp": 12,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 14,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 129,
+      "type": "state",
+      "uwu": 70480
+    },
+    {
+      "actor": "hero3",
+      "seq": 130,
+      "type": "cast_finish",
+      "uwu": 70560
+    },
+    {
+      "actor": "hero2",
+      "seq": 131,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 70560
+    },
+    {
+      "actor": "hero2",
+      "seq": 132,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 70560
+    },
+    {
+      "actor": "hero2",
+      "seq": 133,
+      "type": "cast_finish",
+      "uwu": 71520
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 2,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 134,
+      "type": "state",
+      "uwu": 71520
+    },
+    {
+      "actor": "enemy1",
+      "seq": 135,
+      "skill": "eviscerate/1",
+      "target": "hero4",
+      "type": "action",
+      "uwu": 71760
+    },
+    {
+      "actor": "enemy1",
+      "seq": 136,
+      "skill": "eviscerate/1",
+      "type": "cast_start",
+      "uwu": 71760
+    },
+    {
+      "actor": "hero2",
+      "seq": 137,
+      "type": "cast_finish",
+      "uwu": 73040
+    },
+    {
+      "actor": "hero3",
+      "after": {
+        "hp": 10,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 12,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 138,
+      "type": "state",
+      "uwu": 73360
+    },
+    {
+      "actor": "enemy1",
+      "seq": 139,
+      "type": "cast_finish",
+      "uwu": 73680
+    },
+    {
+      "actor": "hero4",
+      "after": {
+        "hp": 19,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 19,
+        "statuses": []
+      },
+      "seq": 140,
+      "type": "state",
+      "uwu": 73680
+    },
+    {
+      "actor": "hero3",
+      "after": {
+        "hp": 8,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 10,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 141,
+      "type": "state",
+      "uwu": 76240
+    },
+    {
+      "actor": "hero4",
+      "after": {
+        "hp": 17,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 19,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 142,
+      "type": "state",
+      "uwu": 76560
+    },
+    {
+      "actor": "hero5",
+      "seq": 143,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 77840
+    },
+    {
+      "actor": "hero5",
+      "seq": 144,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 77840
+    },
+    {
+      "actor": "hero3",
+      "after": {
+        "hp": 6,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 8,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 145,
+      "type": "state",
+      "uwu": 79120
+    },
+    {
+      "actor": "hero4",
+      "after": {
+        "hp": 15,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 17,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 146,
+      "type": "state",
+      "uwu": 79440
+    },
+    {
+      "actor": "hero5",
+      "damage": 4,
+      "hp_after": 51,
+      "seq": 147,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 79920
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 51,
+        "statuses": []
+      },
+      "before": {
+        "hp": 55,
+        "statuses": []
+      },
+      "seq": 148,
+      "type": "state",
+      "uwu": 79920
+    },
+    {
+      "actor": "hero5",
+      "seq": 149,
+      "type": "cast_finish",
+      "uwu": 80320
+    },
+    {
+      "actor": "hero4",
+      "seq": 150,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 80320
+    },
+    {
+      "actor": "hero4",
+      "seq": 151,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 80320
+    },
+    {
+      "actor": "hero3",
+      "after": {
+        "hp": 4,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 6,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 152,
+      "type": "state",
+      "uwu": 82000
+    },
+    {
+      "actor": "hero4",
+      "after": {
+        "hp": 13,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 15,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 153,
+      "type": "state",
+      "uwu": 82320
+    },
+    {
+      "actor": "hero4",
+      "damage": 3,
+      "hp_after": 48,
+      "seq": 154,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 82400
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 48,
+        "statuses": []
+      },
+      "before": {
+        "hp": 51,
+        "statuses": []
+      },
+      "seq": 155,
+      "type": "state",
+      "uwu": 82400
+    },
+    {
+      "actor": "hero4",
+      "seq": 156,
+      "type": "cast_finish",
+      "uwu": 82800
+    },
+    {
+      "actor": "hero3",
+      "seq": 157,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 82800
+    },
+    {
+      "actor": "hero3",
+      "seq": 158,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 82800
+    },
+    {
+      "actor": "hero3",
+      "damage": 4,
+      "hp_after": 44,
+      "seq": 159,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 84880
+    },
+    {
+      "actor": "hero3",
+      "after": {
+        "hp": 2,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 4,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 160,
+      "type": "state",
+      "uwu": 84880
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 44,
+        "statuses": []
+      },
+      "before": {
+        "hp": 48,
+        "statuses": []
+      },
+      "seq": 161,
+      "type": "state",
+      "uwu": 84880
+    },
+    {
+      "actor": "hero4",
+      "after": {
+        "hp": 11,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 13,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 162,
+      "type": "state",
+      "uwu": 85200
+    },
+    {
+      "actor": "hero3",
+      "seq": 163,
+      "type": "cast_finish",
+      "uwu": 85280
+    },
+    {
+      "actor": "enemy1",
+      "seq": 164,
+      "skill": "eviscerate/1",
+      "target": "hero5",
+      "type": "action",
+      "uwu": 85600
+    },
+    {
+      "actor": "enemy1",
+      "seq": 165,
+      "skill": "eviscerate/1",
+      "type": "cast_start",
+      "uwu": 85600
+    },
+    {
+      "actor": "enemy1",
+      "seq": 166,
+      "type": "cast_finish",
+      "uwu": 87520
+    },
+    {
+      "actor": "hero5",
+      "after": {
+        "hp": 18,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 18,
+        "statuses": []
+      },
+      "seq": 167,
+      "type": "state",
+      "uwu": 87520
+    },
+    {
+      "actor": "hero3",
+      "seq": 168,
+      "type": "cast_finish",
+      "uwu": 87760
+    },
+    {
+      "actor": "hero3",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 2,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 169,
+      "type": "state",
+      "uwu": 87760
+    },
+    {
+      "actor": "hero4",
+      "after": {
+        "hp": 9,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 11,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 170,
+      "type": "state",
+      "uwu": 88080
+    },
+    {
+      "actor": "hero5",
+      "after": {
+        "hp": 16,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 18,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 171,
+      "type": "state",
+      "uwu": 90400
+    },
+    {
+      "actor": "hero4",
+      "after": {
+        "hp": 7,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 9,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 172,
+      "type": "state",
+      "uwu": 90960
+    },
+    {
+      "actor": "hero5",
+      "seq": 173,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 91680
+    },
+    {
+      "actor": "hero5",
+      "seq": 174,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 91680
+    },
+    {
+      "actor": "hero5",
+      "after": {
+        "hp": 14,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 16,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 175,
+      "type": "state",
+      "uwu": 93280
+    },
+    {
+      "actor": "hero5",
+      "damage": 5,
+      "hp_after": 39,
+      "seq": 176,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 93760
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 39,
+        "statuses": []
+      },
+      "before": {
+        "hp": 44,
+        "statuses": []
+      },
+      "seq": 177,
+      "type": "state",
+      "uwu": 93760
+    },
+    {
+      "actor": "hero4",
+      "after": {
+        "hp": 5,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 7,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 178,
+      "type": "state",
+      "uwu": 93840
+    },
+    {
+      "actor": "hero5",
+      "seq": 179,
+      "type": "cast_finish",
+      "uwu": 94160
+    },
+    {
+      "actor": "hero4",
+      "seq": 180,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 94160
+    },
+    {
+      "actor": "hero4",
+      "seq": 181,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 94160
+    },
+    {
+      "actor": "hero5",
+      "after": {
+        "hp": 12,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 14,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 182,
+      "type": "state",
+      "uwu": 96160
+    },
+    {
+      "actor": "hero4",
+      "damage": 7,
+      "hp_after": 32,
+      "seq": 183,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 96240
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 32,
+        "statuses": []
+      },
+      "before": {
+        "hp": 39,
+        "statuses": []
+      },
+      "seq": 184,
+      "type": "state",
+      "uwu": 96240
+    },
+    {
+      "actor": "hero4",
+      "seq": 185,
+      "type": "cast_finish",
+      "uwu": 96640
+    },
+    {
+      "actor": "hero4",
+      "after": {
+        "hp": 3,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 5,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 186,
+      "type": "state",
+      "uwu": 96720
+    },
+    {
+      "actor": "enemy1",
+      "seq": 187,
+      "skill": "eviscerate/1",
+      "target": "hero5",
+      "type": "action",
+      "uwu": 97040
+    },
+    {
+      "actor": "enemy1",
+      "seq": 188,
+      "skill": "eviscerate/1",
+      "type": "cast_start",
+      "uwu": 97040
+    },
+    {
+      "actor": "enemy1",
+      "seq": 189,
+      "type": "cast_finish",
+      "uwu": 98960
+    },
+    {
+      "actor": "hero4",
+      "after": {
+        "hp": 1,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 3,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 190,
+      "type": "state",
+      "uwu": 99600
+    },
+    {
+      "actor": "hero5",
+      "after": {
+        "hp": 10,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 12,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 191,
+      "type": "state",
+      "uwu": 101840
+    },
+    {
+      "actor": "hero4",
+      "seq": 192,
+      "type": "cast_finish",
+      "uwu": 102480
+    },
+    {
+      "actor": "hero4",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 1,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 193,
+      "type": "state",
+      "uwu": 102480
+    },
+    {
+      "actor": "hero5",
+      "seq": 194,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 103120
+    },
+    {
+      "actor": "hero5",
+      "seq": 195,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 103120
+    },
+    {
+      "actor": "hero5",
+      "after": {
+        "hp": 8,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 10,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 196,
+      "type": "state",
+      "uwu": 104720
+    },
+    {
+      "actor": "hero5",
+      "damage": 4,
+      "hp_after": 28,
+      "seq": 197,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 105200
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 28,
+        "statuses": []
+      },
+      "before": {
+        "hp": 32,
+        "statuses": []
+      },
+      "seq": 198,
+      "type": "state",
+      "uwu": 105200
+    },
+    {
+      "actor": "hero5",
+      "seq": 199,
+      "type": "cast_finish",
+      "uwu": 105600
+    },
+    {
+      "actor": "enemy1",
+      "seq": 200,
+      "skill": "eviscerate/1",
+      "target": "hero5",
+      "type": "action",
+      "uwu": 106080
+    },
+    {
+      "actor": "enemy1",
+      "seq": 201,
+      "skill": "eviscerate/1",
+      "type": "cast_start",
+      "uwu": 106080
+    },
+    {
+      "actor": "hero5",
+      "after": {
+        "hp": 6,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 8,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 202,
+      "type": "state",
+      "uwu": 107600
+    },
+    {
+      "actor": "enemy1",
+      "seq": 203,
+      "type": "cast_finish",
+      "uwu": 108000
+    },
+    {
+      "actor": "hero5",
+      "after": {
+        "hp": 4,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 6,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 204,
+      "type": "state",
+      "uwu": 110880
+    },
+    {
+      "actor": "hero5",
+      "seq": 205,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 112160
+    },
+    {
+      "actor": "hero5",
+      "seq": 206,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 112160
+    },
+    {
+      "actor": "hero5",
+      "after": {
+        "hp": 2,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 4,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 207,
+      "type": "state",
+      "uwu": 113760
+    },
+    {
+      "actor": "hero5",
+      "damage": 5,
+      "hp_after": 23,
+      "seq": 208,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 114240
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 23,
+        "statuses": []
+      },
+      "before": {
+        "hp": 28,
+        "statuses": []
+      },
+      "seq": 209,
+      "type": "state",
+      "uwu": 114240
+    },
+    {
+      "actor": "hero5",
+      "seq": 210,
+      "type": "cast_finish",
+      "uwu": 114640
+    },
+    {
+      "actor": "enemy1",
+      "seq": 211,
+      "skill": "eviscerate/1",
+      "target": "hero5",
+      "type": "action",
+      "uwu": 115120
+    },
+    {
+      "actor": "enemy1",
+      "seq": 212,
+      "skill": "eviscerate/1",
+      "type": "cast_start",
+      "uwu": 115120
+    },
+    {
+      "actor": "hero5",
+      "seq": 213,
+      "type": "cast_finish",
+      "uwu": 116640
+    },
+    {
+      "actor": "hero5",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 2,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "seq": 214,
+      "type": "state",
+      "uwu": 116640
+    },
+    {
+      "outcome": "enemy_victory",
+      "seq": 215,
+      "type": "end",
+      "uwu": 116640
+    }
+  ],
+  "expected_outcome": null,
+  "external_inputs": [],
+  "fixture": "origin_woodland_floor10",
+  "fixture_parameters": {
+    "equipped_item": "mouse_nibbled_cape",
+    "variant": "arrival"
+  },
+  "format": "fairlanes-combat-recording",
+  "gameplay_seed": 1,
+  "gameplay_sequence": 0,
+  "initial_state": [
+    {
+      "action_policy": "single_equipped_skill",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [
+        "mouse_nibbled_cape"
+      ],
+      "id": "hero1",
+      "kind": "player",
+      "known_skills": [
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ],
+      "name": "Regression Hero 1",
+      "stats": {
+        "armor": 1,
+        "attack": 2,
+        "hp": 20,
+        "max_hp": 20,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    },
+    {
+      "action_policy": "single_equipped_skill",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "hero2",
+      "kind": "player",
+      "known_skills": [
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ],
+      "name": "Regression Hero 2",
+      "stats": {
+        "armor": 0,
+        "attack": 2,
+        "hp": 20,
+        "max_hp": 20,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    },
+    {
+      "action_policy": "single_equipped_skill",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "hero3",
+      "kind": "player",
+      "known_skills": [
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ],
+      "name": "Regression Hero 3",
+      "stats": {
+        "armor": 0,
+        "attack": 2,
+        "hp": 20,
+        "max_hp": 20,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    },
+    {
+      "action_policy": "single_equipped_skill",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "hero4",
+      "kind": "player",
+      "known_skills": [
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ],
+      "name": "Regression Hero 4",
+      "stats": {
+        "armor": 0,
+        "attack": 2,
+        "hp": 20,
+        "max_hp": 20,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    },
+    {
+      "action_policy": "single_equipped_skill",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "hero5",
+      "kind": "player",
+      "known_skills": [
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ],
+      "name": "Regression Hero 5",
+      "stats": {
+        "armor": 0,
+        "attack": 2,
+        "hp": 20,
+        "max_hp": 20,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    },
+    {
+      "action_policy": "monster_decision_rules",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "enemy1",
+      "kind": "monster",
+      "known_skills": [
+        "eviscerate/1"
+      ],
+      "loadout": [
+        "eviscerate/1"
+      ],
+      "name": "Honey Badger",
+      "stats": {
+        "armor": 0,
+        "attack": 0,
+        "hp": 120,
+        "max_hp": 120,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    },
+    {
+      "action_policy": "monster_decision_rules",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "enemy2",
+      "kind": "monster",
+      "known_skills": [
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ],
+      "name": "Field Mouse",
+      "stats": {
+        "armor": 0,
+        "attack": 0,
+        "hp": 5,
+        "max_hp": 5,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    },
+    {
+      "action_policy": "monster_decision_rules",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "enemy3",
+      "kind": "monster",
+      "known_skills": [
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ],
+      "name": "Field Mouse",
+      "stats": {
+        "armor": 0,
+        "attack": 0,
+        "hp": 5,
+        "max_hp": 5,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    },
+    {
+      "action_policy": "monster_decision_rules",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "enemy4",
+      "kind": "monster",
+      "known_skills": [
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ],
+      "name": "Field Mouse",
+      "stats": {
+        "armor": 0,
+        "attack": 0,
+        "hp": 5,
+        "max_hp": 5,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    },
+    {
+      "action_policy": "monster_decision_rules",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "enemy5",
+      "kind": "monster",
+      "known_skills": [
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ],
+      "name": "Field Mouse",
+      "stats": {
+        "armor": 0,
+        "attack": 0,
+        "hp": 5,
+        "max_hp": 5,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    }
+  ],
+  "result": {
+    "beats": 1459,
+    "outcome": "enemy_victory",
+    "remaining_hp": {
+      "enemy1": 23,
+      "enemy2": 0,
+      "enemy3": 0,
+      "enemy4": 0,
+      "enemy5": 0,
+      "hero1": 0,
+      "hero2": 0,
+      "hero3": 0,
+      "hero4": 0,
+      "hero5": 0
+    },
+    "simulated_seconds": 121.58333333333333,
+    "uwu": 116640
+  },
+  "starting_uwu": 0,
+  "starting_world_beat": 0,
+  "version": 1
+}

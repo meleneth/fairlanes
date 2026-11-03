@@ -389,7 +389,7 @@ void GrandCentral::build_ui() {
 
   root_component_ = ftxui::Make<fl::widgets::RootComponent>(
       fl::context::AccountCtx{reg_, rng_, account}, accounts_, *game_log_,
-      world_clock_, &discoveries_);
+      world_clock_, &discoveries_, &raid_milestones_.bus());
 }
 void GrandCentral::resolve_visuals_for_render() {
   ZoneScopedN("ResolveVisualsForRender");

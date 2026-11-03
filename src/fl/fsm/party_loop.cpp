@@ -32,6 +32,10 @@ void PartyLoop::Ops::enter_farming(fl::context::PartyCtx &ctx) {
   // Regression fixtures construct their encounter before the first world beat.
   if (ctx.party_data().has_encounter()) return;
 
+  // The floor-nine unlock is a real choice: wait here until the player picks
+  // Plains or explicitly continues Woodland, before floor ten is constructed.
+  if (ctx.party_data().tower_choice_pending()) return;
+
   if (ctx.party_data().needs_farm_focus_choice()) {
     if (ctx.party_data().progression_control_mode() ==
         fl::primitives::ProgressionControlMode::Auto) {
@@ -47,8 +51,13 @@ void PartyLoop::Ops::enter_farming(fl::context::PartyCtx &ctx) {
     }
   }
 
-  fl::primitives::EncounterBuilder{ctx, ctx.party_data().encounter_mode()}
-      .thump_it_out();
+  std::optional<fl::primitives::EncounterBuilder::TowerFloor> floor;
+  if (const auto route = ctx.party_data().tower_route())
+    floor = fl::primitives::EncounterBuilder::TowerFloor{
+        std::string(route->biome_id), route->floor};
+  ctx.party_data().begin_tower_encounter();
+  fl::primitives::EncounterBuilder{ctx, ctx.party_data().encounter_mode(),
+                                    std::move(floor)}.thump_it_out();
 };
 
 void PartyLoop::Ops::exit_farming(fl::context::PartyCtx &ctx) {

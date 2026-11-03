@@ -12,7 +12,9 @@
 #include "fl/fwd.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/discovery_journal.hpp"
+#include "fl/primitives/raid_milestones.hpp"
 #include "fl/primitives/world_clock.hpp"
+#include "fl/widgets/important_notice_overlay.hpp"
 #include "fl/widgets/ui_command_controller.hpp"
 
 namespace fl::widgets {
@@ -25,7 +27,8 @@ public:
   RootComponent(fl::context::AccountCtx ctx,
                 std::deque<fl::primitives::AccountData> &accounts,
                 FancyLog &console_log, fl::primitives::WorldClock &world_clock,
-                const fl::primitives::DiscoveryJournal *discoveries = nullptr);
+                const fl::primitives::DiscoveryJournal *discoveries = nullptr,
+                fl::events::AchievementBus *achievements = nullptr);
 
   bool OnEvent(ftxui::Event event) override;
   ftxui::Element Render() override;
@@ -88,6 +91,8 @@ private:
   int displayed_fps_{0};
   std::uint64_t render_frames_{0};
   std::chrono::steady_clock::time_point fps_window_start_{};
+  ImportantNoticeOverlay important_notices_;
+  ftxui::Box viewport_box_{};
 
   ftxui::Component quit_cancel_;
   ftxui::Component quit_confirmation_;
@@ -95,6 +100,8 @@ private:
   ftxui::Component console_overlay_;
   // Account/party buses outlive the root; disconnect before its state dies.
   std::vector<fl::events::ScopedPartyListener> combat_started_subs_;
+  std::vector<fl::events::ScopedPartyListener> milestone_subs_;
+  fl::events::ScopedAchievementListener achievement_sub_;
 };
 
 } // namespace fl::widgets

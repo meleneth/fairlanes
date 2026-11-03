@@ -17,6 +17,7 @@
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/ecs/systems/combat_status_system.hpp"
 #include "fl/ecs/systems/dire_bleed_system.hpp"
+#include "fl/ecs/systems/effective_combat_stats.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/lospec500.hpp"
@@ -259,7 +260,8 @@ void apply_wired_skill_effect(fl::context::EncounterCtx &party_ctx,
         party_ctx.reg(), target, CombatStatusKind::Burn);
     const auto *stats =
         party_ctx.reg().try_get<fl::ecs::components::Stats>(target);
-    const bool wounded = stats != nullptr && stats->hp_ < stats->max_hp_;
+    const bool wounded = stats != nullptr && stats->hp_ <
+        fl::ecs::systems::effective_combat_stats(party_ctx.reg(), target).max_hp;
     CombatStatusSystem::apply_status(
         party_ctx, scheduler,
         {.kind = CombatStatusKind::Burn,
@@ -488,7 +490,9 @@ int apply_healing(fl::context::EncounterCtx &party_ctx, entt::entity healer,
 
   const int before = target_stats->hp_;
   target_stats->hp_ =
-      std::min(target_stats->max_hp_, target_stats->hp_ + heal_amount);
+      std::min(fl::ecs::systems::effective_combat_stats(
+                   party_ctx.reg(), target).max_hp,
+               target_stats->hp_ + heal_amount);
   const int healed = target_stats->hp_ - before;
   add_hitpoint_number_decal(party_ctx, target, fl::lospec500::color_at(15),
                             healed);

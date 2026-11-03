@@ -296,7 +296,7 @@ monster :field_mouse,
 
 monster :honey_badger,
         cycle: :origin,
-        hp: 500,
+        hp: 120,
         known_skills: %i[eviscerate],
         pool: :rare_woodland
 
@@ -656,7 +656,33 @@ gear :boots_of_damp_authority, display: "Boots of Damp Authority",
      slot: :boots, armor_kind: :leather, tier: :excellent, weight: 20,
      modifiers: {resistances: {lightning: 20}}
 gear :mouse_nibbled_cape, display: "Mouse-Nibbled Cape",
-     slot: :cape, armor_kind: :cloth, tier: :fine, weight: 10
+     slot: :cape, armor_kind: :cloth, tier: :fine, weight: 10,
+     modifiers: {armor: 1}
+gear :woodland_stick, display: "Woodland Stick",
+     slot: :mainhand, armor_kind: :none, tier: :plain, weight: 20,
+     modifiers: {attack: 2}
+gear :stitched_hide, display: "Stitched Hide",
+     slot: :chest, armor_kind: :leather, tier: :plain, weight: 20,
+     modifiers: {armor: 2}
+gear :hearty_locket, display: "Hearty Locket",
+     slot: :necklace, armor_kind: :none, tier: :plain, weight: 20,
+     modifiers: {max_hp: 5}
+gear :mossbound_cape, display: "Mossbound Cape",
+     slot: :cape, armor_kind: :cloth, tier: :excellent, weight: 0,
+     modifiers: {armor: 3, max_hp: 5}
+
+encounter_pool :woodland_starter, lineups: [
+  %i[field_mouse field_mouse field_mouse field_mouse field_mouse],
+  %i[field_mouse field_mouse field_mouse bumpkin_hare field_mouse]
+]
+encounter_pool :woodland_light_physical, lineups: [
+  %i[field_mouse bumpkin_hare bumpkin_hare mire_squish field_mouse],
+  %i[bumpkin_hare field_mouse mire_squish bumpkin_hare field_mouse]
+]
+encounter_pool :woodland_heavy_physical, lineups: [
+  %i[bark_smack bark_smack bumpkin_hare field_mouse mire_squish],
+  %i[bark_smack mire_squish bark_smack bumpkin_hare field_mouse]
+]
 
 encounter_pool :woodland_opening, lineups: [
   %i[field_mouse field_mouse bumpkin_hare scaredy_cat mire_squish],
@@ -669,9 +695,73 @@ encounter_pool :woodland_deep, lineups: [
 
 biome :origin_woodland_tower, display: "Origin Woodland Tower", floors: 100,
       bands: [
-        {from: 1, to: 49, pool: :woodland_opening},
+        {from: 1, to: 3, pool: :woodland_starter},
+        {from: 4, to: 6, pool: :woodland_light_physical},
+        {from: 7, to: 9, pool: :woodland_heavy_physical},
+        {from: 11, to: 49, pool: :woodland_opening},
         {from: 50, to: 100, pool: :woodland_deep}
       ],
       overrides: [
         {floor: 10, lineup: %i[honey_badger field_mouse field_mouse field_mouse field_mouse]}
       ]
+
+# Plains follows Woodland in the first playable Origin route. The historical
+# biome brainstorm names wolves and meerkats as its early inhabitants.
+encounter_pool :plains_opening, lineups: [
+  %i[prairie_meerkat prairie_meerkat grass_wolf field_mouse field_mouse],
+  %i[grass_wolf prairie_meerkat prairie_meerkat bumpkin_hare field_mouse]
+]
+encounter_pool :plains_deep, lineups: [
+  %i[grass_wolf bristle_boar prairie_meerkat grass_wolf bristle_boar]
+]
+biome :origin_plains_tower, display: "Origin Plains Tower", floors: 100,
+      bands: [
+        {from: 1, to: 9, pool: :plains_opening},
+        {from: 10, to: 100, pool: :plains_deep}
+      ]
+
+# Five tower biomes per Cycle. This plan also generates the brainstorming map
+# from the live monster declarations and their skill lists.
+biome_plan :origin_woodland_tower, cycle: :origin, order: 1,
+  monsters: %i[field_mouse honey_badger bumpkin_hare scaredy_cat mire_squish bark_smack poison_toad squirrel_brigand webling_spider moss_wolf antler_stag]
+biome_plan :origin_plains_tower, cycle: :origin, order: 2,
+  monsters: %i[grass_wolf bristle_boar prairie_meerkat dust_hare]
+biome_plan :origin_murky_swamp_tower, cycle: :origin, order: 3,
+  monsters: %i[mosquito_choir dragonfly_cutter bog_snail]
+biome_plan :origin_caves_tower, cycle: :origin, order: 4,
+  monsters: %i[cave_bat blind_scorpion echo_moth]
+biome_plan :origin_desert_tower, cycle: :origin, order: 5,
+  monsters: %i[sand_scorpion tarantula_nomad]
+
+biome_plan :resonance_dark_forest_tower, cycle: :resonance, order: 1,
+  monsters: %i[briar_hexling owlshade snail_lantern choir_wisp]
+biome_plan :resonance_fetid_swamp_tower, cycle: :resonance, order: 2,
+  monsters: %i[miasma_toad gorecap_sprout rotcap_elder carrion_dragonfly sludge_saint]
+biome_plan :resonance_tundra_tower, cycle: :resonance, order: 3,
+  monsters: %i[yeti rimefang_hare snowdrift_bison ice_mote berg_wyrm]
+biome_plan :resonance_volcanic_tower, cycle: :resonance, order: 4,
+  monsters: %i[salamander fire_drake]
+biome_plan :resonance_prismatic_tower, cycle: :resonance, order: 5,
+  monsters: %i[glass_lizard stormtick_imp ceiling_grudge prism_newt]
+
+biome_plan :conflict_mines_tower, cycle: :conflict, order: 1,
+  monsters: %i[pickaxe_goblin powder_rat drill_beetle]
+biome_plan :conflict_industrial_tower, cycle: :conflict, order: 2,
+  monsters: %i[mine_canary_revenant rust_loader]
+biome_plan :conflict_trenches_tower, cycle: :conflict, order: 3,
+  monsters: %i[rifle_hare trench_wolf grenadier_badger shield_bison smoke_crow]
+biome_plan :conflict_ship_tower, cycle: :conflict, order: 4,
+  monsters: %i[swordfish_duelist narwhal_gunner deck_kraken]
+biome_plan :conflict_oceanside_tower, cycle: :conflict, order: 5,
+  monsters: %i[bilge_eel]
+
+biome_plan :singularity_cyber_jungle_tower, cycle: :singularity, order: 1,
+  monsters: %i[chrome_gecko packet_snake holo_tarantula neon_orchid]
+biome_plan :singularity_data_caves_tower, cycle: :singularity, order: 2,
+  monsters: %i[cache_bat kernel_grudge fork_bomb_imp segfault_loader]
+biome_plan :singularity_glass_desert_tower, cycle: :singularity, order: 3,
+  monsters: %i[glass_scorpion]
+biome_plan :singularity_orbital_tundra_tower, cycle: :singularity, order: 4,
+  monsters: %i[orbital_yeti]
+biome_plan :singularity_null_ocean_tower, cycle: :singularity, order: 5,
+  monsters: %i[null_kraken blue_screen_wisp starfire_anomaly null_mote]

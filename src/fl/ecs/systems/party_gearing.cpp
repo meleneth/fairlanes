@@ -12,6 +12,8 @@
 
 #include "fl/ecs/components/closet.hpp"
 #include "fl/ecs/components/equipment.hpp"
+#include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/systems/effective_combat_stats.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/loot/equipment_builder.hpp"
 #include "fl/lospec500.hpp"
@@ -403,6 +405,10 @@ void equip_party(fl::context::PartyCtx &ctx,
 
       append_equipped_log(ctx, member.name(), next_equipment, slot);
     }
+    auto &stats = reg.get<fl::ecs::components::Stats>(member.member_id());
+    stats.hp_ = std::min(stats.hp_,
+                         fl::ecs::systems::effective_combat_stats(
+                             reg, member.member_id()).max_hp);
   }
 }
 

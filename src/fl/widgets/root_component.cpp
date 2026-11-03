@@ -27,7 +27,8 @@ RootComponent::RootComponent(
     fl::context::AccountCtx ctx,
     std::deque<fl::primitives::AccountData> &accounts, FancyLog &console_log,
     fl::primitives::WorldClock &world_clock,
-    const fl::primitives::DiscoveryJournal *discoveries)
+    const fl::primitives::DiscoveryJournal *discoveries,
+    fl::events::AchievementBus *achievements)
     : ctx_(std::move(ctx)), accounts_(&accounts), console_log_(&console_log),
       world_clock_(&world_clock), commands_(accounts, console_log, world_clock),
       discoveries_(discoveries) {
@@ -70,7 +71,38 @@ RootComponent::RootComponent(
           [this, account_id = account.account_id()](const auto &) {
             on_party_combat_started(account_id);
           });
+      milestone_subs_.emplace_back(
+          party.party_bus(), std::in_place_type<fl::events::BiomeUnlocked>,
+          [this](const fl::events::BiomeUnlocked &event) {
+            const std::string name = event.biome_id == "origin_plains_tower"
+                                         ? "Origin Plains Tower"
+                                         : event.biome_id;
+            important_notices_.enqueue({"BIOME UNLOCKED", name, 20});
+          });
+      milestone_subs_.emplace_back(
+          party.party_bus(), std::in_place_type<fl::events::CycleUnlocked>,
+          [this](const fl::events::CycleUnlocked &event) {
+            std::string name;
+            switch (event.cycle) {
+            case fl::primitives::Cycle::Origin: name = "Origin"; break;
+            case fl::primitives::Cycle::Resonance: name = "Resonance"; break;
+            case fl::primitives::Cycle::Conflict: name = "Conflict"; break;
+            case fl::primitives::Cycle::Singularity: name = "Singularity"; break;
+            }
+            important_notices_.enqueue({"CYCLE UNLOCKED", name, 27});
+          });
     }
+  }
+  if (achievements) {
+    achievement_sub_ = fl::events::ScopedAchievementListener{
+        *achievements, std::in_place_type<fl::events::AchievementUnlocked>,
+        [this](const fl::events::AchievementUnlocked &event) {
+          if (event.achievement ==
+              fl::events::AchievementId::RaidMutualDestruction) {
+            important_notices_.enqueue(
+                {"ACHIEVEMENT UNLOCKED", "Raid Mutual Destruction", 14});
+          }
+        }};
   }
 
   show_party_battle(commands_.account_index(), commands_.party_index());
@@ -85,6 +117,13 @@ ftxui::Component RootComponent::ActiveChild() {
 
 bool RootComponent::OnEvent(ftxui::Event event) {
   auto *overlay = console_overlay();
+
+  if (important_notices_.active() &&
+      (event == ftxui::Event::Character(" ") ||
+       event == ftxui::Event::Return)) {
+    important_notices_.dismiss();
+    return true;
+  }
 
   if (quit_confirmation_open_) {
     if (event == ftxui::Event::Escape) {
@@ -291,12 +330,8 @@ ftxui::Element RootComponent::Render() {
     });
   }
 
-  if (overlay->should_show()) {
-    return dbox({
-        content,
-        console_overlay_->Render(),
-    });
-  }
+  if (overlay->should_show())
+    content = dbox({content, console_overlay_->Render()});
 
   if (quit_confirmation_open_) {
     auto panel = window(text("Quit Fairlanes?") | bold,
@@ -306,7 +341,14 @@ ftxui::Element RootComponent::Render() {
     content = dbox({content, panel | center});
   }
 
-  return content;
+  if (important_notices_.active()) {
+    const int height = viewport_box_.y_max > viewport_box_.y_min
+                           ? viewport_box_.y_max - viewport_box_.y_min + 1
+                           : 24;
+    content = dbox({content, important_notices_.render(height)});
+  }
+
+  return content | reflect(viewport_box_);
 }
 
 void RootComponent::toggle_console() {

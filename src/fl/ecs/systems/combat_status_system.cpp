@@ -20,6 +20,7 @@
 #include "fl/ecs/systems/poison_system.hpp"
 #include "fl/ecs/systems/status_effect_lifetime.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
+#include "fl/ecs/systems/effective_combat_stats.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/world_clock.hpp"
 #include "fl/skills/skill_definition.hpp"
@@ -383,7 +384,8 @@ int CombatStatusSystem::heal(fl::context::EncounterCtx &party_ctx,
   }
 
   const int before = stats->hp_;
-  stats->hp_ = std::min(stats->max_hp_, stats->hp_ + amount);
+  stats->hp_ = std::min(effective_combat_stats(reg, target).max_hp,
+                        stats->hp_ + amount);
   const int healed = stats->hp_ - before;
   if (healed > 0) {
     party_ctx.log().append_markup(fmt::format(

@@ -15,18 +15,25 @@
 #include "fl/ecs/components/closet.hpp"
 #include "fl/ecs/components/combat_status.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"
+#include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/freeze.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/poison.hpp"
 #include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/systems/manual_equipment.hpp"
+#include "fl/ecs/systems/effective_combat_stats.hpp"
 #include "fl/events/party_bus.hpp"
+#include "fl/generated/floor_content.hpp"
+#include "fl/generated/regression_content.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/primitives/encounter_builder.hpp"
 #include "fl/primitives/encounter_data.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/world_clock.hpp"
 #include "fl/skills/skill.hpp"
+#include "fl/monsters/monster_kind.hpp"
+#include "fl/generated/monster_content.hpp"
 #include "fl/widgets/fancy_log.hpp"
 
 namespace fl::regression {
@@ -35,19 +42,19 @@ namespace {
 using Json = nlohmann::json;
 using fl::ecs::components::Stats;
 
-std::string_view skill_id(fl::skills::SkillKey skill) {
-  if (skill.base == fl::skills::SkillId::Thump && skill.rank.value() == 1) {
-    return "thump/1";
-  }
-  throw std::runtime_error("smoke fixture selected an undeclared skill");
+std::string skill_id(fl::skills::SkillKey skill) {
+  return std::string(fl::skills::stable_id(skill.base)) + "/" +
+         std::to_string(skill.rank.value());
 }
 
-Json stats_json(const Stats &stats) {
-  const auto &r = stats.resistances_;
+Json stats_json(entt::registry &reg, entt::entity actor) {
+  const auto &stats = reg.get<Stats>(actor);
+  const auto effective = fl::ecs::systems::effective_combat_stats(reg, actor);
+  const auto &r = effective.resistances;
   return {{"hp", stats.hp_},
-          {"max_hp", stats.max_hp_},
-          {"attack", stats.attack_},
-          {"armor", stats.armor_},
+          {"max_hp", effective.max_hp},
+          {"attack", effective.attack},
+          {"armor", effective.armor},
           {"resistances",
            {{"physical", r.physical},
             {"magical", r.magical},
@@ -80,11 +87,16 @@ Json statuses_for(entt::registry &reg, entt::entity actor) {
   return statuses;
 }
 
+int party_size_for(std::string_view fixture) {
+  const auto *scenario = generated_content::find(fixture);
+  return scenario ? static_cast<int>(scenario->party.size()) : 1;
+}
+
 } // namespace
 
 struct Session::Impl {
   struct Actor {
-    std::string_view id;
+    std::string id;
     entt::entity entity;
     Json prior_state;
   };
@@ -94,19 +106,30 @@ struct Session::Impl {
   fl::context::AccountCtx account_ctx;
   fl::context::PartyCtx party_ctx;
   fl::primitives::EncounterData *encounter{};
-  std::array<Actor, 2> actors;
+  std::vector<Actor> actors;
+  std::size_t hero_count{1};
   std::vector<fl::events::ScopedCombatantListener> listeners;
   Json recording;
   std::uint64_t beats{0};
   std::string outcome;
 
   explicit Impl(Options selected)
-      : options(std::move(selected)), game(1, 1, 1, false, false, options.seed),
+      : options(std::move(selected)),
+        game(1, 1, party_size_for(options.fixture), false, false, options.seed),
         account_ctx(game.account_context(0)),
         party_ctx(account_ctx.party_context(0)) {
-    if (options.fixture != kSmokeFixture) {
+    if (const auto *scenario = generated_content::find(options.fixture)) {
+      setup_generated(*scenario);
+      return;
+    }
+    const bool armor_fixture = options.fixture == kArmorFixture;
+    if (options.fixture != kSmokeFixture && !armor_fixture) {
       throw std::invalid_argument("unknown regression fixture: " +
                                   options.fixture);
+    }
+    if (options.hero_armor < 0 ||
+        (!armor_fixture && options.hero_armor != 0)) {
+      throw std::invalid_argument("invalid Armor for regression fixture");
     }
     if (options.beat_cap == 0) {
       throw std::invalid_argument("beat cap must be positive");
@@ -117,9 +140,9 @@ struct Session::Impl {
     party_ctx.party_data().preserve_terminal_encounter(true);
     auto &hero_stats = game.reg().get<Stats>(hero);
     hero_stats.name_ = "Regression Hero";
-    hero_stats.hp_ = hero_stats.max_hp_ = 20;
-    hero_stats.attack_ = 2;
-    hero_stats.armor_ = 0;
+    hero_stats.hp_ = hero_stats.max_hp_ = armor_fixture ? 8 : 20;
+    hero_stats.attack_ = armor_fixture ? 0 : 2;
+    hero_stats.armor_ = options.hero_armor;
     hero_stats.resistances_ = {};
     auto &party_member = game.reg().get<fl::ecs::components::PartyMember>(hero);
     party_member.closet().unequip_skill(fl::skills::SkillId::Observe);
@@ -129,19 +152,22 @@ struct Session::Impl {
     }
 
     auto &built = fl::primitives::EncounterBuilder{party_ctx}.one_on_one(
-        fl::monster::MonsterKind::FieldMouse);
+        armor_fixture ? fl::monster::MonsterKind::BumpkinHare
+                      : fl::monster::MonsterKind::FieldMouse);
     encounter = &built;
     const auto mouse = built.attackers().members().front();
     auto &mouse_stats = game.reg().get<Stats>(mouse);
-    mouse_stats.hp_ = mouse_stats.max_hp_ = 8;
+    mouse_stats.hp_ = mouse_stats.max_hp_ = armor_fixture ? 14 : 8;
     mouse_stats.attack_ = 0;
     mouse_stats.armor_ = 0;
     mouse_stats.resistances_ = {};
+    const auto enemy_skill = armor_fixture ? fl::skills::SkillId::Bump
+                                           : fl::skills::SkillId::Thump;
     game.reg().replace<fl::ecs::components::SkillSlots>(
         mouse, fl::ecs::components::SkillSlots::with_known(
-                   fl::skills::SkillKey{fl::skills::SkillId::Thump}));
+                   fl::skills::SkillKey{enemy_skill}));
 
-    actors = {{{"hero", hero, {}}, {"mouse", mouse, {}}}};
+    actors = {{"hero", hero, {}}, {armor_fixture ? "hare" : "mouse", mouse, {}}};
     for (auto &actor : actors)
       actor.prior_state = state(actor.entity);
 
@@ -157,16 +183,17 @@ struct Session::Impl {
         {"gameplay_seed", options.seed},
         {"gameplay_sequence", game.rng().base_sequence()},
         {"beat_cap", options.beat_cap},
+        {"fixture_parameters", {{"hero_armor", options.hero_armor}}},
         {"starting_world_beat", game.world_clock().elapsed_beats()},
         {"starting_uwu", encounter->visual_time().v},
-        {"expected_outcome", "hero_victory"},
+        {"expected_outcome", armor_fixture ? Json(nullptr) : Json("hero_victory")},
         {"external_inputs", Json::array()},
         {"initial_state",
          Json::array(
              {{{"id", "hero"},
                {"kind", "player"},
                {"name", hero_stats.name_},
-               {"stats", stats_json(hero_stats)},
+               {"stats", stats_json(game.reg(), hero)},
                {"atb",
                 atb_json(game.reg().get<fl::ecs::components::AtbCharge>(hero))},
                {"statuses", statuses_for(game.reg(), hero)},
@@ -174,15 +201,15 @@ struct Session::Impl {
                {"known_skills", Json::array({"observe/1", "thump/1"})},
                {"action_policy", "single_equipped_skill"},
                {"gear", Json::array()}},
-              {{"id", "mouse"},
-               {"kind", "field_mouse"},
+              {{"id", armor_fixture ? "hare" : "mouse"},
+               {"kind", armor_fixture ? "bumpkin_hare" : "field_mouse"},
                {"name", mouse_stats.name_},
-               {"stats", stats_json(mouse_stats)},
+               {"stats", stats_json(game.reg(), mouse)},
                {"atb", atb_json(game.reg().get<fl::ecs::components::AtbCharge>(
                            mouse))},
                {"statuses", statuses_for(game.reg(), mouse)},
-               {"loadout", Json::array({"thump/1"})},
-               {"known_skills", Json::array({"thump/1"})},
+               {"loadout", Json::array({armor_fixture ? "bump/1" : "thump/1"})},
+               {"known_skills", Json::array({armor_fixture ? "bump/1" : "thump/1"})},
                {"action_policy", "single_known_skill"},
                {"gear", Json::array()}}})},
         {"events", Json::array()},
@@ -190,6 +217,108 @@ struct Session::Impl {
 
     for (const auto &actor : actors)
       bind_events(actor.entity);
+    game.innervate_event_system(false);
+  }
+
+  void setup_generated(const generated_content::Scenario &scenario) {
+    const auto *variant = generated_content::find_variant(scenario, options.variant);
+    if (!variant) throw std::invalid_argument("unknown regression variant: " + options.variant);
+    if (options.hero_armor != 0)
+      throw std::invalid_argument("generated regression does not accept --armor");
+    if (options.beat_cap != scenario.beat_cap)
+      throw std::invalid_argument("generated regression beat cap differs from declaration");
+
+    auto &party = party_ctx.party_data();
+    party.preserve_terminal_encounter(true);
+    std::size_t index = 0;
+    for (auto &member : party.members()) {
+      const auto setup = scenario.party[index];
+      if (setup.policy != generated_content::ActionPolicy::SingleEquippedSkill)
+        throw std::invalid_argument("unsupported regression action policy");
+      const auto entity = member.member_id();
+      auto &stats = game.reg().get<Stats>(entity);
+      stats.name_ = "Regression Hero " + std::to_string(index + 1);
+      stats.hp_ = stats.max_hp_ = setup.hp;
+      stats.attack_ = setup.attack;
+      stats.armor_ = setup.armor;
+      stats.resistances_ = setup.resistances;
+      auto &party_member = game.reg().get<fl::ecs::components::PartyMember>(entity);
+      party_member.closet().unequip_skill(fl::skills::SkillId::Observe);
+      member.grimoire().learn(setup.skill);
+      if (!party_member.equip_known_skill(setup.skill))
+        throw std::runtime_error("could not equip generated regression skill");
+      actors.push_back({"hero" + std::to_string(index + 1), entity, {}});
+      ++index;
+    }
+    hero_count = actors.size();
+
+    // The variant item travels through inventory and the ordinary equip system.
+    const auto item = fl::loot::generated_content::definition(
+        variant->equipped_item).item.create(game.reg());
+    party.add_item(item);
+    const auto &gear = game.reg().get<fl::ecs::components::Equipment>(item);
+    const auto request = fl::events::EquipmentEquipRequested{
+        actors.front().entity, gear.slot(), item};
+    if (!fl::ecs::systems::ManualEquipmentSystem::commit(party_ctx, request))
+      throw std::runtime_error("could not equip regression variant item");
+    party.revitalize_members();
+
+    auto &built = fl::primitives::EncounterBuilder{
+        party_ctx, fl::primitives::EncounterMode::HeroesJourney,
+        fl::primitives::EncounterBuilder::TowerFloor{
+            std::string(scenario.biome_id), scenario.floor}}.thump_it_out();
+    encounter = &built;
+    const auto *floor = fl::primitives::generated_content::floor_lineup(
+        scenario.biome_id, scenario.floor);
+    for (std::size_t i = 0; i < built.attackers().members().size(); ++i)
+      actors.push_back({"enemy" + std::to_string(i + 1),
+                        built.attackers().members()[i], {}});
+    for (auto &actor : actors) actor.prior_state = state(actor.entity);
+
+    Json initial = Json::array();
+    for (std::size_t i = 0; i < actors.size(); ++i) {
+      const auto &actor = actors[i];
+      const auto &stats = game.reg().get<Stats>(actor.entity);
+      const bool hero = i < hero_count;
+      Json known = Json::array();
+      if (hero) {
+        known.push_back(skill_id(fl::skills::SkillKey{scenario.party[i].skill}));
+      } else {
+        for (const auto skill : fl::monster::generated_content::known_skills(
+                 floor->monsters[i - hero_count]))
+          known.push_back(skill_id(fl::skills::SkillKey{skill}));
+      }
+      initial.push_back({{"id", actor.id},
+                         {"kind", hero ? "player" : "monster"},
+                         {"name", stats.name_},
+                         {"stats", stats_json(game.reg(), actor.entity)},
+                         {"atb", atb_json(game.reg().get<fl::ecs::components::AtbCharge>(actor.entity))},
+                         {"statuses", statuses_for(game.reg(), actor.entity)},
+                         {"loadout", known},
+                         {"known_skills", known},
+                         {"action_policy", hero ? "single_equipped_skill" : "monster_decision_rules"},
+                         {"gear", hero && i == 0 ? Json::array({std::string(gear.unique_id())}) : Json::array()}});
+    }
+    recording = {{"format", "fairlanes-combat-recording"},
+                 {"version", 1},
+                 {"fixture", options.fixture},
+                 {"build", {{"version", fl::build_identity::version},
+                             {"revision", fl::build_identity::revision},
+                             {"source_dirty", fl::build_identity::source_dirty}}},
+                 {"content_sha256", fl::build_identity::content_sha256},
+                 {"gameplay_seed", options.seed},
+                 {"gameplay_sequence", game.rng().base_sequence()},
+                 {"beat_cap", options.beat_cap},
+                 {"fixture_parameters", {{"variant", options.variant},
+                                         {"equipped_item", std::string(gear.unique_id())}}},
+                 {"starting_world_beat", game.world_clock().elapsed_beats()},
+                 {"starting_uwu", encounter->visual_time().v},
+                 {"expected_outcome", nullptr},
+                 {"external_inputs", Json::array()},
+                 {"initial_state", initial},
+                 {"events", Json::array()},
+                 {"result", nullptr}};
+    for (const auto &actor : actors) bind_events(actor.entity);
     game.innervate_event_system(false);
   }
 
@@ -261,22 +390,31 @@ struct Session::Impl {
         actor.prior_state = std::move(next);
       }
     }
-    const bool hero_alive = game.reg().get<Stats>(actors[0].entity).is_alive();
-    const bool mouse_alive = game.reg().get<Stats>(actors[1].entity).is_alive();
-    if (!hero_alive && !mouse_alive)
+    const bool hero_alive = std::ranges::any_of(
+        actors.begin(), actors.begin() + static_cast<std::ptrdiff_t>(hero_count),
+        [this](const Actor &actor) { return game.reg().get<Stats>(actor.entity).is_alive(); });
+    const bool enemy_alive = std::ranges::any_of(
+        actors.begin() + static_cast<std::ptrdiff_t>(hero_count), actors.end(),
+        [this](const Actor &actor) { return game.reg().get<Stats>(actor.entity).is_alive(); });
+    if (!hero_alive && !enemy_alive)
       outcome = "mutual_destruction";
-    else if (!mouse_alive)
+    else if (!enemy_alive)
       outcome = "hero_victory";
     else if (!hero_alive)
-      outcome = "mouse_victory";
+      outcome = options.fixture == kArmorFixture ? "hare_victory" :
+                options.fixture == kSmokeFixture ? "mouse_victory" : "enemy_victory";
     else if (beats >= options.beat_cap)
       outcome = "beat_cap";
 
     if (!outcome.empty()) {
       append({{"type", "end"}, {"outcome", outcome}});
+      Json remaining_hp = Json::object();
+      for (const auto &actor : actors)
+        remaining_hp[actor.id] = game.reg().get<Stats>(actor.entity).hp_;
       recording["result"] = {{"outcome", outcome},
                              {"beats", beats},
                              {"uwu", encounter->visual_time().v},
+                             {"remaining_hp", remaining_hp},
                              {"simulated_seconds",
                               static_cast<double>(beats) /
                                   fl::primitives::WorldClock::kBeatsPerSecond}};
@@ -320,7 +458,7 @@ Session::first_divergence(const nlohmann::json &expected) const {
   for (const auto *key :
        {"fixture", "content_sha256", "gameplay_seed", "gameplay_sequence",
         "beat_cap", "starting_world_beat", "starting_uwu", "initial_state",
-        "external_inputs"}) {
+        "external_inputs", "fixture_parameters"}) {
     if (!expected.contains(key) ||
         expected.at(key) != impl_->recording.at(key)) {
       return std::string("recording metadata differs at ") + key;
@@ -370,9 +508,12 @@ nlohmann::json read_recording(const std::string &path) {
 }
 
 Options options_from_recording(const nlohmann::json &recording) {
+  const auto &parameters = recording.at("fixture_parameters");
   return Options{recording.at("fixture").get<std::string>(),
                  recording.at("gameplay_seed").get<std::uint64_t>(),
-                 recording.at("beat_cap").get<std::uint64_t>()};
+                 recording.at("beat_cap").get<std::uint64_t>(),
+                 parameters.value("hero_armor", 0),
+                 parameters.value("variant", std::string{})};
 }
 
 } // namespace fl::regression

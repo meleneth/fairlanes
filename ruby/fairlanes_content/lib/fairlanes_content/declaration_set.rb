@@ -5,7 +5,7 @@ require "fairlanes_content/models"
 module FairlanesContent
   class DeclarationSet
     attr_reader :visuals, :skills, :random_combat_skills, :monsters, :statuses,
-                :gears, :encounter_pools, :biomes
+                :gears, :encounter_pools, :biomes, :regressions, :biome_plans
 
     def self.load_file(path)
       new.tap { |set| set.load_file(path) }
@@ -20,10 +20,14 @@ module FairlanesContent
       @gears = []
       @encounter_pools = []
       @biomes = []
+      @regressions = []
+      @biome_plans = []
     end
 
     def load_file(path)
       instance_eval(File.read(path), path)
+      regression_path = File.join(File.dirname(path), "fairlanes_regression_declarations.rb")
+      instance_eval(File.read(regression_path), regression_path) if File.file?(regression_path)
       freeze_records
       self
     end
@@ -129,6 +133,16 @@ module FairlanesContent
       )
     end
 
+    def regression(id, encounter:, party:, seeds:, beat_cap:, variants:)
+      regressions << RegressionScenario.new(id: id, encounter: encounter,
+        party: party, seeds: seeds, beat_cap: beat_cap, variants: variants)
+    end
+
+    def biome_plan(id, cycle:, order:, monsters:)
+      biome_plans << BiomePlan.new(id: id, cycle: cycle, order: order,
+                                  monsters: monsters)
+    end
+
     private
 
     def cpp_name(id)
@@ -154,6 +168,10 @@ module FairlanesContent
       encounter_pools.freeze
       biomes.each(&:freeze)
       biomes.freeze
+      regressions.each(&:freeze)
+      regressions.freeze
+      biome_plans.each(&:freeze)
+      biome_plans.freeze
     end
   end
 end

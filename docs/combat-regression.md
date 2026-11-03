@@ -52,3 +52,11 @@ Same-uWu events retain their production callback order followed by actor-order
 state snapshots. Visual effects and presentation random choices do not use the
 gameplay RNG stream. The included sample is
 `samples/regression/woodland_mouse_duel.seed42.json`.
+
+Ruby-authored scenarios use the same runner and replay path. The floor-10
+scenario has two named variants in
+`scripts/fairlanes_regression_declarations.rb`. Run `--fixture
+origin_woodland_floor10 --variant arrival|detour --all-seeds --record-dir DIR`
+to evaluate its declared seed set. Add `--assert-expected` to require its
+win-count range and reject any beat cap. See `docs/origin-woodland-slice.md`
+for paired results and replay commands.

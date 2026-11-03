@@ -4,6 +4,7 @@
 #include "fl/grand_central.hpp"
 #include "fl/primitives/world_clock.hpp"
 #include "fl/regression/session.hpp"
+#include "fl/generated/regression_content.hpp"
 #include "fl/widgets/party_battle_screen.hpp"
 
 namespace {
@@ -63,4 +64,32 @@ TEST_CASE(
   const auto divergence = capped.first_divergence(changed);
   REQUIRE(divergence.has_value());
   REQUIRE(divergence->find("event 0") != std::string::npos);
+}
+
+TEST_CASE("Ruby floor ten variants use the generated lineup and gear in combat",
+          "[regression][generated]") {
+  const auto *scenario = fl::regression::generated_content::find(
+      "origin_woodland_floor10");
+  REQUIRE(scenario != nullptr);
+  REQUIRE(scenario->seeds.size() == 8);
+  fl::regression::Options arrival{"origin_woodland_floor10", 1, 2400, 0,
+                                  "arrival"};
+  fl::regression::Options detour = arrival;
+  detour.variant = "detour";
+  fl::regression::Session first{arrival};
+  fl::regression::Session second{detour};
+  const auto &base = first.recording().at("initial_state");
+  const auto &upgraded = second.recording().at("initial_state");
+  REQUIRE(base.size() == 10);
+  REQUIRE(base.at(5).at("name") == "Honey Badger");
+  REQUIRE(base.at(0).at("stats").at("armor") == 1);
+  REQUIRE(upgraded.at(0).at("stats").at("armor") == 3);
+  REQUIRE(upgraded.at(0).at("stats").at("max_hp") == 25);
+  while (!first.finished()) first.advance_beat();
+  while (!second.finished()) second.advance_beat();
+  REQUIRE(first.outcome() == "enemy_victory");
+  REQUIRE(second.outcome() == "hero_victory");
+  fl::regression::Session repeated{detour};
+  while (!repeated.finished()) repeated.advance_beat();
+  REQUIRE(repeated.recording().at("events") == second.recording().at("events"));
 }

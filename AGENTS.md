@@ -605,6 +605,13 @@ raid screen when any of its parties resumes normal combat; navigation is applied
 on the next frame. Other accounts and live raids cannot trigger this dismissal.
 Enter and the five-minute wipe-result timeout remain available during recovery.
 
+Important progression notices are driven by typed `BiomeUnlocked` and
+`CycleUnlocked` party events, and the existing `AchievementUnlocked` bus. The
+root owns a queued, colored notice overlay that rises from lower right to upper
+right. Space or Enter acknowledges one notice and is consumed before normal
+input handling. The floor-9 Woodland clear currently emits `BiomeUnlocked` for
+Origin Plains; cycle unlock producers are future work.
+
 Collective victory calls `RaidLootSystem` once, granting two exclusive collectible
 `RaidTrinket` entities per participating party before `RaidLootAwarded`. Wiped
 parties receive the same allocation. These items currently have no equipment slot
@@ -617,11 +624,18 @@ The first combat regression fixture is `woodland_mouse_duel`. The separate
 time; `fairlanes --replay` re-simulates a versioned recording in the existing
 party combat view and checks ordered events. See `docs/combat-regression.md`.
 
-Generated content also includes special gear and resolved 100-floor tower data.
-Gear declarations support per-channel resistance percentage modifiers through
-`EquipmentBuilder`; other numeric stat modifiers remain unsupported. An explicit tower floor goes through
-`EncounterBuilder` while ordinary spawn selection remains unchanged. The
-generated floor manifest is `docs/tour/generated/floor-manifest.md`.
+Generated content also includes special gear, resolved 100-floor tower data,
+and typed Ruby-authored regression setup. Gear declarations support Attack,
+Armor, Max HP, and per-channel resistances through `EquipmentBuilder`.
+Effective combat stats read currently equipped items, so swapping does not
+stack bonuses or heal. An explicit tower floor goes through `EncounterBuilder`
+while ordinary spawn selection remains unchanged. The generated floor manifest
+is `docs/tour/generated/floor-manifest.md`. The first playable route runs
+Woodland floors 1–10, unlocks Plains on clearing floor 9, and awards Mossbound
+Cape after Plains floor 1. See `docs/origin-woodland-slice.md`. The five towers
+per Cycle, their monster skills, and unassigned monsters and skills are
+generated from the Ruby DSL into `brainstorms/biome-tower-map.md`; run
+`fairlanes_biome_plan_check` to verify it.
 
 Use specific EnTT headers: `entity/entity.hpp` for IDs/null, `entity/fwd.hpp`
 for declared registry/handle references, `entity/registry.hpp` for registry

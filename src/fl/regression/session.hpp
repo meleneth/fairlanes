@@ -15,11 +15,14 @@ class GrandCentral;
 namespace fl::regression {
 
 inline constexpr std::string_view kSmokeFixture = "woodland_mouse_duel";
+inline constexpr std::string_view kArmorFixture = "woodland_armor_duel";
 
 struct Options {
   std::string fixture{std::string{kSmokeFixture}};
   std::uint64_t seed{42};
   std::uint64_t beat_cap{1200};
+  int hero_armor{0};
+  std::string variant{};
 };
 
 class Session {

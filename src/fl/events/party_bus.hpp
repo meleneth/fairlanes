@@ -4,11 +4,13 @@
 #include <entt/entity/fwd.hpp>
 
 #include <functional>
+#include <string>
 #include <utility>
 #include <variant>
 
 #include "fl/loot/equipment_slot.hpp"
 #include "fl/monsters/monster_kind.hpp"
+#include "fl/primitives/cycle.hpp"
 #include "fl/skills/skill.hpp"
 #include "sr/variant_bus.hpp"
 
@@ -20,6 +22,8 @@ struct MemberJoined {
 };
 struct PartyWiped {};
 struct PartyVictory {};
+struct BiomeUnlocked { std::string biome_id; };
+struct CycleUnlocked { fl::primitives::Cycle cycle; };
 // A normal encounter is fully populated and ready for combat ticks.
 struct PartyCombatStarted {};
 struct PartyLeftCombat {};
@@ -66,6 +70,7 @@ struct EquipmentEquipped {
 
 using PartyEvent =
     std::variant<PartyCreated, MemberJoined, PartyWiped, PartyVictory,
+                 BiomeUnlocked, CycleUnlocked,
                  PartyCombatStarted, PartyLeftCombat,
                  PartyReturnToTownRequested, PartyReturnedToTown,
                  PartySummonedToRaid, PartyRaidResolved, PartyGainedXP,

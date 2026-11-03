@@ -30,6 +30,10 @@ module FairlanesContent
         puts artifacts.fl_source_files
       elsif options[:check_docs]
         artifacts.check_docs!(options.fetch(:docs_dir))
+      elsif options[:check_brainstorms]
+        artifacts.check_brainstorms!(options.fetch(:brainstorms_dir))
+      elsif options[:brainstorms_dir]
+        artifacts.write_brainstorms!(options.fetch(:brainstorms_dir))
       elsif options[:docs_dir]
         artifacts.write_docs!(options.fetch(:docs_dir))
       elsif options[:check]
@@ -72,6 +76,12 @@ module FairlanesContent
         parser.on("--check-docs", "Fail if generated source docs are missing or stale") do
           options[:check_docs] = true
         end
+        parser.on("--brainstorms-dir DIR", "Directory for generated biome plan") do |dir|
+          options[:brainstorms_dir] = dir
+        end
+        parser.on("--check-brainstorms", "Fail if generated biome plan is stale") do
+          options[:check_brainstorms] = true
+        end
         parser.on("--list-generated", "Print generated artifact paths") do
           options[:list_generated] = true
         end
@@ -86,6 +96,11 @@ module FairlanesContent
 
         return
       end
+      if options[:check_brainstorms]
+        raise OptionParser::MissingArgument, "--brainstorms-dir" unless options[:brainstorms_dir]
+        return
+      end
+      return if options[:brainstorms_dir]
       return if options[:docs_dir]
 
       raise OptionParser::MissingArgument, "--out-dir" unless options[:out_dir]

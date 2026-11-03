@@ -25,6 +25,7 @@
 #include "fl/widgets/chaos_attract_root.hpp"
 #include "fl/widgets/root_chrome.hpp"
 #include "fl/widgets/root_component.hpp"
+#include "fl/widgets/important_notice_overlay.hpp"
 
 namespace {
 
@@ -209,6 +210,60 @@ TEST_CASE("Normal gameplay renders the normal key manifest",
   REQUIRE(render_to_string(root).find("2/3") != std::string::npos);
   REQUIRE(root.OnEvent(ftxui::Event::Character(";")));
   REQUIRE(render_to_string(root).find("1/2") != std::string::npos);
+}
+
+TEST_CASE("Important notices rise from bottom right and wait for acknowledgement",
+          "[widgets][root][notice]") {
+  using Overlay = fl::widgets::ImportantNoticeOverlay;
+  const Overlay::Clock::time_point start{};
+  Overlay notices;
+  notices.enqueue({"BIOME UNLOCKED", "Origin Plains Tower", 20}, start);
+
+  auto render_notice = [&](Overlay::Clock::time_point now) {
+    auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(80),
+                                        ftxui::Dimension::Fixed(24));
+    ftxui::Render(screen, notices.render(24, now) |
+                              ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 80) |
+                              ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 24));
+    return screen_text(screen);
+  };
+
+  const auto bottom = render_notice(start);
+  const auto top = render_notice(start + std::chrono::milliseconds{900});
+  REQUIRE(find_line_containing(bottom, "BIOME UNLOCKED").value() > 12);
+  REQUIRE(find_line_containing(top, "BIOME UNLOCKED").value() < 5);
+  REQUIRE(bottom.find("Origin Plains Tower") != std::string::npos);
+  REQUIRE(top.find("Origin Plains Tower") != std::string::npos);
+  notices.dismiss(start + std::chrono::milliseconds{900});
+  REQUIRE_FALSE(notices.active());
+}
+
+TEST_CASE("Root queues milestone events and consumes the acknowledging key",
+          "[widgets][root][notice]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto root = fl::widgets::RootComponent{
+      gc.account_context(0), gc.accounts(), gc.game_log(), gc.world_clock(),
+      nullptr, &gc.raid_milestones().bus()};
+  const auto baseline = render_to_string(root);
+  auto &bus = gc.accounts().front().parties().front().party_bus();
+  bus.emit(fl::events::PartyEvent{
+      fl::events::BiomeUnlocked{"origin_plains_tower"}});
+  bus.emit(fl::events::PartyEvent{
+      fl::events::CycleUnlocked{fl::primitives::Cycle::Resonance}});
+  gc.raid_milestones().bus().emit(fl::events::AchievementUnlocked{
+      fl::events::AchievementId::RaidMutualDestruction,
+      gc.accounts().front().account_id(), 1});
+
+  REQUIRE(render_to_string(root).find("BIOME UNLOCKED") != std::string::npos);
+  REQUIRE(root.OnEvent(ftxui::Event::Character(" ")));
+  REQUIRE(render_to_string(root).find("CYCLE UNLOCKED") != std::string::npos);
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  REQUIRE(render_to_string(root).find("ACHIEVEMENT UNLOCKED") !=
+          std::string::npos);
+  REQUIRE(root.OnEvent(ftxui::Event::Character(" ")));
+  REQUIRE(render_to_string(root) == baseline);
+  REQUIRE(root.OnEvent(ftxui::Event::Character(" ")));
+  REQUIRE(render_to_string(root) != baseline);
 }
 
 TEST_CASE("Account battle combatants keep fixed twenty-percent widths",

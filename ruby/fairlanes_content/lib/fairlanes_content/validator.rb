@@ -75,6 +75,8 @@ module FairlanesContent
       validate_decision_rules(errors)
       validate_gear(errors)
       validate_floor_content(errors)
+      validate_regressions(errors)
+      validate_biome_plans(errors)
       errors
     end
 
@@ -108,11 +110,15 @@ module FairlanesContent
         errors << "#{prefix} has invalid slot #{gear.slot}" unless GEAR_SLOTS.include?(gear.slot)
         errors << "#{prefix} has invalid armor kind #{gear.armor_kind}" unless ARMOR_KINDS.include?(gear.armor_kind)
         errors << "#{prefix} has invalid tier #{gear.tier}" unless GEAR_TIERS.include?(gear.tier)
-        errors << "#{prefix} has invalid weight #{gear.weight}" unless positive_integer?(gear.weight)
-        if !gear.modifiers.is_a?(Hash) || (gear.modifiers.keys - [:resistances]).any?
+        errors << "#{prefix} has invalid weight #{gear.weight}" unless non_negative_integer?(gear.weight)
+        if !gear.modifiers.is_a?(Hash) || (gear.modifiers.keys - [:resistances, :attack, :armor, :max_hp]).any?
           errors << "#{prefix} has unsupported stat modifiers"
         else
           validate_resistances(gear.modifiers.fetch(:resistances, {}), "#{prefix} resistances", errors)
+          %i[attack armor max_hp].each do |stat|
+            value = gear.modifiers.fetch(stat, 0)
+            errors << "#{prefix} has invalid #{stat} modifier" unless non_negative_integer?(value) && value <= 1000
+          end
         end
       end
     end
@@ -171,6 +177,83 @@ module FairlanesContent
       end
       lineup.each do |monster|
         errors << "#{prefix} references unknown monster #{monster}" unless monsters.include?(monster)
+      end
+    end
+
+    def validate_regressions(errors)
+      ids = declarations.regressions.map(&:id)
+      errors << "duplicate regression ids" unless ids.uniq.size == ids.size
+      scenarios = declarations.regressions
+      scenarios.each do |scenario|
+        prefix = "regression #{scenario.id}"
+        errors << "#{prefix} has invalid stable id" unless stable_id?(scenario.id)
+        encounter = scenario.encounter
+        unless encounter.is_a?(Hash) && (encounter.keys - %i[biome floor]).empty? &&
+               declarations.biomes.any? { |b| b.id == encounter[:biome] && valid_floor?(encounter[:floor], b.floors) }
+          errors << "#{prefix} references unknown encounter floor"
+        end
+        unless scenario.party.is_a?(Array) && (1..5).cover?(scenario.party.size)
+          errors << "#{prefix} needs one to five party members"
+          next
+        end
+        scenario.party.each_with_index do |member, index|
+          unless member.is_a?(Hash) && positive_integer?(member[:hp]) &&
+                 non_negative_integer?(member[:attack]) && non_negative_integer?(member[:armor]) &&
+                 member[:skill].is_a?(Symbol) && declarations.skills.any? { |s| s.id == member[:skill] } &&
+                 member[:policy] == :single_equipped_skill
+            errors << "#{prefix} has invalid party member #{index}"
+          end
+          validate_resistances(member.fetch(:resistances, {}),
+                               "#{prefix} party member #{index} resistances", errors) if member.is_a?(Hash)
+        end
+        unless scenario.seeds.is_a?(Array) && !scenario.seeds.empty? &&
+               scenario.seeds.uniq.size == scenario.seeds.size &&
+               scenario.seeds.all? { |seed| non_negative_integer?(seed) }
+          errors << "#{prefix} has invalid seeds"
+        end
+        errors << "#{prefix} has invalid beat cap" unless positive_integer?(scenario.beat_cap)
+        variants = scenario.variants
+        unless variants.is_a?(Array) && !variants.empty?
+          errors << "#{prefix} needs variants"
+          next
+        end
+        variant_ids = variants.map { |variant| variant[:id] }
+        errors << "#{prefix} has duplicate variants" unless variant_ids.uniq.size == variant_ids.size
+        variants.each do |variant|
+          errors << "#{prefix} has invalid variant id" unless stable_id?(variant[:id])
+          item = variant[:equipped_item]
+          errors << "#{prefix} references unknown gear #{item}" unless declarations.gears.any? { |gear| gear.id == item }
+          wins = variant[:expected_wins]
+          if wins && (!wins.is_a?(Range) || !non_negative_integer?(wins.begin) ||
+                      !non_negative_integer?(wins.end) || wins.end > scenario.seeds.size || wins.begin > wins.end)
+            errors << "#{prefix} has invalid expected win range"
+          end
+        end
+      end
+    end
+
+    def validate_biome_plans(errors)
+      return if declarations.biome_plans.empty?
+      ids = declarations.biome_plans.map(&:id)
+      errors << "duplicate biome plan ids" unless ids.uniq.size == ids.size
+      assigned = []
+      CYCLES.each do |cycle|
+        plans = declarations.biome_plans.select { |plan| plan.cycle == cycle }
+        errors << "cycle #{cycle} must plan five ordered towers" unless plans.map(&:order).sort == (1..5).to_a
+      end
+      declarations.biome_plans.each do |plan|
+        errors << "biome plan #{plan.id} has invalid id" unless stable_id?(plan.id)
+        errors << "biome plan #{plan.id} has no monsters" if plan.monsters.empty?
+        plan.monsters.each do |id|
+          monster = declarations.monsters.find { |entry| entry.id == id }
+          errors << "biome plan #{plan.id} references unknown monster #{id}" unless monster
+          errors << "biome plan #{plan.id} has wrong-cycle monster #{id}" if monster && monster.cycle != plan.cycle
+          assigned << id
+        end
+      end
+      errors << "biome plans duplicate monster assignments" unless assigned.uniq.size == assigned.size
+      declarations.biomes.each do |biome|
+        errors << "biome #{biome.id} has no tower plan" unless ids.include?(biome.id)
       end
     end
 

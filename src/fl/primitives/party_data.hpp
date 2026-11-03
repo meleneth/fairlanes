@@ -89,6 +89,15 @@ public:
   bool preserves_terminal_encounter() const noexcept {
     return preserve_terminal_encounter_;
   }
+  struct TowerRoute {
+    std::string_view biome_id;
+    int floor;
+  };
+  std::optional<TowerRoute> tower_route() const noexcept;
+  bool select_tower(std::string_view biome_id);
+  void begin_tower_encounter() { encounter_tower_biome_ = tower_biome_; }
+  bool plains_unlocked() const noexcept { return plains_unlocked_; }
+  bool tower_choice_pending() const noexcept { return tower_choice_pending_; }
   // ---- behavior ----
   void advance_beat();
   void hook_to_beat(seerin::BeatBus &gc_beat_bus);
@@ -179,12 +188,20 @@ private:
   std::optional<FarmFocus> previous_farm_focus_;
   bool farm_focus_selected_{false};
   EncounterMode encounter_mode_{EncounterMode::ChaosAttractor};
+  std::string tower_biome_{};
+  std::string encounter_tower_biome_{};
+  int woodland_floor_{1};
+  int plains_floor_{1};
+  bool plains_unlocked_{false};
+  bool tower_choice_pending_{false};
+  bool plains_reward_awarded_{false};
 
   seerin::BeatBus party_beat_bus_{};
   seerin::BeatSub gc_forward_sub_{};
   fl::events::ScopedPartyListener town_revitalize_sub_{};
   fl::events::ScopedPartyListener loot_drop_sub_{};
   fl::events::ScopedPartyListener manual_equipment_sub_{};
+  fl::events::ScopedPartyListener tower_progress_sub_{};
   int town_penalty_beats_remaining_{0};
 
   struct PendingLearnedSkill {

@@ -5,6 +5,8 @@
 
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
+#include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/systems/effective_combat_stats.hpp"
 #include "fl/primitives/party_data.hpp"
 
 namespace fl::ecs::systems {
@@ -55,6 +57,9 @@ bool ManualEquipmentSystem::commit(
   }
   equipped = request.item;
   party.replace_items(std::move(inventory));
+  auto &stats = reg.get<fl::ecs::components::Stats>(request.member);
+  stats.hp_ = std::min(stats.hp_,
+                       effective_combat_stats(reg, request.member).max_hp);
 
   party_ctx.bus().emit(fl::events::PartyEvent{fl::events::EquipmentEquipped{
       request.member, request.slot, request.item, previous}});

@@ -8,9 +8,11 @@ namespace fl::ecs::components {
 Equipment::Equipment(fl::loot::EquipmentSlot slot, std::string name,
                      fl::loot::ArmorKind armor_kind, fl::loot::Tier tier,
                      std::string unique_id,
-                     fl::primitives::Resistances resistances)
+                     fl::primitives::Resistances resistances,
+                     int attack, int armor, int max_hp)
     : slot_(slot), armor_kind_(armor_kind), tier_(tier), name_(std::move(name)),
-      unique_id_(std::move(unique_id)), resistances_(resistances) {}
+      unique_id_(std::move(unique_id)), resistances_(resistances),
+      attack_(attack), armor_(armor), max_hp_(max_hp) {}
 
 fl::loot::EquipmentSlot Equipment::slot() const noexcept { return slot_; }
 

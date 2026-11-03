@@ -190,7 +190,7 @@ Initial themed assignments for content planning; cycle metadata does not filter 
 | Monster | C++ ID | Cycle | HP | Level | Known skills | Pool |
 | --- | --- | --- | ---: | --- | --- | --- |
 | Field Mouse | FieldMouse | Origin | 5 |  | Thump | common_woodland |
-| Honey Badger | HoneyBadger | Origin | 500 |  | Eviscerate | rare_woodland |
+| Honey Badger | HoneyBadger | Origin | 120 |  | Eviscerate | rare_woodland |
 | Bumpkin Hare | BumpkinHare | Origin | 7 | 2 | Bump | common_woodland |
 | Scaredy Cat | ScaredyCat | Origin | 6 | 2 | Flee, Thump | common_woodland |
 | Mire Squish | MireSquish | Origin | 9 | 3 | Squish | common_woodland |

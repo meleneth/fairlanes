@@ -1,11 +1,11 @@
 {
   "beat_cap": 1200,
   "build": {
-    "revision": "50b2248eab6bea2aa541d3687a294d2e075117cc",
+    "revision": "08b2a9ad60e23304ba376c234db6d92c7bea7169",
     "source_dirty": true,
     "version": "0.1.0"
   },
-  "content_sha256": "5a7fabee2b4c869179214dbd3547fa03448fc93446c7ef825c5b38842825568e",
+  "content_sha256": "89ffdb790da6a723cecf9929ef32507be725e19a3cd207dffa3a37d6afc91eab",
   "events": [
     {
       "actor": "hero",
@@ -146,6 +146,9 @@
   "expected_outcome": "hero_victory",
   "external_inputs": [],
   "fixture": "woodland_mouse_duel",
+  "fixture_parameters": {
+    "hero_armor": 0
+  },
   "format": "fairlanes-combat-recording",
   "gameplay_seed": 42,
   "gameplay_sequence": 0,
@@ -219,6 +222,10 @@
   "result": {
     "beats": 207,
     "outcome": "hero_victory",
+    "remaining_hp": {
+      "hero": 17,
+      "mouse": 0
+    },
     "simulated_seconds": 17.25,
     "uwu": 16480
   },

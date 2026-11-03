@@ -10,6 +10,8 @@
 #include "fl/ecs/components/color_override.hpp"
 #include "fl/ecs/systems/loot_drop.hpp"
 #include "fl/ecs/systems/manual_equipment.hpp"
+#include "fl/ecs/systems/effective_combat_stats.hpp"
+#include "fl/generated/gear_content.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/fsm/party_loop_machine.hpp"
 #include "fl/primitives/account_data.hpp"
@@ -39,6 +41,49 @@ PartyData::PartyData(entt::entity party_id,
   loot_drop_sub_ = fl::ecs::systems::LootDropSystem::bind_listener(party_ctx_);
   manual_equipment_sub_ =
       fl::ecs::systems::ManualEquipmentSystem::bind_listener(party_ctx_);
+  tower_progress_sub_ = fl::events::ScopedPartyListener{
+      party_bus_, std::in_place_type<fl::events::PartyVictory>,
+      [this](const fl::events::PartyVictory &) {
+        if (in_raid() || !encounter_data_ || encounter_tower_biome_.empty()) return;
+        if (encounter_tower_biome_ == "origin_woodland_tower") {
+          if (woodland_floor_ == 9) {
+            plains_unlocked_ = true;
+            tower_choice_pending_ = true;
+            party_bus_.emit(fl::events::PartyEvent{
+                fl::events::BiomeUnlocked{"origin_plains_tower"}});
+            log_->append_plain("Origin Plains Tower unlocked. Choose tower plains for the detour or tower woodland for floor 10.");
+          }
+          woodland_floor_ = std::min(100, woodland_floor_ + 1);
+        } else if (encounter_tower_biome_ == "origin_plains_tower") {
+          if (plains_floor_ == 1 && !plains_reward_awarded_) {
+            fl::ecs::systems::LootDropSystem::grant_unique(
+                party_ctx_, fl::loot::generated_content::GearId::MossboundCape);
+            plains_reward_awarded_ = true;
+            log_->append_plain("Plains floor 1 reward: Mossbound Cape. Equip it in the party inventory.");
+          }
+          plains_floor_ = std::min(100, plains_floor_ + 1);
+        }
+        // Tower travel returns through town; begin the next floor at full
+        // effective HP without adding HP when an item is equipped mid-fight.
+        revitalize_members();
+      }};
+}
+
+std::optional<PartyData::TowerRoute> PartyData::tower_route() const noexcept {
+  if (tower_biome_ == "origin_woodland_tower")
+    return TowerRoute{tower_biome_, woodland_floor_};
+  if (tower_biome_ == "origin_plains_tower")
+    return TowerRoute{tower_biome_, plains_floor_};
+  return std::nullopt;
+}
+
+bool PartyData::select_tower(std::string_view biome_id) {
+  if (biome_id != "origin_woodland_tower" && biome_id != "origin_plains_tower")
+    return false;
+  if (biome_id == "origin_plains_tower" && !plains_unlocked_) return false;
+  tower_biome_ = biome_id;
+  tower_choice_pending_ = false;
+  return true;
 }
 
 PartyData::~PartyData() {
@@ -87,7 +132,8 @@ void PartyData::revitalize_members() {
   for (const auto &member : members_) {
     if (auto *stats = party_ctx_.reg().try_get<Stats>(member.member_id())) {
       const auto old_hp = stats->hp_;
-      stats->hp_ = std::max(1, stats->max_hp_);
+      stats->hp_ = fl::ecs::systems::effective_combat_stats(
+          party_ctx_.reg(), member.member_id()).max_hp;
       party_bus_.emit(fl::events::PartyEvent{
           fl::events::PartyHealed{member.member_id(), stats->hp_ - old_hp}});
     }
