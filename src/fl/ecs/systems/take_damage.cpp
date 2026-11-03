@@ -35,9 +35,15 @@ int TakeDamage::commit(fl::context::AttackCtx &ctx,
   const int incoming_total = ctx.damage().physical + ctx.damage().magical +
                              ctx.damage().fire + ctx.damage().ice +
                              ctx.damage().lightning;
-  auto adjusted = fl::primitives::apply_resistance(ctx.damage(),
-                                                   defender_stats.resistances_);
+  auto adjusted = ctx.damage();
   fl::ecs::systems::CombatStatusSystem::apply_damage_modifiers(ctx, adjusted);
+  // Flat Armor follows percentage status modifiers and affects only the
+  // physical channel of direct hits. Scripted and periodic packets bypass it.
+  if (ctx.hit_kind() == fl::primitives::HitKind::Direct &&
+      adjusted.physical > 0) {
+    adjusted.physical =
+        std::max(0, adjusted.physical - std::max(0, defender_stats.armor_));
+  }
   int total = adjusted.physical + adjusted.magical + adjusted.fire +
               adjusted.ice + adjusted.lightning;
   if (incoming_total > 0) {

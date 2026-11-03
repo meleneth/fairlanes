@@ -99,7 +99,7 @@ TEST_CASE("Party player skill selection replaces inventory with skill details",
   REQUIRE(skill_details.find("Skill information") != std::string::npos);
   REQUIRE(skill_details.find("Thump") != std::string::npos);
   REQUIRE(skill_details.find("Rank 1") != std::string::npos);
-  REQUIRE(skill_details.find("Deal 1-5 physical damage") != std::string::npos);
+  REQUIRE(skill_details.find("Deal 1-5 base physical damage") != std::string::npos);
 
   for (int i = 0; i < fl::ecs::components::Closet::kSkillSlotCount - 1; ++i) {
     REQUIRE(view.OnEvent(ftxui::Event::ArrowDown));

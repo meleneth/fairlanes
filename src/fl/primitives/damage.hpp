@@ -1,7 +1,9 @@
 #pragma once
-#include <algorithm>
 
 namespace fl::primitives {
+
+// Intent is independent of damage channels. Only direct hits use flat Armor.
+enum class HitKind { Scripted, Direct, Periodic };
 
 /// Represents incoming damage across multiple channels.
 struct Damage {
@@ -25,29 +27,5 @@ struct Damage {
     return *this;
   }
 };
-
-/// Represents per-type resistances as percentages (0–100).
-struct Resistances {
-  int physical{0};
-  int magical{0};
-  int fire{0};
-  int ice{0};
-  int lightning{0};
-};
-
-/// Applies resistances to a given damage object.
-inline Damage apply_resistance(const Damage &dmg, const Resistances &res) {
-  Damage out;
-  auto apply = [](int value, int resist) {
-    resist = std::clamp(resist, 0, 100);
-    return value * (100 - resist) / 100;
-  };
-  out.physical = apply(dmg.physical, res.physical);
-  out.magical = apply(dmg.magical, res.magical);
-  out.fire = apply(dmg.fire, res.fire);
-  out.ice = apply(dmg.ice, res.ice);
-  out.lightning = apply(dmg.lightning, res.lightning);
-  return out;
-}
 
 } // namespace fl::primitives

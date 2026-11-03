@@ -132,6 +132,7 @@ void PoisonSystem::schedule_tick(fl::context::EncounterCtx &party_ctx,
         auto attack_ctx = fl::context::AttackCtx::make_attack(
             party_ctx, poison->source, target);
         attack_ctx.damage().magical = poison->damage_per_tick;
+        attack_ctx.set_hit_kind(fl::primitives::HitKind::Periodic);
         party_ctx.log().append_markup(fmt::format(
             "[ability](Poison) from {} hurts {} for "
             "[error]({}) damage.",

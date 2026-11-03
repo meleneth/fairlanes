@@ -313,6 +313,44 @@ TEST_CASE("Thump ranks produce distinct damage bands",
   REQUIRE(damage_iii < damage_v);
 }
 
+TEST_CASE("Attack applies once to Thump while other thump-like skills opt out",
+          "[encounter][skills][thump][damage][stats]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto party = gc.account_context(0).party_context(0);
+  auto &encounter = fl::primitives::EncounterBuilder{party}.thump_it_out();
+  const auto attacker = encounter.attackers().members().front();
+  const auto defender = encounter.defenders().members().front();
+  auto &source = party.reg().get<fl::ecs::components::Stats>(attacker);
+  auto &target = party.reg().get<fl::ecs::components::Stats>(defender);
+  target.max_hp_ = 100;
+  fl::skills::Thump thump;
+
+  auto hit = [&](fl::skills::SkillId skill) {
+    target.hp_ = target.max_hp_;
+    return thump.thump(fl::context::AttackCtx::make_attack(party, attacker, defender),
+                       fl::skills::SkillKey{skill});
+  };
+
+  REQUIRE(source.attack_ == 0);
+  REQUIRE(target.armor_ == 0);
+  const int baseline = hit(fl::skills::SkillId::Thump);
+  REQUIRE(baseline >= 1);
+  REQUIRE(baseline <= 5);
+  source.attack_ = 8;
+  target.armor_ = 3;
+  const int thump_damage = hit(fl::skills::SkillId::Thump);
+  REQUIRE(thump_damage >= 6);
+  REQUIRE(thump_damage <= 10);
+
+  target.armor_ = 0;
+  const int bump_damage = hit(fl::skills::SkillId::Bump);
+  REQUIRE(bump_damage >= 1);
+  REQUIRE(bump_damage <= 5);
+
+  target.armor_ = 100;
+  REQUIRE(hit(fl::skills::SkillId::Thump) == 1);
+}
+
 TEST_CASE("Thump applies mitigation before resolving lethal overkill",
           "[encounter][skills][thump][damage][regression]") {
   fl::GrandCentral gc{1, 1, 1};
@@ -327,7 +365,7 @@ TEST_CASE("Thump applies mitigation before resolving lethal overkill",
   auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(target);
   stats.hp_ = 1;
   stats.max_hp_ = 100;
-  stats.resistances_.physical = 50;
+  stats.armor_ = 7;
 
   fl::skills::Thump thump;
   const auto thump_v = fl::skills::SkillKey{fl::skills::SkillId::Thump,
@@ -337,7 +375,7 @@ TEST_CASE("Thump applies mitigation before resolving lethal overkill",
       thump_v);
 
   REQUIRE(damage >= 6);
-  REQUIRE(damage <= 8);
+  REQUIRE(damage <= 10);
   REQUIRE(stats.hp_ == 0);
 }
 

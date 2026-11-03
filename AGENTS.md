@@ -147,6 +147,12 @@ context from stable owner data, or make lifetime explicit with RAII.
 
 ## ECS Guidance
 
+`Stats` holds name, current/max HP, flat Attack, and flat Armor. Thump alone
+opts into Attack; direct hits use Armor at `TakeDamage` after percentage status
+modifiers and before the positive-hit minimum. Periodic and scripted damage
+bypass both. Level and XP live in `TrackXP`. Legacy MP/resistance JSON fields
+are ignored by the component builder; no save loader exists yet.
+
 Components should be small, explicit, focused data. Do not turn components into
 policy-heavy objects or "bags of whatever."
 

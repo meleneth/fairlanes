@@ -88,7 +88,6 @@ void PartyData::revitalize_members() {
     if (auto *stats = party_ctx_.reg().try_get<Stats>(member.member_id())) {
       const auto old_hp = stats->hp_;
       stats->hp_ = std::max(1, stats->max_hp_);
-      stats->mp_ = std::max(0, stats->max_mp_);
       party_bus_.emit(fl::events::PartyEvent{
           fl::events::PartyHealed{member.member_id(), stats->hp_ - old_hp}});
     }

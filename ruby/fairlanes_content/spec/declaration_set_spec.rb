@@ -37,7 +37,6 @@ RSpec.describe FairlanesContent::DeclarationSet do
     expect(monster.cpp_id).to eq("FieldMouse")
     expect(monster.display).to eq("Field Mouse")
     expect(monster.hp).to eq(5)
-    expect(monster.mp).to eq(0)
     expect(monster.level).to be_nil
   end
 

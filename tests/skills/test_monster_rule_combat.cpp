@@ -24,7 +24,6 @@ struct Combat {
       auto &stats =
           ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
       stats.hp_ = stats.max_hp_ = 100;
-      stats.resistances_ = {};
     }
   }
   entt::entity monster(MonsterKind kind) {

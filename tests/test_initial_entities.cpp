@@ -30,7 +30,9 @@ TEST_CASE("EntityBuilder + ComponentBuilder basics", "[entity][builder]") {
     auto e = EntityBuilder{build_ctx}.with_default<Stats>().build();
     const auto &s = reg.get<Stats>(e);
     REQUIRE(s.hp_ == 10);
-    REQUIRE(s.mp_ == 0);
+    REQUIRE(s.max_hp_ == 10);
+    REQUIRE(s.attack_ == 0);
+    REQUIRE(s.armor_ == 0);
   }
 
   SECTION("Stats JSON overrides apply on top of defaults") {
@@ -38,11 +40,14 @@ TEST_CASE("EntityBuilder + ComponentBuilder basics", "[entity][builder]") {
     auto e = EntityBuilder{build_ctx}.with_default<Stats>().build();
     auto &s = reg.get<Stats>(e);
 
-    json j = R"({ "hp": 25, "mp": 3 })"_json;
+    json j = R"({ "hp": 25, "max_hp": 30, "attack": 3, "armor": 2,
+                   "mp": 9, "max_mp": 12, "resistances": {"physical": 50} })"_json;
     ComponentBuilder<Stats>::apply(s, j);
 
     REQUIRE(s.hp_ == 25);
-    REQUIRE(s.mp_ == 3);
+    REQUIRE(s.max_hp_ == 30);
+    REQUIRE(s.attack_ == 3);
+    REQUIRE(s.armor_ == 2);
   }
 
   SECTION("Tags default + JSON array assignment") {
@@ -70,7 +75,7 @@ TEST_CASE("EntityBuilder + ComponentBuilder basics", "[entity][builder]") {
     auto glass_cannon = [&](entt::entity x) {
       auto &s = reg.get<Stats>(x);
       s.hp_ = 1;
-      s.mp_ = 50;
+      s.attack_ = 50;
 
       auto &t = reg.get<Tags>(x);
       t.values = {"glass", "dps"};
@@ -81,7 +86,7 @@ TEST_CASE("EntityBuilder + ComponentBuilder basics", "[entity][builder]") {
     const auto &s = reg.get<Stats>(e);
     const auto &t = reg.get<Tags>(e);
     REQUIRE(s.hp_ == 1);
-    REQUIRE(s.mp_ == 50);
+    REQUIRE(s.attack_ == 50);
     REQUIRE(t.values.size() == 2);
   }
   SECTION("Monster/Field Mouse") {

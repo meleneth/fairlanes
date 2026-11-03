@@ -95,8 +95,7 @@ ftxui::Element BestiaryView::Render() {
                   vbox({text(std::string{stats.display_name}) | bold,
                         paragraph(std::string{stats.description}),
                         separator(),
-                        text("Base HP " + std::to_string(stats.hp) + "   MP " +
-                             std::to_string(stats.mp)),
+                        text("Base HP " + std::to_string(stats.hp)),
                         separator(), text("Witnessed skills"),
                         skill_menu_->Render() | vscroll_indicator | yframe |
                             flex}) |

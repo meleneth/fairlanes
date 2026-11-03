@@ -389,8 +389,6 @@ void EffectGalleryView::ensure_sample_combatants() {
     Stats stats{std::string(kSampleNames[i])};
     stats.max_hp_ = 80 + static_cast<int>(i) * 17;
     stats.hp_ = stats.max_hp_ - static_cast<int>(i) * 9;
-    stats.max_mp_ = 24 + static_cast<int>(i) * 5;
-    stats.mp_ = stats.max_mp_ / 2;
     registry_.emplace<Stats>(entity, std::move(stats));
     AtbCharge charge{};
     charge.charge = 1200 + static_cast<int64_t>(i) * 420;

@@ -140,7 +140,6 @@ module FairlanesContent
                   #{cpp_string(monster.display)},
                   #{cpp_string(monster.description)},
                   #{monster.hp},
-                  #{monster.mp},
                   #{monster.level || 0},
                   fl::primitives::Cycle::#{camel(monster.cycle)},
                   std::array<fl::skills::SkillId, #{monster.known_skills.size}>{#{known_skills}},
@@ -235,7 +234,6 @@ module FairlanesContent
           std::string_view monster_name;
           std::string_view description;
           int hp;
-          int mp;
           int level;
           fl::primitives::Cycle cycle;
           std::array<fl::skills::SkillId, KnownSkillCount> known_skills;
@@ -366,7 +364,6 @@ module FairlanesContent
             REQUIRE(stats.name_ == expected.monster_name);
             REQUIRE(stats.hp_ == expected.hp);
             REQUIRE(stats.max_hp_ == expected.hp);
-            REQUIRE(stats.mp_ == expected.mp);
             if (expected.level > 0) {
               const auto &xp =
                   party_ctx.reg().get<fl::ecs::components::TrackXP>(entity);
@@ -649,7 +646,6 @@ module FairlanesContent
           std::string_view display_name;
           std::string_view description;
           int hp;
-          int mp;
           int level;
           fl::primitives::Cycle cycle;
         };
@@ -836,7 +832,6 @@ module FairlanesContent
             #{cpp_string(monster.display)},
             #{cpp_string(monster.description)},
             #{monster.hp},
-            #{monster.mp},
             #{monster.level || 0},
             fl::primitives::Cycle::#{camel(monster.cycle)},
         };
@@ -974,8 +969,8 @@ module FairlanesContent
         "",
         "## Monster Topology",
         "",
-        "| Monster | C++ ID | Cycle | HP | MP | Level | Known skills | Pool |",
-        "| --- | --- | --- | ---: | ---: | ---: | --- | --- |"
+        "| Monster | C++ ID | Cycle | HP | Level | Known skills | Pool |",
+        "| --- | --- | --- | ---: | --- | --- | --- |"
       ]
 
       monsters.each do |monster|
@@ -984,7 +979,6 @@ module FairlanesContent
           monster.cpp_id,
           camel(monster.cycle),
           monster.hp,
-          monster.mp,
           monster.level || "",
           monster.known_skills.map { |skill| skill_metadata_by_id.fetch(skill).display }.join(", "),
           monster.pool
@@ -1105,7 +1099,6 @@ module FairlanesContent
             "description" => monster.description,
             "cycle" => monster.cycle.to_s,
             "hp" => monster.hp,
-            "mp" => monster.mp,
             "level" => monster.level,
             "known_skills" => monster.known_skills.map(&:to_s),
             "pool" => monster.pool.to_s
@@ -1176,7 +1169,7 @@ module FairlanesContent
           ),
           "random_combat_skills" => { "type" => "array", "items" => string_type },
           "monsters" => array_schema(
-            %w[id cpp_id display description cycle hp mp level known_skills pool],
+            %w[id cpp_id display description cycle hp level known_skills pool],
             {
               "id" => string_type,
               "cpp_id" => string_type,
@@ -1184,7 +1177,6 @@ module FairlanesContent
               "description" => { "type" => "string", "minLength" => 1 },
               "cycle" => { "enum" => CYCLES.map(&:to_s) },
               "hp" => { "type" => "integer", "minimum" => 1 },
-              "mp" => { "type" => "integer", "minimum" => 0 },
               "level" => { "type" => %w[integer null], "minimum" => 1 },
               "known_skills" => { "type" => "array", "minItems" => 1, "items" => string_type },
               "pool" => string_type

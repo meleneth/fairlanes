@@ -162,8 +162,8 @@ ftxui::Element PlayerDetailsPane::Render() {
   if (stats) {
     lines.push_back(text("HP " + std::to_string(stats->hp_) + "/" +
                          std::to_string(stats->max_hp_)));
-    lines.push_back(text("MP " + std::to_string(stats->mp_) + "/" +
-                         std::to_string(stats->max_mp_)));
+    lines.push_back(text("Attack " + std::to_string(stats->attack_) +
+                         "   Armor " + std::to_string(stats->armor_)));
   } else {
     lines.push_back(text("No stats."));
   }

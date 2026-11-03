@@ -75,7 +75,7 @@ module FairlanesContent
       @random_combat_skills.replace(ids)
     end
 
-    def monster(id, cpp_id: nil, display: nil, hp:, mp: 0, level: nil,
+    def monster(id, cpp_id: nil, display: nil, hp:, level: nil,
                 known_skills:, pool:, cycle:, decision_rules: [], description: nil)
       monsters << Monster.new(
         id: id,
@@ -83,7 +83,6 @@ module FairlanesContent
         display: display || display_name(id),
         cycle: cycle,
         hp: hp,
-        mp: mp,
         level: level,
         known_skills: known_skills,
         pool: pool,

@@ -112,7 +112,7 @@ Emitted by `TrackXP::add_xp(...)`. Observed by `MemberData::hook_level_progressi
 
 ### `fl::events::PartyHealed`
 
-Emitted by `PartyData::revitalize_members()` after town recovery updates HP/MP. It has test listeners today, but no production listener beyond the state change that already happened before the emit.
+Emitted by `PartyData::revitalize_members()` after town recovery restores HP. It has test listeners today, but no production listener beyond the state change that already happened before the emit.
 
 ### `fl::events::PartyRevitalizeRequested`
 

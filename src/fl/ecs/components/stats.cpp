@@ -1,5 +1,3 @@
-#include <fmt/core.h>
-
 #include "stats.hpp"
 
 using fl::ecs::components::Stats;

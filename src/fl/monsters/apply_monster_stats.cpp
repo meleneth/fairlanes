@@ -54,7 +54,6 @@ void apply_monster_stats(fl::primitives::EntityBuilder &builder,
   stats.name_ = generated.display_name;
   stats.hp_ = generated.hp;
   stats.max_hp_ = generated.hp;
-  stats.mp_ = generated.mp;
 
   if (generated.level > 0) {
     auto &xp =

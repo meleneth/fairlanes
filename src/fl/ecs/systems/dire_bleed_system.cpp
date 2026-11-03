@@ -116,6 +116,7 @@ void DireBleedSystem::schedule_tick(fl::context::EncounterCtx &party_ctx,
         auto attack_ctx = fl::context::AttackCtx::make_attack(
             party_ctx, bleed->source, target);
         attack_ctx.damage().physical = bleed->damage_per_tick;
+        attack_ctx.set_hit_kind(fl::primitives::HitKind::Periodic);
         party_ctx.log().append_markup(
             fmt::format("[error](Dire Bleed) tears at "
                         "[player_name]({}) for [error]({}) "

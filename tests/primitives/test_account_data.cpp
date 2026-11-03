@@ -88,7 +88,8 @@ TEST_CASE("Returning to town revitalizes party members",
     auto &stats =
         party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
     stats.hp_ = 0;
-    stats.mp_ = 0;
+    stats.attack_ = 7;
+    stats.armor_ = 4;
   }
 
   fl::fsm::PartyLoop::Ops::enter_dead(party_ctx);
@@ -110,7 +111,8 @@ TEST_CASE("Returning to town revitalizes party members",
     const auto &stats =
         party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
     REQUIRE(stats.hp_ == 0);
-    REQUIRE(stats.mp_ == 0);
+    REQUIRE(stats.attack_ == 7);
+    REQUIRE(stats.armor_ == 4);
   }
 
   for (int i = 0; i < fl::primitives::PartyData::kTownPenaltyBeats; ++i) {
@@ -125,7 +127,8 @@ TEST_CASE("Returning to town revitalizes party members",
         party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
     REQUIRE(stats.hp_ > 0);
     REQUIRE(stats.hp_ == stats.max_hp_);
-    REQUIRE(stats.mp_ == stats.max_mp_);
+    REQUIRE(stats.attack_ == 7);
+    REQUIRE(stats.armor_ == 4);
   }
 }
 
@@ -149,7 +152,8 @@ TEST_CASE("Party loop revitalizes members after a wipe town stay",
     auto &stats =
         party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
     stats.hp_ = 0;
-    stats.mp_ = 0;
+    stats.attack_ = 7;
+    stats.armor_ = 4;
   }
 
   party.party_bus().emit(fl::events::PartyEvent{fl::events::PartyWiped{}});
@@ -170,6 +174,7 @@ TEST_CASE("Party loop revitalizes members after a wipe town stay",
     const auto &stats =
         party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
     REQUIRE(stats.hp_ == stats.max_hp_);
-    REQUIRE(stats.mp_ == stats.max_mp_);
+    REQUIRE(stats.attack_ == 7);
+    REQUIRE(stats.armor_ == 4);
   }
 }

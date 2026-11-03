@@ -484,6 +484,7 @@ void CombatStatusSystem::schedule_burn_tick(fl::context::EncounterCtx &party_ctx
         auto attack_ctx = fl::context::AttackCtx::make_attack(party_ctx,
                                                               burn->source, target);
         attack_ctx.damage().fire = burn->tick_damage;
+        attack_ctx.set_hit_kind(fl::primitives::HitKind::Periodic);
         party_ctx.log().append_markup(fmt::format(
             "[ability](Burn) scorches {} for [error]({}) damage.",
             name_for(party_ctx, target), burn->tick_damage));

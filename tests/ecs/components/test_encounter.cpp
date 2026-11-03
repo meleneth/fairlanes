@@ -384,6 +384,7 @@ TEST_CASE(
   auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
   stats.max_hp_ = 100;
   stats.hp_ = 100;
+  stats.armor_ = 50;
 
   encounter.atb_out().emit(seerin::AtbOutEvent{seerin::BecameActive{
       honey_badger,
@@ -403,7 +404,7 @@ TEST_CASE(
   REQUIRE(stats.hp_ == 90);
 }
 
-TEST_CASE("Dire Bleed kills a one-HP target through percentage mitigation",
+TEST_CASE("Dire Bleed bypasses Armor on a one-HP target",
           "[encounter][skills][bleed][damage][regression]") {
   fl::GrandCentral gc{1, 1, 2};
 
@@ -421,7 +422,7 @@ TEST_CASE("Dire Bleed kills a one-HP target through percentage mitigation",
   auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
   stats.max_hp_ = 10;
   stats.hp_ = 1;
-  stats.resistances_.physical = 50;
+  stats.armor_ = 50;
 
   fl::skills::SkillSequencer sequencer{
       party_ctx, encounter.atb_engine().scheduler(), [](entt::entity) {}};

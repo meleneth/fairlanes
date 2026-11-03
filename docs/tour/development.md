@@ -127,7 +127,7 @@ metadata C++: stable IDs/enums, display names, learn chances, flee chances,
 execution kind tags, visual mappings, and random-combat membership. They also
 generate status display/debug metadata, monster stable IDs/enums, known-skill
 metadata, and encounter pool membership. Monster stat metadata such as name, HP,
-MP, and level is generated from the same declarations, along with the thin
+and level is generated from the same declarations, along with the thin
 monster registration glue that applies those generated stats. Handwritten C++
 remains the authority for skill behavior, status lifecycles, combat effects,
 rendering implementation, and monster construction primitives.
@@ -143,6 +143,18 @@ The libram reports unbalanced current values, with a visible notice that no
 balance passes have been done; damage values precede combat modifiers and times
 are combat time. Content validation rejects descriptions without numbers, but
 review must still verify that those numbers match the implementation.
+
+The always-present `Stats` component holds name, current/max HP, flat Attack,
+and flat Armor. Attack and Armor default to zero. Level and XP remain in
+`TrackXP`; ATB, statuses, timing, and damage channels stay separate. Thump is
+the only skill currently using Attack: it adds Attack once to a positive direct
+physical hit after its weapon roll and rank bonus. Other thump-like skills do
+not opt in. `TakeDamage` checks misses, applies percentage status and field
+modifiers, then subtracts Armor once from the physical channel of direct hits,
+clamping that channel to zero before totaling. Its positive-hit minimum of one
+still applies. Periodic and scripted packets bypass Attack and Armor. The
+component builder accepts legacy `mp`, `max_mp`, and `resistances` JSON keys but
+ignores them; there is no persisted save format or save loader yet.
 
 Skill declarations also supply libram descriptions and status-detonation
 metadata. Monster declarations may supply ordered `decision_rules` (or use

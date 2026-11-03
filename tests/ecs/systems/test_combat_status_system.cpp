@@ -51,7 +51,7 @@ void set_hp(fl::context::PartyCtx &party_ctx, entt::entity entity, int hp,
   auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(entity);
   stats.hp_ = hp;
   stats.max_hp_ = max_hp;
-  stats.resistances_ = {};
+  stats.armor_ = 0;
 }
 
 int hp(fl::context::PartyCtx &party_ctx, entt::entity entity) {
@@ -63,6 +63,7 @@ int deal_physical(fl::context::PartyCtx &party_ctx, entt::entity attacker,
   auto attack_ctx = fl::context::AttackCtx::make_attack(party_ctx, attacker,
                                                         defender);
   attack_ctx.damage().physical = damage;
+  attack_ctx.set_hit_kind(fl::primitives::HitKind::Direct);
   return fl::ecs::systems::TakeDamage::commit(attack_ctx);
 }
 
@@ -85,16 +86,57 @@ TEST_CASE("Shield reduces incoming damage through the shared damage path",
   REQUIRE(hp(h.party_ctx, h.defender()) == 90);
 }
 
-TEST_CASE("Percentage mitigation cannot erase landed positive damage",
+TEST_CASE("Armor applies after percentage status mitigation",
+          "[combat-status][damage][armor]") {
+  BuiltEncounter h;
+  set_hp(h.party_ctx, h.defender(), 100, 100);
+  h.party_ctx.reg().get<fl::ecs::components::Stats>(h.defender()).armor_ = 3;
+  REQUIRE(CombatStatusSystem::apply_status(
+      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Shield,
+                                   .name = "Test Shield",
+                                   .source = h.defender(),
+                                   .target = h.defender(),
+                                   .value = 50,
+                                   .negative = false}));
+  REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 7);
+}
+
+TEST_CASE("Flat Armor cannot erase landed positive damage",
           "[combat-status][damage][regression]") {
   BuiltEncounter h;
   set_hp(h.party_ctx, h.defender(), 1, 100);
   auto &stats =
       h.party_ctx.reg().get<fl::ecs::components::Stats>(h.defender());
-  stats.resistances_.physical = 50;
+  stats.armor_ = 50;
 
   REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 1) == 1);
   REQUIRE(hp(h.party_ctx, h.defender()) == 0);
+}
+
+TEST_CASE("Armor clamps only the physical channel of a direct mixed hit",
+          "[damage][stats][mixed]") {
+  BuiltEncounter h;
+  set_hp(h.party_ctx, h.defender(), 100, 100);
+  h.party_ctx.reg().get<fl::ecs::components::Stats>(h.defender()).armor_ = 10;
+
+  auto hit = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(),
+                                                  h.defender());
+  hit.set_hit_kind(fl::primitives::HitKind::Direct);
+  hit.damage().physical = 5;
+  hit.damage().fire = 7;
+  REQUIRE(fl::ecs::systems::TakeDamage::commit(hit) == 7);
+  REQUIRE(hp(h.party_ctx, h.defender()) == 93);
+
+  auto empty = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(),
+                                                    h.defender());
+  empty.set_hit_kind(fl::primitives::HitKind::Direct);
+  REQUIRE(fl::ecs::systems::TakeDamage::commit(empty) == 0);
+  REQUIRE(hp(h.party_ctx, h.defender()) == 93);
+
+  auto scripted = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(),
+                                                       h.defender());
+  scripted.damage().physical = 5;
+  REQUIRE(fl::ecs::systems::TakeDamage::commit(scripted) == 5);
 }
 
 TEST_CASE("Blind can force attacks to miss through shared accuracy checks",

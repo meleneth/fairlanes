@@ -43,7 +43,6 @@ struct EncounterBuilder;
 struct Logging;
 struct MemberData;
 struct PartyData;
-struct Resistances;
 struct Team;
 } // namespace fl::primitives
 

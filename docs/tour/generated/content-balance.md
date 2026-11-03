@@ -187,80 +187,80 @@ Initial themed assignments for content planning; cycle metadata does not filter 
 
 ## Monster Topology
 
-| Monster | C++ ID | Cycle | HP | MP | Level | Known skills | Pool |
-| --- | --- | --- | ---: | ---: | ---: | --- | --- |
-| Field Mouse | FieldMouse | Origin | 5 | 0 |  | Thump | common_woodland |
-| Honey Badger | HoneyBadger | Origin | 500 | 0 |  | Eviscerate | rare_woodland |
-| Bumpkin Hare | BumpkinHare | Origin | 7 | 0 | 2 | Bump | common_woodland |
-| Scaredy Cat | ScaredyCat | Origin | 6 | 0 | 2 | Flee, Thump | common_woodland |
-| Mire Squish | MireSquish | Origin | 9 | 0 | 3 | Squish | common_woodland |
-| Bark Smack | BarkSmack | Origin | 12 | 0 | 4 | Smack | common_woodland |
-| Poison Toad | PoisonToad | Origin | 16 | 0 | 5 | Poison | common_woodland |
-| Yeti | Yeti | Resonance | 40 | 0 |  | Cold Snap | common_woodland |
-| Salamander | Salamander | Resonance | 24 | 0 | 6 | Flame Strike, Kindle Wound, Cinderburst | common_woodland |
-| Fire Drake | FireDrake | Resonance | 500 | 0 | 8 | Flame Wave | rare_woodland |
-| Stormtick Imp | StormtickImp | Resonance | 10 | 0 | 3 | Joltspasm | common_woodland |
-| Ceiling Grudge | CeilingGrudge | Resonance | 18 | 0 | 5 | Rocks Fall | common_woodland |
-| Miasma Toad | MiasmaToad | Resonance | 15 | 0 | 4 | Sour Breath | common_woodland |
-| Choir Wisp | ChoirWisp | Resonance | 12 | 0 | 4 | Mercyburst | common_woodland |
-| Gorecap Sprout | GorecapSprout | Resonance | 16 | 0 | 5 | Blood Bloom | common_woodland |
-| Rimefang Hare | RimefangHare | Resonance | 13 | 0 | 4 | Ice Splitter | common_woodland |
-| Null Mote | NullMote | Singularity | 14 | 0 | 5 | Gravity Sigh | common_woodland |
-| Grass Wolf | GrassWolf | Origin | 22 | 0 | 3 | Bite, Pack Howl, Claw | common_woodland |
-| Bristle Boar | BristleBoar | Origin | 28 | 0 | 4 | Bumper Rush, Thump, Shell Guard | common_woodland |
-| Prairie Meerkat | PrairieMeerkat | Origin | 18 | 0 | 3 | Pebble Spit, Flee, Thump | common_woodland |
-| Squirrel Brigand | SquirrelBrigand | Origin | 20 | 0 | 4 | Pebble Spit, Flee, Thump Around | common_woodland |
-| Webling Spider | WeblingSpider | Origin | 24 | 0 | 4 | Venom Needle, Web Snare, Bite | common_woodland |
-| Moss Wolf | MossWolf | Origin | 30 | 0 | 5 | Claw, Pack Howl, Root Leech | common_woodland |
-| Antler Stag | AntlerStag | Origin | 36 | 0 | 6 | Bumper Rush, Smackdown Sweep, Shell Guard | common_woodland |
-| Mosquito Choir | MosquitoChoir | Origin | 24 | 0 | 5 | Venom Needle, Gnat Cloud, Blood Bloom | common_woodland |
-| Dragonfly Cutter | DragonflyCutter | Origin | 26 | 0 | 5 | Rake Line, Venom Needle, Flee | common_woodland |
-| Bog Snail | BogSnail | Origin | 38 | 0 | 6 | Shell Guard, Squish, Miasma Cloud | common_woodland |
-| Cave Bat | CaveBat | Origin | 20 | 0 | 3 | Bite, Whiteout, Flee | common_woodland |
-| Blind Scorpion | BlindScorpion | Origin | 30 | 0 | 5 | Venom Needle, Burrow, Bump | common_woodland |
-| Echo Moth | EchoMoth | Origin | 24 | 0 | 5 | Whiteout, Gnat Cloud, Flee | common_woodland |
-| Sand Scorpion | SandScorpion | Origin | 32 | 0 | 5 | Venom Needle, Burrow, Bump | common_woodland |
-| Tarantula Nomad | TarantulaNomad | Origin | 34 | 0 | 6 | Bite, Web Snare, Venom Needle | common_woodland |
-| Dust Hare | DustHare | Origin | 22 | 0 | 4 | Bump, Gnat Cloud, Flee | common_woodland |
-| Glass Lizard | GlassLizard | Resonance | 28 | 0 | 7 | Laser Stitch, Venom Needle, Flee, Cinder Veil | common_woodland |
-| Snail Lantern | SnailLantern | Resonance | 52 | 18 | 8 | Mercyburst, Shell Guard, Clearbell | common_woodland |
-| Briar Hexling | BriarHexling | Resonance | 46 | 28 | 9 | Hush Hex, Root Leech, Blood Bloom | common_woodland |
-| Owlshade | Owlshade | Resonance | 44 | 24 | 9 | Whiteout, Hush Hex, Rake Line | common_woodland |
-| Rotcap Elder | RotcapElder | Resonance | 62 | 35 | 11 | Rot Bloom, Blood Bloom, Miasma Cloud | common_woodland |
-| Carrion Dragonfly | CarrionDragonfly | Resonance | 54 | 22 | 10 | Rake Line, Miasma Cloud, Blood Bloom | common_woodland |
-| Sludge Saint | SludgeSaint | Resonance | 68 | 38 | 12 | Mercyburst, Miasma Cloud, Clearbell | common_woodland |
-| Snowdrift Bison | SnowdriftBison | Resonance | 78 | 20 | 11 | Bumper Rush, Rime Armor, Cold Snap | common_woodland |
-| Ice Mote | IceMote | Resonance | 42 | 32 | 8 | Cold Snap, Whiteout, Mercyburst | common_woodland |
-| Berg Wyrm | BergWyrm | Resonance | 86 | 35 | 13 | Frost Fan, Ice Splitter, Cold Snap | common_woodland |
-| Prism Newt | PrismNewt | Resonance | 50 | 40 | 10 | Flame Strike, Cold Snap, Joltspasm, Clearbell | common_woodland |
-| Pickaxe Goblin | PickaxeGoblin | Conflict | 92 | 0 | 14 | Smackdown Sweep, Pebble Spit, Battle Focus | common_woodland |
-| Powder Rat | PowderRat | Conflict | 70 | 0 | 14 | Grenade Lob, Flee, Bite | common_woodland |
-| Drill Beetle | DrillBeetle | Conflict | 118 | 0 | 16 | Armor Plate, Bumper Rush, Smack | common_woodland |
-| Mine Canary Revenant | MineCanaryRevenant | Conflict | 82 | 15 | 17 | Whiteout, Sour Breath, Clearbell | common_woodland |
-| Rust Loader | RustLoader | Conflict | 150 | 0 | 19 | Armor Plate, Smackdown Sweep, Suppressing Fire | common_woodland |
-| Rifle Hare | RifleHare | Conflict | 86 | 0 | 14 | Snap Shot, Flee, Battle Focus | common_woodland |
-| Trench Wolf | TrenchWolf | Conflict | 112 | 0 | 16 | Bite, Pack Howl, Suppressing Fire | common_woodland |
-| Grenadier Badger | GrenadierBadger | Conflict | 128 | 0 | 18 | Grenade Lob, Eviscerate, Battle Focus | common_woodland |
-| Shield Bison | ShieldBison | Conflict | 170 | 0 | 20 | Armor Plate, Bumper Rush, Shell Guard | common_woodland |
-| Smoke Crow | SmokeCrow | Conflict | 96 | 0 | 17 | Smoke Screen, Rake Line, Signal Flare | common_woodland |
-| Swordfish Duelist | SwordfishDuelist | Conflict | 120 | 0 | 18 | Rake Line, Battle Focus, Field Dressing | common_woodland |
-| Narwhal Gunner | NarwhalGunner | Conflict | 140 | 0 | 19 | Snap Shot, Burst Fire, Field Dressing | common_woodland |
-| Deck Kraken | DeckKraken | Conflict | 190 | 0 | 21 | Smackdown Sweep, Smoke Screen, Bumper Rush, Burst Fire | common_woodland |
-| Bilge Eel | BilgeEel | Conflict | 106 | 20 | 16 | Joltspasm, Bite, Clearbell | common_woodland |
-| Chrome Gecko | ChromeGecko | Singularity | 210 | 55 | 24 | Laser Stitch, Flee, Clock Up | common_woodland |
-| Packet Snake | PacketSnake | Singularity | 230 | 70 | 25 | Venom Needle, Signal Jam, Packet Storm | common_woodland |
-| Holo-Tarantula | HoloTarantula | Singularity | 250 | 80 | 26 | Web Snare, Laser Sweep, Packet Storm | common_woodland |
-| Neon Orchid | NeonOrchid | Singularity | 260 | 95 | 27 | Blood Bloom, Checksum Ward, Plasma Arc | common_woodland |
-| Cache Bat | CacheBat | Singularity | 220 | 75 | 24 | Whiteout, Signal Jam, Packet Storm | common_woodland |
-| Kernel Grudge | KernelGrudge | Singularity | 320 | 100 | 29 | Rocks Fall, Null Pointer, Event Horizon | common_woodland |
-| Fork Bomb Imp | ForkBombImp | Singularity | 240 | 110 | 28 | Packet Storm, Overcharge, Blue Screen | common_woodland |
-| Segfault Loader | SegfaultLoader | Singularity | 360 | 90 | 30 | Smackdown Sweep, Blue Screen, Reboot Pulse | common_woodland |
-| Glass Scorpion | GlassScorpion | Singularity | 275 | 65 | 26 | Laser Stitch, Venom Needle, Cinder Veil | common_woodland |
-| Orbital Yeti | OrbitalYeti | Singularity | 390 | 100 | 31 | Ice Splitter, Laser Sweep, Checksum Ward | common_woodland |
-| Null Kraken | NullKraken | Singularity | 430 | 120 | 32 | Event Horizon, Smoke Screen, Packet Storm, Smackdown Sweep | common_woodland |
-| Blue Screen Wisp | BlueScreenWisp | Singularity | 260 | 130 | 28 | Mercywave, Blue Screen, Reboot Pulse | common_woodland |
-| Starfire Anomaly | StarfireAnomaly | Singularity | 320 | 120 | 24 | Starblaze, Flame Wave, Gravity Sigh | common_woodland |
-| Visitor's Herald | VisitorHerald | Origin | 10000 | 0 | 40 | Visitor Fall | raid |
+| Monster | C++ ID | Cycle | HP | Level | Known skills | Pool |
+| --- | --- | --- | ---: | --- | --- | --- |
+| Field Mouse | FieldMouse | Origin | 5 |  | Thump | common_woodland |
+| Honey Badger | HoneyBadger | Origin | 500 |  | Eviscerate | rare_woodland |
+| Bumpkin Hare | BumpkinHare | Origin | 7 | 2 | Bump | common_woodland |
+| Scaredy Cat | ScaredyCat | Origin | 6 | 2 | Flee, Thump | common_woodland |
+| Mire Squish | MireSquish | Origin | 9 | 3 | Squish | common_woodland |
+| Bark Smack | BarkSmack | Origin | 12 | 4 | Smack | common_woodland |
+| Poison Toad | PoisonToad | Origin | 16 | 5 | Poison | common_woodland |
+| Yeti | Yeti | Resonance | 40 |  | Cold Snap | common_woodland |
+| Salamander | Salamander | Resonance | 24 | 6 | Flame Strike, Kindle Wound, Cinderburst | common_woodland |
+| Fire Drake | FireDrake | Resonance | 500 | 8 | Flame Wave | rare_woodland |
+| Stormtick Imp | StormtickImp | Resonance | 10 | 3 | Joltspasm | common_woodland |
+| Ceiling Grudge | CeilingGrudge | Resonance | 18 | 5 | Rocks Fall | common_woodland |
+| Miasma Toad | MiasmaToad | Resonance | 15 | 4 | Sour Breath | common_woodland |
+| Choir Wisp | ChoirWisp | Resonance | 12 | 4 | Mercyburst | common_woodland |
+| Gorecap Sprout | GorecapSprout | Resonance | 16 | 5 | Blood Bloom | common_woodland |
+| Rimefang Hare | RimefangHare | Resonance | 13 | 4 | Ice Splitter | common_woodland |
+| Null Mote | NullMote | Singularity | 14 | 5 | Gravity Sigh | common_woodland |
+| Grass Wolf | GrassWolf | Origin | 22 | 3 | Bite, Pack Howl, Claw | common_woodland |
+| Bristle Boar | BristleBoar | Origin | 28 | 4 | Bumper Rush, Thump, Shell Guard | common_woodland |
+| Prairie Meerkat | PrairieMeerkat | Origin | 18 | 3 | Pebble Spit, Flee, Thump | common_woodland |
+| Squirrel Brigand | SquirrelBrigand | Origin | 20 | 4 | Pebble Spit, Flee, Thump Around | common_woodland |
+| Webling Spider | WeblingSpider | Origin | 24 | 4 | Venom Needle, Web Snare, Bite | common_woodland |
+| Moss Wolf | MossWolf | Origin | 30 | 5 | Claw, Pack Howl, Root Leech | common_woodland |
+| Antler Stag | AntlerStag | Origin | 36 | 6 | Bumper Rush, Smackdown Sweep, Shell Guard | common_woodland |
+| Mosquito Choir | MosquitoChoir | Origin | 24 | 5 | Venom Needle, Gnat Cloud, Blood Bloom | common_woodland |
+| Dragonfly Cutter | DragonflyCutter | Origin | 26 | 5 | Rake Line, Venom Needle, Flee | common_woodland |
+| Bog Snail | BogSnail | Origin | 38 | 6 | Shell Guard, Squish, Miasma Cloud | common_woodland |
+| Cave Bat | CaveBat | Origin | 20 | 3 | Bite, Whiteout, Flee | common_woodland |
+| Blind Scorpion | BlindScorpion | Origin | 30 | 5 | Venom Needle, Burrow, Bump | common_woodland |
+| Echo Moth | EchoMoth | Origin | 24 | 5 | Whiteout, Gnat Cloud, Flee | common_woodland |
+| Sand Scorpion | SandScorpion | Origin | 32 | 5 | Venom Needle, Burrow, Bump | common_woodland |
+| Tarantula Nomad | TarantulaNomad | Origin | 34 | 6 | Bite, Web Snare, Venom Needle | common_woodland |
+| Dust Hare | DustHare | Origin | 22 | 4 | Bump, Gnat Cloud, Flee | common_woodland |
+| Glass Lizard | GlassLizard | Resonance | 28 | 7 | Laser Stitch, Venom Needle, Flee, Cinder Veil | common_woodland |
+| Snail Lantern | SnailLantern | Resonance | 52 | 8 | Mercyburst, Shell Guard, Clearbell | common_woodland |
+| Briar Hexling | BriarHexling | Resonance | 46 | 9 | Hush Hex, Root Leech, Blood Bloom | common_woodland |
+| Owlshade | Owlshade | Resonance | 44 | 9 | Whiteout, Hush Hex, Rake Line | common_woodland |
+| Rotcap Elder | RotcapElder | Resonance | 62 | 11 | Rot Bloom, Blood Bloom, Miasma Cloud | common_woodland |
+| Carrion Dragonfly | CarrionDragonfly | Resonance | 54 | 10 | Rake Line, Miasma Cloud, Blood Bloom | common_woodland |
+| Sludge Saint | SludgeSaint | Resonance | 68 | 12 | Mercyburst, Miasma Cloud, Clearbell | common_woodland |
+| Snowdrift Bison | SnowdriftBison | Resonance | 78 | 11 | Bumper Rush, Rime Armor, Cold Snap | common_woodland |
+| Ice Mote | IceMote | Resonance | 42 | 8 | Cold Snap, Whiteout, Mercyburst | common_woodland |
+| Berg Wyrm | BergWyrm | Resonance | 86 | 13 | Frost Fan, Ice Splitter, Cold Snap | common_woodland |
+| Prism Newt | PrismNewt | Resonance | 50 | 10 | Flame Strike, Cold Snap, Joltspasm, Clearbell | common_woodland |
+| Pickaxe Goblin | PickaxeGoblin | Conflict | 92 | 14 | Smackdown Sweep, Pebble Spit, Battle Focus | common_woodland |
+| Powder Rat | PowderRat | Conflict | 70 | 14 | Grenade Lob, Flee, Bite | common_woodland |
+| Drill Beetle | DrillBeetle | Conflict | 118 | 16 | Armor Plate, Bumper Rush, Smack | common_woodland |
+| Mine Canary Revenant | MineCanaryRevenant | Conflict | 82 | 17 | Whiteout, Sour Breath, Clearbell | common_woodland |
+| Rust Loader | RustLoader | Conflict | 150 | 19 | Armor Plate, Smackdown Sweep, Suppressing Fire | common_woodland |
+| Rifle Hare | RifleHare | Conflict | 86 | 14 | Snap Shot, Flee, Battle Focus | common_woodland |
+| Trench Wolf | TrenchWolf | Conflict | 112 | 16 | Bite, Pack Howl, Suppressing Fire | common_woodland |
+| Grenadier Badger | GrenadierBadger | Conflict | 128 | 18 | Grenade Lob, Eviscerate, Battle Focus | common_woodland |
+| Shield Bison | ShieldBison | Conflict | 170 | 20 | Armor Plate, Bumper Rush, Shell Guard | common_woodland |
+| Smoke Crow | SmokeCrow | Conflict | 96 | 17 | Smoke Screen, Rake Line, Signal Flare | common_woodland |
+| Swordfish Duelist | SwordfishDuelist | Conflict | 120 | 18 | Rake Line, Battle Focus, Field Dressing | common_woodland |
+| Narwhal Gunner | NarwhalGunner | Conflict | 140 | 19 | Snap Shot, Burst Fire, Field Dressing | common_woodland |
+| Deck Kraken | DeckKraken | Conflict | 190 | 21 | Smackdown Sweep, Smoke Screen, Bumper Rush, Burst Fire | common_woodland |
+| Bilge Eel | BilgeEel | Conflict | 106 | 16 | Joltspasm, Bite, Clearbell | common_woodland |
+| Chrome Gecko | ChromeGecko | Singularity | 210 | 24 | Laser Stitch, Flee, Clock Up | common_woodland |
+| Packet Snake | PacketSnake | Singularity | 230 | 25 | Venom Needle, Signal Jam, Packet Storm | common_woodland |
+| Holo-Tarantula | HoloTarantula | Singularity | 250 | 26 | Web Snare, Laser Sweep, Packet Storm | common_woodland |
+| Neon Orchid | NeonOrchid | Singularity | 260 | 27 | Blood Bloom, Checksum Ward, Plasma Arc | common_woodland |
+| Cache Bat | CacheBat | Singularity | 220 | 24 | Whiteout, Signal Jam, Packet Storm | common_woodland |
+| Kernel Grudge | KernelGrudge | Singularity | 320 | 29 | Rocks Fall, Null Pointer, Event Horizon | common_woodland |
+| Fork Bomb Imp | ForkBombImp | Singularity | 240 | 28 | Packet Storm, Overcharge, Blue Screen | common_woodland |
+| Segfault Loader | SegfaultLoader | Singularity | 360 | 30 | Smackdown Sweep, Blue Screen, Reboot Pulse | common_woodland |
+| Glass Scorpion | GlassScorpion | Singularity | 275 | 26 | Laser Stitch, Venom Needle, Cinder Veil | common_woodland |
+| Orbital Yeti | OrbitalYeti | Singularity | 390 | 31 | Ice Splitter, Laser Sweep, Checksum Ward | common_woodland |
+| Null Kraken | NullKraken | Singularity | 430 | 32 | Event Horizon, Smoke Screen, Packet Storm, Smackdown Sweep | common_woodland |
+| Blue Screen Wisp | BlueScreenWisp | Singularity | 260 | 28 | Mercywave, Blue Screen, Reboot Pulse | common_woodland |
+| Starfire Anomaly | StarfireAnomaly | Singularity | 320 | 24 | Starblaze, Flame Wave, Gravity Sigh | common_woodland |
+| Visitor's Herald | VisitorHerald | Origin | 10000 | 40 | Visitor Fall | raid |
 
 ## Decal Skill Projection
 

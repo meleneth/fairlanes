@@ -1,27 +1,14 @@
 #pragma once
 #include <string>
 
-#include "fl/primitives/damage.hpp"
-
-namespace fl::widgets {
-class FancyLog;
-}
-namespace fl::fsm {
-class PartyLoopCtx;
-}
-
 namespace fl::ecs::components {
-
-using fl::primitives::Damage;
-using fl::primitives::Resistances;
 
 struct Stats {
   std::string name_{"Unknown"};
   int hp_ = 10;
   int max_hp_ = 10;
-  int mp_ = 0;
-  int max_mp_ = 0;
-  Resistances resistances_;
+  int attack_ = 0;
+  int armor_ = 0;
 
   Stats() = default;
   explicit Stats(std::string name_);

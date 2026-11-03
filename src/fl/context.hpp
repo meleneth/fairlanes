@@ -13,7 +13,6 @@ class RandomHub;
 struct AccountData;
 struct PartyData;
 struct EncounterData;
-struct Damage; // only if you KEEP it as value you must include its header
 } // namespace fl::primitives
 
 namespace fl::widgets {
@@ -216,6 +215,9 @@ public:
 
   const fl::primitives::Damage &damage() const { return damage_; }
 
+  void set_hit_kind(fl::primitives::HitKind kind) noexcept { hit_kind_ = kind; }
+  fl::primitives::HitKind hit_kind() const noexcept { return hit_kind_; }
+
   fl::context::EntityCtx entity_context(entt::entity e) const;
   static AttackCtx make_attack(EncounterCtx &ctx, entt::entity attacker,
                                entt::entity defender);
@@ -228,8 +230,8 @@ private:
   fl::widgets::FancyLog *log_{};
   entt::entity attacker_{entt::null};
   entt::entity defender_{entt::null};
-  fl::primitives::Damage
-      damage_; // if you want to forward-declare Damage, make this a pointer too
+  fl::primitives::Damage damage_;
+  fl::primitives::HitKind hit_kind_{fl::primitives::HitKind::Scripted};
 };
 
 template <typename C>

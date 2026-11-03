@@ -26,9 +26,13 @@ template <> struct ComponentBuilder<Stats> {
   static void apply(Stats &s, const json &j) {
     if (auto it = j.find("hp"); it != j.end())
       s.hp_ = it->get<int>();
-    if (auto it = j.find("mp"); it != j.end())
-      s.mp_ = it->get<int>();
-    // Or: s.hp = j.value("hp", s.hp); s.mp = j.value("mp", s.mp);
+    if (auto it = j.find("max_hp"); it != j.end())
+      s.max_hp_ = it->get<int>();
+    if (auto it = j.find("attack"); it != j.end())
+      s.attack_ = it->get<int>();
+    if (auto it = j.find("armor"); it != j.end())
+      s.armor_ = it->get<int>();
+    // Old content may still carry mp/max_mp/resistances. They are ignored.
   }
 };
 

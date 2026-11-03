@@ -114,7 +114,6 @@ RSpec.describe FairlanesContent::Validator do
     declarations.monster :bad_mouse,
                          cycle: :origin,
                          hp: 0,
-                         mp: -1,
                          level: 0,
                          known_skills: %i[thump],
                          pool: :common_woodland
@@ -122,7 +121,6 @@ RSpec.describe FairlanesContent::Validator do
     expect(described_class.new(declarations).validate)
       .to include(
         "monster bad_mouse has invalid hp 0",
-        "monster bad_mouse has invalid mp -1",
         "monster bad_mouse has invalid level 0"
       )
   end

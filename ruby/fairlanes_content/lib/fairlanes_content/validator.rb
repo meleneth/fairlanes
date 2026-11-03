@@ -316,9 +316,6 @@ module FairlanesContent
         unless positive_integer?(monster.hp)
           errors << "monster #{monster.id} has invalid hp #{monster.hp}"
         end
-        unless non_negative_integer?(monster.mp)
-          errors << "monster #{monster.id} has invalid mp #{monster.mp}"
-        end
         unless monster.level.nil? || positive_integer?(monster.level)
           errors << "monster #{monster.id} has invalid level #{monster.level}"
         end

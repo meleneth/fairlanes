@@ -12,6 +12,8 @@ RSpec.describe FairlanesContent::Renderer do
     expect(manifest.fetch("statuses").first.fetch("id")).to eq("poison")
     expect(manifest.fetch("skills").first.fetch("id")).to eq("thump")
     expect(manifest.fetch("monsters").first.fetch("known_skills")).to eq(["thump"])
+    expect(manifest.fetch("monsters").first).not_to have_key("mp")
+    expect(described_class.new(declarations).monster_content_hpp).not_to include("int mp;")
   end
   it "reports every cycle including empty cycles and serializes membership" do
     declarations = build(:declaration_set)
