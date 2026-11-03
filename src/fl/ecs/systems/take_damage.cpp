@@ -1,6 +1,7 @@
 #include "fmt/format.h"
 
 #include "fl/context.hpp"
+#include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/is_party.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
@@ -8,6 +9,7 @@
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/ecs/systems/combat_status_system.hpp"
 #include "fl/events/party_bus.hpp"
+#include "fl/loot/equipment_slot.hpp"
 #include "fl/lospec500.hpp"
 #include "fl/primitives/damage.hpp"
 #include "fl/primitives/party_data.hpp"
@@ -35,7 +37,22 @@ int TakeDamage::commit(fl::context::AttackCtx &ctx,
   const int incoming_total = ctx.damage().physical + ctx.damage().magical +
                              ctx.damage().fire + ctx.damage().ice +
                              ctx.damage().lightning;
-  auto adjusted = ctx.damage();
+  auto resistance = defender_stats.resistances_;
+  if (const auto *member =
+          ctx.reg().try_get<fl::ecs::components::PartyMember>(ctx.defender())) {
+    for (const auto slot : fl::loot::kEquipmentSlots) {
+      const auto item = member->closet().equipped_item(slot);
+      if (ctx.reg().valid(item)) {
+        if (const auto *equipment =
+                ctx.reg().try_get<fl::ecs::components::Equipment>(item)) {
+          resistance += equipment->resistances();
+        }
+      }
+    }
+  }
+  // Channel resistance applies first to every landed damage packet; status
+  // modifiers then run, followed by flat Armor for direct physical hits.
+  auto adjusted = fl::primitives::apply_resistance(ctx.damage(), resistance);
   fl::ecs::systems::CombatStatusSystem::apply_damage_modifiers(ctx, adjusted);
   // Flat Armor follows percentage status modifiers and affects only the
   // physical channel of direct hits. Scripted and periodic packets bypass it.

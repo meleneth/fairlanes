@@ -3,6 +3,7 @@
 #include "fl/context.hpp"
 #include "fl/ecs/components/atb_charge.hpp"
 #include "fl/ecs/components/combat_status.hpp"
+#include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/field_debuff.hpp"
 #include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/poison.hpp"
@@ -11,6 +12,7 @@
 #include "fl/ecs/systems/poison_system.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/generated/gear_content.hpp"
 #include "fl/primitives/encounter_builder.hpp"
 #include "fl/primitives/world_clock.hpp"
 #include "fl/skills/skill.hpp"
@@ -137,6 +139,56 @@ TEST_CASE("Armor clamps only the physical channel of a direct mixed hit",
                                                        h.defender());
   scripted.damage().physical = 5;
   REQUIRE(fl::ecs::systems::TakeDamage::commit(scripted) == 5);
+}
+
+TEST_CASE("Stats resistance mitigates mixed and periodic damage",
+          "[damage][resistance]") {
+  BuiltEncounter h;
+  set_hp(h.party_ctx, h.defender(), 100, 100);
+  auto &stats = h.party_ctx.reg().get<fl::ecs::components::Stats>(h.defender());
+  stats.resistances_.physical = 50;
+  stats.resistances_.fire = 25;
+  stats.armor_ = 3;
+
+  auto hit = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(),
+                                                 h.defender());
+  hit.set_hit_kind(fl::primitives::HitKind::Direct);
+  hit.damage().physical = 20;
+  hit.damage().fire = 20;
+  REQUIRE(fl::ecs::systems::TakeDamage::commit(hit) == 22);
+
+  auto periodic = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(),
+                                                      h.defender());
+  periodic.set_hit_kind(fl::primitives::HitKind::Periodic);
+  periodic.damage().physical = 20;
+  REQUIRE(fl::ecs::systems::TakeDamage::commit(periodic) == 10);
+}
+
+TEST_CASE("Generated gear resistance applies only while equipped",
+          "[damage][resistance][gear]") {
+  BuiltEncounter h;
+  const auto wearer = h.defender();
+  set_hp(h.party_ctx, wearer, 100, 100);
+  auto &reg = h.party_ctx.reg();
+  auto &closet = reg.get<fl::ecs::components::PartyMember>(wearer).closet();
+  const auto &definition = fl::loot::generated_content::definition(
+      fl::loot::generated_content::GearId::BootsOfDampAuthority);
+  const auto boots = definition.item.create(reg);
+  REQUIRE(
+      reg.get<fl::ecs::components::Equipment>(boots).resistances().lightning ==
+      20);
+  closet.equipped_item(fl::loot::EquipmentSlot::boots) = boots;
+
+  auto strike = [&] {
+    auto hit =
+        fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(), wearer);
+    hit.set_hit_kind(fl::primitives::HitKind::Direct);
+    hit.damage().lightning = 10;
+    return fl::ecs::systems::TakeDamage::commit(hit);
+  };
+  REQUIRE(strike() == 8);
+  closet.equipped_item(fl::loot::EquipmentSlot::boots) = entt::null;
+  REQUIRE(strike() == 10);
 }
 
 TEST_CASE("Blind can force attacks to miss through shared accuracy checks",

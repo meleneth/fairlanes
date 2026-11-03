@@ -345,6 +345,7 @@ monster :salamander,
         cycle: :resonance,
         hp: 24,
         level: 6,
+        resistances: {fire: 25},
         known_skills: %i[flame_strike kindle_wound cinderburst],
         pool: :common_woodland
 
@@ -581,7 +582,7 @@ end
   cinderburst: "Detonate an existing burn on one enemy for 8 fire damage, consuming the burn. Requires the burn to still be present when the blast lands.",
   observe: "Spend 12 beats observing, dealing 0 damage. Equipping Observe enables learning from other combatants; its rank caps learnable skill ranks. Observe itself is learned in order, at most 1 rank above the equipped rank, without a chance roll. Combat learning is kept on victory or raid summoning. Learning acquired during a raid is kept on shared victory, even for wiped parties, and lost on shared defeat. Other combat learning is lost on a party wipe.",
   flee: "Attempt to leave combat. The escape attempt has a 65% success chance outside raids and 0% in raids.",
-  thump: "Deal 1-5 base physical damage to 1 enemy with a blunt attack at rank 1, plus 3 damage per additional rank and the attacker's flat Attack once. Percentage status modifiers then apply; the target's flat Armor reduces the physical portion before the minimum 1 damage floor. Hit at beat 26 + 2 x (rank - 1); finish at beat 31 + 3 x (rank - 1). Higher ranks hit harder but take longer.",
+  thump: "Deal 1-5 base physical damage to 1 enemy with a blunt attack at rank 1, plus 3 damage per additional rank and the attacker's flat Attack once. Physical resistance applies before percentage status modifiers; the target's flat Armor then reduces the physical portion before the minimum 1 damage floor. Hit at beat 26 + 2 x (rank - 1); finish at beat 31 + 3 x (rank - 1). Higher ranks hit harder but take longer.",
   eviscerate: "Inflict Dire Bleed on 1 enemy: they bleed to death unless it is stopped. Every 3 seconds, starting 3 seconds after application, deal physical damage equal to 10% of their maximum HP at application (rounded down, minimum 1), bypassing flat Attack and Armor. No timeout and no initial hit. Cleanse, target death or leaving combat clears it; source death or removal stops it at the next tick. Reapplication replaces the bleed and restarts its timer.",
   poison: "Poison 1 enemy for 1 magical damage every 3 seconds: 9 ticks over 27 seconds, starting 3 seconds after application (9 total base damage). No initial hit. Cleanse, target death or leaving combat clears it; source death or removal stops further ticks. Reapplication replaces the poison and restarts its timer.",
   cold_snap: "Freeze 1 enemy for 30 seconds, stopping combat readiness. No initial damage. Casting again while they are frozen clears Freeze and shatters them for ice damage equal to 50% of their maximum HP (rounded down, minimum 1). Freeze can be cleansed and ends on death or leaving combat.",
@@ -650,10 +651,10 @@ monster_rules :salamander,
   {skill: :kindle_wound, conditions: [{predicate: :missing_status, status: :burn}]},
   {skill: :flame_strike}
 
-# Existing special drops. Equipment currently carries tier and armor kind but
-# has no numeric stat modifier component or application path.
+# Existing special drops. Resistance modifiers apply while equipped.
 gear :boots_of_damp_authority, display: "Boots of Damp Authority",
-     slot: :boots, armor_kind: :leather, tier: :excellent, weight: 20
+     slot: :boots, armor_kind: :leather, tier: :excellent, weight: 20,
+     modifiers: {resistances: {lightning: 20}}
 gear :mouse_nibbled_cape, display: "Mouse-Nibbled Cape",
      slot: :cape, armor_kind: :cloth, tier: :fine, weight: 10
 

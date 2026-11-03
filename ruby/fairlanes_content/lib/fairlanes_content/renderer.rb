@@ -18,6 +18,18 @@ module FairlanesContent
     def encounter_pools = declarations.encounter_pools
     def biomes = declarations.biomes
 
+    def resistance_cpp(values)
+      channels = %i[physical magical fire ice lightning]
+      "fl::primitives::Resistances{#{channels.map { |channel| values.fetch(channel, 0) }.join(', ')}}"
+    end
+
+    def resistance_schema
+      { "type" => "object", "additionalProperties" => false,
+        "properties" => %w[physical magical fire ice lightning].to_h do |channel|
+          [channel, { "type" => "integer", "minimum" => 0, "maximum" => 100 }]
+        end }
+    end
+
     def gear_content_hpp
       rows = gears.map do |gear|
         <<~CPP
@@ -27,6 +39,7 @@ module FairlanesContent
               .tier = Tier::#{gear.tier},
               .name = #{cpp_string(gear.display)},
               .unique_id = #{cpp_string(gear.id.to_s)},
+              .resistances = #{resistance_cpp(gear.modifiers.fetch(:resistances, {}))},
           }},
         CPP
       end.join
@@ -142,6 +155,7 @@ module FairlanesContent
                   #{monster.hp},
                   #{monster.level || 0},
                   fl::primitives::Cycle::#{camel(monster.cycle)},
+                  #{resistance_cpp(monster.resistances)},
                   std::array<fl::skills::SkillId, #{monster.known_skills.size}>{#{known_skills}},
                   Pool::#{pool_cpp(monster.pool)},
               },
@@ -236,6 +250,7 @@ module FairlanesContent
           int hp;
           int level;
           fl::primitives::Cycle cycle;
+          fl::primitives::Resistances resistances;
           std::array<fl::skills::SkillId, KnownSkillCount> known_skills;
           Pool pool;
         };
@@ -364,6 +379,11 @@ module FairlanesContent
             REQUIRE(stats.name_ == expected.monster_name);
             REQUIRE(stats.hp_ == expected.hp);
             REQUIRE(stats.max_hp_ == expected.hp);
+            REQUIRE(stats.resistances_.physical == expected.resistances.physical);
+            REQUIRE(stats.resistances_.magical == expected.resistances.magical);
+            REQUIRE(stats.resistances_.fire == expected.resistances.fire);
+            REQUIRE(stats.resistances_.ice == expected.resistances.ice);
+            REQUIRE(stats.resistances_.lightning == expected.resistances.lightning);
             if (expected.level > 0) {
               const auto &xp =
                   party_ctx.reg().get<fl::ecs::components::TrackXP>(entity);
@@ -636,6 +656,7 @@ module FairlanesContent
         #include <string_view>
 
         #include "fl/primitives/cycle.hpp"
+        #include "fl/primitives/damage.hpp"
         #include "fl/monsters/monster_kind.hpp"
         #include "fl/monsters/decision_rule.hpp"
         #include "fl/skills/skill.hpp"
@@ -648,6 +669,7 @@ module FairlanesContent
           int hp;
           int level;
           fl::primitives::Cycle cycle;
+          fl::primitives::Resistances resistances;
         };
 
         MonsterStats stats(MonsterKind kind) noexcept;
@@ -834,6 +856,7 @@ module FairlanesContent
             #{monster.hp},
             #{monster.level || 0},
             fl::primitives::Cycle::#{camel(monster.cycle)},
+            #{resistance_cpp(monster.resistances)},
         };
 
         } // namespace
@@ -1099,6 +1122,7 @@ module FairlanesContent
             "description" => monster.description,
             "cycle" => monster.cycle.to_s,
             "hp" => monster.hp,
+            "resistances" => monster.resistances,
             "level" => monster.level,
             "known_skills" => monster.known_skills.map(&:to_s),
             "pool" => monster.pool.to_s
@@ -1169,7 +1193,7 @@ module FairlanesContent
           ),
           "random_combat_skills" => { "type" => "array", "items" => string_type },
           "monsters" => array_schema(
-            %w[id cpp_id display description cycle hp level known_skills pool],
+            %w[id cpp_id display description cycle hp level resistances known_skills pool],
             {
               "id" => string_type,
               "cpp_id" => string_type,
@@ -1177,6 +1201,7 @@ module FairlanesContent
               "description" => { "type" => "string", "minLength" => 1 },
               "cycle" => { "enum" => CYCLES.map(&:to_s) },
               "hp" => { "type" => "integer", "minimum" => 1 },
+              "resistances" => resistance_schema,
               "level" => { "type" => %w[integer null], "minimum" => 1 },
               "known_skills" => { "type" => "array", "minItems" => 1, "items" => string_type },
               "pool" => string_type
@@ -1186,7 +1211,8 @@ module FairlanesContent
             "id" => string_type, "display" => string_type, "slot" => string_type,
             "armor_kind" => string_type, "tier" => string_type,
             "weight" => { "type" => "integer", "minimum" => 1 },
-            "modifiers" => { "type" => "object", "maxProperties" => 0 }
+            "modifiers" => { "type" => "object", "additionalProperties" => false,
+                             "properties" => { "resistances" => resistance_schema } }
           }),
           "encounter_pools" => array_schema(%w[id lineups], {
             "id" => string_type,

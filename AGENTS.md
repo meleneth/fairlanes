@@ -147,11 +147,13 @@ context from stable owner data, or make lifetime explicit with RAII.
 
 ## ECS Guidance
 
-`Stats` holds name, current/max HP, flat Attack, and flat Armor. Thump alone
-opts into Attack; direct hits use Armor at `TakeDamage` after percentage status
-modifiers and before the positive-hit minimum. Periodic and scripted damage
-bypass both. Level and XP live in `TrackXP`. Legacy MP/resistance JSON fields
-are ignored by the component builder; no save loader exists yet.
+`Stats` holds name, current/max HP, flat Attack, flat Armor, and per-channel
+percentage resistances. Thump alone opts into Attack. `TakeDamage` applies
+Stats and equipped-gear resistances before percentage status modifiers, then
+Armor for direct physical hits before the positive-hit minimum. Periodic and
+scripted damage bypass Attack and Armor, but use resistances. Level and XP live
+in `TrackXP`. The component builder loads legacy resistance JSON; MP fields are
+ignored. No save loader exists yet.
 
 Components should be small, explicit, focused data. Do not turn components into
 policy-heavy objects or "bags of whatever."
@@ -611,8 +613,8 @@ or combat bonus. Definitions/effects and progression-gate rules remain open.
 ## Compile-time dependencies
 
 Generated content also includes special gear and resolved 100-floor tower data.
-Gear declarations currently map only to supported `EquipmentBuilder` fields;
-numeric stat modifiers are unsupported. An explicit tower floor goes through
+Gear declarations support per-channel resistance percentage modifiers through
+`EquipmentBuilder`; other numeric stat modifiers remain unsupported. An explicit tower floor goes through
 `EncounterBuilder` while ordinary spawn selection remains unchanged. The
 generated floor manifest is `docs/tour/generated/floor-manifest.md`.
 

@@ -145,16 +145,17 @@ are combat time. Content validation rejects descriptions without numbers, but
 review must still verify that those numbers match the implementation.
 
 The always-present `Stats` component holds name, current/max HP, flat Attack,
-and flat Armor. Attack and Armor default to zero. Level and XP remain in
+flat Armor, and per-channel percentage resistances. All default to zero. Level and XP remain in
 `TrackXP`; ATB, statuses, timing, and damage channels stay separate. Thump is
 the only skill currently using Attack: it adds Attack once to a positive direct
 physical hit after its weapon roll and rank bonus. Other thump-like skills do
-not opt in. `TakeDamage` checks misses, applies percentage status and field
-modifiers, then subtracts Armor once from the physical channel of direct hits,
+not opt in. `TakeDamage` checks misses, applies Stats and equipped gear
+resistances by channel, then percentage status and field modifiers, then
+subtracts Armor once from the physical channel of direct hits,
 clamping that channel to zero before totaling. Its positive-hit minimum of one
 still applies. Periodic and scripted packets bypass Attack and Armor. The
-component builder accepts legacy `mp`, `max_mp`, and `resistances` JSON keys but
-ignores them; there is no persisted save format or save loader yet.
+component builder loads legacy `resistances` JSON values and ignores `mp` and
+`max_mp`; there is no persisted save format or save loader yet.
 
 Skill declarations also supply libram descriptions and status-detonation
 metadata. Monster declarations may supply ordered `decision_rules` (or use
@@ -218,11 +219,14 @@ effect gallery metadata, JSON manifest, and manifest schema are for review and
 tooling.
 
 Special gear declarations carry stable IDs, names, slots, armor kinds, tiers,
-and loot weights. The two migrated specials are emitted into the existing
-`global_loot_table()` special-item list, and `EquipmentBuilder` still creates
-their runtime components. Numeric stat modifiers are intentionally rejected by
-validation: `Equipment` and the current equip path have no such modifier field
-or application behavior. Tier and armor kind retain their existing behavior.
+loot weights, and optional `modifiers: {resistances: {channel: percent}}` values.
+The two migrated specials are emitted into the existing `global_loot_table()`
+special-item list. `EquipmentBuilder` stores resistance modifiers on the item;
+`TakeDamage` reads them from equipped slots. Other numeric modifiers are
+rejected by validation. Tier and armor kind retain their existing behavior.
+Monster declarations accept `resistances: {channel: percent}` and apply them to
+Stats when the monster is built. Supported channels are physical, magical,
+fire, ice, and lightning, with integer percentages from 0 through 100.
 
 Tower biomes declare exactly 100 floors. Nonoverlapping bands reference
 encounter pools of five-monster lineups; explicit floor overrides take precedence.

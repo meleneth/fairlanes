@@ -12,12 +12,13 @@ struct EquipmentBuilder {
   fl::loot::Tier tier{fl::loot::Tier::worn};
   std::string name;
   std::string unique_id{};
+  fl::primitives::Resistances resistances{};
 
   entt::entity create(entt::registry &reg) const {
     auto item = reg.create();
 
     reg.emplace<fl::ecs::components::Equipment>(item, slot, name, armor_kind,
-                                                tier, unique_id);
+                                                tier, unique_id, resistances);
 
     return item;
   }

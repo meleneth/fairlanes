@@ -48,6 +48,7 @@ TEST_CASE("EntityBuilder + ComponentBuilder basics", "[entity][builder]") {
     REQUIRE(s.max_hp_ == 30);
     REQUIRE(s.attack_ == 3);
     REQUIRE(s.armor_ == 2);
+    REQUIRE(s.resistances_.physical == 50);
   }
 
   SECTION("Tags default + JSON array assignment") {

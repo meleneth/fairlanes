@@ -7,9 +7,10 @@ RSpec.describe "Gear and tower declarations" do
     build(:declaration_set).tap do |set|
       set.monster :honey_badger, cycle: :origin, hp: 500,
                   description: "A stubborn test foe.", known_skills: %i[thump],
-                  pool: :rare_woodland
+                  pool: :rare_woodland, resistances: {fire: 25}
       set.gear :damp_boots, display: "Damp Boots", slot: :boots,
-               armor_kind: :leather, tier: :excellent, weight: 20
+               armor_kind: :leather, tier: :excellent, weight: 20,
+               modifiers: {resistances: {lightning: 20}}
       set.encounter_pool :opening, lineups: [Array.new(5, :field_mouse)]
       set.encounter_pool :deep, lineups: [Array.new(5, :field_mouse)]
       set.biome :mouse_tower, display: "Mouse Tower", floors: 100,
@@ -24,11 +25,23 @@ RSpec.describe "Gear and tower declarations" do
     expect(FairlanesContent::Validator.new(set).validate).to be_empty
     manifest = JSON.parse(FairlanesContent::Renderer.new(set).manifest)
     expect(manifest.fetch("gear").first.fetch("id")).to eq("damp_boots")
+    expect(manifest.fetch("gear").first.fetch("modifiers").fetch("resistances")).to eq("lightning" => 20)
+    expect(manifest.fetch("monsters").last.fetch("resistances")).to eq("fire" => 25)
+    expect(FairlanesContent::Renderer.new(set).gear_content_hpp).to include("Resistances{0, 0, 0, 0, 20}")
     floors = manifest.fetch("biomes").first.fetch("resolved_floors")
     expect(floors.size).to eq(100)
     expect(floors[9]).to include("id" => "mouse_tower/010", "source" => "override")
     expect(floors[9].fetch("lineup").first).to eq("honey_badger")
     expect(floors[49].fetch("source")).to eq("deep")
+  end
+
+  it "rejects unknown resistance channels and percentages outside 0..100" do
+    set = tower_set
+    set.monsters.last.resistances = {acid: 10, fire: 101}
+    set.gears.first.modifiers = {resistances: {lightning: -1}}
+    expect(FairlanesContent::Validator.new(set).validate).to include(
+      /unknown channel acid/, /fire must be an integer from 0 to 100/,
+      /lightning must be an integer from 0 to 100/)
   end
 
   it "keeps floors outside an edited band unchanged" do

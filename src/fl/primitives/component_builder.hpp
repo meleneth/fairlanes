@@ -32,7 +32,20 @@ template <> struct ComponentBuilder<Stats> {
       s.attack_ = it->get<int>();
     if (auto it = j.find("armor"); it != j.end())
       s.armor_ = it->get<int>();
-    // Old content may still carry mp/max_mp/resistances. They are ignored.
+    if (auto it = j.find("resistances"); it != j.end()) {
+      const auto &r = *it;
+      if (auto field = r.find("physical"); field != r.end())
+        s.resistances_.physical = field->get<int>();
+      if (auto field = r.find("magical"); field != r.end())
+        s.resistances_.magical = field->get<int>();
+      if (auto field = r.find("fire"); field != r.end())
+        s.resistances_.fire = field->get<int>();
+      if (auto field = r.find("ice"); field != r.end())
+        s.resistances_.ice = field->get<int>();
+      if (auto field = r.find("lightning"); field != r.end())
+        s.resistances_.lightning = field->get<int>();
+    }
+    // Old content may still carry mp/max_mp; they are ignored.
   }
 };
 

@@ -7,6 +7,7 @@
 #include "fl/loot/armor_kind.hpp"
 #include "fl/loot/equipment_slot.hpp"
 #include "fl/loot/tier.hpp"
+#include "fl/primitives/damage.hpp"
 
 namespace fl::ecs::components {
 
@@ -15,7 +16,8 @@ public:
   Equipment(fl::loot::EquipmentSlot slot, std::string name,
             fl::loot::ArmorKind armor_kind = fl::loot::ArmorKind::none,
             fl::loot::Tier tier = fl::loot::Tier::worn,
-            std::string unique_id = {});
+            std::string unique_id = {},
+            fl::primitives::Resistances resistances = {});
 
   [[nodiscard]] fl::loot::EquipmentSlot slot() const noexcept;
   [[nodiscard]] fl::loot::ArmorKind armor_kind() const noexcept;
@@ -24,6 +26,7 @@ public:
   [[nodiscard]] std::string_view name() const noexcept;
   [[nodiscard]] std::string_view unique_id() const noexcept;
   [[nodiscard]] bool is_unique() const noexcept;
+  [[nodiscard]] const fl::primitives::Resistances &resistances() const noexcept;
   [[nodiscard]] std::size_t palette_index() const noexcept;
 
 private:
@@ -32,6 +35,7 @@ private:
   fl::loot::Tier tier_{fl::loot::Tier::worn};
   std::string name_;
   std::string unique_id_;
+  fl::primitives::Resistances resistances_{};
 };
 
 std::string_view to_string(fl::loot::EquipmentSlot slot);

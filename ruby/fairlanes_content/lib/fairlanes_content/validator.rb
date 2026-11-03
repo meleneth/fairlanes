@@ -20,6 +20,7 @@ module FairlanesContent
     ARMOR_KINDS = Set[:none, :cloth, :leather, :plate].freeze
     GEAR_TIERS = Set[:worn, :plain, :sturdy, :fine, :excellent,
                      :masterwork, :mythic].freeze
+    RESISTANCE_CHANNELS = Set[:physical, :magical, :fire, :ice, :lightning].freeze
     VALID_EXECUTIONS = Set[
       :thump_like, :eviscerate, :poison, :cold_snap, :flame_strike,
       :flame_wave, :decal_strike, :damage_strike, :group_damage,
@@ -108,7 +109,11 @@ module FairlanesContent
         errors << "#{prefix} has invalid armor kind #{gear.armor_kind}" unless ARMOR_KINDS.include?(gear.armor_kind)
         errors << "#{prefix} has invalid tier #{gear.tier}" unless GEAR_TIERS.include?(gear.tier)
         errors << "#{prefix} has invalid weight #{gear.weight}" unless positive_integer?(gear.weight)
-        errors << "#{prefix} has unsupported stat modifiers" unless gear.modifiers == {}
+        if !gear.modifiers.is_a?(Hash) || (gear.modifiers.keys - [:resistances]).any?
+          errors << "#{prefix} has unsupported stat modifiers"
+        else
+          validate_resistances(gear.modifiers.fetch(:resistances, {}), "#{prefix} resistances", errors)
+        end
       end
     end
 
@@ -319,6 +324,7 @@ module FairlanesContent
         unless monster.level.nil? || positive_integer?(monster.level)
           errors << "monster #{monster.id} has invalid level #{monster.level}"
         end
+        validate_resistances(monster.resistances, "monster #{monster.id} resistances", errors)
         errors << "monster #{monster.id} has invalid pool #{monster.pool}" unless VALID_POOLS.include?(monster.pool)
         errors << "monster #{monster.id} has no known skills" if monster.known_skills.empty?
         unless monster.known_skills.uniq.size == monster.known_skills.size
@@ -332,6 +338,17 @@ module FairlanesContent
 
     def percent?(value)
       value.is_a?(Integer) && value >= 0 && value <= 100
+    end
+
+    def validate_resistances(values, prefix, errors)
+      unless values.is_a?(Hash)
+        errors << "#{prefix} must be a hash"
+        return
+      end
+      values.each do |channel, percent|
+        errors << "#{prefix} has unknown channel #{channel}" unless RESISTANCE_CHANNELS.include?(channel)
+        errors << "#{prefix} #{channel} must be an integer from 0 to 100" unless percent?(percent)
+      end
     end
 
     def positive_integer?(value)
