@@ -40,6 +40,8 @@ TEST_CASE("First Visitor defeat reveals the pub recruitment objective",
   for (int beat = 0; beat < 12 && !party.has_encounter(); ++beat)
     game.advance_beat();
   REQUIRE(party.has_encounter());
+  REQUIRE(party.tower_route()->floor == 1);
+  REQUIRE(party.encounter_data().attackers().members().size() == 1);
 }
 
 TEST_CASE("Ruby story event status agrees with handwritten handlers",
@@ -60,11 +62,11 @@ TEST_CASE("Two starter wins lead to a village purchase and second volunteer",
   story->emit("recruit_angry_fellow");
   REQUIRE(party.members().size() == 1);
   int beats = 0;
-  while (party.story_starter_fights_remaining() > 0 && beats < 5000) {
+  while (!party.story_shop_pending() && beats < 5000) {
     game.advance_beat();
     ++beats;
   }
-  REQUIRE(party.story_starter_fights_remaining() == 0);
+  REQUIRE(party.tower_route()->floor == 3);
   REQUIRE(party.story_shop_pending());
   REQUIRE(party.darrin_marks() == 10);
   party.return_to_town();

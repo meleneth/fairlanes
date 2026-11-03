@@ -49,14 +49,22 @@ ObjectiveSystem::ObjectiveSystem(fl::context::AccountCtx account)
   if (account_data.parties().empty()) return;
   auto &bus = account_data.parties().front().party_bus();
   victory_sub_ = fl::events::ScopedPartyListener{
-      bus, std::in_place_type<fl::events::PartyVictory>, [this](const auto &) {
-        ++combat_wins_;
-        if (combat_wins_ == 1) emit("first_combat_won");
-        if (combat_wins_ == 2) emit("two_starter_wins");
+      bus, std::in_place_type<fl::events::TowerFloorCleared>, [this](const auto &event) {
+        if (event.biome_id != "origin_woodland_tower") return;
+        auto &party = account_.account_data().parties().front();
+        if (event.floor == 1) {
+          party.award_darrin_marks(5);
+          emit("first_combat_won");
+        }
+        if (event.floor == 2) {
+          party.award_darrin_marks(5);
+          party.begin_story_shop();
+          emit("two_starter_wins");
+        }
       }};
   return_sub_ = fl::events::ScopedPartyListener{
       bus, std::in_place_type<fl::events::PartyReturnedToTown>, [this](const auto &) {
-        if (combat_wins_ >= 2) returned_after_two_ = true;
+        if (facts_.contains("two_starter_wins")) returned_after_two_ = true;
       }};
 }
 
@@ -105,7 +113,7 @@ void ObjectiveSystem::handle(std::string_view id) {
       party.members().back().grimoire().learn(fl::skills::SkillId::Thump);
       account_.reg().get<fl::ecs::components::PartyMember>(hero)
           .equip_known_skill(fl::skills::SkillId::Thump);
-      party.enable_story_starter_fights();
+      party.select_tower("origin_woodland_tower");
     }
   } else if (id == "recruit_second_hero") {
     auto &party = account.parties().front();

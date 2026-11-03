@@ -6,8 +6,8 @@ Generated from scripts/fairlanes_content_declarations.rb.
 
 | Floor ID | Source | Lineup |
 | --- | --- | --- |
-| `origin_woodland_tower/001` | woodland_starter | field_mouse, field_mouse, field_mouse, field_mouse, field_mouse |
-| `origin_woodland_tower/002` | woodland_starter | field_mouse, field_mouse, field_mouse, bumpkin_hare, field_mouse |
+| `origin_woodland_tower/001` | override | field_mouse |
+| `origin_woodland_tower/002` | override | field_mouse |
 | `origin_woodland_tower/003` | woodland_starter | field_mouse, field_mouse, field_mouse, field_mouse, field_mouse |
 | `origin_woodland_tower/004` | woodland_light_physical | bumpkin_hare, field_mouse, mire_squish, bumpkin_hare, field_mouse |
 | `origin_woodland_tower/005` | woodland_light_physical | bumpkin_hare, field_mouse, mire_squish, bumpkin_hare, field_mouse |

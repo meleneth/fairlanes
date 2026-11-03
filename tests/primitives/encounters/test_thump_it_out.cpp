@@ -160,7 +160,8 @@ TEST_CASE("Declared tower floors use the normal encounter construction path",
         EncounterBuilder::TowerFloor{"origin_woodland_tower", floor}};
     auto &encounter = builder.thump_it_out();
     const auto actual = monster_kinds_for(encounter.attackers().members(), party.reg());
-    REQUIRE(std::ranges::equal(actual, declared->monsters));
+    REQUIRE(std::ranges::equal(actual.begin(), actual.end(), declared->monsters.begin(),
+                               declared->monsters.begin() + declared->monster_count));
     REQUIRE(encounter.defenders().members().size() == 3);
     if (floor == 10) {
       REQUIRE(actual.front() == fl::monster::MonsterKind::HoneyBadger);

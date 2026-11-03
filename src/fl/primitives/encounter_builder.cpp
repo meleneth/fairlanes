@@ -70,9 +70,10 @@ EncounterData &EncounterBuilder::thump_it_out() {
 
   auto &encounter_data = ctx_.party_data().create_encounter();
 
-  for (int i = 0; i < kEnemyPartySize; ++i) {
+  const auto enemy_count = floor ? floor->monster_count : kEnemyPartySize;
+  for (std::size_t i = 0; i < enemy_count; ++i) {
     if (floor) {
-      add_enemy_kind(floor->monsters[static_cast<std::size_t>(i)]);
+      add_enemy_kind(floor->monsters[i]);
     } else {
       add_random_enemy();
     }

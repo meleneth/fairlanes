@@ -317,7 +317,7 @@ module FairlanesContent
       tables = biomes.map do |biome|
         rows = resolved_floors(biome).map do |floor|
           kinds = floor[:lineup].map { |id| "fl::monster::MonsterKind::#{monster_by_id(id).cpp_id}" }.join(", ")
-          "  FloorLineup{#{floor[:floor]}, #{cpp_string(floor[:id])}, {#{kinds}}},"
+          "  FloorLineup{#{floor[:floor]}, #{cpp_string(floor[:id])}, {#{kinds}}, #{floor[:lineup].size}},"
         end.join("\n")
         <<~CPP
           inline constexpr std::array<FloorLineup, #{biome.floors}> k#{camel(biome.id)}{{
@@ -340,6 +340,7 @@ module FairlanesContent
           int floor;
           std::string_view id;
           std::array<fl::monster::MonsterKind, 5> monsters;
+          std::size_t monster_count;
         };
 
         #{tables}

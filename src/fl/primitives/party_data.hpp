@@ -94,18 +94,24 @@ public:
     int floor;
   };
   std::optional<TowerRoute> tower_route() const noexcept;
-  bool select_tower(std::string_view biome_id);
-  void begin_tower_encounter() { encounter_tower_biome_ = tower_biome_; }
+  bool select_tower(std::string_view biome_id,
+                    std::optional<int> floor = std::nullopt);
+  int latest_tower_floor(std::string_view biome_id) const noexcept;
+  void begin_tower_encounter() {
+    encounter_tower_biome_ = tower_biome_;
+    const auto route = tower_route();
+    encounter_tower_floor_ = route ? route->floor : 0;
+  }
   bool plains_unlocked() const noexcept { return plains_unlocked_; }
   bool tower_choice_pending() const noexcept { return tower_choice_pending_; }
   // ---- behavior ----
   void advance_beat();
   entt::entity recruit_member(std::string name);
-  void enable_story_starter_fights() noexcept { story_starter_fights_remaining_ = 2; }
-  int story_starter_fights_remaining() const noexcept { return story_starter_fights_remaining_; }
   bool story_shop_pending() const noexcept { return story_shop_pending_; }
+  void begin_story_shop() noexcept { story_shop_pending_ = true; }
   void finish_story_shop() noexcept { story_shop_pending_ = false; }
   int darrin_marks() const noexcept { return darrin_marks_; }
+  void award_darrin_marks(int amount) noexcept { darrin_marks_ += amount; }
   bool spend_darrin_marks(int amount) noexcept {
     if (amount < 0 || darrin_marks_ < amount) return false;
     darrin_marks_ -= amount;
@@ -201,11 +207,13 @@ private:
   EncounterMode encounter_mode_{EncounterMode::ChaosAttractor};
   std::string tower_biome_{};
   std::string encounter_tower_biome_{};
+  int encounter_tower_floor_{0};
   int woodland_floor_{1};
   int plains_floor_{1};
+  int woodland_latest_floor_{1};
+  int plains_latest_floor_{1};
   bool plains_unlocked_{false};
   bool tower_choice_pending_{false};
-  int story_starter_fights_remaining_{0};
   bool story_shop_pending_{false};
   int darrin_marks_{0};
   bool plains_reward_awarded_{false};
@@ -216,7 +224,6 @@ private:
   fl::events::ScopedPartyListener loot_drop_sub_{};
   fl::events::ScopedPartyListener manual_equipment_sub_{};
   fl::events::ScopedPartyListener tower_progress_sub_{};
-  fl::events::ScopedPartyListener story_starter_sub_{};
   int town_penalty_beats_remaining_{0};
 
   struct PendingLearnedSkill {

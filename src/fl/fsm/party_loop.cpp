@@ -10,7 +10,6 @@
 #include "fl/context.hpp"
 #include "fl/primitives/encounter_builder.hpp"
 #include "fl/primitives/party_data.hpp"
-#include "fl/skills/thump.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include <fmt/format.h>
 #include <spdlog/spdlog.h>
@@ -33,12 +32,6 @@ void PartyLoop::Ops::enter_farming(fl::context::PartyCtx &ctx) {
   if (ctx.party_data().has_encounter()) return;
   if (ctx.party_data().members().empty()) return;
   if (ctx.party_data().story_shop_pending()) return;
-  if (ctx.party_data().story_starter_fights_remaining() > 0) {
-    fl::primitives::EncounterBuilder{ctx, ctx.party_data().encounter_mode()}
-        .one_on_one(fl::monster::MonsterKind::FieldMouse);
-    return;
-  }
-
   // The floor-nine unlock is a real choice: wait here until the player picks
   // Plains or explicitly continues Woodland, before floor ten is constructed.
   if (ctx.party_data().tower_choice_pending()) return;

@@ -47,7 +47,6 @@ private:
   fl::events::ScopedStoryListener fact_sub_;
   fl::events::ScopedStoryListener autoplay_sub_;
   fl::events::ScopedStoryListener purchase_sub_;
-  int combat_wins_{0};
   bool autoplay_enabled_{false};
   std::size_t autoplay_step_index_{0};
   bool returned_after_two_{false};

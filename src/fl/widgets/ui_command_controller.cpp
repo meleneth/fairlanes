@@ -390,7 +390,8 @@ void UiCommandController::handle(std::string_view command) {
     if (words.size() == 1 || words[1] == "status") {
       if (const auto route = party.tower_route())
         write("tower " + std::string(route->biome_id) + " floor " +
-              std::to_string(route->floor));
+              std::to_string(route->floor) + " (latest " +
+              std::to_string(party.latest_tower_floor(route->biome_id)) + ")");
       else
         write("tower route inactive");
       write(party.plains_unlocked() ? "Plains unlocked" : "Plains unlocks after Woodland floor 9");
@@ -400,11 +401,27 @@ void UiCommandController::handle(std::string_view command) {
     }
     const auto biome = words[1] == "woodland" ? "origin_woodland_tower" :
                        words[1] == "plains" ? "origin_plains_tower" : "";
-    if (!party.select_tower(biome)) {
-      write("unknown or locked tower; use tower woodland or tower plains after Woodland floor 9");
+    std::optional<int> floor;
+    if (words.size() > 3) {
+      write("usage: tower <woodland|plains> [unlocked floor]");
       return;
     }
-    write("selected " + std::string(biome) + " for the next encounter");
+    if (words.size() == 3) {
+      int requested = 0;
+      const auto [end, error] = std::from_chars(
+          words[2].data(), words[2].data() + words[2].size(), requested);
+      if (error != std::errc{} || end != words[2].data() + words[2].size()) {
+        write("floor must be a number between 1 and the latest unlocked floor");
+        return;
+      }
+      floor = requested;
+    }
+    if (!party.select_tower(biome, floor)) {
+      write("unknown or locked tower floor; use tower status to see the latest unlocked floor");
+      return;
+    }
+    write("selected " + std::string(biome) + " floor " +
+          std::to_string(party.tower_route()->floor) + " for the next encounter");
     return;
   }
 
@@ -593,9 +610,9 @@ void UiCommandController::show_help(std::string_view topic) {
   }
 
   if (topic == "tower") {
-    write("tower woodland: start or return to the Woodland tower");
-    write("tower plains: enter biome 2 after clearing Woodland floor 9");
-    write("tower status: show the selected party's current tower and floor");
+    write("tower woodland [floor]: choose Woodland and any unlocked floor");
+    write("tower plains [floor]: choose Plains after Woodland floor 9");
+    write("tower status: show the selected floor and latest unlocked floor");
     return;
   }
 

@@ -48,34 +48,40 @@ PartyData::PartyData(entt::entity party_id,
       [this](const fl::events::PartyVictory &) {
         if (in_raid() || !encounter_data_ || encounter_tower_biome_.empty()) return;
         if (encounter_tower_biome_ == "origin_woodland_tower") {
-          if (woodland_floor_ == 9) {
+          if (encounter_tower_floor_ == 9 && !plains_unlocked_) {
             plains_unlocked_ = true;
             tower_choice_pending_ = true;
             party_bus_.emit(fl::events::PartyEvent{
                 fl::events::BiomeUnlocked{"origin_plains_tower"}});
             log_->append_plain("Origin Plains Tower unlocked. Choose tower plains for the detour or tower woodland for floor 10.");
           }
-          woodland_floor_ = std::min(100, woodland_floor_ + 1);
+          const int next = std::min(100, encounter_tower_floor_ + 1);
+          if (encounter_tower_floor_ == woodland_latest_floor_) {
+            woodland_latest_floor_ = next;
+            if (next > encounter_tower_floor_)
+              party_bus_.emit(fl::events::PartyEvent{fl::events::TowerFloorCleared{
+                  encounter_tower_biome_, encounter_tower_floor_}});
+          }
+          woodland_floor_ = next;
         } else if (encounter_tower_biome_ == "origin_plains_tower") {
-          if (plains_floor_ == 1 && !plains_reward_awarded_) {
+          if (encounter_tower_floor_ == 1 && !plains_reward_awarded_) {
             fl::ecs::systems::LootDropSystem::grant_unique(
                 party_ctx_, fl::loot::generated_content::GearId::MossboundCape);
             plains_reward_awarded_ = true;
             log_->append_plain("Plains floor 1 reward: Mossbound Cape. Equip it in the party inventory.");
           }
-          plains_floor_ = std::min(100, plains_floor_ + 1);
+          const int next = std::min(100, encounter_tower_floor_ + 1);
+          if (encounter_tower_floor_ == plains_latest_floor_) {
+            plains_latest_floor_ = next;
+            if (next > encounter_tower_floor_)
+              party_bus_.emit(fl::events::PartyEvent{fl::events::TowerFloorCleared{
+                  encounter_tower_biome_, encounter_tower_floor_}});
+          }
+          plains_floor_ = next;
         }
         // Tower travel returns through town; begin the next floor at full
         // effective HP without adding HP when an item is equipped mid-fight.
         revitalize_members();
-      }};
-  story_starter_sub_ = fl::events::ScopedPartyListener{
-      party_bus_, std::in_place_type<fl::events::PartyVictory>,
-      [this](const fl::events::PartyVictory &) {
-        if (story_starter_fights_remaining_ <= 0 || in_raid()) return;
-        --story_starter_fights_remaining_;
-        darrin_marks_ += 5;
-        if (story_starter_fights_remaining_ == 0) story_shop_pending_ = true;
       }};
 }
 
@@ -87,11 +93,22 @@ std::optional<PartyData::TowerRoute> PartyData::tower_route() const noexcept {
   return std::nullopt;
 }
 
-bool PartyData::select_tower(std::string_view biome_id) {
+int PartyData::latest_tower_floor(std::string_view biome_id) const noexcept {
+  if (biome_id == "origin_woodland_tower") return woodland_latest_floor_;
+  if (biome_id == "origin_plains_tower" && plains_unlocked_)
+    return plains_latest_floor_;
+  return 0;
+}
+
+bool PartyData::select_tower(std::string_view biome_id,
+                             std::optional<int> floor) {
   if (biome_id != "origin_woodland_tower" && biome_id != "origin_plains_tower")
     return false;
-  if (biome_id == "origin_plains_tower" && !plains_unlocked_) return false;
+  const int latest = latest_tower_floor(biome_id);
+  if (latest == 0 || (floor && (*floor < 1 || *floor > latest))) return false;
   tower_biome_ = biome_id;
+  (biome_id == "origin_woodland_tower" ? woodland_floor_ : plains_floor_) =
+      floor.value_or(latest);
   tower_choice_pending_ = false;
   return true;
 }

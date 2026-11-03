@@ -11,6 +11,34 @@
 #include "fl/grand_central.hpp"
 #include "fl/monsters/monster_kind.hpp"
 #include "fl/primitives/encounter_builder.hpp"
+#include "fl/widgets/ui_command_controller.hpp"
+
+TEST_CASE("Tower command selects an unlocked floor and rejects a locked floor",
+          "[tower][command]") {
+  fl::GrandCentral game{1, 1, 1};
+  auto ctx = game.account_context(0).party_context(0);
+  auto &party = ctx.party_data();
+  fl::widgets::UiCommandController commands{
+      game.accounts(), game.game_log(), game.world_clock()};
+  commands.handle("tower woodland 2");
+  REQUIRE_FALSE(party.tower_route().has_value());
+  commands.handle("tower woodland 1");
+  REQUIRE(party.tower_route()->floor == 1);
+  party.begin_tower_encounter();
+  auto &fight = fl::primitives::EncounterBuilder{
+      ctx, fl::primitives::EncounterMode::ChaosAttractor,
+      fl::primitives::EncounterBuilder::TowerFloor{
+          "origin_woodland_tower", 1}}.thump_it_out();
+  for (auto enemy : fight.attackers().members())
+    ctx.reg().get<fl::ecs::components::Stats>(enemy).hp_ = 0;
+  party.leave_combat();
+  commands.handle("tower woodland 1");
+  REQUIRE(party.tower_route()->floor == 1);
+  commands.handle("tower woodland 3");
+  REQUIRE(party.tower_route()->floor == 1);
+  commands.handle("tower woodland 2");
+  REQUIRE(party.tower_route()->floor == 2);
+}
 
 TEST_CASE("Woodland floor nine unlocks Plains, whose first clear rewards the cape",
           "[tower][progression][reward]") {
@@ -39,7 +67,7 @@ TEST_CASE("Woodland floor nine unlocks Plains, whose first clear rewards the cap
         ctx, fl::primitives::EncounterMode::ChaosAttractor,
         fl::primitives::EncounterBuilder::TowerFloor{
             std::string(route->biome_id), route->floor}}.thump_it_out();
-    REQUIRE(fight.attackers().members().size() == lineup->monsters.size());
+    REQUIRE(fight.attackers().members().size() == lineup->monster_count);
     // Resolve the setup without waiting for combat; the victory and reward
     // event path is the same one used after production damage kills a lineup.
     for (auto enemy : fight.attackers().members())
@@ -51,11 +79,21 @@ TEST_CASE("Woodland floor nine unlocks Plains, whose first clear rewards the cap
     REQUIRE(party.tower_route()->floor == floor);
     clear_current_floor();
   }
+  REQUIRE(party.latest_tower_floor("origin_woodland_tower") == 10);
+  REQUIRE_FALSE(party.select_tower("origin_woodland_tower", 11));
+  REQUIRE_FALSE(party.select_tower("origin_woodland_tower", 0));
+  REQUIRE(party.select_tower("origin_woodland_tower", 1));
+  REQUIRE(party.tower_route()->floor == 1);
+  clear_current_floor();
+  REQUIRE(party.tower_route()->floor == 2);
+  REQUIRE(party.latest_tower_floor("origin_woodland_tower") == 10);
+  REQUIRE(party.select_tower("origin_woodland_tower"));
   REQUIRE(party.plains_unlocked());
   REQUIRE(plains_unlock_events == 1);
   REQUIRE(party.tower_route()->floor == 10);
   REQUIRE(party.select_tower("origin_plains_tower"));
   REQUIRE(party.tower_route()->floor == 1);
+  REQUIRE_FALSE(party.select_tower("origin_plains_tower", 2));
   clear_current_floor();
   REQUIRE(party.tower_route()->floor == 2);
   const auto reward = std::find_if(

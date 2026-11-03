@@ -35,6 +35,15 @@ RSpec.describe "Gear and tower declarations" do
     expect(floors[49].fetch("source")).to eq("deep")
   end
 
+  it "supports a single-monster authored floor" do
+    set = tower_set
+    set.biomes.first.overrides << FairlanesContent::FloorOverride.new(
+      floor: 1, lineup: [:field_mouse])
+    expect(FairlanesContent::Validator.new(set).validate).to be_empty
+    header = FairlanesContent::Renderer.new(set).floor_content_hpp
+    expect(header).to include('FloorLineup{1, "mouse_tower/001", {fl::monster::MonsterKind::FieldMouse}, 1}')
+  end
+
   it "rejects unknown resistance channels and percentages outside 0..100" do
     set = tower_set
     set.monsters.last.resistances = {acid: 10, fire: 101}

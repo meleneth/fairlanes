@@ -1,8 +1,12 @@
 # Origin Woodland progression slice
 
-Use `tower woodland` in the client console to start the selected party's tower
-route. Wins advance its resolved floor lineup; a wipe retries the floor after
-recovery. A clear returns the party to full effective HP. Clearing Woodland
+The story's first two victories clear Woodland floors 1 and 2, unlocking the
+next floor and funding the village hide purchase. Use `tower woodland` or
+`tower plains` in the client console to choose a biome at its latest unlocked
+floor. Add a floor number, such as `tower woodland 1`, to replay any floor up
+to that biome's latest unlocked floor. A win unlocks the next floor only when
+the latest floor is cleared; a wipe retries the floor after recovery. A clear
+returns the party to full effective HP. Clearing Woodland
 floor 9 pauses the route until the player chooses `tower plains` or
 `tower woodland`. The party may clear Plains floor 1 for a cape,
 equip it in the party inventory, then use `tower woodland` to return to floor
@@ -17,7 +21,8 @@ achievement event. Combat and progression continue while a notice is shown.
 
 | Woodland milestone | Encounter job |
 | --- | --- |
-| Floors 1–3 | Starter Field Mice and Bumpkin Hare |
+| Floors 1–2 | One Field Mouse each for the opening story victories |
+| Floor 3 | Five Field Mice begin the full tower encounters |
 | Floors 4–6 | Repeated light physical hits from mice, hares, and Mire Squish |
 | Floors 7–9 | Heavier Bark Smack hits mixed with light attackers |
 | Floor 9 clear | Unlock Origin Plains Tower before floor 10 |

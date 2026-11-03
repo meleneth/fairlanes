@@ -249,8 +249,8 @@ module FairlanesContent
     end
 
     def validate_lineup(lineup, prefix, monsters, errors)
-      unless lineup.is_a?(Array) && lineup.size == 5
-        errors << "#{prefix} must contain five monsters"
+      unless lineup.is_a?(Array) && (1..5).cover?(lineup.size)
+        errors << "#{prefix} must contain one to five monsters"
         return
       end
       lineup.each do |monster|

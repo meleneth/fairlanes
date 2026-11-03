@@ -22,6 +22,7 @@ struct MemberJoined {
 };
 struct PartyWiped {};
 struct PartyVictory {};
+struct TowerFloorCleared { std::string biome_id; int floor{1}; };
 struct BiomeUnlocked { std::string biome_id; };
 struct CycleUnlocked { fl::primitives::Cycle cycle; };
 // A normal encounter is fully populated and ready for combat ticks.
@@ -70,6 +71,7 @@ struct EquipmentEquipped {
 
 using PartyEvent =
     std::variant<PartyCreated, MemberJoined, PartyWiped, PartyVictory,
+                 TowerFloorCleared,
                  BiomeUnlocked, CycleUnlocked,
                  PartyCombatStarted, PartyLeftCombat,
                  PartyReturnToTownRequested, PartyReturnedToTown,

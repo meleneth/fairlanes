@@ -705,6 +705,8 @@ biome :origin_woodland_tower, display: "Origin Woodland Tower", floors: 100,
         {from: 50, to: 100, pool: :woodland_deep}
       ],
       overrides: [
+        {floor: 1, lineup: %i[field_mouse]},
+        {floor: 2, lineup: %i[field_mouse]},
         {floor: 10, lineup: %i[honey_badger field_mouse field_mouse field_mouse field_mouse]}
       ]
 
