@@ -141,7 +141,7 @@ struct GoToStory {};
 
           std::unique_ptr<ExternalUiAdapter> adapter_;
           ftxui::Component external_component_;
-          boost::sml::sm<NavigationStateMachine> navigation_;
+          std::unique_ptr<boost::sml::sm<NavigationStateMachine>> navigation_;
           ScreenId current_screen_{ScreenId::PartyBattle};
           std::vector<ScreenId> history_;
         };

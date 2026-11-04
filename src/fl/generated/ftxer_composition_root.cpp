@@ -4,6 +4,7 @@ namespace fl::generated::ftxer {
 
 CompositionRoot::CompositionRoot(std::unique_ptr<ExternalUiAdapter> adapter)
     : adapter_(std::move(adapter)), external_component_(adapter_->component()),
+      navigation_(std::make_unique<boost::sml::sm<NavigationStateMachine>>()),
       current_screen_(adapter_->current_screen()) {
   Add(external_component_);
   dispatch(current_screen_);
@@ -95,14 +96,14 @@ void CompositionRoot::synchronize(bool remember) {
 
 void CompositionRoot::dispatch(ScreenId destination) {
   switch (destination) {
-  case ScreenId::Raid: navigation_.process_event(GoToRaid{}); break;
-  case ScreenId::Party: navigation_.process_event(GoToParty{}); break;
-  case ScreenId::AccountBattle: navigation_.process_event(GoToAccountBattle{}); break;
-  case ScreenId::PartyBattle: navigation_.process_event(GoToPartyBattle{}); break;
-  case ScreenId::EffectGallery: navigation_.process_event(GoToEffectGallery{}); break;
-  case ScreenId::Libram: navigation_.process_event(GoToLibram{}); break;
-  case ScreenId::Bestiary: navigation_.process_event(GoToBestiary{}); break;
-  case ScreenId::Story: navigation_.process_event(GoToStory{}); break;
+  case ScreenId::Raid: navigation_->process_event(GoToRaid{}); break;
+  case ScreenId::Party: navigation_->process_event(GoToParty{}); break;
+  case ScreenId::AccountBattle: navigation_->process_event(GoToAccountBattle{}); break;
+  case ScreenId::PartyBattle: navigation_->process_event(GoToPartyBattle{}); break;
+  case ScreenId::EffectGallery: navigation_->process_event(GoToEffectGallery{}); break;
+  case ScreenId::Libram: navigation_->process_event(GoToLibram{}); break;
+  case ScreenId::Bestiary: navigation_->process_event(GoToBestiary{}); break;
+  case ScreenId::Story: navigation_->process_event(GoToStory{}); break;
   }
   current_screen_ = destination;
 }
