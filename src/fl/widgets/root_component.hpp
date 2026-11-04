@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <deque>
+#include <string_view>
 #include <vector>
 
 #include <ftxui/component/component.hpp>
@@ -38,9 +39,18 @@ public:
 
   bool quit_requested() const { return quit_requested_; }
   bool sandbox_requested() const { return sandbox_requested_; }
+  bool console_open() const;
+  std::size_t console_history_size() const;
+  std::string_view console_input_line() const;
+  std::string_view active_screen_id() const noexcept;
+  std::string_view focus_owner() const noexcept;
 
   void toggle_console();
+  void focus_console();
+  void restore_active_focus();
   void set_full_open();
+  bool show_generated_screen(std::string_view screen);
+  bool invoke_generated_action(std::string_view action);
 
   void show_account_battle(std::size_t account_index);
   void show_party_battle(std::size_t account_index, std::size_t party_index);

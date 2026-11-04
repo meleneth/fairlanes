@@ -32,6 +32,8 @@ void ConsoleOverlay::set_open(bool v) {
   }
 
   target_rows_ = should_open_full_ ? ftxui::HEIGHT : 22;
+  history_cursor_ = history_.size();
+  history_draft_ = line_;
 }
 
 void ConsoleOverlay::set_full_open() {
@@ -65,6 +67,25 @@ bool ConsoleOverlay::OnEvent(ftxui::Event event) {
     return false;
   }
 
+  if (event == ftxui::Event::ArrowUp) {
+    if (history_.empty()) return true;
+    if (history_cursor_ == history_.size()) history_draft_ = line_;
+    if (history_cursor_ > 0) --history_cursor_;
+    line_ = history_[history_cursor_];
+    return true;
+  }
+
+  if (event == ftxui::Event::ArrowDown) {
+    if (history_.empty()) return true;
+    if (history_cursor_ + 1 < history_.size()) {
+      line_ = history_[++history_cursor_];
+    } else {
+      history_cursor_ = history_.size();
+      line_ = history_draft_;
+    }
+    return true;
+  }
+
   if (event == ftxui::Event::Return) {
     if (!line_.empty()) {
       if (console_) {
@@ -72,6 +93,12 @@ bool ConsoleOverlay::OnEvent(ftxui::Event event) {
       }
 
       on_command_(line_);
+      if (history_.empty() || history_.back() != line_) {
+        history_.push_back(line_);
+        if (history_.size() > 500) history_.erase(history_.begin());
+      }
+      history_cursor_ = history_.size();
+      history_draft_.clear();
       line_.clear();
     }
 

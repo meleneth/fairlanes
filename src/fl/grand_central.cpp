@@ -23,6 +23,7 @@
 #include "fl/ecs/systems/special_festival_event.hpp"
 #include "fl/ecs/systems/visual_resolver.hpp"
 #include "fl/monsters/register_monsters.hpp"
+#include "fl/generated/ftxer_composition_root.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/fancy_log_sink.hpp"
 #include "fl/primitives/hero_names.hpp"
@@ -34,6 +35,7 @@
 #include "fl/web_screen_bridge.hpp"
 #include "fl/widgets/account_battle_view.hpp"
 #include "fl/widgets/fancy_log.hpp"
+#include "fl/widgets/ftxer_ui_adapter.hpp"
 #include "fl/widgets/log_wall.hpp"
 #include "fl/widgets/root_component.hpp"
 
@@ -277,7 +279,8 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
     return root_component()->Render();
   });
 
-  auto *root = dynamic_cast<fl::widgets::RootComponent *>(root_component().get());
+  auto *root = dynamic_cast<fl::generated::ftxer::CompositionRoot *>(
+      root_component().get());
   ui = CatchEvent(ui, [&](Event e) {
     std::scoped_lock lock(frame_mutex_);
     root->OnEvent(e);
@@ -379,13 +382,17 @@ void GrandCentral::build_ui() {
 
   auto &account = accounts_.front();
 
-  root_component_ = ftxui::Make<fl::widgets::RootComponent>(
+  auto existing_ui = ftxui::Make<fl::widgets::RootComponent>(
       fl::context::AccountCtx{reg_, rng_, account}, accounts_, *game_log_,
       world_clock_, &discoveries_, &raid_milestones_.bus(), objectives_.get());
+  auto adapter =
+      std::make_unique<fl::widgets::FtxerUiAdapter>(std::move(existing_ui));
+  root_component_ = ftxui::Make<fl::generated::ftxer::CompositionRoot>(
+      std::move(adapter));
 }
 
 bool GrandCentral::sandbox_requested() const {
-  const auto *root = dynamic_cast<const fl::widgets::RootComponent *>(
+  const auto *root = dynamic_cast<const fl::generated::ftxer::CompositionRoot *>(
       root_component_.get());
   return root && root->sandbox_requested();
 }

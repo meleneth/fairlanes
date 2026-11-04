@@ -380,6 +380,27 @@ if(FAIRLANES_RUBY_COMMAND)
   message(STATUS "Fairlanes Ruby content runner: ${FAIRLANES_RUBY_RUNNER_DESCRIPTION}")
 endif()
 
+set(FAIRLANES_FTXER_ROOT "${CMAKE_SOURCE_DIR}/../FTXer" CACHE PATH
+    "Path to the FTXer generator used for UI composition")
+if(RUBY_EXECUTABLE AND
+   EXISTS "${FAIRLANES_FTXER_ROOT}/lib/ftxer.rb" AND
+   EXISTS "${CMAKE_SOURCE_DIR}/../CMaker/lib/cmaker.rb")
+  file(GLOB_RECURSE FAIRLANES_FTXER_RUBY_SOURCES CONFIGURE_DEPENDS
+    "${FAIRLANES_FTXER_ROOT}/lib/*.rb")
+  add_custom_target(fairlanes_ftxer_ui_check
+    COMMAND "${RUBY_EXECUTABLE}"
+            "${CMAKE_SOURCE_DIR}/scripts/ftxer_ui.rb"
+            "${CMAKE_SOURCE_DIR}/src/fl/generated"
+            --check
+    DEPENDS
+      "${CMAKE_SOURCE_DIR}/scripts/ftxer_ui.rb"
+      ${FAIRLANES_FTXER_RUBY_SOURCES}
+      "${CMAKE_SOURCE_DIR}/src/fl/generated/ftxer_composition_root.hpp"
+      "${CMAKE_SOURCE_DIR}/src/fl/generated/ftxer_composition_root.cpp"
+    COMMENT "Checking generated FTXer UI composition"
+    VERBATIM)
+endif()
+
 file(GLOB_RECURSE FAIRLANES_CONTENT_RUBY_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_SOURCE_DIR}/ruby/fairlanes_content/lib/*.rb"
 )

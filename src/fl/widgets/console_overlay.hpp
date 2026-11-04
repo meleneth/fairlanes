@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstddef>
 #include <functional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
@@ -20,6 +22,8 @@ public:
 
   bool open() const;
   bool should_show() const;
+  std::size_t history_size() const { return history_.size(); }
+  const std::string &input_line() const { return line_; }
 
   void toggle();
   void set_open(bool v);
@@ -44,6 +48,9 @@ private:
   FancyLog *console_ = nullptr;
 
   std::string line_;
+  std::string history_draft_;
+  std::vector<std::string> history_;
+  std::size_t history_cursor_{0};
   ftxui::Component input_;
 
   CommandHandler on_command_ = [](std::string_view) {};

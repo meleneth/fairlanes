@@ -133,14 +133,23 @@ RootComponent::RootComponent(
 }
 
 ftxui::Component RootComponent::ActiveChild() {
+  if (console_overlay()->open()) {
+    return console_overlay_;
+  }
   if (quit_confirmation_open_) {
     return quit_confirmation_;
   }
-  return console_overlay()->open() ? console_overlay_ : active_screen_;
+  return active_screen_;
 }
 
 bool RootComponent::OnEvent(ftxui::Event event) {
   auto *overlay = console_overlay();
+
+  // The generated composition root owns the reserved toggle. Once open, the
+  // real command input remains the exclusive recipient until it closes.
+  if (overlay->open()) {
+    return console_overlay_->OnEvent(event);
+  }
 
   if (sandbox_confirmation_open_) {
     if (event == ftxui::Event::Return || event == ftxui::Event::Character("y")) {
@@ -191,10 +200,6 @@ bool RootComponent::OnEvent(ftxui::Event event) {
   if (event == ftxui::Event::Character("`")) {
     toggle_console();
     return true;
-  }
-
-  if (overlay->open()) {
-    return console_overlay_->OnEvent(event);
   }
 
   if (objectives_ && event == ftxui::Event::Character("a")) {
@@ -397,9 +402,6 @@ ftxui::Element RootComponent::Render() {
     });
   }
 
-  if (overlay->should_show())
-    content = dbox({content, console_overlay_->Render()});
-
   if (quit_confirmation_open_) {
     auto panel = window(text("Quit Fairlanes?") | bold,
                         vbox({text("Progress is not saved and will be lost."),
@@ -431,7 +433,46 @@ ftxui::Element RootComponent::Render() {
                         clear_under});
   }
 
+  // Console chrome is last so the generated shell remains above every modal.
+  if (overlay->should_show())
+    content = dbox({content, console_overlay_->Render()});
+
   return content | reflect(viewport_box_);
+}
+
+bool RootComponent::console_open() const {
+  const auto *overlay = dynamic_cast<const ConsoleOverlay *>(console_overlay_.get());
+  return overlay && overlay->open();
+}
+
+std::size_t RootComponent::console_history_size() const {
+  const auto *overlay = dynamic_cast<const ConsoleOverlay *>(console_overlay_.get());
+  return overlay ? overlay->history_size() : 0U;
+}
+
+std::string_view RootComponent::console_input_line() const {
+  const auto *overlay = dynamic_cast<const ConsoleOverlay *>(console_overlay_.get());
+  return overlay ? std::string_view{overlay->input_line()} : std::string_view{};
+}
+
+std::string_view RootComponent::active_screen_id() const noexcept {
+  switch (active_screen_kind_) {
+  case ActiveScreen::raid: return "raid";
+  case ActiveScreen::party: return "party";
+  case ActiveScreen::account_battle: return "account_battle";
+  case ActiveScreen::party_battle: return "party_battle";
+  case ActiveScreen::effect_gallery: return "effect_gallery";
+  case ActiveScreen::libram: return "libram";
+  case ActiveScreen::bestiary: return "bestiary";
+  case ActiveScreen::story: return "story";
+  }
+  return "party_battle";
+}
+
+std::string_view RootComponent::focus_owner() const noexcept {
+  if (console_open()) return "console";
+  if (quit_confirmation_open_) return "quit_confirmation";
+  return active_screen_id();
 }
 
 void RootComponent::toggle_console() {
@@ -443,7 +484,59 @@ void RootComponent::toggle_console() {
   }
 }
 
+void RootComponent::focus_console() { console_overlay()->FocusInput(); }
+
+void RootComponent::restore_active_focus() {
+  if (quit_confirmation_open_) {
+    quit_cancel_->TakeFocus();
+  } else if (active_screen_) {
+    active_screen_->TakeFocus();
+  }
+}
+
 void RootComponent::set_full_open() { console_overlay()->set_full_open(); }
+
+bool RootComponent::show_generated_screen(std::string_view screen) {
+  if (screen == "raid") return active_screen_kind_ == ActiveScreen::raid;
+  if (screen == "party") {
+    show_party(commands_.account_index(), commands_.party_index());
+  } else if (screen == "account_battle") {
+    show_account_battle(commands_.account_index());
+  } else if (screen == "party_battle") {
+    show_party_battle(commands_.account_index(), commands_.party_index());
+  } else if (screen == "effect_gallery") {
+    show_effect_gallery();
+  } else if (screen == "libram") {
+    show_libram();
+  } else if (screen == "bestiary") {
+    show_bestiary();
+  } else if (screen == "story") {
+    show_village();
+  } else {
+    return false;
+  }
+  return active_screen_id() == screen;
+}
+
+bool RootComponent::invoke_generated_action(std::string_view action) {
+  if (action == "show_objectives") return OnEvent(ftxui::Event::Character("o"));
+  if (action == "show_village") return OnEvent(ftxui::Event::Character("v"));
+  if (action == "toggle_autoplay") return OnEvent(ftxui::Event::Character("a"));
+  if (action == "toggle_help") return OnEvent(ftxui::Event::Character("h"));
+  if (action == "return_to_town") return OnEvent(ftxui::Event::Character("r"));
+  if (action == "toggle_party_battle") return OnEvent(ftxui::Event::Character(" "));
+  if (action == "toggle_active_screen") return OnEvent(ftxui::Event::Character("/"));
+  if (action == "collapse_help") return OnEvent(ftxui::Event::Character(">"));
+  if (action == "expand_help") return OnEvent(ftxui::Event::Character("<"));
+  if (action == "overdrive_up") return OnEvent(ftxui::Event::Character("+"));
+  if (action == "overdrive_down") return OnEvent(ftxui::Event::Character("-"));
+  if (action == "previous_party") return OnEvent(ftxui::Event::Character("["));
+  if (action == "next_party") return OnEvent(ftxui::Event::Character("]"));
+  if (action == "previous_account") return OnEvent(ftxui::Event::Character("{"));
+  if (action == "next_account") return OnEvent(ftxui::Event::Character("}"));
+  if (action == "back_or_quit") return OnEvent(ftxui::Event::Escape);
+  return false;
+}
 
 void RootComponent::show_account_battle(std::size_t account_index) {
   if (raid_screen_locked()) {
