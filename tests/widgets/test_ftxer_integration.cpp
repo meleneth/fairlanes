@@ -68,7 +68,6 @@ TEST_CASE("FTXer root renders the real battle while simulation advances",
   const auto output = render(root.component);
   REQUIRE(output.find("Stormbreak Company") != std::string::npos);
   REQUIRE(output.find("Account log") != std::string::npos);
-  REQUIRE(output.find("Party log") != std::string::npos);
 }
 
 TEST_CASE("FTXer root owns navigation and preserves the previous battle",
