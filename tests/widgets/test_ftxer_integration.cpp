@@ -66,8 +66,9 @@ TEST_CASE("FTXer root renders the real battle while simulation advances",
   REQUIRE(game.world_clock().elapsed_beats() == before + 1);
 
   const auto output = render(root.component);
-  REQUIRE(output.find("Inventory") != std::string::npos);
-  REQUIRE(output.find("Combat Log") != std::string::npos);
+  REQUIRE(output.find("Stormbreak Company") != std::string::npos);
+  REQUIRE(output.find("Account log") != std::string::npos);
+  REQUIRE(output.find("Party log") != std::string::npos);
 }
 
 TEST_CASE("FTXer root owns navigation and preserves the previous battle",
@@ -83,7 +84,8 @@ TEST_CASE("FTXer root owns navigation and preserves the previous battle",
   REQUIRE(root.composition->OnEvent(ftxui::Event::Escape));
   REQUIRE(root.composition->current_screen() ==
           fl::generated::ftxer::ScreenId::PartyBattle);
-  REQUIRE(render(root.component).find("Inventory") != std::string::npos);
+  REQUIRE(render(root.component).find("Stormbreak Company") !=
+          std::string::npos);
 }
 
 TEST_CASE("FTXer console stays above modals and uses the real command system",
@@ -100,7 +102,10 @@ TEST_CASE("FTXer console stays above modals and uses the real command system",
   type(*root.composition, "help");
   REQUIRE(root.composition->OnEvent(ftxui::Event::Return));
   REQUIRE(root.existing->console_history_size() == 1);
-  REQUIRE(render(root.component).find("commands: screen") != std::string::npos);
+  std::string expanded_console;
+  for (int frame = 0; frame < 24; ++frame)
+    expanded_console = render(root.component);
+  REQUIRE(expanded_console.find("commands: screen") != std::string::npos);
 
   REQUIRE(root.composition->OnEvent(ftxui::Event::ArrowUp));
   REQUIRE(root.existing->console_input_line() == "help");
@@ -140,6 +145,6 @@ TEST_CASE("FTXer root remains usable across terminal sizes and subscriptions",
           std::string::npos);
   REQUIRE_FALSE(render(root.component, 160, 48).empty());
   REQUIRE(root.composition->OnEvent(ftxui::Event::Escape));
-  REQUIRE(render(root.component, 80, 24).find("Inventory") !=
+  REQUIRE(render(root.component, 80, 24).find("Stormbreak Company") !=
           std::string::npos);
 }
