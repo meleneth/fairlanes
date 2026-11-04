@@ -55,6 +55,10 @@ ftxui::Element PartyStatus::Render() {
     }
 
     detail_text = "[" + bar + "] " + std::to_string(remaining) + "b";
+    if (const auto route = party_data_.tower_route(); route) {
+      detail_text += " F" + std::to_string(route->floor) + " try " +
+                     std::to_string(party_data_.tower_floor_attempts());
+    }
   } else {
     status_text = "IDLE";
     status_color = fl::lospec500::color_at(20); // Bright green
@@ -64,10 +68,16 @@ ftxui::Element PartyStatus::Render() {
   if (party_data_.needs_farm_focus_choice()) {
     detail_text = "Farm: choose focus";
   } else if (detail_text.empty()) {
-    const auto &plan = party_data_.farming_plan();
-    detail_text =
-        "Farm: " + std::string{fl::primitives::display_name(plan.focus)} +
-        " / " + std::string{fl::primitives::display_name(plan.reward_class)};
+    const auto route = party_data_.tower_route();
+    if (route) {
+      detail_text = "Floor " + std::to_string(route->floor) + " try " +
+                    std::to_string(party_data_.tower_floor_attempts());
+    } else {
+      const auto &plan = party_data_.farming_plan();
+      detail_text =
+          "Farm: " + std::string{fl::primitives::display_name(plan.focus)} +
+          " / " + std::string{fl::primitives::display_name(plan.reward_class)};
+    }
   }
 
   // Every party state uses the frame title so the status projection always

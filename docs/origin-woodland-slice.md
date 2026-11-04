@@ -13,6 +13,23 @@ equip it in the party inventory, then use `tower woodland` to return to floor
 10. `tower status` shows the current route. Encounter selection outside a
 selected tower remains unchanged.
 
+A wipe keeps the selected biome and floor. After the existing 60-second town
+recovery, manual play and story autoplay both start another attempt on that
+floor. `tower status` and the party status row show the attempt count. Choosing
+a different biome or floor resets the count; clearing a floor advances to the
+next floor and resets it before that floor's first attempt.
+
+Ruby `tower_pattern` declarations generate each five-floor composition cycle
+from an ordered list of one to five monster types. Within the cycle, later
+types replace more of the five slots. Level, HP, and Attack use one generated
+percentage for the whole five-floor tier, rising from 5% on floors 1–5 to 100%
+on floors 96–100. Authored floor overrides retain that tier's percentage.
+
+The percentages are applied to runtime maxima when an encounter is built. Use
+`--tower-max-level`, `--tower-max-hp`, and `--tower-max-attack` with either
+`fairlanes` or `fairlanes_regression` to run balance experiments without
+recompiling. Defaults are level 20, 100 HP, and 20 Attack at 100%.
+
 The floor-9 clear emits `BiomeUnlocked`. The client shows a colored notice
 that rises from the lower right to the upper right. It stays there until
 Space or Enter acknowledges it; that key is consumed before normal navigation.
@@ -22,9 +39,8 @@ achievement event. Combat and progression continue while a notice is shown.
 | Woodland milestone | Encounter job |
 | --- | --- |
 | Floors 1–2 | One Field Mouse each for the opening story victories |
-| Floor 3 | Five Field Mice begin the full tower encounters |
-| Floors 4–6 | Repeated light physical hits from mice, hares, and Mire Squish |
-| Floors 7–9 | Heavier Bark Smack hits mixed with light attackers |
+| Floors 3–5 | The Woodland pattern introduces Hare, Squish, Bark Smack, and Poison Toad |
+| Floors 6–9 | The composition repeats at 10% of the runtime maxima |
 | Floor 9 clear | Unlock Origin Plains Tower before floor 10 |
 | Floor 10 | Authored Honey Badger and four Field Mice |
 
@@ -50,32 +66,16 @@ shares a five-hero setup across two variants. Each hero has 20 base HP,
 2 Attack, 0 Armor, and rank-one Thump. Only the leader's cape changes;
 the town heal fills effective Max HP before combat. Both use the generated
 Woodland floor-10 lineup, seeds 1–8, and a 2400-beat cap. Honey Badger now
-has 120 HP. The asserted win-count ranges are 2–3 of 8 on arrival and 3–4
-of 8 after the detour; a beat cap fails separately from a loss.
-
-| Seed | Arrival | Beats | Party HP / boss HP | Detour | Beats | Party HP / boss HP |
-| ---: | --- | ---: | ---: | --- | ---: | ---: |
-| 1 | Loss | 1459 | 0 / 23 | Win | 1673 | 16 / 0 |
-| 2 | Loss | 1570 | 0 / 13 | Loss | 1570 | 0 / 13 |
-| 3 | Win | 1728 | 18 / 0 | Win | 1728 | 16 / 0 |
-| 4 | Loss | 1456 | 0 / 24 | Loss | 1447 | 0 / 24 |
-| 5 | Loss | 1458 | 0 / 41 | Loss | 1458 | 0 / 41 |
-| 6 | Win | 1743 | 25 / 0 | Win | 1743 | 25 / 0 |
-| 7 | Loss | 1438 | 0 / 21 | Loss | 1447 | 0 / 17 |
-| 8 | Loss | 1549 | 0 / 20 | Loss | 1549 | 0 / 20 |
-
-No run hit the cap. Seed 1 shows the item benefit. Dire Bleed ticks the
-leader for 2 HP. Arrival gear leaves the leader at 2 HP before the uWu 52880
-tick, which kills them after two Thumps. The detour cape starts them at 25
-rather than 20 HP; that tick leaves 5 HP. They take a third action at uWu
-56800 and hit Honey Badger for 4 at uWu 58880 (71→67 HP), before dying on
-a later tick. Another hero eventually finishes the boss. The upgrade moves
-the fixed set from two to three wins while leaving alternate arrival clears.
+uses the floor's 10% scaling. With the default maxima, every floor-10 enemy
+has 10 HP, level 2, and 2 Attack. Both cape variants currently win all eight
+seeds. These assertions protect deterministic execution while the runtime
+maximum flags are used to search for useful balance ranges.
 
 ```sh
 cmake --build build-linux-debug -j 4
 build-linux-debug/fairlanes_regression --fixture origin_woodland_floor10 --variant arrival --all-seeds --record-dir /tmp/fairlanes-floor10-arrival --assert-expected
 build-linux-debug/fairlanes_regression --fixture origin_woodland_floor10 --variant detour --all-seeds --record-dir /tmp/fairlanes-floor10-detour --assert-expected
+build-linux-debug/fairlanes_regression --fixture origin_woodland_floor10 --variant arrival --all-seeds --record-dir /tmp/fairlanes-floor10-sweep --tower-max-level 40 --tower-max-hp 400 --tower-max-attack 60
 build-linux-debug/fairlanes --replay samples/regression/origin_woodland_floor10.arrival.seed1.json --overdrive 8
 build-linux-debug/fairlanes --replay samples/regression/origin_woodland_floor10.detour.seed1.json --overdrive 8
 ```

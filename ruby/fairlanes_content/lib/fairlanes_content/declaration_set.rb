@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
 require "fairlanes_content/models"
+require "fairlanes_content/tower_pattern"
 
 module FairlanesContent
   class DeclarationSet
     attr_reader :visuals, :skills, :random_combat_skills, :monsters, :statuses,
-                :gears, :encounter_pools, :biomes, :regressions, :biome_plans,
+                :gears, :encounter_pools, :tower_patterns, :biomes, :regressions, :biome_plans,
                 :story_events, :objectives, :dialogues, :autoplay_routes
 
     def self.load_file(path)
@@ -20,6 +21,7 @@ module FairlanesContent
       @statuses = []
       @gears = []
       @encounter_pools = []
+      @tower_patterns = []
       @biomes = []
       @regressions = []
       @biome_plans = []
@@ -132,10 +134,14 @@ module FairlanesContent
       encounter_pools << EncounterPool.new(id: id, lineups: lineups)
     end
 
-    def biome(id, display:, floors:, bands:, overrides: [])
+    def tower_pattern(id, monsters:)
+      tower_patterns << TowerPattern.new(id: id, monsters: monsters)
+    end
+
+    def biome(id, display:, floors:, bands: [], pattern: nil, overrides: [])
       biomes << Biome.new(
         id: id, display: display, floors: floors,
-        bands: bands.map { |entry| FloorBand.new(**entry) },
+        bands: bands.map { |entry| FloorBand.new(**entry) }, pattern: pattern,
         overrides: overrides.map { |entry| FloorOverride.new(**entry) }
       )
     end
@@ -191,6 +197,8 @@ module FairlanesContent
       gears.freeze
       encounter_pools.each(&:freeze)
       encounter_pools.freeze
+      tower_patterns.each(&:freeze)
+      tower_patterns.freeze
       biomes.each(&:freeze)
       biomes.freeze
       regressions.each(&:freeze)

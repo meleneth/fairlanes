@@ -16,6 +16,7 @@ module FairlanesContent
     def random_combat_skills = declarations.random_combat_skills
     def gears = declarations.gears
     def encounter_pools = declarations.encounter_pools
+    def tower_patterns = declarations.tower_patterns
     def biomes = declarations.biomes
     def regressions = declarations.regressions
     def biome_plans = declarations.biome_plans
@@ -317,7 +318,10 @@ module FairlanesContent
       tables = biomes.map do |biome|
         rows = resolved_floors(biome).map do |floor|
           kinds = floor[:lineup].map { |id| "fl::monster::MonsterKind::#{monster_by_id(id).cpp_id}" }.join(", ")
-          "  FloorLineup{#{floor[:floor]}, #{cpp_string(floor[:id])}, {#{kinds}}, #{floor[:lineup].size}},"
+          levels = Array.new(floor[:lineup].size, floor[:level_percent]).join(", ")
+          hp = Array.new(floor[:lineup].size, floor[:hp_percent]).join(", ")
+          attack = Array.new(floor[:lineup].size, floor[:attack_percent]).join(", ")
+          "  FloorLineup{#{floor[:floor]}, #{cpp_string(floor[:id])}, {#{kinds}}, {#{levels}}, {#{hp}}, {#{attack}}, #{floor[:lineup].size}},"
         end.join("\n")
         <<~CPP
           inline constexpr std::array<FloorLineup, #{biome.floors}> k#{camel(biome.id)}{{
@@ -340,6 +344,9 @@ module FairlanesContent
           int floor;
           std::string_view id;
           std::array<fl::monster::MonsterKind, 5> monsters;
+          std::array<int, 5> level_percent;
+          std::array<int, 5> hp_percent;
+          std::array<int, 5> attack_percent;
           std::size_t monster_count;
         };
 
@@ -357,9 +364,9 @@ module FairlanesContent
       lines = ["# Resolved tower floors", "", "Generated from scripts/fairlanes_content_declarations.rb.", ""]
       biomes.each do |biome|
         lines.concat(["## #{biome.display} (`#{biome.id}`)", "",
-                      "| Floor ID | Source | Lineup |", "| --- | --- | --- |"])
+                      "| Floor ID | Source | Scale | Lineup |", "| --- | --- | ---: | --- |"])
         resolved_floors(biome).each do |floor|
-          lines << "| `#{floor[:id]}` | #{floor[:source]} | #{floor[:lineup].join(', ')} |"
+          lines << "| `#{floor[:id]}` | #{floor[:source]} | #{floor[:level_percent]}% | #{floor[:lineup].join(', ')} |"
         end
         lines << ""
       end
@@ -1391,13 +1398,19 @@ module FairlanesContent
         "encounter_pools" => encounter_pools.map do |pool|
           { "id" => pool.id.to_s, "lineups" => pool.lineups.map { |lineup| lineup.map(&:to_s) } }
         end,
+        "tower_patterns" => tower_patterns.map do |pattern|
+          { "id" => pattern.id.to_s, "monsters" => pattern.monsters.map(&:to_s) }
+        end,
         "biomes" => biomes.map do |biome|
           { "id" => biome.id.to_s, "display" => biome.display, "floors" => biome.floors,
+            "pattern" => biome.pattern&.to_s,
             "bands" => biome.bands.map { |band| { "from" => band.from, "to" => band.to, "pool" => band.pool.to_s } },
             "overrides" => biome.overrides.map { |entry| { "floor" => entry.floor, "lineup" => entry.lineup.map(&:to_s) } },
             "resolved_floors" => resolved_floors(biome).map do |floor|
               { "id" => floor[:id], "floor" => floor[:floor], "source" => floor[:source],
-                "lineup" => floor[:lineup].map(&:to_s) }
+                "lineup" => floor[:lineup].map(&:to_s),
+                "level_percent" => floor[:level_percent], "hp_percent" => floor[:hp_percent],
+                "attack_percent" => floor[:attack_percent] }
             end }
         end,
         "biome_plans" => biome_plans.map do |plan|
@@ -1453,7 +1466,7 @@ module FairlanesContent
         "title" => "Fairlanes Generated Content Manifest",
         "type" => "object",
         "additionalProperties" => false,
-        "required" => %w[schema_version source runtime_authority visuals statuses skills random_combat_skills monsters gear encounter_pools biomes biome_plans story_events objectives dialogues autoplay_routes regressions],
+        "required" => %w[schema_version source runtime_authority visuals statuses skills random_combat_skills monsters gear encounter_pools tower_patterns biomes biome_plans story_events objectives dialogues autoplay_routes regressions],
         "properties" => {
           "schema_version" => { "const" => 1 },
           "source" => string_type,
@@ -1514,11 +1527,17 @@ module FairlanesContent
           "encounter_pools" => array_schema(%w[id lineups], {
             "id" => string_type,
             "lineups" => { "type" => "array", "minItems" => 1,
-                           "items" => { "type" => "array", "minItems" => 5, "maxItems" => 5,
+                           "items" => { "type" => "array", "minItems" => 1, "maxItems" => 5,
                                         "items" => string_type } }
           }),
-          "biomes" => array_schema(%w[id display floors bands overrides resolved_floors], {
+          "tower_patterns" => array_schema(%w[id monsters], {
+            "id" => string_type,
+            "monsters" => { "type" => "array", "minItems" => 1, "maxItems" => 5,
+                             "items" => string_type }
+          }),
+          "biomes" => array_schema(%w[id display floors pattern bands overrides resolved_floors], {
             "id" => string_type, "display" => string_type, "floors" => { "const" => 100 },
+            "pattern" => { "type" => %w[string null] },
             "bands" => { "type" => "array", "items" => { "type" => "object" } },
             "overrides" => { "type" => "array", "items" => { "type" => "object" } },
             "resolved_floors" => { "type" => "array", "minItems" => 100, "maxItems" => 100,

@@ -56,7 +56,8 @@ void GrandCentral::_create_initial_accounts() {
   // party_ctx.party_loop_ctx();
 
   for (std::size_t a = 0; a < num_accounts_; ++a) {
-    auto &account_data = accounts_.emplace_back(reg_.create(), record_progress_);
+    auto &account_data =
+        accounts_.emplace_back(reg_.create(), record_progress_, tower_balance_);
 
     logger_.info(
         "[yellow](Account " + std::to_string(a) + " initialized with ID " +
@@ -106,9 +107,11 @@ GrandCentral::GrandCentral(uint8_t num_accounts,
                            uint8_t num_members_per_party,
                            bool record_discoveries, bool record_progress,
                            std::optional<std::uint64_t> gameplay_seed,
-                           bool story_mode, bool story_autoplay)
+                           bool story_mode, bool story_autoplay,
+                           fl::primitives::TowerBalance tower_balance)
     : record_progress_(record_progress), story_mode_(story_mode),
-      story_autoplay_(story_autoplay), num_accounts_(num_accounts),
+      story_autoplay_(story_autoplay), tower_balance_(tower_balance),
+      num_accounts_(num_accounts),
       num_parties_per_account_(num_parties_per_account),
       num_members_per_party_(num_members_per_party), reg_(),
       rng_(gameplay_seed), log_bus_(),

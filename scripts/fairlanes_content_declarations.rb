@@ -696,14 +696,10 @@ encounter_pool :woodland_deep, lineups: [
   %i[bark_smack poison_toad mire_squish scaredy_cat field_mouse]
 ]
 
+tower_pattern :woodland_progression,
+              monsters: %i[field_mouse bumpkin_hare mire_squish bark_smack poison_toad]
 biome :origin_woodland_tower, display: "Origin Woodland Tower", floors: 100,
-      bands: [
-        {from: 1, to: 3, pool: :woodland_starter},
-        {from: 4, to: 6, pool: :woodland_light_physical},
-        {from: 7, to: 9, pool: :woodland_heavy_physical},
-        {from: 11, to: 49, pool: :woodland_opening},
-        {from: 50, to: 100, pool: :woodland_deep}
-      ],
+      pattern: :woodland_progression,
       overrides: [
         {floor: 1, lineup: %i[field_mouse]},
         {floor: 2, lineup: %i[field_mouse]},
@@ -719,11 +715,10 @@ encounter_pool :plains_opening, lineups: [
 encounter_pool :plains_deep, lineups: [
   %i[grass_wolf bristle_boar prairie_meerkat grass_wolf bristle_boar]
 ]
+tower_pattern :plains_progression,
+              monsters: %i[field_mouse prairie_meerkat grass_wolf bristle_boar squirrel_brigand]
 biome :origin_plains_tower, display: "Origin Plains Tower", floors: 100,
-      bands: [
-        {from: 1, to: 9, pool: :plains_opening},
-        {from: 10, to: 100, pool: :plains_deep}
-      ]
+      pattern: :plains_progression
 
 # Five tower biomes per Cycle. This plan also generates the brainstorming map
 # from the live monster declarations and their skill lists.

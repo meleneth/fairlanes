@@ -97,13 +97,10 @@ public:
   bool select_tower(std::string_view biome_id,
                     std::optional<int> floor = std::nullopt);
   int latest_tower_floor(std::string_view biome_id) const noexcept;
-  void begin_tower_encounter() {
-    encounter_tower_biome_ = tower_biome_;
-    const auto route = tower_route();
-    encounter_tower_floor_ = route ? route->floor : 0;
-  }
+  void begin_tower_encounter();
   bool plains_unlocked() const noexcept { return plains_unlocked_; }
   bool tower_choice_pending() const noexcept { return tower_choice_pending_; }
+  int tower_floor_attempts() const noexcept { return tower_floor_attempts_; }
   // ---- behavior ----
   void advance_beat();
   entt::entity recruit_member(std::string name);
@@ -212,6 +209,7 @@ private:
   int plains_floor_{1};
   int woodland_latest_floor_{1};
   int plains_latest_floor_{1};
+  int tower_floor_attempts_{0};
   bool plains_unlocked_{false};
   bool tower_choice_pending_{false};
   bool story_shop_pending_{false};

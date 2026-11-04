@@ -8,6 +8,8 @@
 
 #include <nlohmann/json_fwd.hpp>
 
+#include "fl/primitives/tower_balance.hpp"
+
 namespace fl {
 class GrandCentral;
 }
@@ -23,6 +25,7 @@ struct Options {
   std::uint64_t beat_cap{1200};
   int hero_armor{0};
   std::string variant{};
+  fl::primitives::TowerBalance tower_balance{};
 };
 
 class Session {

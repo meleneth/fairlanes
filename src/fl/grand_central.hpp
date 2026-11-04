@@ -20,6 +20,7 @@
 #include "fl/primitives/random_hub.hpp"
 #include "fl/primitives/objective_system.hpp"
 #include "fl/primitives/world_clock.hpp"
+#include "fl/primitives/tower_balance.hpp"
 #include "sr/beat_bus.hpp"
 
 namespace fl {
@@ -38,7 +39,8 @@ public:
                uint8_t num_members_per_party, bool record_discoveries = true,
                bool record_progress = true,
                std::optional<std::uint64_t> gameplay_seed = std::nullopt,
-               bool story_mode = false, bool story_autoplay = false);
+               bool story_mode = false, bool story_autoplay = false,
+               fl::primitives::TowerBalance tower_balance = {});
   ~GrandCentral();
 
   fl::primitives::RaidMilestones &raid_milestones() { return raid_milestones_; }
@@ -103,6 +105,7 @@ private:
   bool record_progress_{true};
   bool story_mode_{false};
   bool story_autoplay_{false};
+  fl::primitives::TowerBalance tower_balance_{};
   uint8_t num_accounts_{8};
   uint8_t num_parties_per_account_{5};
   uint8_t num_members_per_party_{5};

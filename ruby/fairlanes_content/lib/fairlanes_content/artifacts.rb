@@ -192,6 +192,7 @@ module FairlanesContent
         monsters
         gear
         encounter_pools
+        tower_patterns
         biomes
         biome_plans
         story_events
@@ -212,6 +213,7 @@ module FairlanesContent
       errors << "manifest monsters must be an array" unless manifest["monsters"].is_a?(Array)
       errors << "manifest gear must be an array" unless manifest["gear"].is_a?(Array)
       errors << "manifest encounter_pools must be an array" unless manifest["encounter_pools"].is_a?(Array)
+      errors << "manifest tower_patterns must be an array" unless manifest["tower_patterns"].is_a?(Array)
       errors << "manifest biomes must be an array" unless manifest["biomes"].is_a?(Array)
       errors << "manifest biome_plans must be an array" unless manifest["biome_plans"].is_a?(Array)
       errors << "manifest story_events must be an array" unless manifest["story_events"].is_a?(Array)

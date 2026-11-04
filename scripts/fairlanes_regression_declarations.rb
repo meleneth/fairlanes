@@ -10,6 +10,6 @@ regression :origin_woodland_floor10,
   seeds: [1, 2, 3, 4, 5, 6, 7, 8],
   beat_cap: 2400,
   variants: [
-    {id: :arrival, equipped_item: :mouse_nibbled_cape, expected_wins: 2..3},
-    {id: :detour, equipped_item: :mossbound_cape, expected_wins: 3..4}
+    {id: :arrival, equipped_item: :mouse_nibbled_cape, expected_wins: 8..8},
+    {id: :detour, equipped_item: :mossbound_cape, expected_wins: 8..8}
   ]

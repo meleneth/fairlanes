@@ -5,12 +5,14 @@
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/systems/effective_combat_stats.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/generated/floor_content.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/monsters/monster_kind.hpp"
 #include "fl/primitives/encounter_builder.hpp"
+#include "fl/primitives/tower_balance.hpp"
 #include "fl/widgets/ui_command_controller.hpp"
 
 TEST_CASE("Tower command selects an unlocked floor and rejects a locked floor",
@@ -38,6 +40,58 @@ TEST_CASE("Tower command selects an unlocked floor and rejects a locked floor",
   REQUIRE(party.tower_route()->floor == 1);
   commands.handle("tower woodland 2");
   REQUIRE(party.tower_route()->floor == 2);
+}
+
+TEST_CASE("Tower wipe retries the selected floor after recovery and counts attempts",
+          "[tower][retry][attempts]") {
+  fl::GrandCentral game{1, 1, 1};
+  auto ctx = game.account_context(0).party_context(0);
+  auto &party = ctx.party_data();
+  REQUIRE(party.select_tower("origin_woodland_tower"));
+
+  party.advance_beat();
+  REQUIRE(party.has_encounter());
+  REQUIRE(party.tower_route()->floor == 1);
+  REQUIRE(party.tower_floor_attempts() == 1);
+
+  for (const auto &member : party.members())
+    ctx.reg().get<fl::ecs::components::Stats>(member.member_id()).hp_ = 0;
+  party.party_bus().emit(fl::events::PartyEvent{fl::events::PartyWiped{}});
+  REQUIRE(party.town_penalty_active());
+  REQUIRE_FALSE(party.has_encounter());
+
+  int beats = 0;
+  while (party.tower_floor_attempts() < 2 &&
+         beats < fl::primitives::PartyData::kTownPenaltyBeats + 10) {
+    party.advance_beat();
+    ++beats;
+  }
+  REQUIRE(beats >= fl::primitives::PartyData::kTownPenaltyBeats);
+  REQUIRE(party.has_encounter());
+  REQUIRE(party.tower_route()->floor == 1);
+  REQUIRE(party.tower_floor_attempts() == 2);
+}
+
+TEST_CASE("Runtime tower maxima scale generated floor percentages",
+          "[tower][balance][runtime]") {
+  const fl::primitives::TowerBalance balance{
+      .maximum_monster_level = 40,
+      .maximum_monster_hp = 200,
+      .maximum_monster_attack = 80};
+  fl::GrandCentral game{1, 1, 1, true, true, std::nullopt, false, false,
+                        balance};
+  auto ctx = game.account_context(0).party_context(0);
+  auto &fight = fl::primitives::EncounterBuilder{
+      ctx, fl::primitives::EncounterMode::ChaosAttractor,
+      fl::primitives::EncounterBuilder::TowerFloor{
+          "origin_woodland_tower", 6}}.thump_it_out();
+  const auto enemy = fight.attackers().members().front();
+  const auto &stats = ctx.reg().get<fl::ecs::components::Stats>(enemy);
+  const auto &xp = ctx.reg().get<fl::ecs::components::TrackXP>(enemy);
+  REQUIRE(stats.max_hp_ == 20);
+  REQUIRE(stats.hp_ == 20);
+  REQUIRE(stats.attack_ == 8);
+  REQUIRE(xp.level_ == 4);
 }
 
 TEST_CASE("Woodland floor nine unlocks Plains, whose first clear rewards the cape",

@@ -24,6 +24,7 @@ int main(int argc, char **argv) {
   bool skip_chaos_attract = false;
   bool story_autoplay = false;
   std::string replay_path;
+  fl::primitives::TowerBalance tower_balance;
 
   app.add_flag("--no-ui", opts.no_ui, "Run headless (no FTXUI screen)");
   app.add_flag("--skip-chaos-attract", skip_chaos_attract,
@@ -42,6 +43,15 @@ int main(int argc, char **argv) {
 
   app.add_option("--cutoff-seconds", opts.cutoff_seconds,
                  "Stop after this many simulated seconds")
+      ->check(CLI::PositiveNumber);
+  app.add_option("--tower-max-level", tower_balance.maximum_monster_level,
+                 "Monster level represented by 100% tower scaling")
+      ->check(CLI::PositiveNumber);
+  app.add_option("--tower-max-hp", tower_balance.maximum_monster_hp,
+                 "Monster HP represented by 100% tower scaling")
+      ->check(CLI::PositiveNumber);
+  app.add_option("--tower-max-attack", tower_balance.maximum_monster_attack,
+                 "Monster Attack represented by 100% tower scaling")
       ->check(CLI::PositiveNumber);
 
   CLI11_PARSE(app, argc, argv);
@@ -108,11 +118,13 @@ int main(int argc, char **argv) {
           story_mode == fl::widgets::StoryStartMode::Autoplay;
     }
 
-    GrandCentral gc{1, 1, 0, true, true, std::nullopt, true, story_autoplay};
+    GrandCentral gc{1, 1, 0, true, true, std::nullopt, true, story_autoplay,
+                    tower_balance};
     gc.innervate_event_system();
     gc.main_loop(opts);
     if (gc.sandbox_requested()) {
-      GrandCentral sandbox{8, 5, 5};
+      GrandCentral sandbox{8, 5, 5, true, true, std::nullopt, false, false,
+                           tower_balance};
       sandbox.innervate_event_system();
       sandbox.main_loop(opts);
     }

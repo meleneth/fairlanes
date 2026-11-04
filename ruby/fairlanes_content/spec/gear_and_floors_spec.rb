@@ -41,7 +41,27 @@ RSpec.describe "Gear and tower declarations" do
       floor: 1, lineup: [:field_mouse])
     expect(FairlanesContent::Validator.new(set).validate).to be_empty
     header = FairlanesContent::Renderer.new(set).floor_content_hpp
-    expect(header).to include('FloorLineup{1, "mouse_tower/001", {fl::monster::MonsterKind::FieldMouse}, 1}')
+    expect(header).to include('FloorLineup{1, "mouse_tower/001", {fl::monster::MonsterKind::FieldMouse}, {5}, {5}, {5}, 1}')
+  end
+
+  it "generates a five-floor composition pattern and raises scaling every five floors" do
+    set = tower_set
+    set.tower_pattern :mouse_climb,
+                      monsters: %i[field_mouse honey_badger]
+    set.biomes.clear
+    set.biome :mouse_tower, display: "Mouse Tower", floors: 100,
+              pattern: :mouse_climb
+    expect(FairlanesContent::Validator.new(set).validate).to be_empty
+    floors = FairlanesContent::FloorResolver.new(set).resolve(set.biomes.first)
+    expect(floors[0]).to include(lineup: Array.new(5, :field_mouse),
+                                 level_percent: 5, hp_percent: 5,
+                                 attack_percent: 5)
+    expect(floors[4].fetch(:lineup)).to eq(
+      %i[field_mouse honey_badger honey_badger honey_badger honey_badger])
+    expect(floors[5]).to include(level_percent: 10, hp_percent: 10,
+                                 attack_percent: 10)
+    expect(floors[99]).to include(level_percent: 100, hp_percent: 100,
+                                  attack_percent: 100)
   end
 
   it "rejects unknown resistance channels and percentages outside 0..100" do

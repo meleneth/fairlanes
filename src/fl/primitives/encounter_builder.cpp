@@ -10,15 +10,19 @@
 #include "fl/context.hpp"
 #include "fl/ecs/components/encounter.hpp"
 #include "fl/ecs/components/monster_identity.hpp"
+#include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/track_xp.hpp"
 #include "fl/generated/monster_content.hpp"
 #include "fl/generated/floor_content.hpp"
 #include "fl/monsters/monster_kind.hpp"
 #include "fl/monsters/monster_registry.hpp"
+#include "fl/primitives/account_data.hpp"
 #include "fl/primitives/encounter_data.hpp"
 #include "fl/primitives/entity_builder.hpp"
 #include "fl/primitives/farming_plan.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/team.hpp"
+#include "fl/primitives/tower_balance.hpp"
 #include "sr/atb_events.hpp"
 
 namespace fl::primitives {
@@ -73,7 +77,19 @@ EncounterData &EncounterBuilder::thump_it_out() {
   const auto enemy_count = floor ? floor->monster_count : kEnemyPartySize;
   for (std::size_t i = 0; i < enemy_count; ++i) {
     if (floor) {
-      add_enemy_kind(floor->monsters[i]);
+      const auto entity = add_enemy_kind(floor->monsters[i]);
+      const auto &balance = ctx_.account_data().tower_balance();
+      auto &stats = ctx_.reg().get<fl::ecs::components::Stats>(entity);
+      stats.max_hp_ = fl::primitives::TowerBalance::scale(
+          balance.maximum_monster_hp, floor->hp_percent[i]);
+      stats.hp_ = stats.max_hp_;
+      stats.attack_ = fl::primitives::TowerBalance::scale(
+          balance.maximum_monster_attack, floor->attack_percent[i]);
+      auto &xp = ctx_.reg().get<fl::ecs::components::TrackXP>(entity);
+      xp.level_ = fl::primitives::TowerBalance::scale(
+          balance.maximum_monster_level, floor->level_percent[i]);
+      xp.xp_ = xp.xp_for_level(xp.level_);
+      xp.next_level_at = xp.xp_for_level(xp.level_ + 1);
     } else {
       add_random_enemy();
     }
@@ -131,10 +147,11 @@ void EncounterBuilder::add_random_enemy() {
   add_enemy_kind(kind);
 }
 
-void EncounterBuilder::add_enemy_kind(fl::monster::MonsterKind kind) {
+entt::entity EncounterBuilder::add_enemy_kind(fl::monster::MonsterKind kind) {
   auto context = ctx_.build_context();
   entt::entity ent = EntityBuilder(context).monster(kind).build();
   add_to_enemy_team(ent);
+  return ent;
 }
 
 void EncounterBuilder::add_to_enemy_team(entt::entity entity) {

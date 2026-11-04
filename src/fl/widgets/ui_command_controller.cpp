@@ -391,7 +391,8 @@ void UiCommandController::handle(std::string_view command) {
       if (const auto route = party.tower_route())
         write("tower " + std::string(route->biome_id) + " floor " +
               std::to_string(route->floor) + " (latest " +
-              std::to_string(party.latest_tower_floor(route->biome_id)) + ")");
+              std::to_string(party.latest_tower_floor(route->biome_id)) +
+              ", attempts " + std::to_string(party.tower_floor_attempts()) + ")");
       else
         write("tower route inactive");
       write(party.plains_unlocked() ? "Plains unlocked" : "Plains unlocks after Woodland floor 9");
@@ -612,7 +613,7 @@ void UiCommandController::show_help(std::string_view topic) {
   if (topic == "tower") {
     write("tower woodland [floor]: choose Woodland and any unlocked floor");
     write("tower plains [floor]: choose Plains after Woodland floor 9");
-    write("tower status: show the selected floor and latest unlocked floor");
+    write("tower status: show selected floor, latest unlock, and attempts");
     return;
   }
 

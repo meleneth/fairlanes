@@ -82,12 +82,14 @@ TEST_CASE("Ruby floor ten variants use the generated lineup and gear in combat",
   const auto &upgraded = second.recording().at("initial_state");
   REQUIRE(base.size() == 10);
   REQUIRE(base.at(5).at("name") == "Honey Badger");
+  REQUIRE(base.at(5).at("stats").at("max_hp") == 10);
+  REQUIRE(base.at(5).at("stats").at("attack") == 2);
   REQUIRE(base.at(0).at("stats").at("armor") == 1);
   REQUIRE(upgraded.at(0).at("stats").at("armor") == 3);
   REQUIRE(upgraded.at(0).at("stats").at("max_hp") == 25);
   while (!first.finished()) first.advance_beat();
   while (!second.finished()) second.advance_beat();
-  REQUIRE(first.outcome() == "enemy_victory");
+  REQUIRE(first.outcome() == "hero_victory");
   REQUIRE(second.outcome() == "hero_victory");
   fl::regression::Session repeated{detour};
   while (!repeated.finished()) repeated.advance_beat();

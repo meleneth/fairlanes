@@ -50,3 +50,20 @@ TEST_CASE("Dead PartyStatus keeps its label in a three-line frame",
   REQUIRE(rendered.substr(0, first_newline).find("DEAD") != std::string::npos);
   REQUIRE(rendered.substr(first_newline + 1).find("DEAD") == std::string::npos);
 }
+
+TEST_CASE("PartyStatus shows the selected tower floor and attempt",
+          "[widgets][party_status][tower]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto party_ctx = gc.account_context(0).party_context(0);
+  auto &party = party_ctx.party_data();
+  REQUIRE(party.select_tower("origin_woodland_tower"));
+  party.begin_tower_encounter();
+
+  fl::widgets::PartyStatus status{party};
+  auto element = status.Render();
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fit(element),
+                                      ftxui::Dimension::Fit(element));
+  ftxui::Render(screen, element);
+  const auto rendered = screen.ToString();
+  REQUIRE(rendered.find("Floor 1 try 1") != std::string::npos);
+}

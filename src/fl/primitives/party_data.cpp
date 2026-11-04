@@ -63,6 +63,7 @@ PartyData::PartyData(entt::entity party_id,
                   encounter_tower_biome_, encounter_tower_floor_}});
           }
           woodland_floor_ = next;
+          tower_floor_attempts_ = 0;
         } else if (encounter_tower_biome_ == "origin_plains_tower") {
           if (encounter_tower_floor_ == 1 && !plains_reward_awarded_) {
             fl::ecs::systems::LootDropSystem::grant_unique(
@@ -78,6 +79,7 @@ PartyData::PartyData(entt::entity party_id,
                   encounter_tower_biome_, encounter_tower_floor_}});
           }
           plains_floor_ = next;
+          tower_floor_attempts_ = 0;
         }
         // Tower travel returns through town; begin the next floor at full
         // effective HP without adding HP when an item is equipped mid-fight.
@@ -93,6 +95,13 @@ std::optional<PartyData::TowerRoute> PartyData::tower_route() const noexcept {
   return std::nullopt;
 }
 
+void PartyData::begin_tower_encounter() {
+  encounter_tower_biome_ = tower_biome_;
+  const auto route = tower_route();
+  encounter_tower_floor_ = route ? route->floor : 0;
+  if (route) ++tower_floor_attempts_;
+}
+
 int PartyData::latest_tower_floor(std::string_view biome_id) const noexcept {
   if (biome_id == "origin_woodland_tower") return woodland_latest_floor_;
   if (biome_id == "origin_plains_tower" && plains_unlocked_)
@@ -106,9 +115,14 @@ bool PartyData::select_tower(std::string_view biome_id,
     return false;
   const int latest = latest_tower_floor(biome_id);
   if (latest == 0 || (floor && (*floor < 1 || *floor > latest))) return false;
+  const int selected_floor = floor.value_or(latest);
+  const auto current = tower_route();
+  const bool changed = tower_biome_ != biome_id || !current ||
+                       current->floor != selected_floor;
   tower_biome_ = biome_id;
   (biome_id == "origin_woodland_tower" ? woodland_floor_ : plains_floor_) =
-      floor.value_or(latest);
+      selected_floor;
+  if (changed) tower_floor_attempts_ = 0;
   tower_choice_pending_ = false;
   return true;
 }

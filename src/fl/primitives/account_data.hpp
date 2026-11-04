@@ -12,15 +12,18 @@
 #include "fl/primitives/raid_data.hpp"
 #include "fl/primitives/moon_calendar.hpp"
 #include "fl/primitives/raid_statistics.hpp"
+#include "fl/primitives/tower_balance.hpp"
 
 namespace fl::primitives {
 
 struct AccountData {
 public:
-  explicit AccountData(entt::entity account_id, bool record_progress = true)
+  explicit AccountData(entt::entity account_id, bool record_progress = true,
+                       TowerBalance tower_balance = {})
       : account_id_{account_id},
         log_{std::make_unique<fl::widgets::FancyLog>()},
-        statistics_{std::make_unique<RaidStatistics>(*raid_bus_, account_id, record_progress)} {}
+        statistics_{std::make_unique<RaidStatistics>(*raid_bus_, account_id, record_progress)},
+        tower_balance_{tower_balance} {}
 
   AccountData(AccountData &&) noexcept = default;
   AccountData &operator=(AccountData &&) noexcept = default;
@@ -67,6 +70,7 @@ public:
 
   PartyData &party(std::size_t idx) { return parties_.at(idx); }
   const PartyData &party(std::size_t idx) const { return parties_.at(idx); }
+  const TowerBalance &tower_balance() const noexcept { return tower_balance_; }
 
 private:
   entt::entity account_id_{entt::null};
@@ -75,6 +79,7 @@ private:
   std::deque<PartyData> parties_{}; // owned parties
   std::unique_ptr<fl::events::RaidBus> raid_bus_{std::make_unique<fl::events::RaidBus>()};
   std::unique_ptr<RaidStatistics> statistics_;
+  TowerBalance tower_balance_{};
   std::uint64_t raid_id_{0};
   std::unique_ptr<WorldClock> calendar_{std::make_unique<WorldClock>()};
   std::uint64_t next_visitor_beat_{0};

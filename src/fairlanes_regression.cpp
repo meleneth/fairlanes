@@ -26,6 +26,17 @@ int main(int argc, char **argv) {
   app.add_flag("--all-seeds", all_seeds, "Run the declaration's full seed set");
   auto *beat_cap_option = app.add_option("--beat-cap", options.beat_cap, "Maximum simulated beats");
   app.add_option("--armor", options.hero_armor, "Player's initial flat Armor");
+  app.add_option("--tower-max-level",
+                 options.tower_balance.maximum_monster_level,
+                 "Monster level represented by 100% tower scaling")
+      ->check(CLI::PositiveNumber);
+  app.add_option("--tower-max-hp", options.tower_balance.maximum_monster_hp,
+                 "Monster HP represented by 100% tower scaling")
+      ->check(CLI::PositiveNumber);
+  app.add_option("--tower-max-attack",
+                 options.tower_balance.maximum_monster_attack,
+                 "Monster Attack represented by 100% tower scaling")
+      ->check(CLI::PositiveNumber);
   app.add_flag("--assert-expected", assert_expected,
                "Fail unless the fixture reaches its expected outcome");
   CLI11_PARSE(app, argc, argv);

@@ -115,7 +115,8 @@ struct Session::Impl {
 
   explicit Impl(Options selected)
       : options(std::move(selected)),
-        game(1, 1, party_size_for(options.fixture), false, false, options.seed),
+        game(1, 1, party_size_for(options.fixture), false, false, options.seed,
+             false, false, options.tower_balance),
         account_ctx(game.account_context(0)),
         party_ctx(account_ctx.party_context(0)) {
     if (const auto *scenario = generated_content::find(options.fixture)) {
@@ -183,7 +184,10 @@ struct Session::Impl {
         {"gameplay_seed", options.seed},
         {"gameplay_sequence", game.rng().base_sequence()},
         {"beat_cap", options.beat_cap},
-        {"fixture_parameters", {{"hero_armor", options.hero_armor}}},
+        {"fixture_parameters", {{"hero_armor", options.hero_armor},
+                                {"tower_max_level", options.tower_balance.maximum_monster_level},
+                                {"tower_max_hp", options.tower_balance.maximum_monster_hp},
+                                {"tower_max_attack", options.tower_balance.maximum_monster_attack}}},
         {"starting_world_beat", game.world_clock().elapsed_beats()},
         {"starting_uwu", encounter->visual_time().v},
         {"expected_outcome", armor_fixture ? Json(nullptr) : Json("hero_victory")},
@@ -310,7 +314,10 @@ struct Session::Impl {
                  {"gameplay_sequence", game.rng().base_sequence()},
                  {"beat_cap", options.beat_cap},
                  {"fixture_parameters", {{"variant", options.variant},
-                                         {"equipped_item", std::string(gear.unique_id())}}},
+                                         {"equipped_item", std::string(gear.unique_id())},
+                                         {"tower_max_level", options.tower_balance.maximum_monster_level},
+                                         {"tower_max_hp", options.tower_balance.maximum_monster_hp},
+                                         {"tower_max_attack", options.tower_balance.maximum_monster_attack}}},
                  {"starting_world_beat", game.world_clock().elapsed_beats()},
                  {"starting_uwu", encounter->visual_time().v},
                  {"expected_outcome", nullptr},
@@ -509,11 +516,18 @@ nlohmann::json read_recording(const std::string &path) {
 
 Options options_from_recording(const nlohmann::json &recording) {
   const auto &parameters = recording.at("fixture_parameters");
-  return Options{recording.at("fixture").get<std::string>(),
-                 recording.at("gameplay_seed").get<std::uint64_t>(),
-                 recording.at("beat_cap").get<std::uint64_t>(),
-                 parameters.value("hero_armor", 0),
-                 parameters.value("variant", std::string{})};
+  auto options = Options{recording.at("fixture").get<std::string>(),
+                         recording.at("gameplay_seed").get<std::uint64_t>(),
+                         recording.at("beat_cap").get<std::uint64_t>(),
+                         parameters.value("hero_armor", 0),
+                         parameters.value("variant", std::string{})};
+  options.tower_balance.maximum_monster_level =
+      parameters.value("tower_max_level", 20);
+  options.tower_balance.maximum_monster_hp =
+      parameters.value("tower_max_hp", 100);
+  options.tower_balance.maximum_monster_attack =
+      parameters.value("tower_max_attack", 20);
+  return options;
 }
 
 } // namespace fl::regression

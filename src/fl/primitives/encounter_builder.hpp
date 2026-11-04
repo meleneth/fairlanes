@@ -38,7 +38,7 @@ struct EncounterBuilder {
   void add_to_enemy_team(entt::entity entity);
 
 private:
-  void add_enemy_kind(fl::monster::MonsterKind kind);
+  entt::entity add_enemy_kind(fl::monster::MonsterKind kind);
   fl::context::PartyCtx &ctx_;
   EncounterMode mode_{EncounterMode::ChaosAttractor};
   std::optional<TowerFloor> tower_floor_;

@@ -204,6 +204,18 @@ module FairlanesContent
     def validate_floor_content(errors)
       monsters = declarations.monsters.map(&:id).to_set
       pools = declarations.encounter_pools.map(&:id).to_set
+      patterns = declarations.tower_patterns.to_h { |pattern| [pattern.id, pattern] }
+      errors << "duplicate tower pattern ids" unless patterns.size == declarations.tower_patterns.size
+      declarations.tower_patterns.each do |pattern|
+        errors << "tower pattern #{pattern.id} has invalid stable id" unless stable_id?(pattern.id)
+        unless pattern.monsters.is_a?(Array) && (1..5).cover?(pattern.monsters.size)
+          errors << "tower pattern #{pattern.id} must contain one to five monsters"
+          next
+        end
+        pattern.monsters.each do |monster|
+          errors << "tower pattern #{pattern.id} references unknown monster #{monster}" unless monsters.include?(monster)
+        end
+      end
       declarations.encounter_pools.each do |pool|
         errors << "encounter pool #{pool.id} has invalid stable id" unless stable_id?(pool.id)
         unless pool.lineups.is_a?(Array) && !pool.lineups.empty?
@@ -222,6 +234,10 @@ module FairlanesContent
         next unless biome.floors.is_a?(Integer) && biome.floors.positive?
 
         covered = Array.new(biome.floors + 1, false)
+        if biome.pattern
+          errors << "#{prefix} references unknown tower pattern #{biome.pattern}" unless patterns.key?(biome.pattern)
+          (1..biome.floors).each { |number| covered[number] = true }
+        end
         biome.bands.each do |band|
           unless valid_floor?(band.from, biome.floors) && valid_floor?(band.to, biome.floors) && band.from <= band.to
             errors << "#{prefix} has out-of-range band #{band.from}..#{band.to}"

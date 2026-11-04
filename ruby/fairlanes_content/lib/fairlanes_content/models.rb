@@ -23,7 +23,7 @@ module FairlanesContent
   EncounterPool = Struct.new(:id, :lineups, keyword_init: true)
   FloorBand = Struct.new(:from, :to, :pool, keyword_init: true)
   FloorOverride = Struct.new(:floor, :lineup, keyword_init: true)
-  Biome = Struct.new(:id, :display, :floors, :bands, :overrides, keyword_init: true)
+  Biome = Struct.new(:id, :display, :floors, :bands, :overrides, :pattern, keyword_init: true)
   RegressionScenario = Struct.new(:id, :encounter, :party, :seeds, :beat_cap,
                                   :variants, keyword_init: true)
   BiomePlan = Struct.new(:id, :cycle, :order, :monsters, keyword_init: true)
