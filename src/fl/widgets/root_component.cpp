@@ -147,7 +147,7 @@ bool RootComponent::OnEvent(ftxui::Event event) {
 
   // The generated composition root owns the reserved toggle. Once open, the
   // real command input remains the exclusive recipient until it closes.
-  if (overlay->open()) {
+  if (overlay->open() && console_above_modals_) {
     return console_overlay_->OnEvent(event);
   }
 
@@ -200,6 +200,10 @@ bool RootComponent::OnEvent(ftxui::Event event) {
   if (event == ftxui::Event::Character("`")) {
     toggle_console();
     return true;
+  }
+
+  if (overlay->open()) {
+    return console_overlay_->OnEvent(event);
   }
 
   if (objectives_ && event == ftxui::Event::Character("a")) {
@@ -481,10 +485,15 @@ void RootComponent::toggle_console() {
 
   if (overlay->open()) {
     overlay->FocusInput();
+  } else {
+    console_above_modals_ = false;
   }
 }
 
-void RootComponent::focus_console() { console_overlay()->FocusInput(); }
+void RootComponent::focus_console() {
+  console_above_modals_ = true;
+  console_overlay()->FocusInput();
+}
 
 void RootComponent::restore_active_focus() {
   if (quit_confirmation_open_) {

@@ -103,6 +103,7 @@ private:
   bool quit_requested_{false};
   bool sandbox_confirmation_open_{false};
   bool autoplay_confirmation_open_{false};
+  bool console_above_modals_{false};
   bool sandbox_requested_{false};
   bool help_hint_collapsed_{false};
   bool normal_combat_resumed_{false};
