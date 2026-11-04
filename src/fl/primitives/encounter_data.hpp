@@ -3,6 +3,7 @@
 #include <deque>
 #include <entt/entity/registry.hpp>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "fl/context.hpp"
@@ -110,6 +111,14 @@ public:
   std::optional<fl::monster::SkillDecision>
   choose_action(entt::entity attacker);
 
+  void configure_projectile_cover(entt::entity protected_entity,
+                                  entt::entity protector,
+                                  fl::skills::SkillId release_skill);
+  entt::entity resolve_skill_target(entt::entity attacker,
+                                    entt::entity aimed_target,
+                                    fl::skills::SkillKey skill);
+  void release_projectile_cover(entt::entity actor, fl::skills::SkillKey skill);
+
 private:
   struct Topology {
     Team attackers_;
@@ -140,6 +149,16 @@ private:
   struct Lifecycle {
     std::vector<entt::entity> entities_to_cleanup_;
   } life_;
+
+  struct ProjectileCover {
+    entt::entity protected_entity{entt::null};
+    entt::entity protector{entt::null};
+    fl::skills::SkillId release_skill{fl::skills::SkillId::Observe};
+    bool active{true};
+  };
+
+  std::optional<ProjectileCover> projectile_cover_;
+  std::vector<std::pair<entt::entity, fl::skills::SkillId>> used_skills_;
 
   void bind_combatant_bus(entt::entity combatant,
                           fl::events::CombatantBus &combatant_bus);

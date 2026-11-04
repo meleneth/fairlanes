@@ -39,6 +39,9 @@ inline bool has_status(const entt::registry &reg, entt::entity entity,
   case TargetStatus::Shield:
     kind = CombatStatusKind::Shield;
     break;
+  case TargetStatus::Brace:
+    kind = CombatStatusKind::Brace;
+    break;
   case TargetStatus::Haste:
     kind = CombatStatusKind::Haste;
     break;

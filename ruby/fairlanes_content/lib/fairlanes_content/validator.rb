@@ -258,9 +258,41 @@ module FairlanesContent
           errors << "#{prefix} has duplicate override #{override.floor}" unless seen_overrides.add?(override.floor)
           covered[override.floor] = true
           validate_lineup(override.lineup, "#{prefix} override #{override.floor}", monsters, errors)
+          validate_cover(override, "#{prefix} override #{override.floor}", errors)
+          %i[level_percent hp_percent attack_percent].each do |field|
+            value = override.public_send(field)
+            if value && (!value.is_a?(Integer) || !(1..100).cover?(value))
+              errors << "#{prefix} override #{override.floor} has invalid #{field}"
+            end
+          end
         end
         missing = (1..biome.floors).reject { |number| covered[number] }
         errors << "#{prefix} is missing floor coverage: #{missing.join(', ')}" unless missing.empty?
+      end
+    end
+
+    def validate_cover(override, prefix, errors)
+      return unless override.cover
+      cover = override.cover
+      unless cover.is_a?(Hash) &&
+             (cover.keys - %i[protected protector release_skill]).empty?
+        errors << "#{prefix} has invalid cover rule"
+        return
+      end
+      protected_index = cover[:protected]
+      protector_index = cover[:protector]
+      size = override.lineup.is_a?(Array) ? override.lineup.size : 0
+      unless protected_index.is_a?(Integer) && (0...size).cover?(protected_index)
+        errors << "#{prefix} cover has invalid protected index"
+      end
+      unless protector_index.is_a?(Integer) && (0...size).cover?(protector_index)
+        errors << "#{prefix} cover has invalid protector index"
+      end
+      if protected_index == protector_index
+        errors << "#{prefix} cover entities must differ"
+      end
+      unless declarations.skills.any? { |skill| skill.id == cover[:release_skill] }
+        errors << "#{prefix} cover has unknown release skill"
       end
     end
 
@@ -314,9 +346,27 @@ module FairlanesContent
         variant_ids = variants.map { |variant| variant[:id] }
         errors << "#{prefix} has duplicate variants" unless variant_ids.uniq.size == variant_ids.size
         variants.each do |variant|
+          unless variant.is_a?(Hash) &&
+                 (variant.keys - %i[id equipped_item skill_overrides observe_members expected_wins]).empty?
+            errors << "#{prefix} variant has unknown fields"
+          end
           errors << "#{prefix} has invalid variant id" unless stable_id?(variant[:id])
           item = variant[:equipped_item]
-          errors << "#{prefix} references unknown gear #{item}" unless declarations.gears.any? { |gear| gear.id == item }
+          if item && !declarations.gears.any? { |gear| gear.id == item }
+            errors << "#{prefix} references unknown gear #{item}"
+          end
+          overrides = variant.fetch(:skill_overrides, {})
+          unless overrides.is_a?(Hash) && overrides.all? do |index, skill|
+            index.is_a?(Integer) && (0...scenario.party.size).cover?(index) &&
+              declarations.skills.any? { |entry| entry.id == skill }
+          end
+            errors << "#{prefix} has invalid skill overrides"
+          end
+          observers = variant.fetch(:observe_members, [])
+          unless observers.is_a?(Array) && observers.uniq == observers &&
+                 observers.all? { |index| index.is_a?(Integer) && (0...scenario.party.size).cover?(index) }
+            errors << "#{prefix} has invalid Observe members"
+          end
           wins = variant[:expected_wins]
           if wins && (!wins.is_a?(Range) || !non_negative_integer?(wins.begin) ||
                       !non_negative_integer?(wins.end) || wins.end > scenario.seeds.size || wins.begin > wins.end)
@@ -450,11 +500,14 @@ module FairlanesContent
             errors << "#{prefix} must be a hash"
             next
           end
-          errors << "#{prefix} has unknown fields" unless (rule.keys - %i[skill target chance_percent conditions]).empty?
+          errors << "#{prefix} has unknown fields" unless (rule.keys - %i[skill target chance_percent conditions once_per_encounter]).empty?
           errors << "#{prefix} uses an unknown or unequipped skill" unless monster.known_skills.include?(rule[:skill])
           errors << "#{prefix} has invalid target" unless %i[self ally enemy].include?(rule.fetch(:target, :enemy))
           chance = rule.fetch(:chance_percent, 100)
           errors << "#{prefix} has invalid chance" unless chance.is_a?(Integer) && (0..100).cover?(chance)
+          unless [true, false].include?(rule.fetch(:once_per_encounter, false))
+            errors << "#{prefix} has invalid once-per-encounter flag"
+          end
           conditions = rule.fetch(:conditions, [])
           unless conditions.is_a?(Array)
             errors << "#{prefix} conditions must be an array"
@@ -469,7 +522,7 @@ module FairlanesContent
             errors << "#{prefix} has invalid subject" unless %i[actor target].include?(condition.fetch(:subject, :target))
             case condition[:predicate]
             when :has_status, :missing_status
-              unless %i[shield haste burn blind silence slow stun poison dire_bleed freeze].include?(condition[:status])
+              unless %i[shield brace haste burn blind silence slow stun poison dire_bleed freeze].include?(condition[:status])
                 errors << "#{prefix} has invalid status"
               end
               errors << "#{prefix} status condition cannot have percent" if condition.key?(:percent)

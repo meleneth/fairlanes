@@ -95,6 +95,21 @@ EncounterData &EncounterBuilder::thump_it_out() {
     }
   }
 
+  if (floor && floor->cover.enabled()) {
+    const auto protected_index =
+        static_cast<std::size_t>(floor->cover.protected_index);
+    const auto protector_index =
+        static_cast<std::size_t>(floor->cover.protector_index);
+    if (protected_index >= encounter_data.attackers().members().size() ||
+        protector_index >= encounter_data.attackers().members().size()) {
+      throw std::logic_error("generated tower cover index is out of range");
+    }
+    encounter_data.configure_projectile_cover(
+        encounter_data.attackers().members()[protected_index],
+        encounter_data.attackers().members()[protector_index],
+        floor->cover.release_skill);
+  }
+
   ctx_.party_data().for_each_member([&](entt::entity member) {
     encounter_data.defenders().members().push_back(member);
     encounter_data.add_party_combatant_bus(member);

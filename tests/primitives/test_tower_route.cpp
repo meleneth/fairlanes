@@ -1,4 +1,7 @@
 #include <algorithm>
+#include <array>
+#include <cstddef>
+#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -94,7 +97,56 @@ TEST_CASE("Runtime tower maxima scale generated floor percentages",
   REQUIRE(xp.level_ == 4);
 }
 
-TEST_CASE("Woodland floor nine unlocks Plains, whose first clear rewards the cape",
+TEST_CASE("The first physical progression floors resolve to authored lineups",
+          "[tower][content][physical-slice]") {
+  using fl::monster::MonsterKind;
+  const std::array woodland{
+      std::vector{MonsterKind::FieldMouse},
+      std::vector{MonsterKind::FieldMouse},
+      std::vector{MonsterKind::FieldMouse, MonsterKind::FieldMouse},
+      std::vector{MonsterKind::BumpkinHare},
+      std::vector{MonsterKind::FieldMouse, MonsterKind::BumpkinHare},
+      std::vector{MonsterKind::BarkSmack},
+      std::vector{MonsterKind::AntlerStag},
+      std::vector{MonsterKind::BarkSmack, MonsterKind::BarkSmack},
+      std::vector{MonsterKind::FieldMouse, MonsterKind::BumpkinHare,
+                  MonsterKind::BarkSmack},
+      std::vector{MonsterKind::HoneyBadger, MonsterKind::FieldMouse,
+                  MonsterKind::FieldMouse, MonsterKind::FieldMouse,
+                  MonsterKind::FieldMouse}};
+  for (std::size_t index = 0; index < woodland.size(); ++index) {
+    const auto *floor = fl::primitives::generated_content::floor_lineup(
+        "origin_woodland_tower", static_cast<int>(index + 1));
+    REQUIRE(floor != nullptr);
+    REQUIRE(std::vector(floor->monsters.begin(),
+                        floor->monsters.begin() + static_cast<std::ptrdiff_t>(
+                                                      floor->monster_count)) ==
+            woodland[index]);
+  }
+
+  const std::array plains{
+      std::vector{MonsterKind::PrairieMeerkat},
+      std::vector{MonsterKind::PrairieMeerkat, MonsterKind::GrassWolf},
+      std::vector{MonsterKind::PrairieMeerkat, MonsterKind::BristleBoar}};
+  for (std::size_t index = 0; index < plains.size(); ++index) {
+    const auto *floor = fl::primitives::generated_content::floor_lineup(
+        "origin_plains_tower", static_cast<int>(index + 1));
+    REQUIRE(floor != nullptr);
+    REQUIRE(std::vector(floor->monsters.begin(),
+                        floor->monsters.begin() + static_cast<std::ptrdiff_t>(
+                                                      floor->monster_count)) ==
+            plains[index]);
+  }
+  const auto *cover =
+      fl::primitives::generated_content::floor_lineup("origin_plains_tower", 3);
+  REQUIRE(cover->cover.enabled());
+  REQUIRE(cover->cover.protected_index == 0);
+  REQUIRE(cover->cover.protector_index == 1);
+  REQUIRE(cover->cover.release_skill == fl::skills::SkillId::BumperRush);
+}
+
+TEST_CASE(
+    "Woodland floor nine unlocks Plains, whose first clear rewards the cape",
           "[tower][progression][reward]") {
   fl::GrandCentral game{1, 1, 5};
   auto ctx = game.account_context(0).party_context(0);
@@ -169,7 +221,8 @@ TEST_CASE("Woodland floor nine unlocks Plains, whose first clear rewards the cap
   REQUIRE(floor_ten->monsters.front() == fl::monster::MonsterKind::HoneyBadger);
 }
 
-TEST_CASE("Seeded production beats can clear Woodland nine and take the Plains detour",
+TEST_CASE("Seeded production beats can clear Woodland nine and take the Plains "
+          "detour",
           "[tower][progression][combat]") {
   fl::GrandCentral game{1, 1, 5, false, false, 42};
   auto ctx = game.account_context(0).party_context(0);

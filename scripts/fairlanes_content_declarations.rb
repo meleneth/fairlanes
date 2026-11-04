@@ -130,6 +130,12 @@ skill :smack,
       tags: %i[physical blunt melee enemy damage],
       declarative_shape: :handwritten_behavior
 
+skill :brace,
+      learn_chance_percent: 100,
+      execution: :placeholder_effect,
+      tags: %i[physical self buff shield_status martial],
+      declarative_shape: :generated_runtime_behavior
+
 [
   [:thump_around, :group_damage, %i[physical blunt melee group damage natural]],
   [:rake_line, :group_damage, %i[physical slashing melee group damage bleed_status natural]],
@@ -150,7 +156,7 @@ skill :smack,
   [:miasma_cloud, :placeholder_effect, %i[poison rot field group poison_status debuff]],
   [:rot_bloom, :group_damage, %i[rot plant group damage debuff]],
   [:root_leech, :damage_strike, %i[plant rot enemy damage drain slow_status]],
-  [:pebble_spit, :damage_strike, %i[earth ranged enemy damage]],
+  [:pebble_spit, :damage_strike, %i[physical earth blunt projectile ranged enemy damage]],
   [:cave_in, :group_damage, %i[earth trap group damage slow_status]],
   [:weight_of_tuesday, :placeholder_effect, %i[gravity void spell group debuff slow_status]],
   [:snap_shot, :damage_strike, %i[ballistic ranged enemy damage industrial]],
@@ -226,6 +232,7 @@ random_combat_skills(
   :bump,
   :squish,
   :smack,
+  :brace,
   :joltspasm,
   :rocks_fall,
   :sour_breath,
@@ -412,7 +419,7 @@ monster :null_mote,
   [:squirrel_brigand, "Squirrel Brigand", 20, 4, %i[pebble_spit flee thump_around], :origin],
   [:webling_spider, "Webling Spider", 24, 4, %i[venom_needle web_snare bite], :origin],
   [:moss_wolf, "Moss Wolf", 30, 5, %i[claw pack_howl root_leech], :origin],
-  [:antler_stag, "Antler Stag", 36, 6, %i[bumper_rush smackdown_sweep shell_guard], :origin],
+  [:antler_stag, "Antler Stag", 36, 6, %i[brace bumper_rush smackdown_sweep], :origin],
   [:mosquito_choir, "Mosquito Choir", 24, 5, %i[venom_needle gnat_cloud blood_bloom], :origin],
   [:dragonfly_cutter, "Dragonfly Cutter", 26, 5, %i[rake_line venom_needle flee], :origin],
   [:bog_snail, "Bog Snail", 38, 6, %i[shell_guard squish miasma_cloud], :origin],
@@ -581,6 +588,7 @@ end
   reboot_pulse: "Restore 4 HP to each living ally, capped at maximum HP. Does not cleanse statuses.",
   cinderburst: "Detonate an existing burn on one enemy for 8 fire damage, consuming the burn. Requires the burn to still be present when the blast lands.",
   observe: "Spend 12 beats observing, dealing 0 damage. Equipping Observe enables learning from other combatants; its rank caps learnable skill ranks. Observe itself is learned in order, at most 1 rank above the equipped rank, without a chance roll. Combat learning is kept on victory or raid summoning. Learning acquired during a raid is kept on shared victory, even for wiped parties, and lost on shared defeat. Other combat learning is lost on a party wipe.",
+  brace: "Arm a combat-local Brace on the user. The next landed direct physical hit is reduced by 35%, then Brace is spent. Misses, periodic damage, and nonphysical hits do not spend it.",
   flee: "Attempt to leave combat. The escape attempt has a 65% success chance outside raids and 0% in raids.",
   thump: "Deal 1-5 base physical damage to 1 enemy with a blunt attack at rank 1, plus 3 damage per additional rank and the attacker's flat Attack once. Physical resistance applies before percentage status modifiers; the target's flat Armor then reduces the physical portion before the minimum 1 damage floor. Hit at beat 26 + 2 x (rank - 1); finish at beat 31 + 3 x (rank - 1). Higher ranks hit harder but take longer.",
   eviscerate: "Inflict Dire Bleed on 1 enemy: they bleed to death unless it is stopped. Every 3 seconds, starting 3 seconds after application, deal physical damage equal to 10% of their maximum HP at application (rounded down, minimum 1), bypassing flat Attack and Armor. No timeout and no initial hit. Cleanse, target death or leaving combat clears it; source death or removal stops it at the next tick. Reapplication replaces the bleed and restarts its timer.",
@@ -645,6 +653,19 @@ monster_rules :drill_beetle,
   {skill: :bumper_rush, chance_percent: 40},
   {skill: :smack}
 
+monster_rules :antler_stag,
+  {skill: :brace, target: :self, once_per_encounter: true},
+  {skill: :bumper_rush},
+  {skill: :smackdown_sweep}
+
+monster_rules :bristle_boar,
+  {skill: :shell_guard, target: :self, once_per_encounter: true},
+  {skill: :bumper_rush},
+  {skill: :thump}
+
+monster_rules :prairie_meerkat,
+  {skill: :pebble_spit}
+
 
 monster_rules :salamander,
   {skill: :cinderburst, conditions: [{predicate: :has_status, status: :burn}]},
@@ -703,6 +724,13 @@ biome :origin_woodland_tower, display: "Origin Woodland Tower", floors: 100,
       overrides: [
         {floor: 1, lineup: %i[field_mouse]},
         {floor: 2, lineup: %i[field_mouse]},
+        {floor: 3, lineup: %i[field_mouse field_mouse]},
+        {floor: 4, lineup: %i[bumpkin_hare]},
+        {floor: 5, lineup: %i[field_mouse bumpkin_hare]},
+        {floor: 6, lineup: %i[bark_smack]},
+        {floor: 7, lineup: %i[antler_stag], hp_percent: 25},
+        {floor: 8, lineup: %i[bark_smack bark_smack]},
+        {floor: 9, lineup: %i[field_mouse bumpkin_hare bark_smack]},
         {floor: 10, lineup: %i[honey_badger field_mouse field_mouse field_mouse field_mouse]}
       ]
 
@@ -718,7 +746,14 @@ encounter_pool :plains_deep, lineups: [
 tower_pattern :plains_progression,
               monsters: %i[field_mouse prairie_meerkat grass_wolf bristle_boar squirrel_brigand]
 biome :origin_plains_tower, display: "Origin Plains Tower", floors: 100,
-      pattern: :plains_progression
+      pattern: :plains_progression,
+      overrides: [
+        {floor: 1, lineup: %i[prairie_meerkat]},
+        {floor: 2, lineup: %i[prairie_meerkat grass_wolf]},
+        {floor: 3, lineup: %i[prairie_meerkat bristle_boar],
+         hp_percent: 15,
+         cover: {protected: 0, protector: 1, release_skill: :bumper_rush}}
+      ]
 
 # Five tower biomes per Cycle. This plan also generates the brainstorming map
 # from the live monster declarations and their skill lists.

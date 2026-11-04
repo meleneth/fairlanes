@@ -19,14 +19,17 @@ module FairlanesContent
         if override
           percent = scale_percent(patterns[biome.pattern], number, biome.floors)
           { floor: number, id: floor_id(biome.id, number), source: "override",
-            lineup: override.lineup, level_percent: percent,
-            hp_percent: percent, attack_percent: percent }
+            lineup: override.lineup,
+            level_percent: override.level_percent || percent,
+            hp_percent: override.hp_percent || percent,
+            attack_percent: override.attack_percent || percent,
+            cover: override.cover }
         elsif biome.pattern
           pattern = patterns.fetch(biome.pattern)
           percent = pattern.scale_percent(number, biome.floors)
           { floor: number, id: floor_id(biome.id, number), source: pattern.id.to_s,
             lineup: pattern.lineup(number), level_percent: percent,
-            hp_percent: percent, attack_percent: percent }
+            hp_percent: percent, attack_percent: percent, cover: nil }
         else
           band = biome.bands.find { |entry| (entry.from..entry.to).cover?(number) }
           lineups = pools.fetch(band.pool).lineups
@@ -35,7 +38,7 @@ module FairlanesContent
           { floor: number, id: floor_id(biome.id, number), source: band.pool.to_s,
             lineup: lineups[index], level_percent: percent_for(number, biome.floors),
             hp_percent: percent_for(number, biome.floors),
-            attack_percent: percent_for(number, biome.floors) }
+            attack_percent: percent_for(number, biome.floors), cover: nil }
         end
       end
     end

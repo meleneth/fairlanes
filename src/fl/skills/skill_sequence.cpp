@@ -166,6 +166,7 @@ std::vector<entt::entity> allied_alive_targets(fl::context::EncounterCtx &party_
 
 bool is_wired_status_skill(SkillKey skill) noexcept {
   switch (skill.base) {
+  case SkillId::Brace:
   case SkillId::ShellGuard:
   case SkillId::ArmorPlate:
   case SkillId::SmokeScreen:
@@ -213,6 +214,15 @@ void apply_wired_skill_effect(fl::context::EncounterCtx &party_ctx,
   using fl::ecs::systems::CombatStatusSystem;
 
   switch (skill.base) {
+  case SkillId::Brace:
+    CombatStatusSystem::apply_status(party_ctx, scheduler,
+                                     {.kind = CombatStatusKind::Brace,
+                                      .name = display_name(skill),
+                                      .source = attacker,
+                                      .target = attacker,
+                                      .value = 35,
+                                      .negative = false});
+    return;
   case SkillId::ShellGuard:
     CombatStatusSystem::apply_status(party_ctx, scheduler,
                                      {.kind = CombatStatusKind::Shield,
@@ -524,6 +534,8 @@ void SkillSequencer::schedule(entt::entity attacker, entt::entity target,
   party_ctx_.encounter().combatant_bus(attacker).emit(
       fl::events::CombatantEvent{
           fl::events::SkillCastStarted{attacker, skill}});
+  party_ctx_.encounter().release_projectile_cover(attacker, skill);
+  target = party_ctx_.encounter().resolve_skill_target(attacker, target, skill);
   const auto &skill_definition = definition(skill);
   if (skill_definition.consumes_status &&
       !target_meets_skill_requirements(party_ctx_.reg(), target, skill)) {

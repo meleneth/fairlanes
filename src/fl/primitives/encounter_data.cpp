@@ -1,5 +1,6 @@
 #include "fl/primitives/encounter_data.hpp"
 
+#include <entt/entity/handle.hpp>
 #include <fmt/format.h>
 
 #include <optional>
@@ -115,17 +116,79 @@ EncounterData::choose_action(entt::entity actor) {
     const auto rules =
         fl::monster::generated_content::decision_rules(monster->kind);
     if (!rules.empty()) {
+      std::vector<fl::monster::DecisionRule> available_rules;
+      available_rules.reserve(rules.size());
+      for (const auto &rule : rules) {
+        const bool already_used =
+            std::ranges::find(used_skills_, std::pair{actor, rule.skill}) !=
+            used_skills_.end();
+        if (!rule.once_per_encounter || !already_used)
+          available_rules.push_back(rule);
+      }
       auto allies = possible_targets().FriendlyPossibleTargets(actor);
       auto enemies = possible_targets().EnemyPossibleTargets(actor);
       auto random = context_.rng().stream("encounter/monster-rule",
                                              entt::to_integral(actor));
-      return fl::monster::evaluate_rules(
-          context_.reg(), actor, allies, enemies, rules,
+      auto decision = fl::monster::evaluate_rules(
+          context_.reg(), actor, allies, enemies, available_rules,
           [&random] { return random.uniform_int<int>(1, 100); });
+      if (decision)
+        used_skills_.emplace_back(actor, decision->skill.base);
+      return decision;
     }
   }
   const auto skill = choose_skill(actor);
   return fl::monster::SkillDecision{skill, target_for_skill(actor, skill)};
+}
+
+void EncounterData::configure_projectile_cover(
+    entt::entity protected_entity, entt::entity protector,
+    fl::skills::SkillId release_skill) {
+  projectile_cover_ =
+      ProjectileCover{protected_entity, protector, release_skill, true};
+}
+
+entt::entity EncounterData::resolve_skill_target(entt::entity attacker,
+                                                 entt::entity aimed_target,
+                                                 fl::skills::SkillKey skill) {
+  if (!projectile_cover_ || !projectile_cover_->active ||
+      aimed_target != projectile_cover_->protected_entity ||
+      !defenders().contains(attacker) ||
+      !fl::skills::has_tag(skill, fl::skills::SkillTag::Physical) ||
+      !fl::skills::has_tag(skill, fl::skills::SkillTag::Projectile) ||
+      fl::skills::has_tag(skill, fl::skills::SkillTag::Group) ||
+      fl::skills::has_tag(skill, fl::skills::SkillTag::Area)) {
+    return aimed_target;
+  }
+
+  const auto protector = projectile_cover_->protector;
+  const auto *stats =
+      context_.reg().try_get<fl::ecs::components::Stats>(protector);
+  if (stats == nullptr || !stats->is_alive()) {
+    projectile_cover_->active = false;
+    return aimed_target;
+  }
+
+  context_.log().append_markup(fmt::format(
+      "{} [warn](covers) {}; [ability]({}) is redirected.",
+      context_.log().name_tag_for(entt::handle{context_.reg(), protector}),
+      context_.log().name_tag_for(entt::handle{context_.reg(), aimed_target}),
+      fl::skills::display_name(skill)));
+  return protector;
+}
+
+void EncounterData::release_projectile_cover(entt::entity actor,
+                                             fl::skills::SkillKey skill) {
+  if (!projectile_cover_ || !projectile_cover_->active ||
+      actor != projectile_cover_->protector ||
+      skill.base != projectile_cover_->release_skill) {
+    return;
+  }
+  projectile_cover_->active = false;
+  context_.log().append_markup(fmt::format(
+      "{} charges out with [ability]({}); [warn](Cover opens).",
+      context_.log().name_tag_for(entt::handle{context_.reg(), actor}),
+      fl::skills::display_name(skill)));
 }
 
 entt::entity

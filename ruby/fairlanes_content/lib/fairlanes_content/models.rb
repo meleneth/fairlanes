@@ -22,7 +22,10 @@ module FairlanesContent
   Gear = Struct.new(:id, :display, :slot, :armor_kind, :tier, :weight, :modifiers, keyword_init: true)
   EncounterPool = Struct.new(:id, :lineups, keyword_init: true)
   FloorBand = Struct.new(:from, :to, :pool, keyword_init: true)
-  FloorOverride = Struct.new(:floor, :lineup, keyword_init: true)
+  FloorOverride = Struct.new(
+    :floor, :lineup, :cover, :level_percent, :hp_percent, :attack_percent,
+    keyword_init: true
+  )
   Biome = Struct.new(:id, :display, :floors, :bands, :overrides, :pattern, keyword_init: true)
   RegressionScenario = Struct.new(:id, :encounter, :party, :seeds, :beat_cap,
                                   :variants, keyword_init: true)

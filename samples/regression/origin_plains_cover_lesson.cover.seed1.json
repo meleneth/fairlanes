@@ -1,0 +1,1142 @@
+{
+  "beat_cap": 1600,
+  "build": {
+    "revision": "cb2bd9364e466b6697f4fe4d5d8ef6002010de56",
+    "source_dirty": true,
+    "version": "0.1.0"
+  },
+  "content_sha256": "67f02d18b9a52215b4cc1d0a02cc0f039d18d42ee201f45e856e6fe33e564584",
+  "events": [
+    {
+      "actor": "hero1",
+      "seq": 0,
+      "skill": "pebble_spit/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 4800
+    },
+    {
+      "actor": "hero1",
+      "seq": 1,
+      "skill": "pebble_spit/1",
+      "type": "cast_start",
+      "uwu": 4800
+    },
+    {
+      "actor": "hero1",
+      "damage": 3,
+      "hp_after": 12,
+      "seq": 2,
+      "skill": "pebble_spit/1",
+      "target": "enemy2",
+      "type": "hit",
+      "uwu": 5760
+    },
+    {
+      "actor": "enemy2",
+      "after": {
+        "hp": 12,
+        "statuses": []
+      },
+      "before": {
+        "hp": 15,
+        "statuses": []
+      },
+      "seq": 3,
+      "type": "state",
+      "uwu": 5760
+    },
+    {
+      "actor": "hero1",
+      "seq": 4,
+      "type": "cast_finish",
+      "uwu": 5840
+    },
+    {
+      "actor": "enemy2",
+      "seq": 5,
+      "skill": "shell_guard/1",
+      "target": "enemy2",
+      "type": "action",
+      "uwu": 5840
+    },
+    {
+      "actor": "enemy2",
+      "seq": 6,
+      "skill": "shell_guard/1",
+      "type": "cast_start",
+      "uwu": 5840
+    },
+    {
+      "actor": "enemy2",
+      "after": {
+        "hp": 12,
+        "statuses": [
+          "Shell Guard"
+        ]
+      },
+      "before": {
+        "hp": 12,
+        "statuses": []
+      },
+      "seq": 7,
+      "type": "state",
+      "uwu": 5920
+    },
+    {
+      "actor": "enemy2",
+      "seq": 8,
+      "type": "cast_finish",
+      "uwu": 6000
+    },
+    {
+      "actor": "hero2",
+      "seq": 9,
+      "skill": "pebble_spit/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 6000
+    },
+    {
+      "actor": "hero2",
+      "seq": 10,
+      "skill": "pebble_spit/1",
+      "type": "cast_start",
+      "uwu": 6000
+    },
+    {
+      "actor": "hero2",
+      "damage": 1,
+      "hp_after": 11,
+      "seq": 11,
+      "skill": "pebble_spit/1",
+      "target": "enemy2",
+      "type": "hit",
+      "uwu": 6960
+    },
+    {
+      "actor": "enemy2",
+      "after": {
+        "hp": 11,
+        "statuses": [
+          "Shell Guard"
+        ]
+      },
+      "before": {
+        "hp": 12,
+        "statuses": [
+          "Shell Guard"
+        ]
+      },
+      "seq": 12,
+      "type": "state",
+      "uwu": 6960
+    },
+    {
+      "actor": "hero2",
+      "seq": 13,
+      "type": "cast_finish",
+      "uwu": 7040
+    },
+    {
+      "actor": "enemy1",
+      "seq": 14,
+      "skill": "pebble_spit/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 7040
+    },
+    {
+      "actor": "enemy1",
+      "seq": 15,
+      "skill": "pebble_spit/1",
+      "type": "cast_start",
+      "uwu": 7040
+    },
+    {
+      "actor": "enemy1",
+      "damage": 4,
+      "hp_after": 16,
+      "seq": 16,
+      "skill": "pebble_spit/1",
+      "target": "hero1",
+      "type": "hit",
+      "uwu": 8000
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 16,
+        "statuses": []
+      },
+      "before": {
+        "hp": 20,
+        "statuses": []
+      },
+      "seq": 17,
+      "type": "state",
+      "uwu": 8000
+    },
+    {
+      "actor": "enemy1",
+      "seq": 18,
+      "type": "cast_finish",
+      "uwu": 8080
+    },
+    {
+      "actor": "hero1",
+      "seq": 19,
+      "skill": "pebble_spit/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 12560
+    },
+    {
+      "actor": "hero1",
+      "seq": 20,
+      "skill": "pebble_spit/1",
+      "type": "cast_start",
+      "uwu": 12560
+    },
+    {
+      "actor": "hero1",
+      "damage": 2,
+      "hp_after": 9,
+      "seq": 21,
+      "skill": "pebble_spit/1",
+      "target": "enemy2",
+      "type": "hit",
+      "uwu": 13520
+    },
+    {
+      "actor": "enemy2",
+      "after": {
+        "hp": 9,
+        "statuses": [
+          "Shell Guard"
+        ]
+      },
+      "before": {
+        "hp": 11,
+        "statuses": [
+          "Shell Guard"
+        ]
+      },
+      "seq": 22,
+      "type": "state",
+      "uwu": 13520
+    },
+    {
+      "actor": "hero1",
+      "seq": 23,
+      "type": "cast_finish",
+      "uwu": 13600
+    },
+    {
+      "actor": "enemy2",
+      "seq": 24,
+      "skill": "bumper_rush/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 13600
+    },
+    {
+      "actor": "enemy2",
+      "seq": 25,
+      "skill": "bumper_rush/1",
+      "type": "cast_start",
+      "uwu": 13600
+    },
+    {
+      "actor": "enemy2",
+      "damage": 2,
+      "hp_after": 14,
+      "seq": 26,
+      "skill": "bumper_rush/1",
+      "target": "hero1",
+      "type": "hit",
+      "uwu": 14560
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 14,
+        "statuses": []
+      },
+      "before": {
+        "hp": 16,
+        "statuses": []
+      },
+      "seq": 27,
+      "type": "state",
+      "uwu": 14560
+    },
+    {
+      "actor": "enemy2",
+      "damage": 4,
+      "hp_after": 16,
+      "seq": 28,
+      "skill": "bumper_rush/1",
+      "target": "hero2",
+      "type": "hit",
+      "uwu": 14800
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 16,
+        "statuses": []
+      },
+      "before": {
+        "hp": 20,
+        "statuses": []
+      },
+      "seq": 29,
+      "type": "state",
+      "uwu": 14800
+    },
+    {
+      "actor": "enemy2",
+      "seq": 30,
+      "type": "cast_finish",
+      "uwu": 14880
+    },
+    {
+      "actor": "hero2",
+      "seq": 31,
+      "skill": "pebble_spit/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 14880
+    },
+    {
+      "actor": "hero2",
+      "seq": 32,
+      "skill": "pebble_spit/1",
+      "type": "cast_start",
+      "uwu": 14880
+    },
+    {
+      "actor": "hero2",
+      "damage": 4,
+      "hp_after": 11,
+      "seq": 33,
+      "skill": "pebble_spit/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 15840
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 11,
+        "statuses": []
+      },
+      "before": {
+        "hp": 15,
+        "statuses": []
+      },
+      "seq": 34,
+      "type": "state",
+      "uwu": 15840
+    },
+    {
+      "actor": "hero2",
+      "seq": 35,
+      "type": "cast_finish",
+      "uwu": 15920
+    },
+    {
+      "actor": "enemy1",
+      "seq": 36,
+      "skill": "pebble_spit/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 15920
+    },
+    {
+      "actor": "enemy1",
+      "seq": 37,
+      "skill": "pebble_spit/1",
+      "type": "cast_start",
+      "uwu": 15920
+    },
+    {
+      "actor": "enemy1",
+      "damage": 4,
+      "hp_after": 10,
+      "seq": 38,
+      "skill": "pebble_spit/1",
+      "target": "hero1",
+      "type": "hit",
+      "uwu": 16880
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 10,
+        "statuses": []
+      },
+      "before": {
+        "hp": 14,
+        "statuses": []
+      },
+      "seq": 39,
+      "type": "state",
+      "uwu": 16880
+    },
+    {
+      "actor": "enemy1",
+      "seq": 40,
+      "type": "cast_finish",
+      "uwu": 16960
+    },
+    {
+      "actor": "hero1",
+      "seq": 41,
+      "skill": "pebble_spit/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 21440
+    },
+    {
+      "actor": "hero1",
+      "seq": 42,
+      "skill": "pebble_spit/1",
+      "type": "cast_start",
+      "uwu": 21440
+    },
+    {
+      "actor": "hero1",
+      "damage": 2,
+      "hp_after": 9,
+      "seq": 43,
+      "skill": "pebble_spit/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 22400
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 9,
+        "statuses": []
+      },
+      "before": {
+        "hp": 11,
+        "statuses": []
+      },
+      "seq": 44,
+      "type": "state",
+      "uwu": 22400
+    },
+    {
+      "actor": "hero1",
+      "seq": 45,
+      "type": "cast_finish",
+      "uwu": 22480
+    },
+    {
+      "actor": "enemy2",
+      "seq": 46,
+      "skill": "bumper_rush/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 22480
+    },
+    {
+      "actor": "enemy2",
+      "seq": 47,
+      "skill": "bumper_rush/1",
+      "type": "cast_start",
+      "uwu": 22480
+    },
+    {
+      "actor": "enemy2",
+      "damage": 4,
+      "hp_after": 6,
+      "seq": 48,
+      "skill": "bumper_rush/1",
+      "target": "hero1",
+      "type": "hit",
+      "uwu": 23440
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 6,
+        "statuses": []
+      },
+      "before": {
+        "hp": 10,
+        "statuses": []
+      },
+      "seq": 49,
+      "type": "state",
+      "uwu": 23440
+    },
+    {
+      "actor": "enemy2",
+      "damage": 4,
+      "hp_after": 12,
+      "seq": 50,
+      "skill": "bumper_rush/1",
+      "target": "hero2",
+      "type": "hit",
+      "uwu": 23680
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 12,
+        "statuses": []
+      },
+      "before": {
+        "hp": 16,
+        "statuses": []
+      },
+      "seq": 51,
+      "type": "state",
+      "uwu": 23680
+    },
+    {
+      "actor": "enemy2",
+      "seq": 52,
+      "type": "cast_finish",
+      "uwu": 23760
+    },
+    {
+      "actor": "hero2",
+      "seq": 53,
+      "skill": "pebble_spit/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 23760
+    },
+    {
+      "actor": "hero2",
+      "seq": 54,
+      "skill": "pebble_spit/1",
+      "type": "cast_start",
+      "uwu": 23760
+    },
+    {
+      "actor": "hero2",
+      "damage": 3,
+      "hp_after": 6,
+      "seq": 55,
+      "skill": "pebble_spit/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 24720
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 6,
+        "statuses": []
+      },
+      "before": {
+        "hp": 9,
+        "statuses": []
+      },
+      "seq": 56,
+      "type": "state",
+      "uwu": 24720
+    },
+    {
+      "actor": "hero2",
+      "seq": 57,
+      "type": "cast_finish",
+      "uwu": 24800
+    },
+    {
+      "actor": "enemy1",
+      "seq": 58,
+      "skill": "pebble_spit/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 24800
+    },
+    {
+      "actor": "enemy1",
+      "seq": 59,
+      "skill": "pebble_spit/1",
+      "type": "cast_start",
+      "uwu": 24800
+    },
+    {
+      "actor": "enemy1",
+      "damage": 2,
+      "hp_after": 4,
+      "seq": 60,
+      "skill": "pebble_spit/1",
+      "target": "hero1",
+      "type": "hit",
+      "uwu": 25760
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 4,
+        "statuses": []
+      },
+      "before": {
+        "hp": 6,
+        "statuses": []
+      },
+      "seq": 61,
+      "type": "state",
+      "uwu": 25760
+    },
+    {
+      "actor": "enemy1",
+      "seq": 62,
+      "type": "cast_finish",
+      "uwu": 25840
+    },
+    {
+      "actor": "hero1",
+      "seq": 63,
+      "skill": "pebble_spit/1",
+      "target": "enemy2",
+      "type": "action",
+      "uwu": 30320
+    },
+    {
+      "actor": "hero1",
+      "seq": 64,
+      "skill": "pebble_spit/1",
+      "type": "cast_start",
+      "uwu": 30320
+    },
+    {
+      "actor": "hero1",
+      "damage": 3,
+      "hp_after": 6,
+      "seq": 65,
+      "skill": "pebble_spit/1",
+      "target": "enemy2",
+      "type": "hit",
+      "uwu": 31280
+    },
+    {
+      "actor": "enemy2",
+      "after": {
+        "hp": 6,
+        "statuses": [
+          "Shell Guard"
+        ]
+      },
+      "before": {
+        "hp": 9,
+        "statuses": [
+          "Shell Guard"
+        ]
+      },
+      "seq": 66,
+      "type": "state",
+      "uwu": 31280
+    },
+    {
+      "actor": "hero1",
+      "seq": 67,
+      "type": "cast_finish",
+      "uwu": 31360
+    },
+    {
+      "actor": "enemy2",
+      "seq": 68,
+      "skill": "bumper_rush/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 31360
+    },
+    {
+      "actor": "enemy2",
+      "seq": 69,
+      "skill": "bumper_rush/1",
+      "type": "cast_start",
+      "uwu": 31360
+    },
+    {
+      "actor": "enemy2",
+      "damage": 3,
+      "hp_after": 1,
+      "seq": 70,
+      "skill": "bumper_rush/1",
+      "target": "hero1",
+      "type": "hit",
+      "uwu": 32320
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 1,
+        "statuses": []
+      },
+      "before": {
+        "hp": 4,
+        "statuses": []
+      },
+      "seq": 71,
+      "type": "state",
+      "uwu": 32320
+    },
+    {
+      "actor": "enemy2",
+      "damage": 3,
+      "hp_after": 9,
+      "seq": 72,
+      "skill": "bumper_rush/1",
+      "target": "hero2",
+      "type": "hit",
+      "uwu": 32560
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 9,
+        "statuses": []
+      },
+      "before": {
+        "hp": 12,
+        "statuses": []
+      },
+      "seq": 73,
+      "type": "state",
+      "uwu": 32560
+    },
+    {
+      "actor": "enemy2",
+      "seq": 74,
+      "type": "cast_finish",
+      "uwu": 32640
+    },
+    {
+      "actor": "hero2",
+      "seq": 75,
+      "skill": "pebble_spit/1",
+      "target": "enemy2",
+      "type": "action",
+      "uwu": 32640
+    },
+    {
+      "actor": "hero2",
+      "seq": 76,
+      "skill": "pebble_spit/1",
+      "type": "cast_start",
+      "uwu": 32640
+    },
+    {
+      "actor": "hero2",
+      "damage": 1,
+      "hp_after": 5,
+      "seq": 77,
+      "skill": "pebble_spit/1",
+      "target": "enemy2",
+      "type": "hit",
+      "uwu": 33600
+    },
+    {
+      "actor": "enemy2",
+      "after": {
+        "hp": 5,
+        "statuses": [
+          "Shell Guard"
+        ]
+      },
+      "before": {
+        "hp": 6,
+        "statuses": [
+          "Shell Guard"
+        ]
+      },
+      "seq": 78,
+      "type": "state",
+      "uwu": 33600
+    },
+    {
+      "actor": "hero2",
+      "seq": 79,
+      "type": "cast_finish",
+      "uwu": 33680
+    },
+    {
+      "actor": "enemy1",
+      "seq": 80,
+      "skill": "pebble_spit/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 33680
+    },
+    {
+      "actor": "enemy1",
+      "seq": 81,
+      "skill": "pebble_spit/1",
+      "type": "cast_start",
+      "uwu": 33680
+    },
+    {
+      "actor": "hero1",
+      "seq": 82,
+      "type": "cast_finish",
+      "uwu": 34640
+    },
+    {
+      "actor": "enemy1",
+      "damage": 3,
+      "hp_after": 0,
+      "seq": 83,
+      "skill": "pebble_spit/1",
+      "target": "hero1",
+      "type": "hit",
+      "uwu": 34640
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 1,
+        "statuses": []
+      },
+      "seq": 84,
+      "type": "state",
+      "uwu": 34640
+    },
+    {
+      "actor": "enemy1",
+      "seq": 85,
+      "type": "cast_finish",
+      "uwu": 34720
+    },
+    {
+      "actor": "enemy2",
+      "after": {
+        "hp": 5,
+        "statuses": []
+      },
+      "before": {
+        "hp": 5,
+        "statuses": [
+          "Shell Guard"
+        ]
+      },
+      "seq": 86,
+      "type": "state",
+      "uwu": 34720
+    },
+    {
+      "actor": "enemy2",
+      "seq": 87,
+      "skill": "bumper_rush/1",
+      "target": "hero2",
+      "type": "action",
+      "uwu": 39280
+    },
+    {
+      "actor": "enemy2",
+      "seq": 88,
+      "skill": "bumper_rush/1",
+      "type": "cast_start",
+      "uwu": 39280
+    },
+    {
+      "actor": "enemy2",
+      "damage": 4,
+      "hp_after": 5,
+      "seq": 89,
+      "skill": "bumper_rush/1",
+      "target": "hero2",
+      "type": "hit",
+      "uwu": 40240
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 5,
+        "statuses": []
+      },
+      "before": {
+        "hp": 9,
+        "statuses": []
+      },
+      "seq": 90,
+      "type": "state",
+      "uwu": 40240
+    },
+    {
+      "actor": "enemy2",
+      "seq": 91,
+      "type": "cast_finish",
+      "uwu": 40320
+    },
+    {
+      "actor": "hero2",
+      "seq": 92,
+      "skill": "pebble_spit/1",
+      "target": "enemy2",
+      "type": "action",
+      "uwu": 40320
+    },
+    {
+      "actor": "hero2",
+      "seq": 93,
+      "skill": "pebble_spit/1",
+      "type": "cast_start",
+      "uwu": 40320
+    },
+    {
+      "actor": "hero2",
+      "damage": 5,
+      "hp_after": 0,
+      "seq": 94,
+      "skill": "pebble_spit/1",
+      "target": "enemy2",
+      "type": "hit",
+      "uwu": 41280
+    },
+    {
+      "actor": "enemy2",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 5,
+        "statuses": []
+      },
+      "seq": 95,
+      "type": "state",
+      "uwu": 41280
+    },
+    {
+      "actor": "hero2",
+      "seq": 96,
+      "type": "cast_finish",
+      "uwu": 41360
+    },
+    {
+      "actor": "enemy1",
+      "seq": 97,
+      "skill": "pebble_spit/1",
+      "target": "hero2",
+      "type": "action",
+      "uwu": 41360
+    },
+    {
+      "actor": "enemy1",
+      "seq": 98,
+      "skill": "pebble_spit/1",
+      "type": "cast_start",
+      "uwu": 41360
+    },
+    {
+      "actor": "hero2",
+      "seq": 99,
+      "type": "cast_finish",
+      "uwu": 42320
+    },
+    {
+      "actor": "enemy1",
+      "damage": 5,
+      "hp_after": 0,
+      "seq": 100,
+      "skill": "pebble_spit/1",
+      "target": "hero2",
+      "type": "hit",
+      "uwu": 42320
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 5,
+        "statuses": []
+      },
+      "seq": 101,
+      "type": "state",
+      "uwu": 42320
+    },
+    {
+      "outcome": "enemy_victory",
+      "seq": 102,
+      "type": "end",
+      "uwu": 42320
+    }
+  ],
+  "expected_outcome": null,
+  "external_inputs": [],
+  "fixture": "origin_plains_cover_lesson",
+  "fixture_parameters": {
+    "equipped_item": null,
+    "tower_max_attack": 20,
+    "tower_max_hp": 100,
+    "tower_max_level": 20,
+    "variant": "cover"
+  },
+  "format": "fairlanes-combat-recording",
+  "gameplay_seed": 1,
+  "gameplay_sequence": 0,
+  "initial_state": [
+    {
+      "action_policy": "single_equipped_skill",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "hero1",
+      "kind": "player",
+      "known_skills": [
+        "observe/1",
+        "pebble_spit/1"
+      ],
+      "loadout": [
+        "pebble_spit/1"
+      ],
+      "name": "Regression Hero 1",
+      "stats": {
+        "armor": 1,
+        "attack": 2,
+        "hp": 20,
+        "max_hp": 20,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    },
+    {
+      "action_policy": "single_equipped_skill",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "hero2",
+      "kind": "player",
+      "known_skills": [
+        "observe/1",
+        "pebble_spit/1"
+      ],
+      "loadout": [
+        "pebble_spit/1"
+      ],
+      "name": "Regression Hero 2",
+      "stats": {
+        "armor": 0,
+        "attack": 2,
+        "hp": 20,
+        "max_hp": 20,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    },
+    {
+      "action_policy": "monster_decision_rules",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "enemy1",
+      "kind": "monster",
+      "known_skills": [
+        "pebble_spit/1",
+        "flee/1",
+        "thump/1"
+      ],
+      "loadout": [
+        "pebble_spit/1",
+        "flee/1",
+        "thump/1"
+      ],
+      "name": "Prairie Meerkat",
+      "stats": {
+        "armor": 0,
+        "attack": 1,
+        "hp": 15,
+        "max_hp": 15,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    },
+    {
+      "action_policy": "monster_decision_rules",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "enemy2",
+      "kind": "monster",
+      "known_skills": [
+        "bumper_rush/1",
+        "thump/1",
+        "shell_guard/1"
+      ],
+      "loadout": [
+        "bumper_rush/1",
+        "thump/1",
+        "shell_guard/1"
+      ],
+      "name": "Bristle Boar",
+      "stats": {
+        "armor": 0,
+        "attack": 1,
+        "hp": 15,
+        "max_hp": 15,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    }
+  ],
+  "result": {
+    "beats": 530,
+    "outcome": "enemy_victory",
+    "remaining_hp": {
+      "enemy1": 6,
+      "enemy2": 0,
+      "hero1": 0,
+      "hero2": 0
+    },
+    "simulated_seconds": 44.166666666666664,
+    "uwu": 42320
+  },
+  "starting_uwu": 0,
+  "starting_world_beat": 0,
+  "version": 1
+}

@@ -137,3 +137,19 @@ TEST_CASE("Self skills keep the caster as their target",
   REQUIRE(combat.encounter.target_for_skill(actor, SkillId::ArmorPlate) ==
           actor);
 }
+
+TEST_CASE("Antler Stag demonstrates Brace once before its damaging follow-up",
+          "[monster-rules][combat][brace]") {
+  Combat combat;
+  const auto stag = combat.monster(MonsterKind::AntlerStag);
+  const auto opening = combat.encounter.choose_action(stag);
+  REQUIRE(opening);
+  REQUIRE(opening->skill.base == SkillId::Brace);
+  REQUIRE(opening->target == stag);
+
+  // Selection itself consumes an encounter-once rule. Even if Brace is gone
+  // before the next turn, the stag advances to its damaging follow-up.
+  const auto follow_up = combat.encounter.choose_action(stag);
+  REQUIRE(follow_up);
+  REQUIRE(follow_up->skill.base == SkillId::BumperRush);
+}

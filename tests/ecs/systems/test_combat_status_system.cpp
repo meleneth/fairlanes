@@ -69,6 +69,16 @@ int deal_physical(fl::context::PartyCtx &party_ctx, entt::entity attacker,
   return fl::ecs::systems::TakeDamage::commit(attack_ctx);
 }
 
+void apply_brace(BuiltEncounter &h) {
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Brace,
+                                            .name = "Brace",
+                                            .source = h.defender(),
+                                            .target = h.defender(),
+                                            .value = 35,
+                                            .negative = false}));
+}
+
 } // namespace
 
 TEST_CASE("Shield reduces incoming damage through the shared damage path",
@@ -101,6 +111,54 @@ TEST_CASE("Armor applies after percentage status mitigation",
                                    .value = 50,
                                    .negative = false}));
   REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 7);
+}
+
+TEST_CASE("Brace reduces and spends on the next landed direct physical hit",
+          "[combat-status][brace]") {
+  BuiltEncounter h;
+  set_hp(h.party_ctx, h.defender(), 100, 100);
+  h.party_ctx.reg().get<fl::ecs::components::Stats>(h.defender()).armor_ = 3;
+  apply_brace(h);
+
+  REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 10);
+  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.defender(),
+                                               CombatStatusKind::Brace));
+  REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 17);
+}
+
+TEST_CASE("Misses and nonqualifying damage leave Brace armed",
+          "[combat-status][brace]") {
+  BuiltEncounter h;
+  set_hp(h.party_ctx, h.defender(), 100, 100);
+  apply_brace(h);
+
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Blind,
+                                            .name = "Certain Miss",
+                                            .source = h.defender(),
+                                            .target = h.attacker(),
+                                            .value = 100}));
+  REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 0);
+  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.defender(),
+                                         CombatStatusKind::Brace));
+  REQUIRE(CombatStatusSystem::clear_status(h.party_ctx, h.attacker(),
+                                           CombatStatusKind::Blind));
+
+  auto periodic = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(),
+                                                      h.defender());
+  periodic.damage().physical = 10;
+  periodic.set_hit_kind(fl::primitives::HitKind::Periodic);
+  REQUIRE(fl::ecs::systems::TakeDamage::commit(periodic) == 10);
+  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.defender(),
+                                         CombatStatusKind::Brace));
+
+  auto fire = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(),
+                                                  h.defender());
+  fire.damage().fire = 10;
+  fire.set_hit_kind(fl::primitives::HitKind::Direct);
+  REQUIRE(fl::ecs::systems::TakeDamage::commit(fire) == 10);
+  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.defender(),
+                                         CombatStatusKind::Brace));
 }
 
 TEST_CASE("Flat Armor cannot erase landed positive damage",

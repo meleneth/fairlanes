@@ -27,6 +27,7 @@ struct DecisionRule {
   RuleTarget target{RuleTarget::Enemy};
   int chance_percent{100};
   std::span<const RuleCondition> conditions;
+  bool once_per_encounter{false};
 };
 
 struct SkillDecision {

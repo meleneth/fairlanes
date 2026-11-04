@@ -8,8 +8,8 @@ Generated artifacts currently provide runtime skill metadata C++, status metadat
 
 | Projection | Count | Source of truth |
 | --- | ---: | --- |
-| Skill definitions | 71 | Ruby DSL generated C++ `SkillDefinition` table |
-| Random combat skills | 70 | Ruby DSL generated C++ random combat table |
+| Skill definitions | 72 | Ruby DSL generated C++ `SkillDefinition` table |
+| Random combat skills | 71 | Ruby DSL generated C++ random combat table |
 | Status declarations | 3 | Ruby DSL generated C++ status metadata table |
 | Monster declarations | 72 | Ruby DSL generated C++ monster topology table |
 | Common woodland monsters | 69 | Ruby DSL generated C++ encounter pool |
@@ -48,6 +48,7 @@ Initial themed assignments for content planning; cycle metadata does not filter 
 | Bump | Bump | 20 | 0 | yes | thump_like |  | Bumpkin Hare, Blind Scorpion, Sand Scorpion, Dust Hare | handwritten_behavior |
 | Squish | Squish | 20 | 0 | yes | thump_like |  | Mire Squish, Bog Snail | handwritten_behavior |
 | Smack | Smack | 20 | 0 | yes | thump_like |  | Bark Smack, Drill Beetle | handwritten_behavior |
+| Brace | Brace | 100 | 0 | yes | placeholder_effect |  | Antler Stag | generated_runtime_behavior |
 | Thump Around | ThumpAround | 5 | 0 | yes | group_damage |  | Squirrel Brigand | generated_runtime_behavior |
 | Rake Line | RakeLine | 5 | 0 | yes | group_damage |  | Dragonfly Cutter, Owlshade, Carrion Dragonfly, Smoke Crow, Swordfish Duelist | generated_runtime_behavior |
 | Smackdown Sweep | SmackdownSweep | 5 | 0 | yes | group_damage |  | Antler Stag, Pickaxe Goblin, Rust Loader, Deck Kraken, Segfault Loader, Null Kraken | generated_runtime_behavior |
@@ -87,7 +88,7 @@ Initial themed assignments for content planning; cycle metadata does not filter 
 | Bite | Bite | 5 | 0 | yes | damage_strike |  | Grass Wolf, Webling Spider, Cave Bat, Tarantula Nomad, Powder Rat, Trench Wolf, Bilge Eel | generated_runtime_behavior |
 | Pack Howl | PackHowl | 5 | 0 | yes | placeholder_effect |  | Grass Wolf, Moss Wolf, Trench Wolf | placeholder_effect |
 | Claw | Claw | 5 | 0 | yes | damage_strike |  | Grass Wolf, Moss Wolf | generated_runtime_behavior |
-| Shell Guard | ShellGuard | 5 | 0 | yes | placeholder_effect |  | Bristle Boar, Antler Stag, Bog Snail, Snail Lantern, Shield Bison | placeholder_effect |
+| Shell Guard | ShellGuard | 5 | 0 | yes | placeholder_effect |  | Bristle Boar, Bog Snail, Snail Lantern, Shield Bison | placeholder_effect |
 | Venom Needle | VenomNeedle | 5 | 0 | yes | damage_strike |  | Webling Spider, Mosquito Choir, Dragonfly Cutter, Blind Scorpion, Sand Scorpion, Tarantula Nomad, Glass Lizard, Packet Snake, Glass Scorpion | generated_runtime_behavior |
 | Web Snare | WebSnare | 5 | 0 | yes | placeholder_effect |  | Webling Spider, Tarantula Nomad, Holo-Tarantula | placeholder_effect |
 | Gnat Cloud | GnatCloud | 5 | 0 | yes | placeholder_effect |  | Mosquito Choir, Echo Moth, Dust Hare | placeholder_effect |
@@ -212,7 +213,7 @@ Initial themed assignments for content planning; cycle metadata does not filter 
 | Squirrel Brigand | SquirrelBrigand | Origin | 20 | 4 | Pebble Spit, Flee, Thump Around | common_woodland |
 | Webling Spider | WeblingSpider | Origin | 24 | 4 | Venom Needle, Web Snare, Bite | common_woodland |
 | Moss Wolf | MossWolf | Origin | 30 | 5 | Claw, Pack Howl, Root Leech | common_woodland |
-| Antler Stag | AntlerStag | Origin | 36 | 6 | Bumper Rush, Smackdown Sweep, Shell Guard | common_woodland |
+| Antler Stag | AntlerStag | Origin | 36 | 6 | Brace, Bumper Rush, Smackdown Sweep | common_woodland |
 | Mosquito Choir | MosquitoChoir | Origin | 24 | 5 | Venom Needle, Gnat Cloud, Blood Bloom | common_woodland |
 | Dragonfly Cutter | DragonflyCutter | Origin | 26 | 5 | Rake Line, Venom Needle, Flee | common_woodland |
 | Bog Snail | BogSnail | Origin | 38 | 6 | Shell Guard, Squish, Miasma Cloud | common_woodland |

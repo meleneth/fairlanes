@@ -247,24 +247,34 @@ struct Session::Impl {
       stats.armor_ = setup.armor;
       stats.resistances_ = setup.resistances;
       auto &party_member = game.reg().get<fl::ecs::components::PartyMember>(entity);
-      party_member.closet().unequip_skill(fl::skills::SkillId::Observe);
-      member.grimoire().learn(setup.skill);
-      if (!party_member.equip_known_skill(setup.skill))
+      party_member.closet().skill_slots.fill(std::nullopt);
+      const auto configured_skill =
+          variant->skill_overrides[index].value_or(setup.skill);
+      member.grimoire().learn(configured_skill);
+      if (variant->observe_equipped[index] &&
+          !party_member.equip_known_skill(fl::skills::SkillId::Observe))
+        throw std::runtime_error(
+            "could not equip generated regression Observe");
+      if (!party_member.equip_known_skill(configured_skill))
         throw std::runtime_error("could not equip generated regression skill");
       actors.push_back({"hero" + std::to_string(index + 1), entity, {}});
       ++index;
     }
     hero_count = actors.size();
 
-    // The variant item travels through inventory and the ordinary equip system.
-    const auto item = fl::loot::generated_content::definition(
-        variant->equipped_item).item.create(game.reg());
-    party.add_item(item);
-    const auto &gear = game.reg().get<fl::ecs::components::Equipment>(item);
-    const auto request = fl::events::EquipmentEquipRequested{
-        actors.front().entity, gear.slot(), item};
-    if (!fl::ecs::systems::ManualEquipmentSystem::commit(party_ctx, request))
-      throw std::runtime_error("could not equip regression variant item");
+    std::optional<std::string> equipped_item_id;
+    if (variant->equipped_item) {
+      // Variant gear travels through inventory and the ordinary equip system.
+      const auto item = fl::loot::generated_content::definition(
+          *variant->equipped_item).item.create(game.reg());
+      party.add_item(item);
+      const auto &gear = game.reg().get<fl::ecs::components::Equipment>(item);
+      const auto request = fl::events::EquipmentEquipRequested{
+          actors.front().entity, gear.slot(), item};
+      if (!fl::ecs::systems::ManualEquipmentSystem::commit(party_ctx, request))
+        throw std::runtime_error("could not equip regression variant item");
+      equipped_item_id = std::string(gear.unique_id());
+    }
     party.revitalize_members();
 
     auto &built = fl::primitives::EncounterBuilder{
@@ -285,12 +295,23 @@ struct Session::Impl {
       const auto &stats = game.reg().get<Stats>(actor.entity);
       const bool hero = i < hero_count;
       Json known = Json::array();
+      Json loadout = Json::array();
       if (hero) {
-        known.push_back(skill_id(fl::skills::SkillKey{scenario.party[i].skill}));
+        const auto &member = party.members()[i];
+        for (const auto skill : member.grimoire().known_skills())
+          known.push_back(skill_id(skill));
+        const auto &closet =
+            game.reg()
+                .get<fl::ecs::components::PartyMember>(actor.entity)
+                .closet();
+        for (const auto skill : closet.skill_slots)
+          if (skill)
+            loadout.push_back(skill_id(*skill));
       } else {
         for (const auto skill : fl::monster::generated_content::known_skills(
                  floor->monsters[i - hero_count]))
           known.push_back(skill_id(fl::skills::SkillKey{skill}));
+        loadout = known;
       }
       initial.push_back({{"id", actor.id},
                          {"kind", hero ? "player" : "monster"},
@@ -298,10 +319,12 @@ struct Session::Impl {
                          {"stats", stats_json(game.reg(), actor.entity)},
                          {"atb", atb_json(game.reg().get<fl::ecs::components::AtbCharge>(actor.entity))},
                          {"statuses", statuses_for(game.reg(), actor.entity)},
-                         {"loadout", known},
+                         {"loadout", loadout},
                          {"known_skills", known},
                          {"action_policy", hero ? "single_equipped_skill" : "monster_decision_rules"},
-                         {"gear", hero && i == 0 ? Json::array({std::string(gear.unique_id())}) : Json::array()}});
+                         {"gear", hero && i == 0 && equipped_item_id
+                                      ? Json::array({*equipped_item_id})
+                                      : Json::array()}});
     }
     recording = {{"format", "fairlanes-combat-recording"},
                  {"version", 1},
@@ -314,7 +337,9 @@ struct Session::Impl {
                  {"gameplay_sequence", game.rng().base_sequence()},
                  {"beat_cap", options.beat_cap},
                  {"fixture_parameters", {{"variant", options.variant},
-                                         {"equipped_item", std::string(gear.unique_id())},
+                                         {"equipped_item", equipped_item_id
+                                                               ? Json(*equipped_item_id)
+                                                               : Json(nullptr)},
                                          {"tower_max_level", options.tower_balance.maximum_monster_level},
                                          {"tower_max_hp", options.tower_balance.maximum_monster_hp},
                                          {"tower_max_attack", options.tower_balance.maximum_monster_attack}}},

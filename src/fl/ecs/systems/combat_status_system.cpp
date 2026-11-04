@@ -44,6 +44,8 @@ std::string_view default_status_name(CombatStatusKind kind) {
   switch (kind) {
   case CombatStatusKind::Shield:
     return "Shield";
+  case CombatStatusKind::Brace:
+    return "Brace";
   case CombatStatusKind::Blind:
     return "Blind";
   case CombatStatusKind::Silence:
@@ -61,7 +63,8 @@ std::string_view default_status_name(CombatStatusKind kind) {
 }
 
 bool is_positive(CombatStatusKind kind) {
-  return kind == CombatStatusKind::Shield || kind == CombatStatusKind::Haste;
+  return kind == CombatStatusKind::Shield || kind == CombatStatusKind::Brace ||
+         kind == CombatStatusKind::Haste;
 }
 
 CombatStatusEffect *find_status(entt::registry &reg, entt::entity target,
@@ -337,8 +340,9 @@ bool CombatStatusSystem::attack_misses(fl::context::AttackCtx &ctx) {
 
 void CombatStatusSystem::apply_damage_modifiers(fl::context::AttackCtx &ctx,
                                                 fl::primitives::Damage &damage) {
-  if (auto party_ctx =
-          party_ctx_for_combatant(ctx.reg(), ctx.attacker(), ctx.defender())) {
+  auto *party_ctx =
+      party_ctx_for_combatant(ctx.reg(), ctx.attacker(), ctx.defender());
+  if (party_ctx != nullptr) {
     if (const auto attacker_team = team_for(*party_ctx, ctx.attacker())) {
       const int reduction = field_debuff_value(*party_ctx, *attacker_team,
                                                FieldDebuffKind::DamageDown);
@@ -367,6 +371,24 @@ void CombatStatusSystem::apply_damage_modifiers(fl::context::AttackCtx &ctx,
           "[ability](Shield) absorbs [xp]({}) damage from {}.", reduced,
           ctx.log().name_tag_for(entt::handle{ctx.reg(), ctx.defender()})));
     }
+  }
+
+  const bool qualifying_brace_hit =
+      ctx.hit_kind() == fl::primitives::HitKind::Direct &&
+      ctx.damage().physical > 0 &&
+      has_status(ctx.reg(), ctx.defender(), CombatStatusKind::Brace);
+  if (qualifying_brace_hit && party_ctx != nullptr) {
+    const int brace_percent =
+        status_value(ctx.reg(), ctx.defender(), CombatStatusKind::Brace);
+    const int before = damage.physical;
+    damage.physical = damage.physical * std::max(0, 100 - brace_percent) / 100;
+    const int reduced = std::max(0, before - damage.physical);
+    ctx.log().append_markup(fmt::format(
+        "{} spends [ability](Brace), reducing the direct physical hit by "
+        "[xp]({}) damage.",
+        ctx.log().name_tag_for(entt::handle{ctx.reg(), ctx.defender()}),
+        reduced));
+    clear_status(*party_ctx, ctx.defender(), CombatStatusKind::Brace);
   }
 }
 

@@ -53,10 +53,44 @@ state snapshots. Visual effects and presentation random choices do not use the
 gameplay RNG stream. The included sample is
 `samples/regression/woodland_mouse_duel.seed42.json`.
 
-Ruby-authored scenarios use the same runner and replay path. The floor-10
-scenario has two named variants in
-`scripts/fairlanes_regression_declarations.rb`. Run `--fixture
-origin_woodland_floor10 --variant arrival|detour --all-seeds --record-dir DIR`
-to evaluate its declared seed set. Add `--assert-expected` to require its
-win-count range and reject any beat cap. See `docs/origin-woodland-slice.md`
-for paired results and replay commands.
+Ruby-authored scenarios use the same runner and replay path. The declarations
+in `scripts/fairlanes_regression_declarations.rb` can equip Observe for selected
+members, replace a member's one configured combat skill, and omit gear. This
+keeps paired variants identical except for the mechanic under test. Add
+`--assert-expected` to require the declared win-count range and reject any beat
+cap.
+
+The physical progression fixtures are:
+
+| Fixture | Variants | Semantic check |
+| --- | --- | --- |
+| `origin_woodland_stag_lesson` | `observe_equipped`, `observe_unequipped` | The stag casts Brace in both; only the eligible equipped observer learns and retains it |
+| `origin_woodland_brace_practice` | `braced`, `unbraced` | Brace applies, reduces and consumes on the first qualifying hit, then the next hit is ordinary |
+| `origin_plains_cover_lesson` | `cover` | A projectile aimed at the meerkat resolves on the boar before Bumper Rush, then reaches the meerkat after the screen opens |
+| `origin_woodland_floor10` | `arrival`, `detour` | Both routes reach and clear the same Honey Badger encounter with only the declared cape changed |
+
+An action event retains the originally aimed target. Its hit event contains the
+resolved target, so Cover assertions do not infer interception from log text.
+Status state events similarly make Brace application and consumption explicit.
+The Cover fixture's declared result is an enemy victory; its purpose is the
+causal interception sequence, while the production story-route test proves the
+normal party can clear Plains 1–3.
+
+```sh
+build-linux-debug/fairlanes_regression --fixture origin_woodland_stag_lesson --variant observe_equipped --all-seeds --record-dir /tmp/fairlanes-stag --assert-expected
+build-linux-debug/fairlanes_regression --fixture origin_woodland_brace_practice --variant braced --all-seeds --record-dir /tmp/fairlanes-brace --assert-expected
+build-linux-debug/fairlanes_regression --fixture origin_plains_cover_lesson --variant cover --all-seeds --record-dir /tmp/fairlanes-cover --assert-expected
+build-linux-debug/fairlanes_regression --fixture origin_woodland_floor10 --variant arrival --all-seeds --record-dir /tmp/fairlanes-badger --assert-expected
+```
+
+Readable pinned recordings are replayed through the client path with:
+
+```sh
+build-linux-debug/fairlanes --replay samples/regression/origin_woodland_stag_lesson.observe_equipped.seed1.json --no-ui
+build-linux-debug/fairlanes --replay samples/regression/origin_woodland_brace_practice.braced.seed1.json --no-ui
+build-linux-debug/fairlanes --replay samples/regression/origin_plains_cover_lesson.cover.seed1.json --no-ui
+build-linux-debug/fairlanes --replay samples/regression/origin_woodland_floor10.arrival.seed1.json --no-ui
+build-linux-debug/fairlanes --replay samples/regression/origin_woodland_floor10.detour.seed1.json --no-ui
+```
+
+See `docs/origin-woodland-slice.md` for the authored fights and paired results.

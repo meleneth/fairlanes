@@ -1,11 +1,11 @@
 {
   "beat_cap": 2400,
   "build": {
-    "revision": "d08fda2468bb642bdb82b6168c469ebbf50f8d7a",
+    "revision": "cb2bd9364e466b6697f4fe4d5d8ef6002010de56",
     "source_dirty": true,
     "version": "0.1.0"
   },
-  "content_sha256": "8e41b07cea6379703b02c363925ab2e99fde48e9918e827f63118a8507ed503b",
+  "content_sha256": "67f02d18b9a52215b4cc1d0a02cc0f039d18d42ee201f45e856e6fe33e564584",
   "events": [
     {
       "actor": "hero5",
@@ -800,6 +800,7 @@
       "id": "hero1",
       "kind": "player",
       "known_skills": [
+        "observe/1",
         "thump/1"
       ],
       "loadout": [
@@ -832,6 +833,7 @@
       "id": "hero2",
       "kind": "player",
       "known_skills": [
+        "observe/1",
         "thump/1"
       ],
       "loadout": [
@@ -864,6 +866,7 @@
       "id": "hero3",
       "kind": "player",
       "known_skills": [
+        "observe/1",
         "thump/1"
       ],
       "loadout": [
@@ -896,6 +899,7 @@
       "id": "hero4",
       "kind": "player",
       "known_skills": [
+        "observe/1",
         "thump/1"
       ],
       "loadout": [
@@ -928,6 +932,7 @@
       "id": "hero5",
       "kind": "player",
       "known_skills": [
+        "observe/1",
         "thump/1"
       ],
       "loadout": [

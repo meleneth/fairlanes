@@ -105,6 +105,11 @@ void append_shared_status_visuals(std::vector<CombatantStatusVisual> &out,
                                DecalAnimationKind::Aura,
                                kGenericStatusPriority));
     break;
+  case CombatStatusKind::Brace:
+    out.push_back(label_for(effect, CombatantVisualRegion::Body,
+                            fl::lospec500::color_at(14),
+                            kGenericStatusPriority));
+    break;
   case CombatStatusKind::Haste:
     out.push_back(underlay_for(effect, CombatantVisualRegion::Feet,
                                DecalAnimationKind::Projectile,

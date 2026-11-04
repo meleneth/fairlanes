@@ -191,7 +191,13 @@ module FairlanesContent
         seeds = scenario.seeds.join(", ")
         variants = scenario.variants.map do |variant|
           wins = variant[:expected_wins]
-          "  Variant{#{cpp_string(variant[:id].to_s)}, fl::loot::generated_content::GearId::#{camel(variant[:equipped_item])}, #{wins ? wins.begin : 0}, #{wins ? wins.end : 0}, #{wins ? 'true' : 'false'}},"
+          item = variant[:equipped_item] ? "fl::loot::generated_content::GearId::#{camel(variant[:equipped_item])}" : "std::nullopt"
+          overrides = (0...5).map do |member_index|
+            skill_id = variant.fetch(:skill_overrides, {})[member_index]
+            skill_id ? "fl::skills::SkillId::#{skills.find { |skill| skill.id == skill_id }.cpp_id}" : "std::nullopt"
+          end.join(", ")
+          observers = (0...5).map { |member_index| variant.fetch(:observe_members, []).include?(member_index) ? "true" : "false" }.join(", ")
+          "  Variant{#{cpp_string(variant[:id].to_s)}, #{item}, {#{overrides}}, {#{observers}}, #{wins ? wins.begin : 0}, #{wins ? wins.end : 0}, #{wins ? 'true' : 'false'}},"
         end.join("\n")
         <<~CPP
           inline constexpr std::array<MemberSetup, #{scenario.party.size}> kMembers#{index}{{
@@ -211,6 +217,7 @@ module FairlanesContent
         #include <array>
         #include <cstdint>
         #include <span>
+        #include <optional>
         #include <string_view>
         #include "fl/generated/gear_content.hpp"
         #include "fl/primitives/damage.hpp"
@@ -228,7 +235,9 @@ module FairlanesContent
         };
         struct Variant {
           std::string_view id;
-          fl::loot::generated_content::GearId equipped_item;
+          std::optional<fl::loot::generated_content::GearId> equipped_item;
+          std::array<std::optional<fl::skills::SkillId>, 5> skill_overrides;
+          std::array<bool, 5> observe_equipped;
           int min_wins;
           int max_wins;
           bool asserted;
@@ -321,7 +330,13 @@ module FairlanesContent
           levels = Array.new(floor[:lineup].size, floor[:level_percent]).join(", ")
           hp = Array.new(floor[:lineup].size, floor[:hp_percent]).join(", ")
           attack = Array.new(floor[:lineup].size, floor[:attack_percent]).join(", ")
-          "  FloorLineup{#{floor[:floor]}, #{cpp_string(floor[:id])}, {#{kinds}}, {#{levels}}, {#{hp}}, {#{attack}}, #{floor[:lineup].size}},"
+          cover = floor[:cover]
+          cover_cpp = if cover
+            "CoverRule{#{cover.fetch(:protected)}, #{cover.fetch(:protector)}, fl::skills::SkillId::#{skills.find { |skill| skill.id == cover.fetch(:release_skill) }.cpp_id}}"
+          else
+            "CoverRule{}"
+          end
+          "  FloorLineup{#{floor[:floor]}, #{cpp_string(floor[:id])}, {#{kinds}}, {#{levels}}, {#{hp}}, {#{attack}}, #{floor[:lineup].size}, #{cover_cpp}},"
         end.join("\n")
         <<~CPP
           inline constexpr std::array<FloorLineup, #{biome.floors}> k#{camel(biome.id)}{{
@@ -338,8 +353,19 @@ module FairlanesContent
         #include <cstddef>
         #include <string_view>
         #include "fl/monsters/monster_kind.hpp"
+        #include "fl/skills/skill.hpp"
 
         namespace fl::primitives::generated_content {
+        struct CoverRule {
+          int protected_index{-1};
+          int protector_index{-1};
+          fl::skills::SkillId release_skill{fl::skills::SkillId::Observe};
+
+          [[nodiscard]] constexpr bool enabled() const noexcept {
+            return protected_index >= 0 && protector_index >= 0;
+          }
+        };
+
         struct FloorLineup {
           int floor;
           std::string_view id;
@@ -348,6 +374,7 @@ module FairlanesContent
           std::array<int, 5> hp_percent;
           std::array<int, 5> attack_percent;
           std::size_t monster_count;
+          CoverRule cover;
         };
 
         #{tables}
@@ -364,9 +391,11 @@ module FairlanesContent
       lines = ["# Resolved tower floors", "", "Generated from scripts/fairlanes_content_declarations.rb.", ""]
       biomes.each do |biome|
         lines.concat(["## #{biome.display} (`#{biome.id}`)", "",
-                      "| Floor ID | Source | Scale | Lineup |", "| --- | --- | ---: | --- |"])
+                      "| Floor ID | Source | Scale | Lineup | Rule |", "| --- | --- | ---: | --- | --- |"])
         resolved_floors(biome).each do |floor|
-          lines << "| `#{floor[:id]}` | #{floor[:source]} | #{floor[:level_percent]}% | #{floor[:lineup].join(', ')} |"
+          cover = floor[:cover]
+          rule = cover ? "cover #{cover[:protected]} by #{cover[:protector]} until #{cover[:release_skill]}" : "--"
+          lines << "| `#{floor[:id]}` | #{floor[:source]} | #{floor[:level_percent]}% | #{floor[:lineup].join(', ')} | #{rule} |"
         end
         lines << ""
       end
@@ -1000,7 +1029,7 @@ module FairlanesContent
           "constexpr std::array<RuleCondition, #{rows.size}> k#{monster.cpp_id}Conditions#{index}{{#{rows.join(', ')}}};"
         end.join("\n")
         rows = monster.decision_rules.each_with_index.map do |rule, index|
-          "DecisionRule{#{skill_symbol_cpp(rule.fetch(:skill))}, RuleTarget::#{camel(rule.fetch(:target, :enemy))}, #{rule.fetch(:chance_percent, 100)}, k#{monster.cpp_id}Conditions#{index}}"
+          "DecisionRule{#{skill_symbol_cpp(rule.fetch(:skill))}, RuleTarget::#{camel(rule.fetch(:target, :enemy))}, #{rule.fetch(:chance_percent, 100)}, k#{monster.cpp_id}Conditions#{index}, #{rule.fetch(:once_per_encounter, false) ? 'true' : 'false'}}"
         end
         conditions + "\nconstexpr std::array<DecisionRule, #{rows.size}> k#{monster.cpp_id}Rules{{#{rows.join(', ')}}};"
       end.join("\n")
@@ -1405,7 +1434,12 @@ module FairlanesContent
           { "id" => biome.id.to_s, "display" => biome.display, "floors" => biome.floors,
             "pattern" => biome.pattern&.to_s,
             "bands" => biome.bands.map { |band| { "from" => band.from, "to" => band.to, "pool" => band.pool.to_s } },
-            "overrides" => biome.overrides.map { |entry| { "floor" => entry.floor, "lineup" => entry.lineup.map(&:to_s) } },
+            "overrides" => biome.overrides.map do |entry|
+              { "floor" => entry.floor, "lineup" => entry.lineup.map(&:to_s),
+                "level_percent" => entry.level_percent, "hp_percent" => entry.hp_percent,
+                "attack_percent" => entry.attack_percent,
+                "cover" => entry.cover&.transform_values { |value| value.is_a?(Symbol) ? value.to_s : value } }
+            end,
             "resolved_floors" => resolved_floors(biome).map do |floor|
               { "id" => floor[:id], "floor" => floor[:floor], "source" => floor[:source],
                 "lineup" => floor[:lineup].map(&:to_s),
@@ -1449,7 +1483,9 @@ module FairlanesContent
             "party" => scenario.party.map { |member| member.transform_values { |value| value.is_a?(Symbol) ? value.to_s : value } },
             "seeds" => scenario.seeds, "beat_cap" => scenario.beat_cap,
             "variants" => scenario.variants.map do |variant|
-              { "id" => variant[:id].to_s, "equipped_item" => variant[:equipped_item].to_s,
+              { "id" => variant[:id].to_s, "equipped_item" => variant[:equipped_item]&.to_s,
+                "skill_overrides" => variant.fetch(:skill_overrides, {}).transform_keys(&:to_s).transform_values(&:to_s),
+                "observe_members" => variant.fetch(:observe_members, []),
                 "expected_wins" => variant[:expected_wins] && [variant[:expected_wins].begin, variant[:expected_wins].end] }
             end }
         end

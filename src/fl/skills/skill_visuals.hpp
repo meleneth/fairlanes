@@ -154,6 +154,7 @@ visual_archetype_for(SkillKey skill) noexcept {
   case SkillId::NullPointer:
     return SkillVisualArchetype::Glitch;
   case SkillId::ShellGuard:
+  case SkillId::Brace:
   case SkillId::ArmorPlate:
   case SkillId::CinderVeil:
   case SkillId::RimeArmor:

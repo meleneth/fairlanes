@@ -4,6 +4,7 @@ namespace fl::ecs::components {
 
 enum class CombatStatusKind {
   Shield,
+  Brace,
   Blind,
   Silence,
   Slow,

@@ -19,7 +19,7 @@ Each Cycle has five ordered 100-floor tower biomes. `Playable` means the biome h
 | `squirrel_brigand` | `pebble_spit`, `flee`, `thump_around` | 20 | `common_woodland` |
 | `webling_spider` | `venom_needle`, `web_snare`, `bite` | 24 | `common_woodland` |
 | `moss_wolf` | `claw`, `pack_howl`, `root_leech` | 30 | `common_woodland` |
-| `antler_stag` | `bumper_rush`, `smackdown_sweep`, `shell_guard` | 36 | `common_woodland` |
+| `antler_stag` | `brace`, `bumper_rush`, `smackdown_sweep` | 36 | `common_woodland` |
 
 ### 2. `origin_plains_tower` — Playable
 

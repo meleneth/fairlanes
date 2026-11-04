@@ -41,7 +41,7 @@ RSpec.describe "Gear and tower declarations" do
       floor: 1, lineup: [:field_mouse])
     expect(FairlanesContent::Validator.new(set).validate).to be_empty
     header = FairlanesContent::Renderer.new(set).floor_content_hpp
-    expect(header).to include('FloorLineup{1, "mouse_tower/001", {fl::monster::MonsterKind::FieldMouse}, {5}, {5}, {5}, 1}')
+    expect(header).to include('FloorLineup{1, "mouse_tower/001", {fl::monster::MonsterKind::FieldMouse}, {5}, {5}, {5}, 1, CoverRule{}}')
   end
 
   it "generates a five-floor composition pattern and raises scaling every five floors" do

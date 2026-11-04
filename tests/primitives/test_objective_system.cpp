@@ -117,3 +117,47 @@ TEST_CASE("Autoplay follows the Ruby-authored opening path on production beats",
   REQUIRE(story->completed("recruit_second_hero"));
   REQUIRE(game.accounts().front().parties().front().members().size() == 2);
 }
+
+TEST_CASE("The story party clears the physical slice and can return to Badger",
+          "[story][tower][physical-slice]") {
+  fl::GrandCentral game{1, 1, 0, true, true, 7, true, true};
+  auto *story = game.objectives();
+  auto &party = game.accounts().front().parties().front();
+  REQUIRE_FALSE(party.select_tower("origin_plains_tower"));
+  game.innervate_event_system();
+
+  int beats = 0;
+  while (party.latest_tower_floor("origin_woodland_tower") < 7 &&
+         beats < 40000) {
+    game.advance_beat();
+    ++beats;
+  }
+  REQUIRE(party.latest_tower_floor("origin_woodland_tower") == 7);
+  REQUIRE_FALSE(std::ranges::any_of(party.members(), [](const auto &member) {
+    return member.grimoire().knows(fl::skills::SkillId::Brace);
+  }));
+
+  while (party.latest_tower_floor("origin_woodland_tower") < 10 &&
+         beats < 40000) {
+    game.advance_beat();
+    ++beats;
+  }
+  REQUIRE(story->completed("recruit_second_hero"));
+  REQUIRE(party.members().size() == 2);
+  REQUIRE(std::ranges::any_of(party.members(), [](const auto &member) {
+    return member.grimoire().knows(fl::skills::SkillId::Brace);
+  }));
+  REQUIRE(party.latest_tower_floor("origin_woodland_tower") == 10);
+  REQUIRE(party.tower_choice_pending());
+  REQUIRE_FALSE(party.has_encounter());
+  REQUIRE(party.select_tower("origin_plains_tower"));
+
+  while (party.latest_tower_floor("origin_plains_tower") < 4 && beats < 80000) {
+    game.advance_beat();
+    ++beats;
+  }
+  REQUIRE(party.latest_tower_floor("origin_plains_tower") == 4);
+  REQUIRE(party.select_tower("origin_woodland_tower", 10));
+  REQUIRE(party.tower_route()->biome_id == "origin_woodland_tower");
+  REQUIRE(party.tower_route()->floor == 10);
+}
