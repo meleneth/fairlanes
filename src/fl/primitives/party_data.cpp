@@ -137,6 +137,18 @@ entt::entity PartyData::recruit_member(std::string name) {
   return id;
 }
 
+entt::entity PartyData::recruit_origin_member(std::string name) {
+  const auto hero = recruit_member(std::move(name));
+  if (hero == entt::null) return entt::null;
+  auto& stats = party_ctx_.reg().get<fl::ecs::components::Stats>(hero);
+  stats.hp_ = stats.max_hp_ = 20;
+  stats.attack_ = 2;
+  members_.back().grimoire().learn(fl::skills::SkillId::Thump);
+  party_ctx_.reg().get<fl::ecs::components::PartyMember>(hero).equip_known_skill(
+      fl::skills::SkillId::Thump);
+  return hero;
+}
+
 PartyData::~PartyData() {
   // EncounterData owns listeners into MemberData combatant buses. Clear it
   // before members_ is destroyed so listener handles disconnect from live buses.

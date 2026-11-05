@@ -12,6 +12,8 @@
 
 namespace fl::primitives {
 
+struct RecruitmentOpportunity;
+
 // Save-wide story state for the first playable account. Facts are dispatched
 // through a bus; generated objectives observe fact IDs, while effects remain
 // handwritten and testable here.
@@ -33,6 +35,8 @@ public:
   int darrin_marks() const;
   void request_autoplay(bool enabled);
   void request_purchase(std::string_view item_id);
+  void request_recruitment(std::string_view opportunity_id);
+  const std::vector<RecruitmentOpportunity>& recruitment_opportunities() const;
   bool autoplay_enabled() const noexcept {
     return autoplay_enabled_;
   }
@@ -55,6 +59,7 @@ private:
   fl::events::ScopedStoryListener fact_sub_;
   fl::events::ScopedStoryListener autoplay_sub_;
   fl::events::ScopedStoryListener purchase_sub_;
+  fl::events::ScopedStoryListener recruitment_sub_;
   bool autoplay_enabled_{false};
   std::size_t autoplay_step_index_{0};
   bool returned_after_two_{false};

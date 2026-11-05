@@ -48,6 +48,7 @@ module FairlanesContent
         "fl/generated/gear_content.hpp" => renderer.gear_content_hpp,
         "fl/generated/floor_content.hpp" => renderer.floor_content_hpp,
         "fl/generated/regression_content.hpp" => renderer.regression_content_hpp,
+        "fl/generated/recruitment_content.hpp" => renderer.recruitment_content_hpp,
         "fl/generated/story_content.hpp" => renderer.story_content_hpp,
         "decal_content_balance.md" => renderer.balance_report,
         "floor_manifest.md" => renderer.floor_manifest,
@@ -79,7 +80,8 @@ module FairlanesContent
         "generated/content-balance.md" => renderer.balance_report,
         "generated/effect-gallery.md" => renderer.effect_gallery,
         "generated/floor-manifest.md" => renderer.floor_manifest,
-        "generated/story-events.md" => renderer.story_event_doc
+        "generated/story-events.md" => renderer.story_event_doc,
+        "generated/recruitment-progression.md" => renderer.recruitment_progression_doc
       }
     end
 
@@ -195,6 +197,7 @@ module FairlanesContent
         tower_patterns
         biomes
         biome_plans
+        recruitment_opportunities
         story_events
         objectives
         dialogues
@@ -216,6 +219,9 @@ module FairlanesContent
       errors << "manifest tower_patterns must be an array" unless manifest["tower_patterns"].is_a?(Array)
       errors << "manifest biomes must be an array" unless manifest["biomes"].is_a?(Array)
       errors << "manifest biome_plans must be an array" unless manifest["biome_plans"].is_a?(Array)
+      unless manifest["recruitment_opportunities"].is_a?(Array)
+        errors << "manifest recruitment_opportunities must be an array"
+      end
       errors << "manifest story_events must be an array" unless manifest["story_events"].is_a?(Array)
       errors << "manifest objectives must be an array" unless manifest["objectives"].is_a?(Array)
       errors << "manifest dialogues must be an array" unless manifest["dialogues"].is_a?(Array)

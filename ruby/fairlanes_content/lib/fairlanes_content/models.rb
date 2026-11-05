@@ -30,6 +30,10 @@ module FairlanesContent
   RegressionScenario = Struct.new(:id, :encounter, :encounters, :party, :seeds, :beat_cap,
                                   :recording_version, :variants, keyword_init: true)
   BiomePlan = Struct.new(:id, :cycle, :order, :monsters, keyword_init: true)
+  RecruitmentOpportunity = Struct.new(
+    :id, :cycle, :biome, :floor, :destination_party, :unlocked_by_party_completion,
+    keyword_init: true
+  )
   StoryEvent = Struct.new(:id, :handled, keyword_init: true)
   Objective = Struct.new(:id, :title, :description, :revealed_by, :completed_by, keyword_init: true)
   Dialogue = Struct.new(:id, :location, :npc, :start, :nodes, keyword_init: true)

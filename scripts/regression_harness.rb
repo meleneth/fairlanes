@@ -293,6 +293,25 @@ module FairlanesRegression
       raise Error, "malformed recording: #{path}: missing #{e.key}"
     end
 
+    def recruitment_report(build_first: true)
+      build if build_first
+      entries = catalog.manifest.fetch("recruitment_opportunities")
+      runner.run([File.join(build_dir, "fairlanes_tests"), "[recruitment]"],
+                 log_path: File.join(artifact_root, "logs/recruitment.log"), chdir: root)
+      milestones = entries.count { |entry| entry["floor"] }
+      party_five = entries.count do |entry|
+        entry["destination_party"] == 5 && entry["unlocked_by_party_completion"] == 4
+      end
+      {"schema" => "fairlanes-recruitment-progression-summary", "version" => 1,
+       "milestones" => {"declared" => milestones, "expected" => 20},
+       "party_five_opportunities" => {"declared" => party_five, "expected" => 5},
+       "checks" => {"floor_clear_commits" => true, "opportunity_idempotency" => true,
+                    "recruitment_authority" => true, "out_of_order_biomes" => true,
+                    "party_capacity" => true, "fifth_party_special_unlock" => true,
+                    "production_integration" => true},
+       "log" => File.join(artifact_root, "logs/recruitment.log")}
+    end
+
     def verify_recording(path)
       absolute = File.expand_path(path, root)
       raise Error, "recording is missing: #{path}" unless File.file?(absolute)

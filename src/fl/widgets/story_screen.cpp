@@ -9,6 +9,7 @@
 
 #include "fl/generated/story_content.hpp"
 #include "fl/lospec500.hpp"
+#include "fl/primitives/account_data.hpp"
 #include "fl/primitives/objective_system.hpp"
 #include "fl/primitives/party_data.hpp"
 
@@ -16,9 +17,10 @@ namespace fl::widgets {
 
 StoryScreen::StoryScreen(const fl::primitives::ObjectiveSystem& objectives,
                          const fl::primitives::PartyData& party, EmitChoice emit_choice,
-                         Purchase purchase, SelectTower select_tower, Start start)
+                         Purchase purchase, SelectTower select_tower, Recruit recruit, Start start)
     : objectives_(&objectives), party_(&party), emit_choice_(std::move(emit_choice)),
       purchase_(std::move(purchase)), select_tower_(std::move(select_tower)),
+      recruit_(std::move(recruit)),
       mode_(start == Start::Objectives ? Mode::Objectives : Mode::Village) {}
 
 std::size_t StoryScreen::biome_count() const noexcept {
@@ -45,7 +47,8 @@ bool StoryScreen::OnEvent(ftxui::Event event) {
     else if (mode_ == Mode::Floors) {
       mode_ = Mode::Biomes;
       selection_ = biome_selection_;
-    } else if (mode_ == Mode::Pub || mode_ == Mode::Outfitter || mode_ == Mode::Biomes)
+    } else if (mode_ == Mode::Pub || mode_ == Mode::Outfitter || mode_ == Mode::Biomes ||
+               mode_ == Mode::Recruitment)
       mode_ = Mode::Village;
     else
       return false;
@@ -59,9 +62,15 @@ bool StoryScreen::OnEvent(ftxui::Event event) {
                          : nullptr;
   const std::size_t count =
       mode_ == Mode::Dialogue && node                                       ? node->choices.size()
-      : mode_ == Mode::Village && objectives_->can_talk("second_volunteer") ? 4
-      : mode_ == Mode::Village                                              ? 3
+      : mode_ == Mode::Village && objectives_->can_talk("second_volunteer") ? 5
+      : mode_ == Mode::Village                                              ? 4
       : mode_ == Mode::Biomes                                               ? biome_count()
+      : mode_ == Mode::Recruitment
+          ? static_cast<std::size_t>(std::ranges::count_if(
+                objectives_->recruitment_opportunities(),
+                [](const auto& entry) {
+                  return entry.state != fl::primitives::RecruitmentOpportunityState::Locked;
+                }))
       : mode_ == Mode::Floors
           ? static_cast<std::size_t>(party_->latest_tower_floor(selected_biome_id()))
           : 1;
@@ -83,6 +92,8 @@ bool StoryScreen::OnEvent(ftxui::Event event) {
       mode_ = Mode::Outfitter;
     else if (selection_ == 2)
       mode_ = Mode::Biomes;
+    else if (selection_ == 3)
+      mode_ = Mode::Recruitment;
     else
       open_dialogue("second_volunteer");
   } else if (mode_ == Mode::Pub) {
@@ -98,6 +109,14 @@ bool StoryScreen::OnEvent(ftxui::Event event) {
   } else if (mode_ == Mode::Floors) {
     select_tower_(selected_biome_id(), static_cast<int>(selection_) + 1);
     return true;
+  } else if (mode_ == Mode::Recruitment) {
+    std::vector<const fl::primitives::RecruitmentOpportunity*> visible;
+    for (const auto& opportunity : objectives_->recruitment_opportunities())
+      if (opportunity.state != fl::primitives::RecruitmentOpportunityState::Locked)
+        visible.push_back(&opportunity);
+    if (selection_ < visible.size() &&
+        visible[selection_]->state == fl::primitives::RecruitmentOpportunityState::Available)
+      recruit_(visible[selection_]->id);
   } else if (node && selection_ < node->choices.size()) {
     const auto& choice = node->choices[selection_];
     if (!choice.event_id.empty()) emit_choice_(choice.event_id);
@@ -137,8 +156,10 @@ ftxui::Element StoryScreen::Render() {
     lines.push_back(
         text(std::string(selection_ == 1 ? "> " : "  ") + "Visit the outfitter's shop"));
     lines.push_back(text(std::string(selection_ == 2 ? "> " : "  ") + "Choose a biome expedition"));
+    lines.push_back(
+        text(std::string(selection_ == 3 ? "> " : "  ") + "Visit the recruitment board"));
     if (objectives_->can_talk("second_volunteer"))
-      lines.push_back(text(std::string(selection_ == 3 ? "> " : "  ") + "Speak to the volunteer"));
+      lines.push_back(text(std::string(selection_ == 4 ? "> " : "  ") + "Speak to the volunteer"));
   } else if (mode_ == Mode::Pub) {
     title = "Village Pub";
     lines.push_back(paragraph("An angry-looking fellow watches the door."));
@@ -173,6 +194,23 @@ ftxui::Element StoryScreen::Render() {
         text("> Floor " + std::to_string(selection_ + 1) +
              (selection_ + 1 == static_cast<std::size_t>(latest) ? " [next target]" : "")));
     lines.push_back(text("Left/Right or Up/Down changes the floor") | dim);
+  } else if (mode_ == Mode::Recruitment) {
+    title = "Recruitment Board";
+    std::size_t index = 0;
+    for (const auto& opportunity : objectives_->recruitment_opportunities()) {
+      if (opportunity.state == fl::primitives::RecruitmentOpportunityState::Locked) continue;
+      const auto state = opportunity.state == fl::primitives::RecruitmentOpportunityState::Claimed
+                             ? "claimed"
+                             : "available";
+      const auto source = opportunity.floor > 0
+                              ? opportunity.biome_id + " floor " + std::to_string(opportunity.floor)
+                              : "party 4 roster completion";
+      lines.push_back(text(std::string(selection_ == index ? "> " : "  ") + "Party " +
+                           std::to_string(opportunity.destination_party + 1) + " — " + source +
+                           " [" + state + "]"));
+      ++index;
+    }
+    if (index == 0) lines.push_back(text("No recruitment opportunities are available yet."));
   } else {
     const auto* dialogue = fl::story::generated_content::find_dialogue(dialogue_id_);
     const auto* node =

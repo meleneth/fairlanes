@@ -255,6 +255,7 @@ ftxui::Component RootComponent::make_story_screen(bool village) {
       *objectives_, party, [this](std::string_view id) { objectives_->emit(id); },
       [this] { objectives_->request_purchase("village_guard_hide"); },
       [&party](std::string_view biome, int floor) { return party.select_tower(biome, floor); },
+      [this](std::string_view opportunity) { objectives_->request_recruitment(opportunity); },
       village ? StoryScreen::Start::Village : StoryScreen::Start::Objectives);
 }
 

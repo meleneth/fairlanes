@@ -82,6 +82,7 @@ module FairlanesContent
       validate_floor_content(errors)
       validate_regressions(errors)
       validate_biome_plans(errors)
+      validate_recruitment_opportunities(errors)
       validate_story(errors)
       errors
     end
@@ -420,6 +421,46 @@ module FairlanesContent
       declarations.biomes.each do |biome|
         errors << "biome #{biome.id} has no tower plan" unless ids.include?(biome.id)
       end
+    end
+
+    def validate_recruitment_opportunities(errors)
+      entries = declarations.recruitment_opportunities
+      return if entries.empty?
+
+      ids = entries.map(&:id)
+      errors << "duplicate recruitment opportunity ids" unless ids.uniq.size == ids.size
+      biome_ids = declarations.biome_plans.map(&:id)
+      entries.each do |entry|
+        prefix = "recruitment opportunity #{entry.id}"
+        errors << "#{prefix} has invalid id" unless stable_id?(entry.id)
+        errors << "#{prefix} has invalid cycle" unless CYCLES.include?(entry.cycle)
+        unless entry.destination_party.is_a?(Integer) && (1..5).cover?(entry.destination_party)
+          errors << "#{prefix} has invalid destination party"
+        end
+        milestone = !entry.biome.nil? || !entry.floor.nil?
+        completion = !entry.unlocked_by_party_completion.nil?
+        errors << "#{prefix} must have exactly one trigger" if milestone == completion
+        if milestone
+          errors << "#{prefix} references unknown biome" unless biome_ids.include?(entry.biome)
+          errors << "#{prefix} has invalid milestone floor" unless [5, 25, 50, 75].include?(entry.floor)
+        elsif completion
+          unless entry.unlocked_by_party_completion.is_a?(Integer) &&
+                 (1..4).cover?(entry.unlocked_by_party_completion)
+            errors << "#{prefix} has invalid completed party"
+          end
+        end
+      end
+
+      origin_biomes = declarations.biome_plans.select { |plan| plan.cycle == :origin }.map(&:id)
+      milestones = entries.select { |entry| entry.cycle == :origin && entry.biome }
+      expected = origin_biomes.product([5, 25, 50, 75])
+      actual = milestones.map { |entry| [entry.biome, entry.floor] }
+      errors << "Origin recruitment schedule must cover every biome milestone" unless actual.sort == expected.sort
+      fifth_party = entries.select do |entry|
+        entry.cycle == :origin && entry.unlocked_by_party_completion == 4 &&
+          entry.destination_party == 5
+      end
+      errors << "Origin party five must have five completion opportunities" unless fifth_party.size == 5
     end
 
     def stable_id?(id)

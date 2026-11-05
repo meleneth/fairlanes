@@ -9,6 +9,7 @@ of compiler commands or combat events.
 scripts/regress summary
 scripts/regress compare origin_woodland_brace_progression
 scripts/regress compare origin_woodland_honey_badger --json
+scripts/regress recruitment
 scripts/regress inspect build-linux-debug/regression-artifacts/origin_woodland_brace_progression/learn_brace/recordings/origin_woodland_brace_progression.learn_brace.seed1.json --mechanic brace
 scripts/regress verify
 ```
@@ -40,6 +41,11 @@ reports the command, original exit status, focused compiler/assertion/replay
 diagnostics, and the complete log path. `scripts/regress verify` checks the
 regression tests, Ruby specs, generated content consistency, and every pinned
 recording.
+
+`scripts/regress recruitment` is the compact non-balance report for the Origin
+roster schedule. It validates all generated milestone counts and runs the tagged
+event, capacity, Village, and production floor-clear integration coverage while
+keeping detailed Catch output in the regression artifact log.
 
 ## Low-level runner and recording format
 

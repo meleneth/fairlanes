@@ -111,20 +111,32 @@ GrandCentral::GrandCentral(uint8_t num_accounts, uint8_t num_parties_per_account
           log_bus_, *game_log_, fl::primitives::LogLevel::trace)) {
   fl::monster::register_all_monsters();
   _create_initial_accounts();
+  if (record_discoveries) {
+    discovery_listener_ =
+        std::make_unique<fl::primitives::DiscoveryJournalListener>(discoveries_, reg_);
+    for (auto& account : accounts_)
+      for (auto& party : account.parties()) discovery_listener_->bind(party.party_bus());
+  }
+  if (story_mode) {
+    for (std::size_t index = 0; index < accounts_.size(); ++index) {
+      auto& account = accounts_[index];
+      account.enable_origin_recruitment();
+      if (discovery_listener_ && !account.parties().empty()) {
+        party_unlock_subscriptions_.emplace_back(
+            account.parties().front().party_bus(), std::in_place_type<fl::events::PartyUnlocked>,
+            [this, index](const fl::events::PartyUnlocked& event) {
+              auto& parties = accounts_.at(index).parties();
+              if (event.party_index < parties.size())
+                discovery_listener_->bind(parties[event.party_index].party_bus());
+            });
+      }
+    }
+  }
   if (story_mode && !accounts_.empty())
     objectives_ = std::make_unique<fl::primitives::ObjectiveSystem>(account_context(0));
   if (objectives_) objectives_->request_autoplay(story_autoplay_);
   if (record_progress_) {
     for (auto& account : accounts_) raid_milestones_.bind(account.raid_bus(), account.account_id());
-  }
-  if (record_discoveries) {
-    discovery_listener_ =
-        std::make_unique<fl::primitives::DiscoveryJournalListener>(discoveries_, reg_);
-    for (auto& account : accounts_) {
-      for (auto& party : account.parties()) {
-        discovery_listener_->bind(party.party_bus());
-      }
-    }
   }
   for (std::size_t index = 0; index < accounts_.size(); ++index) {
     raid_log_subscriptions_.emplace_back(

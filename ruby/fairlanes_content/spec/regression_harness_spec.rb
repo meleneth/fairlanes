@@ -106,4 +106,28 @@ RSpec.describe FairlanesRegression do
         described_class::Error, /unknown variant/)
     end
   end
+
+  it "reports recruitment declarations through the concise harness entry point" do
+    Dir.mktmpdir do |dir|
+      manifest_dir = File.join(dir, "build-linux-debug/generated/fairlanes_content")
+      FileUtils.mkdir_p(manifest_dir)
+      entries = 20.times.map do |index|
+        {"id" => "milestone_#{index}", "floor" => 5, "destination_party" => 1,
+         "unlocked_by_party_completion" => nil}
+      end
+      entries.concat(5.times.map do |index|
+        {"id" => "party_five_#{index}", "floor" => nil, "destination_party" => 5,
+         "unlocked_by_party_completion" => 4}
+      end)
+      File.write(File.join(manifest_dir, "content_manifest.json"),
+                 JSON.generate("regressions" => [], "recruitment_opportunities" => entries))
+      runner = Object.new
+      runner.define_singleton_method(:run) { |_command, **_options| "" }
+      report = described_class::Harness.new(root: dir, runner: runner)
+                                       .recruitment_report(build_first: false)
+      expect(report.dig("milestones", "declared")).to eq(20)
+      expect(report.dig("party_five_opportunities", "declared")).to eq(5)
+      expect(report.fetch("checks").values).to all(be(true))
+    end
+  end
 end

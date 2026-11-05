@@ -31,6 +31,14 @@ volunteer in the village to recruit Bramblethorn. The first two objectives are
 the opening progression slice. A wider village economy and later objectives
 remain to be authored.
 
+Later committed tower milestones appear on the Village recruitment board. Each
+row identifies its destination party and source biome floor; Enter requests the
+recruit through the existing Story Bus and account roster authority. Claimed
+rows remain visible. Alderion and Bramblethorn still use their authored dialogue
+and count toward party 1's five-member capacity. See
+[Origin recruitment progression](recruitment-progression.md) for the generated
+schedule and overflow policy.
+
 `scripts/fairlanes_story_declarations.rb` defines stable story event IDs,
 objectives, dialogue nodes, and choices. The existing content generator validates
 references and renders ordinary C++ tables in `fl/generated/story_content.hpp`.

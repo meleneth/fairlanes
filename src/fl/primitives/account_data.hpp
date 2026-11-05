@@ -1,8 +1,13 @@
 // grand_central.hpp (or better: fl/primitives/account_data.hpp)
 #pragma once
 
+#include <array>
 #include <deque>
 #include <memory>
+#include <string>
+#include <string_view>
+#include <unordered_set>
+#include <vector>
 
 #include <entt/entity/registry.hpp>
 
@@ -15,6 +20,16 @@
 #include "party_data.hpp"
 
 namespace fl::primitives {
+
+enum class RecruitmentOpportunityState { Locked, Available, Claimed };
+
+struct RecruitmentOpportunity {
+  std::string id;
+  std::string biome_id;
+  int floor{0};
+  std::size_t destination_party{0};
+  RecruitmentOpportunityState state{RecruitmentOpportunityState::Locked};
+};
 
 struct AccountData {
 public:
@@ -97,6 +112,14 @@ public:
   const TowerBalance& tower_balance() const noexcept {
     return tower_balance_;
   }
+  void enable_origin_recruitment();
+  void resolve_recruitment_events(fl::context::AccountCtx ctx);
+  bool claim_recruitment(fl::context::AccountCtx ctx, std::string_view opportunity_id);
+  bool recruit_story_hero(fl::context::AccountCtx ctx, std::string_view opportunity_id,
+                          std::string_view name);
+  const std::vector<RecruitmentOpportunity>& recruitment_opportunities() const noexcept {
+    return recruitment_opportunities_;
+  }
 
 private:
   entt::entity account_id_{entt::null};
@@ -111,7 +134,20 @@ private:
   std::uint64_t next_visitor_beat_{0};
   seerin::BeatSub progression_sub_{};
   bool try_start_visitor(fl::context::AccountCtx ctx);
+  void bind_recruitment_party(std::size_t party_index);
+  bool ensure_party_unlocked(fl::context::AccountCtx ctx, std::size_t party_index);
+  void unlock_floor_opportunities(fl::context::AccountCtx ctx);
+  void unlock_completion_opportunities(fl::context::AccountCtx ctx, std::size_t party_index);
+  void complete_roster(fl::context::AccountCtx ctx, std::size_t party_index);
+  fl::events::PartyBus& progression_bus();
   std::unique_ptr<RaidData> raid_; // destroyed before participants and event bus
+  bool recruitment_enabled_{false};
+  std::vector<RecruitmentOpportunity> recruitment_opportunities_;
+  std::vector<fl::events::ScopedPartyListener> recruitment_subscriptions_;
+  std::array<bool, 5> completed_rosters_{};
+  std::unordered_set<std::string> claimed_story_recruits_;
+  std::unordered_set<std::string> committed_floor_clears_;
+  std::vector<fl::events::TowerFloorCleared> pending_floor_clears_;
 };
 
 } // namespace fl::primitives

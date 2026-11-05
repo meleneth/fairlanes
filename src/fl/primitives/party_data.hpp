@@ -135,6 +135,7 @@ public:
   // ---- behavior ----
   void advance_beat();
   entt::entity recruit_member(std::string name);
+  entt::entity recruit_origin_member(std::string name);
   bool story_shop_pending() const noexcept {
     return story_shop_pending_;
   }

@@ -62,6 +62,20 @@ def print_timeline(report)
   puts "  recording: #{report['recording']}"
 end
 
+def print_recruitment(report)
+  puts "RECRUITMENT PROGRESSION"
+  milestones = report.fetch("milestones")
+  fifth = report.fetch("party_five_opportunities")
+  puts "  Milestones:          #{milestones['declared']}/#{milestones['expected']}"
+  puts "  Party 5 opportunities: #{fifth['declared']}/#{fifth['expected']}"
+  puts ""
+  puts "EVENT CHECKS"
+  report.fetch("checks").each do |name, passed|
+    puts "  #{name.tr('_', ' ').split.map(&:capitalize).join(' ')}: #{passed ? 'PASS' : 'FAIL'}"
+  end
+  puts "  log: #{report.fetch('log')}"
+end
+
 command = ARGV.shift || "help"
 options = {json: false, build: true, variants: [], limit: 60, seeds: false, replay: false}
 parser = OptionParser.new do |opts|
@@ -117,9 +131,12 @@ begin
     puts(options[:json] ? JSON.pretty_generate({"schema" => "fairlanes-regression-verification",
                                                 "version" => 1, "passed" => passed}) :
                            "PASS: #{passed.join(', ')}\nlogs: #{harness.artifact_root}/logs")
+  when "recruitment"
+    report = harness.recruitment_report(build_first: options[:build])
+    puts(options[:json] ? JSON.pretty_generate(report) : print_recruitment(report))
   else
     puts parser
-    puts "Commands: summary, run FIXTURE, compare FIXTURE, inspect RECORDING, verify"
+    puts "Commands: summary, run FIXTURE, compare FIXTURE, inspect RECORDING, recruitment, verify"
   end
 rescue FairlanesRegression::Error => e
   warn e.message

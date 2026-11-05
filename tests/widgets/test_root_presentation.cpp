@@ -338,6 +338,38 @@ TEST_CASE("Manual village navigation is scoped to a selected party",
   REQUIRE(party.tower_route()->floor == 1);
 }
 
+TEST_CASE("Village recruitment board claims an available milestone exactly once",
+          "[widgets][story][recruitment]") {
+  fl::GrandCentral game{1, 1, 0, true, true, 42, true};
+  auto ctx = game.account_context(0);
+  auto& account = ctx.account_data();
+  REQUIRE(account.recruit_story_hero(ctx, "story_alderion", "Alderion"));
+  REQUIRE(account.recruit_story_hero(ctx, "story_bramblethorn", "Bramblethorn"));
+  account.parties().front().party_bus().emit(
+      fl::events::PartyEvent{fl::events::TowerFloorCleared{"origin_woodland_tower", 5}});
+  account.resolve_recruitment_events(ctx);
+
+  auto root =
+      fl::test::ProductionUiHarness{game.account_context(0), game.accounts(), game.game_log(),
+                                    game.world_clock(),      nullptr,         nullptr,
+                                    game.objectives()};
+  REQUIRE(root.OnEvent(ftxui::Event::Character(" ")));
+  REQUIRE(root.OnEvent(ftxui::Event::Character(" ")));
+  REQUIRE(root.OnEvent(ftxui::Event::Character("v")));
+  for (int index = 0; index < 3; ++index) REQUIRE(root.OnEvent(ftxui::Event::ArrowDown));
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  auto rendered = render_to_string(root);
+  REQUIRE(rendered.find("Recruitment Board") != std::string::npos);
+  REQUIRE(rendered.find("Party 1") != std::string::npos);
+  REQUIRE(rendered.find("origin_woodland_tower floor 5 [available]") != std::string::npos);
+
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  REQUIRE(account.parties().front().members().size() == 3);
+  REQUIRE(render_to_string(root).find("[claimed]") != std::string::npos);
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  REQUIRE(account.parties().front().members().size() == 3);
+}
+
 TEST_CASE("Sandbox console switch warns that story cannot be recovered", "[widgets][root][story]") {
   fl::GrandCentral game{1, 1, 0, true, true, 42, true};
   auto root =

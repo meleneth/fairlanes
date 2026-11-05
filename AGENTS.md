@@ -654,6 +654,15 @@ and test output to `build-linux-debug/regression-artifacts/logs`; on failure it
 prints the focused diagnostic, original exit status, and complete log path.
 Do not repeatedly print full build logs or recordings into agent context.
 
+Origin recruitment is account-owned, event-operated progression. The Ruby DSL
+generates twenty biome milestone opportunities (floors 5/25/50/75 for parties
+1/2/3/4) and five party-five completion opportunities. `PartyData` commits and
+emits floor clears; `AccountData` resolves durable opportunity state and owns
+party creation and validated roster commits; the Objective System routes
+Village requests. Alderion and Bramblethorn consume two party-1 slots, so two
+excess floor-5 opportunities remain Available rather than being discarded.
+Use `scripts/regress recruitment`; see `docs/recruitment-progression.md`.
+
 Generated content also includes special gear, resolved 100-floor tower data,
 and typed Ruby-authored regression setup. Gear declarations support Attack,
 Armor, Max HP, and per-channel resistances through `EquipmentBuilder`.

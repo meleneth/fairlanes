@@ -151,6 +151,7 @@ private:
   std::vector<fl::events::ScopedRaidListener> raid_log_subscriptions_;
   fl::primitives::DiscoveryJournal discoveries_;
   std::unique_ptr<fl::primitives::DiscoveryJournalListener> discovery_listener_;
+  std::vector<fl::events::ScopedPartyListener> party_unlock_subscriptions_;
 
   std::unique_ptr<fl::widgets::FancyLog> game_log_;
   std::unique_ptr<fl::primitives::FancyLogSink> fancy_log_sink_;

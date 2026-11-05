@@ -74,6 +74,9 @@ or its death, ends the screen for that encounter.
 The historical README biome list names Plains with wolves and meerkats. The
 generated [biome tower map](../brainstorms/biome-tower-map.md) gives five towers
 per Cycle, monster skill lists, current runtime pools, and assignment gaps.
+Woodland floor 5 also commits the first generated recruitment opportunity. It
+remains available on the Village recruitment board until claimed; details and
+the other Origin milestones are in [recruitment progression](recruitment-progression.md).
 
 | Item ID | Bonus | Job and source |
 | --- | --- | --- |

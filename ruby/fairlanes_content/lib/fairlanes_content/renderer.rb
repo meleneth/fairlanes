@@ -20,10 +20,56 @@ module FairlanesContent
     def biomes = declarations.biomes
     def regressions = declarations.regressions
     def biome_plans = declarations.biome_plans
+    def recruitment_opportunities = declarations.recruitment_opportunities
     def story_events = declarations.story_events
     def objectives = declarations.objectives
     def dialogues = declarations.dialogues
     def autoplay_routes = declarations.autoplay_routes
+
+    def recruitment_content_hpp
+      rows = recruitment_opportunities.map do |entry|
+        trigger = entry.biome ? "Trigger::TowerMilestone" : "Trigger::PartyCompleted"
+        biome = cpp_string(entry.biome&.to_s || "")
+        floor = entry.floor || 0
+        completed_party = entry.unlocked_by_party_completion || 0
+        "  Opportunity{#{cpp_string(entry.id.to_s)}, fl::primitives::Cycle::#{camel(entry.cycle)}, #{trigger}, #{biome}, #{floor}, #{entry.destination_party}, #{completed_party}},"
+      end.join("\n")
+      <<~CPP
+        #pragma once
+        #include <array>
+        #include <string_view>
+        #include "fl/primitives/cycle.hpp"
+
+        namespace fl::recruitment::generated_content {
+        enum class Trigger { TowerMilestone, PartyCompleted };
+        struct Opportunity {
+          std::string_view id;
+          fl::primitives::Cycle cycle;
+          Trigger trigger;
+          std::string_view biome_id;
+          int floor;
+          int destination_party;
+          int completed_party;
+        };
+        inline constexpr std::array<Opportunity, #{recruitment_opportunities.size}> kOpportunities{{
+        #{rows}
+        }};
+        } // namespace fl::recruitment::generated_content
+      CPP
+    end
+
+    def recruitment_progression_doc
+      lines = ["# Origin recruitment progression", "",
+               "Generated from the Ruby content DSL. Party numbers are one-based.", "",
+               "| Opportunity | Trigger | Destination |", "| --- | --- | --- |"]
+      recruitment_opportunities.each do |entry|
+        trigger = entry.biome ? "`#{entry.biome}` floor #{entry.floor}" :
+          "party #{entry.unlocked_by_party_completion} roster completed"
+        lines << "| `#{entry.id}` | #{trigger} | party #{entry.destination_party} |"
+      end
+      lines << ""
+      lines.join("\n")
+    end
 
     def story_content_hpp
       event_rows = story_events.map { |event| "  Event{#{cpp_string(event.id.to_s)}, #{event.handled ? 'true' : 'false'}}," }.join("\n")
@@ -1471,6 +1517,12 @@ module FairlanesContent
           { "id" => plan.id.to_s, "cycle" => plan.cycle.to_s,
             "order" => plan.order, "monsters" => plan.monsters.map(&:to_s) }
         end,
+        "recruitment_opportunities" => recruitment_opportunities.map do |entry|
+          { "id" => entry.id.to_s, "cycle" => entry.cycle.to_s,
+            "biome" => entry.biome&.to_s, "floor" => entry.floor,
+            "destination_party" => entry.destination_party,
+            "unlocked_by_party_completion" => entry.unlocked_by_party_completion }
+        end,
         "story_events" => story_events.map { |event| { "id" => event.id.to_s, "handled" => event.handled } },
         "objectives" => objectives.map do |objective|
           { "id" => objective.id.to_s, "title" => objective.title,
@@ -1528,7 +1580,7 @@ module FairlanesContent
         "title" => "Fairlanes Generated Content Manifest",
         "type" => "object",
         "additionalProperties" => false,
-        "required" => %w[schema_version source runtime_authority visuals statuses skills random_combat_skills monsters gear encounter_pools tower_patterns biomes biome_plans story_events objectives dialogues autoplay_routes regressions],
+        "required" => %w[schema_version source runtime_authority visuals statuses skills random_combat_skills monsters gear encounter_pools tower_patterns biomes biome_plans recruitment_opportunities story_events objectives dialogues autoplay_routes regressions],
         "properties" => {
           "schema_version" => { "const" => 1 },
           "source" => string_type,
@@ -1610,6 +1662,15 @@ module FairlanesContent
             "order" => { "type" => "integer", "minimum" => 1, "maximum" => 5 },
             "monsters" => { "type" => "array", "items" => string_type }
           }),
+          "recruitment_opportunities" => array_schema(
+            %w[id cycle biome floor destination_party unlocked_by_party_completion], {
+              "id" => string_type, "cycle" => { "enum" => CYCLES.map(&:to_s) },
+              "biome" => { "type" => %w[string null] },
+              "floor" => { "type" => %w[integer null] },
+              "destination_party" => { "type" => "integer", "minimum" => 1, "maximum" => 5 },
+              "unlocked_by_party_completion" => { "type" => %w[integer null] }
+            }
+          ),
           "story_events" => array_schema(%w[id handled], {
             "id" => string_type, "handled" => { "type" => "boolean" }
           }),

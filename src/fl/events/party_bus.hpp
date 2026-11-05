@@ -26,6 +26,23 @@ struct TowerFloorCleared {
   std::string biome_id;
   int floor{1};
 };
+struct RecruitmentOpportunityUnlocked {
+  std::string opportunity_id;
+  std::string biome_id;
+  int floor{0};
+  std::size_t destination_party{0};
+};
+struct HeroRecruited {
+  std::string opportunity_id;
+  std::size_t party_index{0};
+  entt::entity member{entt::null};
+};
+struct PartyRosterCompleted {
+  std::size_t party_index{0};
+};
+struct PartyUnlocked {
+  std::size_t party_index{0};
+};
 struct BiomeUnlocked {
   std::string biome_id;
 };
@@ -80,6 +97,7 @@ struct EquipmentEquipped {
 
 using PartyEvent =
     std::variant<PartyCreated, MemberJoined, PartyWiped, PartyVictory, TowerFloorCleared,
+                 RecruitmentOpportunityUnlocked, HeroRecruited, PartyRosterCompleted, PartyUnlocked,
                  BiomeUnlocked, CycleUnlocked, PartyCombatStarted, PartyLeftCombat,
                  PartyReturnToTownRequested, PartyReturnedToTown, PartySummonedToRaid,
                  PartyRaidResolved, PartyGainedXP, PartyGainedLevel, PartyHealed,

@@ -36,6 +36,11 @@ ObjectiveSystem::ObjectiveSystem(fl::context::AccountCtx account) : account_(acc
       [this](const fl::events::VillagePurchaseRequested& event) {
         if (event.item_id == "village_guard_hide") buy_village_guard_hide();
       }};
+  recruitment_sub_ = fl::events::ScopedStoryListener{
+      bus_, std::in_place_type<fl::events::RecruitmentClaimRequested>,
+      [this](const fl::events::RecruitmentClaimRequested& event) {
+        account_.account_data().claim_recruitment(account_, event.opportunity_id);
+      }};
   auto& account_data = account_.account_data();
   raid_sub_ = fl::events::ScopedRaidListener{
       account_data.raid_bus(), std::in_place_type<fl::events::RaidResolved>,
@@ -77,6 +82,15 @@ void ObjectiveSystem::request_purchase(std::string_view item_id) {
   bus_.emit(fl::events::StoryEvent{fl::events::VillagePurchaseRequested{std::string(item_id)}});
 }
 
+void ObjectiveSystem::request_recruitment(std::string_view opportunity_id) {
+  bus_.emit(
+      fl::events::StoryEvent{fl::events::RecruitmentClaimRequested{std::string(opportunity_id)}});
+}
+
+const std::vector<RecruitmentOpportunity>& ObjectiveSystem::recruitment_opportunities() const {
+  return account_.account_data().recruitment_opportunities();
+}
+
 void ObjectiveSystem::receive(std::string_view event_id) {
   if (event_id == "recruit_angry_fellow" && !active("recruit_first_hero")) return;
   if (event_id == "recruit_second_hero" && !active("recruit_second_hero")) return;
@@ -101,27 +115,11 @@ void ObjectiveSystem::handle(std::string_view id) {
         "The first Visitor has devastated the village. The pub still stands.");
   } else if (id == "recruit_angry_fellow") {
     auto& party = account.parties().front();
-    const auto hero = party.recruit_member("Alderion");
-    if (hero != entt::null) {
-      auto& stats = account_.reg().get<fl::ecs::components::Stats>(hero);
-      stats.hp_ = stats.max_hp_ = 20;
-      stats.attack_ = 2;
-      party.members().back().grimoire().learn(fl::skills::SkillId::Thump);
-      account_.reg().get<fl::ecs::components::PartyMember>(hero).equip_known_skill(
-          fl::skills::SkillId::Thump);
+    if (account.recruit_story_hero(account_, "story_alderion", "Alderion")) {
       party.select_tower("origin_woodland_tower");
     }
   } else if (id == "recruit_second_hero") {
-    auto& party = account.parties().front();
-    const auto hero = party.recruit_member("Bramblethorn");
-    if (hero != entt::null) {
-      auto& stats = account_.reg().get<fl::ecs::components::Stats>(hero);
-      stats.hp_ = stats.max_hp_ = 20;
-      stats.attack_ = 2;
-      party.members().back().grimoire().learn(fl::skills::SkillId::Thump);
-      account_.reg().get<fl::ecs::components::PartyMember>(hero).equip_known_skill(
-          fl::skills::SkillId::Thump);
-    }
+    account.recruit_story_hero(account_, "story_bramblethorn", "Bramblethorn");
   }
 }
 

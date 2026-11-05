@@ -20,14 +20,15 @@ public:
   using EmitChoice = std::function<void(std::string_view)>;
   using Purchase = std::function<void()>;
   using SelectTower = std::function<bool(std::string_view, int)>;
+  using Recruit = std::function<void(std::string_view)>;
   StoryScreen(const fl::primitives::ObjectiveSystem& objectives,
               const fl::primitives::PartyData& party, EmitChoice emit_choice, Purchase purchase,
-              SelectTower select_tower, Start start);
+              SelectTower select_tower, Recruit recruit, Start start);
   bool OnEvent(ftxui::Event event) override;
   ftxui::Element Render() override;
 
 private:
-  enum class Mode { Objectives, Village, Pub, Outfitter, Biomes, Floors, Dialogue };
+  enum class Mode { Objectives, Village, Pub, Outfitter, Biomes, Floors, Recruitment, Dialogue };
   void open_dialogue(std::string_view id);
   std::size_t biome_count() const noexcept;
   std::string_view selected_biome_id() const noexcept;
@@ -36,6 +37,7 @@ private:
   EmitChoice emit_choice_;
   Purchase purchase_;
   SelectTower select_tower_;
+  Recruit recruit_;
   Mode mode_;
   std::string_view dialogue_id_{};
   std::string_view node_id_{};

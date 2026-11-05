@@ -769,6 +769,25 @@ biome_plan :origin_caves_tower, cycle: :origin, order: 4,
 biome_plan :origin_desert_tower, cycle: :origin, order: 5,
   monsters: %i[sand_scorpion tarantula_nomad]
 
+# Origin recruitment milestones are account-wide committed progression facts.
+# Floors 5/25/50/75 feed parties 1/2/3/4 respectively; completing party 4
+# exposes all five party-5 roster opportunities in one transition.
+origin_recruitment_biomes = %i[
+  origin_woodland_tower origin_plains_tower origin_murky_swamp_tower
+  origin_caves_tower origin_desert_tower
+]
+{5 => 1, 25 => 2, 50 => 3, 75 => 4}.each do |floor, destination_party|
+  origin_recruitment_biomes.each do |biome|
+    recruitment_opportunity :"#{biome.to_s.delete_suffix('_tower')}_floor_#{floor}_recruit",
+                            cycle: :origin, biome: biome, floor: floor,
+                            destination_party: destination_party
+  end
+end
+5.times do |index|
+  recruitment_opportunity :"origin_party_five_recruit_#{index + 1}", cycle: :origin,
+                          destination_party: 5, unlocked_by_party_completion: 4
+end
+
 biome_plan :resonance_dark_forest_tower, cycle: :resonance, order: 1,
   monsters: %i[briar_hexling owlshade snail_lantern choir_wisp]
 biome_plan :resonance_fetid_swamp_tower, cycle: :resonance, order: 2,

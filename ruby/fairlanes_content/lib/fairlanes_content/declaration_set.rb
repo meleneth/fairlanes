@@ -7,7 +7,7 @@ module FairlanesContent
   class DeclarationSet
     attr_reader :visuals, :skills, :random_combat_skills, :monsters, :statuses,
                 :gears, :encounter_pools, :tower_patterns, :biomes, :regressions, :biome_plans,
-                :story_events, :objectives, :dialogues, :autoplay_routes
+                :recruitment_opportunities, :story_events, :objectives, :dialogues, :autoplay_routes
 
     def self.load_file(path)
       new.tap { |set| set.load_file(path) }
@@ -25,6 +25,7 @@ module FairlanesContent
       @biomes = []
       @regressions = []
       @biome_plans = []
+      @recruitment_opportunities = []
       @story_events = []
       @objectives = []
       @dialogues = []
@@ -159,6 +160,15 @@ module FairlanesContent
                                   monsters: monsters)
     end
 
+    def recruitment_opportunity(id, cycle:, destination_party:, biome: nil, floor: nil,
+                                unlocked_by_party_completion: nil)
+      recruitment_opportunities << RecruitmentOpportunity.new(
+        id: id, cycle: cycle, biome: biome, floor: floor,
+        destination_party: destination_party,
+        unlocked_by_party_completion: unlocked_by_party_completion
+      )
+    end
+
     def story_event(id, handled: false)
       story_events << StoryEvent.new(id: id, handled: handled)
     end
@@ -208,6 +218,8 @@ module FairlanesContent
       regressions.freeze
       biome_plans.each(&:freeze)
       biome_plans.freeze
+      recruitment_opportunities.each(&:freeze)
+      recruitment_opportunities.freeze
       story_events.each(&:freeze)
       story_events.freeze
       objectives.each(&:freeze)
