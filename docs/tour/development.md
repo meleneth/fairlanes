@@ -122,6 +122,46 @@ You should not need to install libraries manually.
 
 ## Generated Content
 
+### Generator prerequisites and ownership
+
+Fairlanes has two distinct Ruby code-generation paths. Do not assume that a
+checked-in Ruby declaration and a checked-in generated C++ file follow the same
+build model.
+
+The content, regression, and story DSLs are self-contained in this repository:
+
+- `scripts/fairlanes_content_declarations.rb`
+- `scripts/fairlanes_regression_declarations.rb`
+- `scripts/fairlanes_story_declarations.rb`
+- `ruby/fairlanes_content/`
+
+They require no external gems, Bundler environment, or sibling repositories.
+Their generated runtime C++ is written to
+`<build-dir>/generated/fairlanes_content` and is not checked into the source
+tree. A normal source build therefore needs a content-generation runner: local
+Ruby, or Docker/Podman using `FAIRLANES_RUBY_CONTAINER_IMAGE`. A build can avoid
+running Ruby only when configured with
+`-DFAIRLANES_CONTENT_PREGENERATED_DIR=<generated-tree>`; that directory must
+already contain a complete generated Fairlanes content tree. Generated review
+documents under `docs/tour/generated` are checked in separately.
+
+FTXer UI composition uses the opposite model. The generated
+`src/fl/generated/ftxer_composition_root.{hpp,cpp}` files are checked in and
+are compiled directly by ordinary builds. FTXer and CMaker are maintainer-only
+code-generation dependencies, expected in sibling repositories at `../FTXer`
+and `../CMaker`; players and ordinary source builders do not need them. Change
+`scripts/ftxer_ui.rb` for shell-level screens, navigation, or global bindings,
+then regenerate instead of editing generated C++:
+
+```sh
+ruby scripts/ftxer_ui.rb src/fl/generated
+cmake --build build-linux-debug --target fairlanes_ftxer_ui_check
+```
+
+The check target is created only when native Ruby and both sibling generator
+repositories are available. Handwritten screen rendering and behavior remain
+under `src/fl/widgets` and do not require FTXer regeneration.
+
 The Ruby content declarations are the source of truth for generated skill
 metadata C++: stable IDs/enums, display names, learn chances, flee chances,
 execution kind tags, visual mappings, and random-combat membership. They also
@@ -175,11 +215,12 @@ under:
 <build-dir>/generated/fairlanes_content
 ```
 
-Native Ruby is optional for normal CMake builds. If `ruby` is unavailable but
-Docker or Podman is available, CMake runs the generator through the
-`FAIRLANES_RUBY_CONTAINER_IMAGE` image, which defaults to `ruby:4.0-alpine`.
-CMake searches the host `PATH`, common rbenv/asdf shim directories, and standard
-host install paths for these runner tools.
+Native Ruby is optional, but a generator runner is required for a normal source
+build unless `FAIRLANES_CONTENT_PREGENERATED_DIR` is supplied. If `ruby` is
+unavailable but Docker or Podman is available, CMake runs the generator through
+the `FAIRLANES_RUBY_CONTAINER_IMAGE` image, which defaults to
+`ruby:4.0-alpine`. CMake searches the host `PATH`, common rbenv/asdf shim
+directories, and standard host install paths for these runner tools.
 
 Run the content check target after changing declarations:
 

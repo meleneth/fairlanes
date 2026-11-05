@@ -63,6 +63,14 @@ cmake --build build-linux-debug
 ctest --test-dir build-linux-debug --output-on-failure
 ```
 
+Fresh source builds generate game content with the repository's self-contained
+Ruby DSL. They require local Ruby or Docker/Podman; no Ruby gems or sibling
+repositories are needed. A prepared generated tree can instead be supplied
+with `FAIRLANES_CONTENT_PREGENERATED_DIR`. The external FTXer and CMaker sibling
+repositories are needed only by maintainers regenerating the checked-in UI
+composition files. See
+[Development Environment Setup](docs/tour/development.md#generator-prerequisites-and-ownership).
+
 Formatting target:
 
 ```sh
