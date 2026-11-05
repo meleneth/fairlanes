@@ -48,6 +48,8 @@ PartyData::PartyData(entt::entity party_id,
       [this](const fl::events::PartyVictory &) {
         if (in_raid() || !encounter_data_ || encounter_tower_biome_.empty()) return;
         if (encounter_tower_biome_ == "origin_woodland_tower") {
+          woodland_cleared_floor_ =
+              std::max(woodland_cleared_floor_, encounter_tower_floor_);
           if (encounter_tower_floor_ == 9 && !plains_unlocked_) {
             plains_unlocked_ = true;
             tower_choice_pending_ = true;
@@ -65,6 +67,8 @@ PartyData::PartyData(entt::entity party_id,
           woodland_floor_ = next;
           tower_floor_attempts_ = 0;
         } else if (encounter_tower_biome_ == "origin_plains_tower") {
+          plains_cleared_floor_ =
+              std::max(plains_cleared_floor_, encounter_tower_floor_);
           if (encounter_tower_floor_ == 1 && !plains_reward_awarded_) {
             fl::ecs::systems::LootDropSystem::grant_unique(
                 party_ctx_, fl::loot::generated_content::GearId::MossboundCape);
@@ -106,6 +110,14 @@ int PartyData::latest_tower_floor(std::string_view biome_id) const noexcept {
   if (biome_id == "origin_woodland_tower") return woodland_latest_floor_;
   if (biome_id == "origin_plains_tower" && plains_unlocked_)
     return plains_latest_floor_;
+  return 0;
+}
+
+int PartyData::highest_tower_floor_cleared(
+    std::string_view biome_id) const noexcept {
+  if (biome_id == "origin_woodland_tower") return woodland_cleared_floor_;
+  if (biome_id == "origin_plains_tower" && plains_unlocked_)
+    return plains_cleared_floor_;
   return 0;
 }
 

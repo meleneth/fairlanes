@@ -97,6 +97,7 @@ public:
   bool select_tower(std::string_view biome_id,
                     std::optional<int> floor = std::nullopt);
   int latest_tower_floor(std::string_view biome_id) const noexcept;
+  int highest_tower_floor_cleared(std::string_view biome_id) const noexcept;
   void begin_tower_encounter();
   bool plains_unlocked() const noexcept { return plains_unlocked_; }
   bool tower_choice_pending() const noexcept { return tower_choice_pending_; }
@@ -209,6 +210,8 @@ private:
   int plains_floor_{1};
   int woodland_latest_floor_{1};
   int plains_latest_floor_{1};
+  int woodland_cleared_floor_{0};
+  int plains_cleared_floor_{0};
   int tower_floor_attempts_{0};
   bool plains_unlocked_{false};
   bool tower_choice_pending_{false};

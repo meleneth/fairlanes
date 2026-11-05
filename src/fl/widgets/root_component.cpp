@@ -225,7 +225,7 @@ bool RootComponent::OnEvent(ftxui::Event event) {
   if (active_screen_kind_ == ActiveScreen::story) {
     if (active_screen_ && active_screen_->OnEvent(event)) return true;
     if (event == ftxui::Event::Escape || event == ftxui::Event::Character("q"))
-      show_party_battle(commands_.account_index(), commands_.party_index());
+      return_from_story();
     return true;
   }
 
@@ -660,20 +660,56 @@ void RootComponent::show_bestiary(
 
 void RootComponent::show_objectives() {
   if (!objectives_ || raid_screen_locked()) return;
+  if (active_screen_kind_ != ActiveScreen::story)
+    story_return_screen_ = active_screen_kind_;
+  auto &parties = ctx_.account_data().parties();
+  if (parties.empty()) return;
+  auto &party = parties[std::min(commands_.party_index(), parties.size() - 1)];
   active_screen_kind_ = ActiveScreen::story;
   replace_screen(ftxui::Make<StoryScreen>(
-      *objectives_, [this](std::string_view id) { objectives_->emit(id); },
+      *objectives_, party,
+      [this](std::string_view id) { objectives_->emit(id); },
       [this] { objectives_->request_purchase("village_guard_hide"); },
+      [&party](std::string_view biome, int floor) {
+        return party.select_tower(biome, floor);
+      },
       StoryScreen::Start::Objectives));
 }
 
 void RootComponent::show_village() {
-  if (!objectives_ || raid_screen_locked()) return;
+  if (!objectives_ || raid_screen_locked() ||
+      !village_available_from_current_screen()) return;
+  if (active_screen_kind_ != ActiveScreen::story)
+    story_return_screen_ = active_screen_kind_;
+  auto &parties = ctx_.account_data().parties();
+  if (parties.empty()) return;
+  auto &party = parties[std::min(commands_.party_index(), parties.size() - 1)];
   active_screen_kind_ = ActiveScreen::story;
   replace_screen(ftxui::Make<StoryScreen>(
-      *objectives_, [this](std::string_view id) { objectives_->emit(id); },
+      *objectives_, party,
+      [this](std::string_view id) { objectives_->emit(id); },
       [this] { objectives_->request_purchase("village_guard_hide"); },
+      [&party](std::string_view biome, int floor) {
+        return party.select_tower(biome, floor);
+      },
       StoryScreen::Start::Village));
+}
+
+bool RootComponent::village_available_from_current_screen() const noexcept {
+  const auto origin = active_screen_kind_ == ActiveScreen::story
+                          ? story_return_screen_
+                          : std::optional{active_screen_kind_};
+  return origin == ActiveScreen::party || origin == ActiveScreen::party_battle;
+}
+
+void RootComponent::return_from_story() {
+  const auto destination =
+      story_return_screen_.value_or(ActiveScreen::party_battle);
+  story_return_screen_.reset();
+  if (destination == ActiveScreen::party)
+    show_party(commands_.account_index(), commands_.party_index());
+  else
+    show_party_battle(commands_.account_index(), commands_.party_index());
 }
 
 void RootComponent::toggle_active_screen() {
@@ -694,8 +730,10 @@ void RootComponent::toggle_active_screen() {
   case ActiveScreen::libram:
   case ActiveScreen::bestiary:
   case ActiveScreen::effect_gallery:
-  case ActiveScreen::story:
     show_party_battle(commands_.account_index(), commands_.party_index());
+    return;
+  case ActiveScreen::story:
+    return_from_story();
     return;
   }
 }

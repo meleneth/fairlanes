@@ -2,7 +2,8 @@
 
 Normal client play starts with one empty party. The day-zero Visitor has no
 defenders and devastates the village. The game-wide Objective System observes
-the raid result and reveals **Recruit a hero**. Press `o` to read objectives,
+the raid result and reveals **Recruit a hero**. Its text points to `v` for the
+village; press `o` to read objectives,
 or `v` to visit the village. Enter the pub, speak to the angry fellow, and
 choose **Then fight beside me**. Alderion joins through the ordinary ECS
 member construction path with Thump ready to use.
@@ -18,7 +19,12 @@ path and opens only the requested regression recording.
 
 His first two encounters are one-on-one Field Mouse fights. Each clear earns
 five Darrin-marks. After the second clear, combat pauses for the town visit.
-Press `r` to return, then `v` to buy **Village Guard Hide** for ten marks.
+Press `r` to return, then `v` from a selected-party screen to enter the village
+hub. The hub separates the pub, outfitter, and biome expedition chooser. The
+biome chooser shows each unlocked biome's highest cleared floor and defaults
+the floor picker to its next unlocked target. Village route choices are not
+available from the multi-party account view. Buy **Village Guard Hide** from
+the outfitter for ten marks.
 The shop grants and equips the authored chest item through the normal inventory
 and equipment events. This reveals **Meet the next volunteer**; speak to the
 volunteer in the village to recruit Bramblethorn. The first two objectives are

@@ -81,6 +81,8 @@ private:
   fl::context::AccountCtx make_context(std::size_t account_index);
   void toggle_active_screen();
   void toggle_party_battle_screen();
+  void return_from_story();
+  bool village_available_from_current_screen() const noexcept;
   bool return_selected_party_to_town();
   void refresh_selected_account(std::size_t account_index,
                                 std::size_t party_index);
@@ -97,6 +99,7 @@ private:
   fl::primitives::ObjectiveSystem *objectives_{nullptr};
   std::optional<fl::monster::MonsterKind> return_monster_;
   ActiveScreen active_screen_kind_{ActiveScreen::account_battle};
+  std::optional<ActiveScreen> story_return_screen_;
   std::optional<std::pair<entt::entity, std::uint64_t>> shown_raid_;
   bool keybind_help_open_{false};
   bool quit_confirmation_open_{false};

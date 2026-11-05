@@ -307,6 +307,8 @@ TEST_CASE("Story keys lead from the Visitor defeat to pub recruitment",
   REQUIRE(root.OnEvent(ftxui::Event::Return));
   REQUIRE(root.OnEvent(ftxui::Event::Character("o")));
   REQUIRE(render_to_string(root).find("Recruit a hero") != std::string::npos);
+  REQUIRE(render_to_string(root).find("Press v to visit the village") !=
+          std::string::npos);
   REQUIRE(root.OnEvent(ftxui::Event::Character("v")));
   REQUIRE(render_to_string(root).find("Village") != std::string::npos);
   REQUIRE(root.OnEvent(ftxui::Event::Return));
@@ -316,6 +318,47 @@ TEST_CASE("Story keys lead from the Visitor defeat to pub recruitment",
   REQUIRE(root.OnEvent(ftxui::Event::Return));
   REQUIRE(game.accounts().front().parties().front().members().size() == 1);
   REQUIRE(game.objectives()->completed("recruit_first_hero"));
+}
+
+TEST_CASE("Manual village navigation is scoped to a selected party",
+          "[widgets][root][story][tower]") {
+  fl::GrandCentral game{1, 1, 1, true, true, 42, true};
+  auto root = fl::widgets::RootComponent{
+      game.account_context(0), game.accounts(), game.game_log(),
+      game.world_clock(), nullptr, nullptr, game.objectives()};
+
+  // The account battle view is the multi-party surface and cannot choose a
+  // route for whichever party happens to be selected in the command model.
+  REQUIRE(root.OnEvent(ftxui::Event::Character(" ")));
+  REQUIRE(root.active_screen_id() == "account_battle");
+  REQUIRE(root.OnEvent(ftxui::Event::Character("v")));
+  REQUIRE(root.active_screen_id() == "account_battle");
+
+  REQUIRE(root.OnEvent(ftxui::Event::Character(" ")));
+  REQUIRE(root.active_screen_id() == "party_battle");
+  REQUIRE(root.OnEvent(ftxui::Event::Character("v")));
+  auto rendered = render_to_string(root);
+  REQUIRE(rendered.find("Visit the pub") != std::string::npos);
+  REQUIRE(rendered.find("Visit the outfitter's shop") != std::string::npos);
+  REQUIRE(rendered.find("Choose a biome expedition") != std::string::npos);
+
+  REQUIRE(root.OnEvent(ftxui::Event::ArrowDown));
+  REQUIRE(root.OnEvent(ftxui::Event::ArrowDown));
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  rendered = render_to_string(root);
+  REQUIRE(rendered.find("Choose a Biome") != std::string::npos);
+  REQUIRE(rendered.find("Origin Woodland  Cleared 0  Next 1") !=
+          std::string::npos);
+
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  rendered = render_to_string(root);
+  REQUIRE(rendered.find("Choose a Floor") != std::string::npos);
+  REQUIRE(rendered.find("Floor 1 [next target]") != std::string::npos);
+  REQUIRE(root.OnEvent(ftxui::Event::Return));
+  const auto &party = game.accounts().front().parties().front();
+  REQUIRE(party.tower_route().has_value());
+  REQUIRE(party.tower_route()->biome_id == "origin_woodland_tower");
+  REQUIRE(party.tower_route()->floor == 1);
 }
 
 TEST_CASE("Sandbox console switch warns that story cannot be recovered",

@@ -29,6 +29,7 @@ TEST_CASE("Tower command selects an unlocked floor and rejects a locked floor",
   REQUIRE_FALSE(party.tower_route().has_value());
   commands.handle("tower woodland 1");
   REQUIRE(party.tower_route()->floor == 1);
+  REQUIRE(party.highest_tower_floor_cleared("origin_woodland_tower") == 0);
   party.begin_tower_encounter();
   auto &fight = fl::primitives::EncounterBuilder{
       ctx, fl::primitives::EncounterMode::ChaosAttractor,
@@ -37,6 +38,7 @@ TEST_CASE("Tower command selects an unlocked floor and rejects a locked floor",
   for (auto enemy : fight.attackers().members())
     ctx.reg().get<fl::ecs::components::Stats>(enemy).hp_ = 0;
   party.leave_combat();
+  REQUIRE(party.highest_tower_floor_cleared("origin_woodland_tower") == 1);
   commands.handle("tower woodland 1");
   REQUIRE(party.tower_route()->floor == 1);
   commands.handle("tower woodland 3");
@@ -186,6 +188,7 @@ TEST_CASE(
     clear_current_floor();
   }
   REQUIRE(party.latest_tower_floor("origin_woodland_tower") == 10);
+  REQUIRE(party.highest_tower_floor_cleared("origin_woodland_tower") == 9);
   REQUIRE_FALSE(party.select_tower("origin_woodland_tower", 11));
   REQUIRE_FALSE(party.select_tower("origin_woodland_tower", 0));
   REQUIRE(party.select_tower("origin_woodland_tower", 1));
@@ -202,6 +205,7 @@ TEST_CASE(
   REQUIRE_FALSE(party.select_tower("origin_plains_tower", 2));
   clear_current_floor();
   REQUIRE(party.tower_route()->floor == 2);
+  REQUIRE(party.highest_tower_floor_cleared("origin_plains_tower") == 1);
   const auto reward = std::find_if(
       party.items().begin(), party.items().end(), [&](entt::entity item) {
         const auto *gear = ctx.reg().try_get<fl::ecs::components::Equipment>(item);

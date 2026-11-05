@@ -12,7 +12,7 @@ story_event :recruit_second_hero, handled: true
 
 objective :recruit_first_hero,
           title: "Recruit a hero",
-          description: "Visit the village pub and speak to the angry fellow.",
+          description: "Press v to visit the village, then enter the pub and speak to the angry fellow.",
           revealed_by: :visitor_destroyed_village,
           completed_by: :recruit_angry_fellow
 objective :recruit_second_hero,
