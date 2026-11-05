@@ -64,12 +64,16 @@ public:
   }
   bool start_raid(fl::context::AccountCtx ctx, std::span<const fl::monster::MonsterKind> enemies) {
     if (in_raid() || parties_.empty() || enemies.empty()) return false;
+    normal_party_battle_mode_ = false;
     raid_.reset();
     raid_ = std::make_unique<RaidData>(ctx, *raid_bus_, ++raid_id_, enemies);
     raid_->announce_started();
     return true;
   }
   bool spawn_visitor(fl::context::AccountCtx ctx);
+  bool normal_party_battle_mode() const noexcept {
+    return normal_party_battle_mode_;
+  }
 
   static constexpr std::uint64_t kVisitorPeriodBeats =
       MoonCalendar::kVisitorCycleDays * WorldClock::kBeatsPerCalendarDay;
@@ -177,6 +181,7 @@ private:
   };
   std::vector<PendingTransfer> pending_transfers_;
   bool roster_transfers_enabled_{false};
+  bool normal_party_battle_mode_{false};
   std::array<bool, 5> completed_rosters_{};
   std::unordered_set<std::string> claimed_story_recruits_;
   std::unordered_set<std::string> committed_floor_clears_;

@@ -26,6 +26,7 @@ struct PartyLoop {
     static void combat_tick(fl::context::PartyCtx& ctx);
     static void next_event(fl::context::PartyCtx& ctx);
 
+    static bool ready_to_farm(fl::context::PartyCtx& ctx);
     static bool in_combat(fl::context::PartyCtx& ctx);
     static bool fixing_done(fl::context::PartyCtx& ctx);
   };
@@ -85,6 +86,11 @@ struct PartyLoop {
       return Ops::in_combat(ctx);
     }
   };
+  struct ReadyToFarm {
+    bool operator()(fl::context::PartyCtx& ctx) const {
+      return Ops::ready_to_farm(ctx);
+    }
+  };
   struct FixingDone {
     bool operator()(fl::context::PartyCtx& ctx) const {
       return Ops::fixing_done(ctx);
@@ -107,7 +113,7 @@ struct PartyLoop {
         state<Fixing> + sml::on_entry<_> / EnterFixing{},
         state<Gearing> + sml::on_entry<_> / EnterGearing{},
 
-        state<Idle> + event<NextEvent> = state<Farming>,
+        state<Idle> + event<NextEvent>[ReadyToFarm{}] = state<Farming>,
         state<Idle> + event<PartyWipedEvent> = state<Dead>,
         state<Farming> + event<PartyWipedEvent> = state<Dead>,
         state<CombatIdle> + event<PartyWipedEvent> = state<Dead>,

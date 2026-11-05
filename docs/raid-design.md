@@ -488,6 +488,12 @@ when any of its parties resumes normal combat. Other accounts' combat cannot
 dismiss the results, and this event cannot dismiss a live raid. Result display
 does not pause recovery or ordinary party progression.
 
+`AccountData` retains whether normal party-battle mode has resumed since the
+last raid began. `PartyCombatStarted` enters that mode and a new `RaidStarted`
+clears it. The state survives encounter cleanup, preventing a resolved Visitor
+screen from becoming active again between ordinary encounters. Presentation
+listeners are attached to newly unlocked parties as well as the initial roster.
+
 The next-Visitor countdown belongs at the end of the moon-status line, with no
 separate countdown row in chrome or raid content. Future research will unlock this
 forecast; it remains visible in the current prototype until research mechanics and

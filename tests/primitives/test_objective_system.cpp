@@ -65,6 +65,10 @@ TEST_CASE("Two starter wins lead to a village purchase and second volunteer",
   REQUIRE(party.tower_route()->floor == 3);
   REQUIRE(party.story_shop_pending());
   REQUIRE(party.darrin_marks() == 10);
+  for (int beat = 0; beat < 10 && !party.has_encounter(); ++beat) game.advance_beat();
+  REQUIRE(party.has_encounter());
+  REQUIRE(party.tower_route()->floor == 3);
+  REQUIRE(game.accounts().front().normal_party_battle_mode());
   party.return_to_town();
   REQUIRE(story->can_buy_village_guard_hide());
   story->request_purchase("village_guard_hide");

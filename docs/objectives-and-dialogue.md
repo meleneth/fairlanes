@@ -18,9 +18,9 @@ that route when attract mode is skipped. `--replay` takes its existing early
 path and opens only the requested regression recording.
 
 His first two encounters are one-on-one Field Mouse fights. Each clear earns
-five Darrin-marks. After the second clear, combat pauses for the town visit.
-Press `r` to return, then `v` from a selected-party screen to enter the village
-hub. The hub separates the pub, outfitter, and biome expedition chooser. The
+five Darrin-marks. After the second clear, manual combat continues to the next
+floor unless the player presses `r` to return. Use `v` from a selected-party
+screen to enter the village hub. The hub separates the pub, outfitter, and biome expedition chooser. The
 biome chooser shows each unlocked biome's highest cleared floor and defaults
 the floor picker to its next unlocked target. Village route choices are not
 available from the multi-party account view. Buy **Village Guard Hide** from
@@ -57,7 +57,9 @@ that route on production beats. The same generated
 an autoplay author can see exactly what is needed to advance. Autoplay is
 opt-in; ordinary play waits for the player's choices.
 While autoplay is enabled, achievement-style notices auto-acknowledge after
-60 seconds of wall time each. Space or Enter can still acknowledge one sooner.
+30 seconds of wall time each. Space or Enter can still acknowledge one sooner.
+Cleared notices retain their enqueue, display, and clearance timestamps in
+presentation history, in the order they were cleared.
 
 The previous 8-account, 5-party, 5-hero setup is available through the
 `sandbox` console command. It asks for confirmation and warns that the current

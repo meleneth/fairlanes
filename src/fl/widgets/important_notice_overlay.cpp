@@ -10,25 +10,32 @@ namespace fl::widgets {
 
 void ImportantNoticeOverlay::enqueue(Notice notice, Clock::time_point now) {
   if (queue_.empty()) shown_at_ = now;
-  queue_.push_back(std::move(notice));
+  queue_.push_back(PendingNotice{std::move(notice), now});
 }
 
 void ImportantNoticeOverlay::dismiss(Clock::time_point now) {
+  clear_front(ClearReason::Manual, now);
+}
+
+void ImportantNoticeOverlay::clear_front(ClearReason reason, Clock::time_point now) {
   if (queue_.empty()) return;
+  auto pending = std::move(queue_.front());
   queue_.pop_front();
+  cleared_notices_.push_back(
+      ClearedNotice{std::move(pending.notice), pending.enqueued_at, shown_at_, now, reason});
   if (!queue_.empty()) shown_at_ = now;
 }
 
 void ImportantNoticeOverlay::tick(Clock::time_point now) {
   if (auto_acknowledge_ && !queue_.empty() && now - shown_at_ >= kAutoAcknowledgeDelay)
-    dismiss(now);
+    clear_front(ClearReason::Automatic, now);
 }
 
 ftxui::Element ImportantNoticeOverlay::render(int viewport_height, Clock::time_point now) const {
   using namespace ftxui;
   if (queue_.empty()) return text("");
 
-  const auto& notice = queue_.front();
+  const auto& notice = queue_.front().notice;
   const auto elapsed = std::max(Clock::duration::zero(), now - shown_at_);
   const double progress = std::clamp(std::chrono::duration<double>(elapsed).count() /
                                          std::chrono::duration<double>(kRiseDuration).count(),

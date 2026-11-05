@@ -149,12 +149,18 @@ TEST_CASE("Raid results yield to normal combat for the selected account",
   }
   REQUIRE(starts == 1);
   REQUIRE(account.party(1).in_combat());
+  REQUIRE(account.normal_party_battle_mode());
   SECTION("Normal combat replaces results and later arrivals still take over") {
     REQUIRE(render().find("VISITOR RAID") == std::string::npos);
     REQUIRE(render().find("FPS ") != std::string::npos);
+    account.party(1).return_to_town();
+    REQUIRE_FALSE(account.party(1).in_combat());
+    REQUIRE(account.normal_party_battle_mode());
+    REQUIRE(render().find("VISITOR RAID") == std::string::npos);
     REQUIRE(account.spawn_visitor(ctx));
     REQUIRE(render().find("VISITOR RAID") != std::string::npos);
     REQUIRE(account.in_raid());
+    REQUIRE_FALSE(account.normal_party_battle_mode());
   }
   SECTION("A new raid supersedes a return queued before the next frame") {
     REQUIRE(account.spawn_visitor(ctx));

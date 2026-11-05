@@ -84,6 +84,9 @@ void AccountData::enable_origin_recruitment() {
 void AccountData::bind_boundary_party(std::size_t party_index) {
   auto& bus = parties_.at(party_index).party_bus();
   boundary_subscriptions_.emplace_back(
+      bus, std::in_place_type<fl::events::PartyCombatStarted>,
+      [this](const fl::events::PartyCombatStarted&) { normal_party_battle_mode_ = true; });
+  boundary_subscriptions_.emplace_back(
       bus, std::in_place_type<fl::events::PartyEncounterBoundary>,
       [this, party_index](const fl::events::PartyEncounterBoundary&) {
         if (pending_transfers_.empty()) return;

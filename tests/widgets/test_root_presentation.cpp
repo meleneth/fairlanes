@@ -24,6 +24,7 @@
 #include "fl/widgets/battle_render_budget.hpp"
 #include "fl/widgets/chaos_attract_root.hpp"
 #include "fl/widgets/important_notice_overlay.hpp"
+#include "fl/widgets/party_battle_screen.hpp"
 #include "fl/widgets/root_chrome.hpp"
 #include "fl/widgets/root_component.hpp"
 #include "fl/widgets/story_start_picker.hpp"
@@ -219,9 +220,15 @@ TEST_CASE("Important notices rise from bottom right and wait for acknowledgement
   REQUIRE(top.find("Origin Plains Tower") != std::string::npos);
   notices.dismiss(start + std::chrono::milliseconds{900});
   REQUIRE_FALSE(notices.active());
+  REQUIRE(notices.cleared_notices().size() == 1);
+  REQUIRE(notices.cleared_notices().front().notice.message == "Origin Plains Tower");
+  REQUIRE(notices.cleared_notices().front().enqueued_at == start);
+  REQUIRE(notices.cleared_notices().front().shown_at == start);
+  REQUIRE(notices.cleared_notices().front().cleared_at == start + std::chrono::milliseconds{900});
+  REQUIRE(notices.cleared_notices().front().reason == Overlay::ClearReason::Manual);
 }
 
-TEST_CASE("Autoplay acknowledges each achievement-style notice after sixty seconds",
+TEST_CASE("Autoplay archives each achievement-style notice after thirty seconds",
           "[widgets][root][notice]") {
   using Overlay = fl::widgets::ImportantNoticeOverlay;
   const Overlay::Clock::time_point start{};
@@ -229,22 +236,42 @@ TEST_CASE("Autoplay acknowledges each achievement-style notice after sixty secon
   notices.set_auto_acknowledge(true);
   notices.enqueue({"ACHIEVEMENT UNLOCKED", "First", 14}, start);
   notices.enqueue({"OBJECTIVE REVEALED", "Second", 27}, start);
+  notices.tick(start + std::chrono::seconds{29});
+  REQUIRE(notices.active());
+  notices.tick(start + std::chrono::seconds{30});
+  REQUIRE(notices.active());
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(80), ftxui::Dimension::Fixed(24));
+  ftxui::Render(screen, notices.render(24, start + std::chrono::seconds{30}));
+  REQUIRE(screen_text(screen).find("Second") != std::string::npos);
   notices.tick(start + std::chrono::seconds{59});
   REQUIRE(notices.active());
   notices.tick(start + std::chrono::seconds{60});
-  REQUIRE(notices.active());
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(80), ftxui::Dimension::Fixed(24));
-  ftxui::Render(screen, notices.render(24, start + std::chrono::seconds{60}));
-  REQUIRE(screen_text(screen).find("Second") != std::string::npos);
-  notices.tick(start + std::chrono::seconds{119});
-  REQUIRE(notices.active());
-  notices.tick(start + std::chrono::seconds{120});
   REQUIRE_FALSE(notices.active());
+  REQUIRE(notices.cleared_notices().size() == 2);
+  REQUIRE(notices.cleared_notices()[0].notice.message == "First");
+  REQUIRE(notices.cleared_notices()[0].cleared_at == start + std::chrono::seconds{30});
+  REQUIRE(notices.cleared_notices()[1].notice.message == "Second");
+  REQUIRE(notices.cleared_notices()[1].shown_at == start + std::chrono::seconds{30});
+  REQUIRE(notices.cleared_notices()[1].cleared_at == start + std::chrono::seconds{60});
+  REQUIRE(notices.cleared_notices()[0].reason == Overlay::ClearReason::Automatic);
+  REQUIRE(notices.cleared_notices()[1].reason == Overlay::ClearReason::Automatic);
 
   Overlay manual;
   manual.enqueue({"ACHIEVEMENT UNLOCKED", "Keep reading", 14}, start);
   manual.tick(start + std::chrono::minutes{2});
   REQUIRE(manual.active());
+}
+
+TEST_CASE("Party battle divider identifies the selected tower floor",
+          "[widgets][party-battle][tower]") {
+  fl::GrandCentral game{1, 1, 1};
+  auto ctx = game.account_context(0);
+  auto& party = ctx.account_data().party(0);
+  REQUIRE(party.select_tower("origin_woodland_tower", 1));
+  fl::widgets::PartyBattleScreen view{ctx, 0};
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(120), ftxui::Dimension::Fixed(37));
+  ftxui::Render(screen, view.Render());
+  REQUIRE(screen_text(screen).find("Origin Woodland | Floor 1/100") != std::string::npos);
 }
 
 TEST_CASE("Root queues milestone events and consumes the acknowledging key",

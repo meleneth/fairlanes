@@ -134,35 +134,15 @@ RootComponent::RootComponent(fl::context::AccountCtx ctx,
           if (ctx_.account_data().account_id() == account_id && shell_.navigate)
             shell_.navigate(generated::ScreenId::Raid, false);
         });
-    for (auto& party : account.parties()) {
-      combat_started_subs_.emplace_back(party.party_bus(),
-                                        std::in_place_type<fl::events::PartyCombatStarted>,
-                                        [this, account_id = account.account_id()](const auto&) {
-                                          on_party_combat_started(account_id);
-                                        });
-      milestone_subs_.emplace_back(party.party_bus(), std::in_place_type<fl::events::BiomeUnlocked>,
-                                   [this](const fl::events::BiomeUnlocked& event) {
-                                     const std::string name =
-                                         event.biome_id == "origin_plains_tower"
-                                             ? "Origin Plains Tower"
-                                             : event.biome_id;
-                                     important_notices_.enqueue({"BIOME UNLOCKED", name, 20});
-                                   });
-      milestone_subs_.emplace_back(party.party_bus(), std::in_place_type<fl::events::CycleUnlocked>,
-                                   [this](const fl::events::CycleUnlocked& event) {
-                                     std::string name;
-                                     switch (event.cycle) {
-                                     case fl::primitives::Cycle::Origin: name = "Origin"; break;
-                                     case fl::primitives::Cycle::Resonance:
-                                       name = "Resonance";
-                                       break;
-                                     case fl::primitives::Cycle::Conflict: name = "Conflict"; break;
-                                     case fl::primitives::Cycle::Singularity:
-                                       name = "Singularity";
-                                       break;
-                                     }
-                                     important_notices_.enqueue({"CYCLE UNLOCKED", name, 27});
-                                   });
+    for (std::size_t index = 0; index < account.parties().size(); ++index)
+      bind_party_presentation_events(account, index);
+    if (!account.parties().empty()) {
+      party_unlocked_subs_.emplace_back(
+          account.parties().front().party_bus(), std::in_place_type<fl::events::PartyUnlocked>,
+          [this, account = &account](const fl::events::PartyUnlocked& event) {
+            if (event.party_index < account->parties().size())
+              bind_party_presentation_events(*account, event.party_index);
+          });
     }
   }
   if (achievements) {
@@ -201,7 +181,7 @@ generated::ScreenId RootComponent::initial_screen(generated::ScreenId declared) 
 
 ftxui::Component RootComponent::make_raid() {
   auto* raid = ctx_.account_data().raid();
-  if (!raid) return {};
+  if (!raid || (!raid->active() && ctx_.account_data().normal_party_battle_mode())) return {};
   return ftxui::Make<RaidView>(ctx_);
 }
 
@@ -411,6 +391,36 @@ fl::context::AccountCtx RootComponent::make_context(std::size_t account_index) {
 
 bool RootComponent::raid_locked() const noexcept {
   return ctx_.account_data().in_raid();
+}
+
+void RootComponent::bind_party_presentation_events(fl::primitives::AccountData& account,
+                                                   std::size_t party_index) {
+  auto& party = account.parties().at(party_index);
+  combat_started_subs_.emplace_back(party.party_bus(),
+                                    std::in_place_type<fl::events::PartyCombatStarted>,
+                                    [this, account_id = account.account_id()](const auto&) {
+                                      on_party_combat_started(account_id);
+                                    });
+  milestone_subs_.emplace_back(party.party_bus(), std::in_place_type<fl::events::BiomeUnlocked>,
+                               [this](const fl::events::BiomeUnlocked& event) {
+                                 const std::string name = event.biome_id == "origin_plains_tower"
+                                                              ? "Origin Plains Tower"
+                                                              : event.biome_id;
+                                 important_notices_.enqueue({"BIOME UNLOCKED", name, 20});
+                               });
+  milestone_subs_.emplace_back(party.party_bus(), std::in_place_type<fl::events::CycleUnlocked>,
+                               [this](const fl::events::CycleUnlocked& event) {
+                                 std::string name;
+                                 switch (event.cycle) {
+                                 case fl::primitives::Cycle::Origin: name = "Origin"; break;
+                                 case fl::primitives::Cycle::Resonance: name = "Resonance"; break;
+                                 case fl::primitives::Cycle::Conflict: name = "Conflict"; break;
+                                 case fl::primitives::Cycle::Singularity:
+                                   name = "Singularity";
+                                   break;
+                                 }
+                                 important_notices_.enqueue({"CYCLE UNLOCKED", name, 27});
+                               });
 }
 
 void RootComponent::on_party_combat_started(entt::entity account) {

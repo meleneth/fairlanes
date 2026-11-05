@@ -17,6 +17,9 @@
   target, and `scripts/build --test` to compile and run CTest. It keeps complete
   output in `build-linux-debug/logs` while showing only concise results. Use
   `--verbose` only when live underlying output is genuinely useful.
+- Fairlanes compiles are slow. When monitoring an ongoing build, wait up to five
+  minutes between checks; completion will return earlier. Do not poll every few
+  seconds and waste agent context on unchanged build state.
 
 # Local Debugging
 
@@ -659,7 +662,9 @@ facts and actions. `--story-autoplay` follows those steps after account beats;
 manual play remains the default. Keep the generated route aligned with the
 handwritten Objective System and test it on production beats.
 Autoplay also auto-acknowledges each queued achievement-style notice after
-60 seconds of wall time; manual Space/Enter acknowledgement remains available.
+30 seconds of wall time; manual Space/Enter acknowledgement remains available.
+The presentation keeps cleared notices in order with enqueue, display, and
+clearance timestamps rather than discarding them.
 Leaving attract mode with Enter presents a manual-story/autoplay picker with a
 toggle hint. `a` toggles story autoplay during normal input. `--replay` returns
 through its dedicated recording path before the picker or story game is built.

@@ -91,6 +91,8 @@ private:
   bool select_account(int delta);
   bool select_party(int delta);
   ftxui::Component make_story_screen(bool village);
+  void bind_party_presentation_events(fl::primitives::AccountData& account,
+                                      std::size_t party_index);
   void on_party_combat_started(entt::entity account);
   void update_fps_counter();
   ftxui::Element render_help_hint() const;
@@ -125,6 +127,7 @@ private:
   ftxui::Component keybind_help_;
   std::vector<fl::events::ScopedPartyListener> combat_started_subs_;
   std::vector<fl::events::ScopedPartyListener> milestone_subs_;
+  std::vector<fl::events::ScopedPartyListener> party_unlocked_subs_;
   std::vector<fl::events::ScopedRaidListener> raid_started_subs_;
   fl::events::ScopedAchievementListener achievement_sub_;
   fl::events::ScopedStoryListener objective_sub_;

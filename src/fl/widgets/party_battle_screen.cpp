@@ -96,6 +96,20 @@ ftxui::Element labeled_separator(std::string label, int width) {
          size(WIDTH, EQUAL, width);
 }
 
+std::string tower_separator_label(const fl::primitives::PartyData& party) {
+  std::string label{party.name()};
+  const auto route = party.tower_route();
+  if (!route) return label;
+
+  std::string biome{route->biome_id};
+  if (route->biome_id == "origin_woodland_tower")
+    biome = "Origin Woodland";
+  else if (route->biome_id == "origin_plains_tower")
+    biome = "Origin Plains";
+  label += " | " + biome + " | Floor " + std::to_string(route->floor) + "/100";
+  return label;
+}
+
 std::uint32_t forest_seed_for_party(const std::string& party_name, std::size_t party_index) {
   std::uint32_t seed = 0x46A7B055u ^ static_cast<std::uint32_t>((party_index + 1U) * 0x9E3779B9u);
   for (unsigned char ch : party_name) {
@@ -211,8 +225,10 @@ ftxui::Element PartyBattleScreen::Render() {
   const bool show_status = primary_party == nullptr || !primary_party->has_encounter();
   Element status = text("No parties.") | bold;
   std::string party_name = "Party";
+  std::string divider_label = party_name;
   if (primary_party != nullptr) {
     party_name = std::string(primary_party->name());
+    divider_label = tower_separator_label(*primary_party);
     if (primary_party->needs_farm_focus_choice()) {
       const auto selected = std::min(party_index_, parties.size() - 1);
       if (!farming_choice_ || farming_choice_party_index_ != selected) {
@@ -259,7 +275,7 @@ ftxui::Element PartyBattleScreen::Render() {
   }
   rows.push_back(render_stage_background(std::move(attacker_stage), layout.screen_width,
                                          layout.combatant_grid_height, forest_seed));
-  rows.push_back(labeled_separator(party_name, layout.screen_width) |
+  rows.push_back(labeled_separator(divider_label, layout.screen_width) |
                  size(HEIGHT, EQUAL, layout.separator_height) |
                  fl::lospec500::on_not_black(fl::lospec500::color_at(32)));
   rows.push_back(render_stage_background(std::move(defender_stage), layout.screen_width,
