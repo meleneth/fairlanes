@@ -2,19 +2,18 @@
 
 #include <algorithm>
 #include <string>
-#include <string_view>
 #include <utility>
 #include <vector>
 
-#include "fl/tracy_shim.hpp"
+#include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
 
 #include "account_battle_view.hpp"
 #include "bestiary_view.hpp"
 #include "console_overlay.hpp"
 #include "effect_gallery_view.hpp"
-#include "fl/events/party_bus.hpp"
 #include "fl/lospec500.hpp"
+#include "fl/tracy_shim.hpp"
 #include "libram_view.hpp"
 #include "party_battle_screen.hpp"
 #include "party_view.hpp"
@@ -23,6 +22,8 @@
 #include "story_screen.hpp"
 
 namespace fl::widgets {
+
+namespace generated = fl::generated::ftxer;
 
 RootComponent::RootComponent(fl::context::AccountCtx ctx,
                              std::deque<fl::primitives::AccountData>& accounts,
@@ -34,37 +35,105 @@ RootComponent::RootComponent(fl::context::AccountCtx ctx,
       world_clock_(&world_clock), commands_(accounts, console_log, world_clock),
       discoveries_(discoveries), objectives_(objectives) {
   important_notices_.set_auto_acknowledge(objectives_ && objectives_->autoplay_enabled());
-  quit_cancel_ = ftxui::Button("Cancel", [this] {
-    quit_confirmation_open_ = false;
-    active_screen_->TakeFocus();
-  });
-  auto quit = ftxui::Button("Quit", [this] { quit_requested_ = true; });
-  quit_confirmation_ = ftxui::Container::Horizontal({quit_cancel_, quit});
-  Add(quit_confirmation_);
   console_overlay_ = ftxui::Make<ConsoleOverlay>(console_log_);
-  commands_.set_show_account_view(
-      [this](std::size_t account_index) { show_account_battle(account_index); });
-  commands_.set_show_party_view([this](std::size_t account_index, std::size_t party_index) {
-    show_party(account_index, party_index);
+  console_overlay()->set_on_command(
+      [this](std::string_view command) { commands_.handle(command); });
+
+  quit_cancel_ = ftxui::Button(
+      "Cancel", [this] { shell_.close_overlay(generated::OverlayId::QuitConfirmation); });
+  auto quit = ftxui::Button("Quit", [this] { quit_requested_ = true; });
+  auto quit_buttons = ftxui::Container::Horizontal({quit_cancel_, quit});
+  quit_confirmation_ = ftxui::Renderer(quit_buttons, [quit_buttons] {
+    using namespace ftxui;
+    return window(text("Quit Fairlanes?") | bold,
+                  vbox({text("Progress is not saved and will be lost."), separator(),
+                        quit_buttons->Render()})) |
+           center | bgcolor(fl::lospec500::color_at(0)) | clear_under;
   });
-  commands_.set_show_effect_gallery([this]() { show_effect_gallery(); });
+
+  auto autoplay_body = ftxui::Renderer([] {
+    using namespace ftxui;
+    return window(text("Enable story autoplay?"),
+                  vbox({paragraph("Autoplay will make dialogue, town, and purchase decisions for "
+                                  "the opening story."),
+                        text("Enter/y: enable   Esc/n: stay manual")})) |
+           center | bgcolor(fl::lospec500::color_at(0)) | clear_under;
+  });
+  autoplay_confirmation_ = ftxui::CatchEvent(autoplay_body, [this](const ftxui::Event& event) {
+    if (event == ftxui::Event::Return || event == ftxui::Event::Character("y")) {
+      if (objectives_) objectives_->request_autoplay(true);
+      shell_.close_overlay(generated::OverlayId::AutoplayConfirmation);
+      return true;
+    }
+    if (event == ftxui::Event::Character("n")) {
+      shell_.close_overlay(generated::OverlayId::AutoplayConfirmation);
+      return true;
+    }
+    return true;
+  });
+
+  auto sandbox_body = ftxui::Renderer([] {
+    using namespace ftxui;
+    return window(text("Switch to full roster?"),
+                  vbox({paragraph("The current story session cannot be recovered after switching."),
+                        text("Enter/y: switch   Esc/n: stay")})) |
+           center | bgcolor(fl::lospec500::color_at(0)) | clear_under;
+  });
+  sandbox_confirmation_ = ftxui::CatchEvent(sandbox_body, [this](const ftxui::Event& event) {
+    if (event == ftxui::Event::Return || event == ftxui::Event::Character("y")) {
+      sandbox_requested_ = true;
+      quit_requested_ = true;
+      return true;
+    }
+    if (event == ftxui::Event::Character("n")) {
+      shell_.close_overlay(generated::OverlayId::SandboxConfirmation);
+      return true;
+    }
+    return true;
+  });
+
+  auto help_body = ftxui::Renderer([this] { return render_keybind_help(); });
+  keybind_help_ = ftxui::CatchEvent(help_body, [this](const ftxui::Event& event) {
+    if (event == ftxui::Event::Character("h"))
+      shell_.close_overlay(generated::OverlayId::KeybindHelp);
+    return true;
+  });
+
+  commands_.set_show_account_view([this](std::size_t account_index) {
+    ctx_ = make_context(account_index);
+    shell_.navigate(generated::ScreenId::AccountBattle, true);
+  });
+  commands_.set_show_party_view([this](std::size_t account_index, std::size_t) {
+    ctx_ = make_context(account_index);
+    shell_.navigate(generated::ScreenId::Party, true);
+  });
+  commands_.set_show_effect_gallery(
+      [this] { shell_.navigate(generated::ScreenId::EffectGallery, true); });
   commands_.set_show_libram([this] {
     return_monster_.reset();
-    show_libram();
+    selected_skill_.reset();
+    shell_.navigate(generated::ScreenId::Libram, true);
   });
-  commands_.set_show_bestiary([this] { show_bestiary(); });
-  commands_.set_account_selected([this](std::size_t account_index, std::size_t party_index) {
-    refresh_selected_account(account_index, party_index);
+  commands_.set_show_bestiary([this] { shell_.navigate(generated::ScreenId::Bestiary, true); });
+  commands_.set_account_selected([this](std::size_t account_index, std::size_t) {
+    ctx_ = make_context(account_index);
+    if (shell_.refresh) shell_.refresh();
   });
   commands_.set_spawn_visitor([this](std::size_t account_index) {
     auto context = make_context(account_index);
     return context.account_data().spawn_visitor(context);
   });
-  if (objectives_) commands_.set_start_sandbox([this] { sandbox_confirmation_open_ = true; });
-  console_overlay()->set_on_command(
-      [this](std::string_view command) { commands_.handle(command); });
-  Add(console_overlay_);
+  if (objectives_)
+    commands_.set_start_sandbox(
+        [this] { shell_.open_overlay(generated::OverlayId::SandboxConfirmation); });
+
   for (auto& account : accounts) {
+    raid_started_subs_.emplace_back(
+        account.raid_bus(), std::in_place_type<fl::events::RaidStarted>,
+        [this, account_id = account.account_id()](const fl::events::RaidStarted&) {
+          if (ctx_.account_data().account_id() == account_id && shell_.navigate)
+            shell_.navigate(generated::ScreenId::Raid, false);
+        });
     for (auto& party : account.parties()) {
       combat_started_subs_.emplace_back(party.party_bus(),
                                         std::in_place_type<fl::events::PartyCombatStarted>,
@@ -100,9 +169,8 @@ RootComponent::RootComponent(fl::context::AccountCtx ctx,
     achievement_sub_ = fl::events::ScopedAchievementListener{
         *achievements, std::in_place_type<fl::events::AchievementUnlocked>,
         [this](const fl::events::AchievementUnlocked& event) {
-          if (event.achievement == fl::events::AchievementId::RaidMutualDestruction) {
+          if (event.achievement == fl::events::AchievementId::RaidMutualDestruction)
             important_notices_.enqueue({"ACHIEVEMENT UNLOCKED", "Raid Mutual Destruction", 14});
-          }
         }};
   }
   if (objectives_) {
@@ -121,644 +189,230 @@ RootComponent::RootComponent(fl::context::AccountCtx ctx,
                                                    : "Story autoplay paused.");
         }};
   }
-
-  show_party_battle(commands_.account_index(), commands_.party_index());
 }
 
-ftxui::Component RootComponent::ActiveChild() {
-  if (console_overlay()->open()) {
-    return console_overlay_;
-  }
-  if (quit_confirmation_open_) {
-    return quit_confirmation_;
-  }
-  return active_screen_;
+void RootComponent::bind_shell(generated::ShellCallbacks callbacks) {
+  shell_ = std::move(callbacks);
 }
 
-bool RootComponent::OnEvent(ftxui::Event event) {
-  auto* overlay = console_overlay();
-
-  // The generated composition root owns the reserved toggle. Once open, the
-  // real command input remains the exclusive recipient until it closes.
-  if (overlay->open() && console_above_modals_) {
-    return console_overlay_->OnEvent(event);
-  }
-
-  if (sandbox_confirmation_open_) {
-    if (event == ftxui::Event::Return || event == ftxui::Event::Character("y")) {
-      sandbox_requested_ = true;
-      quit_requested_ = true;
-    } else if (event == ftxui::Event::Escape || event == ftxui::Event::Character("n")) {
-      sandbox_confirmation_open_ = false;
-    }
-    return true;
-  }
-  if (autoplay_confirmation_open_) {
-    if (event == ftxui::Event::Return || event == ftxui::Event::Character("y")) {
-      objectives_->request_autoplay(true);
-      autoplay_confirmation_open_ = false;
-    } else if (event == ftxui::Event::Escape || event == ftxui::Event::Character("n")) {
-      autoplay_confirmation_open_ = false;
-    }
-    return true;
-  }
-
-  if (important_notices_.active() &&
-      (event == ftxui::Event::Character(" ") || event == ftxui::Event::Return)) {
-    important_notices_.dismiss();
-    return true;
-  }
-
-  if (quit_confirmation_open_) {
-    if (event == ftxui::Event::Escape) {
-      quit_confirmation_open_ = false;
-      active_screen_->TakeFocus();
-    } else {
-      quit_confirmation_->OnEvent(event);
-    }
-    return true;
-  }
-
-  if (keybind_help_open_) {
-    if (event == ftxui::Event::Character("h") || event == ftxui::Event::Escape) {
-      keybind_help_open_ = false;
-      return true;
-    }
-
-    return true;
-  }
-
-  if (event == ftxui::Event::Character("`")) {
-    toggle_console();
-    return true;
-  }
-
-  if (overlay->open()) {
-    return console_overlay_->OnEvent(event);
-  }
-
-  if (objectives_ && event == ftxui::Event::Character("a")) {
-    if (objectives_->autoplay_enabled())
-      objectives_->request_autoplay(false);
-    else
-      autoplay_confirmation_open_ = true;
-    return true;
-  }
-
-  if (objectives_ && event == ftxui::Event::Character("o")) {
-    show_objectives();
-    return true;
-  }
-  if (objectives_ && event == ftxui::Event::Character("v")) {
-    show_village();
-    return true;
-  }
-  if (active_screen_kind_ == ActiveScreen::story) {
-    if (active_screen_ && active_screen_->OnEvent(event)) return true;
-    if (event == ftxui::Event::Escape || event == ftxui::Event::Character("q")) return_from_story();
-    return true;
-  }
-
-  if (event == ftxui::Event::Character(">") || event == ftxui::Event::Character(".")) {
-    help_hint_collapsed_ = true;
-    return true;
-  }
-
-  if (event == ftxui::Event::Character("<") || event == ftxui::Event::Character(",")) {
-    help_hint_collapsed_ = false;
-    return true;
-  }
-
-  if (active_screen_kind_ == ActiveScreen::raid && event == ftxui::Event::Return) {
-    auto* raid = ctx_.account_data().raid();
-    if (raid && !raid->active()) {
-      show_party_battle(commands_.account_index(), commands_.party_index());
-      return true;
-    }
-  }
-
-  if (active_screen_kind_ == ActiveScreen::effect_gallery &&
-      (event == ftxui::Event::Escape || event == ftxui::Event::Character("q"))) {
-    show_party_battle(commands_.account_index(), commands_.party_index());
-    return true;
-  }
-
-  if (active_screen_kind_ == ActiveScreen::effect_gallery && active_screen_ &&
-      active_screen_->OnEvent(event)) {
-    return true;
-  }
-
-  if (active_screen_kind_ != ActiveScreen::effect_gallery) {
-    if (event == ftxui::Event::Character("l")) {
-      return_monster_.reset();
-      show_libram();
-      return true;
-    }
-    if (event == ftxui::Event::Character("b")) {
-      show_bestiary();
-      return true;
-    }
-  }
-  if (active_screen_kind_ == ActiveScreen::libram ||
-      active_screen_kind_ == ActiveScreen::bestiary) {
-    if (event == ftxui::Event::Escape || event == ftxui::Event::Character("q")) {
-      if (active_screen_kind_ == ActiveScreen::libram && return_monster_) {
-        show_bestiary(return_monster_);
-      } else {
-        show_party_battle(commands_.account_index(), commands_.party_index());
-      }
-      return true;
-    }
-    // Keep the view alive if its link callback replaces the current screen.
-    auto screen = active_screen_;
-    return screen->OnEvent(event);
-  }
-
-  if (event == ftxui::Event::Escape || event == ftxui::Event::Character("q")) {
-    quit_confirmation_open_ = true;
-    quit_cancel_->TakeFocus();
-    return true;
-  }
-
-  if (event == ftxui::Event::Character("h") &&
-      active_screen_kind_ != ActiveScreen::effect_gallery) {
-    keybind_help_open_ = true;
-    return true;
-  }
-
-  if (event == ftxui::Event::Character("r") && return_selected_party_to_town()) {
-    return true;
-  }
-
-  if (event == ftxui::Event::Character(" ")) {
-    toggle_party_battle_screen();
-    return true;
-  }
-
-  if (event == ftxui::Event::Character("/")) {
-    toggle_active_screen();
-    return true;
-  }
-
-  if (event == ftxui::Event::Character("+") || event == ftxui::Event::Character("=")) {
-    commands_.adjust_overdrive(1);
-    return true;
-  }
-
-  if (event == ftxui::Event::Character("-")) {
-    commands_.adjust_overdrive(-1);
-    return true;
-  }
-
-  if (event == ftxui::Event::Character("[")) {
-    const bool stay_on_party_battle = active_screen_kind_ == ActiveScreen::party_battle;
-    commands_.select_party_relative(-1);
-    if (stay_on_party_battle) {
-      show_party_battle(commands_.account_index(), commands_.party_index());
-    }
-    return true;
-  }
-
-  if (event == ftxui::Event::Character("]")) {
-    const bool stay_on_party_battle = active_screen_kind_ == ActiveScreen::party_battle;
-    commands_.select_party_relative(1);
-    if (stay_on_party_battle) {
-      show_party_battle(commands_.account_index(), commands_.party_index());
-    }
-    return true;
-  }
-
-  if (event == ftxui::Event::Character("{") || event == ftxui::Event::Character(";")) {
-    commands_.select_account_relative(-1);
-    return true;
-  }
-
-  if (event == ftxui::Event::Character("}") || event == ftxui::Event::Character("'")) {
-    commands_.select_account_relative(1);
-    return true;
-  }
-
-  if (active_screen_) {
-    return active_screen_->OnEvent(event);
-  }
-
-  return false;
+generated::ScreenId RootComponent::initial_screen(generated::ScreenId declared) const {
+  return ctx_.account_data().in_raid() ? generated::ScreenId::Raid : declared;
 }
 
-ftxui::Element RootComponent::Render() {
+ftxui::Component RootComponent::make_raid() {
+  auto* raid = ctx_.account_data().raid();
+  if (!raid) return {};
+  return ftxui::Make<RaidView>(ctx_);
+}
+
+ftxui::Component RootComponent::make_party() {
+  if (raid_locked()) return {};
+  return ftxui::Make<PartyView>(ctx_, commands_.party_index());
+}
+
+ftxui::Component RootComponent::make_account_battle() {
+  if (raid_locked()) return {};
+  return ftxui::Make<AccountBattleView>(ctx_);
+}
+
+ftxui::Component RootComponent::make_party_battle() {
+  if (raid_locked()) return {};
+  return ftxui::Make<PartyBattleScreen>(ctx_, commands_.party_index());
+}
+
+ftxui::Component RootComponent::make_effect_gallery() {
+  if (raid_locked()) return {};
+  return ftxui::Make<EffectGalleryView>();
+}
+
+ftxui::Component RootComponent::make_libram() {
+  if (raid_locked() || !discoveries_) return {};
+  auto screen = ftxui::Make<LibramView>(*discoveries_, selected_skill_);
+  selected_skill_.reset();
+  return screen;
+}
+
+ftxui::Component RootComponent::make_bestiary() {
+  if (raid_locked() || !discoveries_) return {};
+  auto selected = return_monster_;
+  return_monster_.reset();
+  return ftxui::Make<BestiaryView>(
+      *discoveries_,
+      [this](fl::monster::MonsterKind kind, fl::skills::SkillId skill) {
+        return_monster_ = kind;
+        selected_skill_ = skill;
+        shell_.navigate(generated::ScreenId::Libram, true);
+      },
+      selected);
+}
+
+ftxui::Component RootComponent::make_story_screen(bool village) {
+  if (raid_locked() || !objectives_) return {};
+  auto& parties = ctx_.account_data().parties();
+  if (parties.empty()) return {};
+  auto& party = parties[std::min(commands_.party_index(), parties.size() - 1)];
+  return ftxui::Make<StoryScreen>(
+      *objectives_, party, [this](std::string_view id) { objectives_->emit(id); },
+      [this] { objectives_->request_purchase("village_guard_hide"); },
+      [&party](std::string_view biome, int floor) { return party.select_tower(biome, floor); },
+      village ? StoryScreen::Start::Village : StoryScreen::Start::Objectives);
+}
+
+ftxui::Component RootComponent::make_objectives() {
+  return make_story_screen(false);
+}
+ftxui::Component RootComponent::make_village() {
+  return make_story_screen(true);
+}
+
+ftxui::Component RootComponent::make_console_overlay() {
+  return console_overlay_;
+}
+ftxui::Component RootComponent::make_quit_confirmation_overlay() {
+  return quit_confirmation_;
+}
+ftxui::Component RootComponent::make_autoplay_confirmation_overlay() {
+  return autoplay_confirmation_;
+}
+ftxui::Component RootComponent::make_sandbox_confirmation_overlay() {
+  return sandbox_confirmation_;
+}
+ftxui::Component RootComponent::make_keybind_help_overlay() {
+  return keybind_help_;
+}
+
+ftxui::Element RootComponent::decorate(generated::ScreenId screen, ftxui::Element content) {
   using namespace ftxui;
-
   ZoneScoped;
-
-  auto* overlay = console_overlay();
-  overlay->tick();
+  console_overlay()->tick();
   important_notices_.tick();
   update_fps_counter();
-
   auto& account = ctx_.account_data();
-  if (auto* raid = account.raid(); raid && raid->active()) {
-    const auto key = std::pair{account.account_id(), raid->id()};
-    if (shown_raid_ != key) {
-      shown_raid_ = key;
-      active_screen_kind_ = ActiveScreen::raid;
-      replace_screen(ftxui::Make<RaidView>(ctx_));
-    }
-  }
-  if (active_screen_kind_ == ActiveScreen::raid && !account.in_raid() &&
-      (normal_combat_resumed_ || (account.raid() && account.raid()->result_expired())))
-    show_party_battle(commands_.account_index(), commands_.party_index());
-  Element content = active_screen_ ? active_screen_->Render() : text("");
   content = render_root_chrome(account.calendar(), std::move(content),
                                VisitorCountdown{account.beats_until_visitor(), account.in_raid()});
-
-  // The floating metrics/help panel would cover the last raid party on small
-  // terminals. RaidView carries a compact hint in its own allocated footer.
-  if (active_screen_kind_ != ActiveScreen::raid) {
-    content = dbox({content, render_help_hint()});
-  }
-
-  if (keybind_help_open_) {
-    content = dbox({
-        content,
-        render_keybind_help(),
-    });
-  }
-
-  if (quit_confirmation_open_) {
-    auto panel = window(text("Quit Fairlanes?") | bold,
-                        vbox({text("Progress is not saved and will be lost."), separator(),
-                              quit_confirmation_->Render()})) |
-                 bgcolor(fl::lospec500::color_at(0)) | clear_under;
-    content = dbox({content, panel | center});
-  }
-  if (sandbox_confirmation_open_) {
-    content = dbox(
-        {content,
-         window(text("Switch to full roster?"),
-                vbox({paragraph("The current story session cannot be recovered after switching."),
-                      text("Enter/y: switch   Esc/n: stay")})) |
-             center | bgcolor(fl::lospec500::color_at(0)) | clear_under});
-  }
-
+  if (screen != generated::ScreenId::Raid) content = dbox({content, render_help_hint()});
   if (important_notices_.active()) {
     const int height = viewport_box_.y_max > viewport_box_.y_min
                            ? viewport_box_.y_max - viewport_box_.y_min + 1
                            : 24;
     content = dbox({content, important_notices_.render(height)});
   }
-  if (autoplay_confirmation_open_) {
-    content = dbox({content, window(text("Enable story autoplay?"),
-                                    vbox({paragraph("Autoplay will make dialogue, town, and "
-                                                    "purchase decisions for the opening story."),
-                                          text("Enter/y: enable   Esc/n: stay manual")})) |
-                                 center | bgcolor(fl::lospec500::color_at(0)) | clear_under});
-  }
-
-  // Console chrome is last so the generated shell remains above every modal.
-  if (overlay->should_show()) content = dbox({content, console_overlay_->Render()});
-
   return content | reflect(viewport_box_);
 }
 
-bool RootComponent::console_open() const {
-  const auto* overlay = dynamic_cast<const ConsoleOverlay*>(console_overlay_.get());
-  return overlay && overlay->open();
-}
-
-std::size_t RootComponent::console_history_size() const {
-  const auto* overlay = dynamic_cast<const ConsoleOverlay*>(console_overlay_.get());
-  return overlay ? overlay->history_size() : 0U;
-}
-
-std::string_view RootComponent::console_input_line() const {
-  const auto* overlay = dynamic_cast<const ConsoleOverlay*>(console_overlay_.get());
-  return overlay ? std::string_view{overlay->input_line()} : std::string_view{};
-}
-
-std::string_view RootComponent::active_screen_id() const noexcept {
-  switch (active_screen_kind_) {
-  case ActiveScreen::raid: return "raid";
-  case ActiveScreen::party: return "party";
-  case ActiveScreen::account_battle: return "account_battle";
-  case ActiveScreen::party_battle: return "party_battle";
-  case ActiveScreen::effect_gallery: return "effect_gallery";
-  case ActiveScreen::libram: return "libram";
-  case ActiveScreen::bestiary: return "bestiary";
-  case ActiveScreen::story: return "story";
+bool RootComponent::intercept(const ftxui::Event& event) {
+  if (important_notices_.active() &&
+      (event == ftxui::Event::Character(" ") || event == ftxui::Event::Return)) {
+    important_notices_.dismiss();
+    return true;
   }
-  return "party_battle";
-}
-
-std::string_view RootComponent::focus_owner() const noexcept {
-  if (console_open()) return "console";
-  if (quit_confirmation_open_) return "quit_confirmation";
-  return active_screen_id();
-}
-
-void RootComponent::toggle_console() {
-  auto* overlay = console_overlay();
-  overlay->toggle();
-
-  if (overlay->open()) {
-    overlay->FocusInput();
-  } else {
-    console_above_modals_ = false;
-  }
-}
-
-void RootComponent::focus_console() {
-  console_above_modals_ = true;
-  console_overlay()->FocusInput();
-}
-
-void RootComponent::restore_active_focus() {
-  if (quit_confirmation_open_) {
-    quit_cancel_->TakeFocus();
-  } else if (active_screen_) {
-    active_screen_->TakeFocus();
-  }
-}
-
-void RootComponent::set_full_open() {
-  console_overlay()->set_full_open();
-}
-
-bool RootComponent::show_generated_screen(std::string_view screen) {
-  if (screen == "raid") return active_screen_kind_ == ActiveScreen::raid;
-  if (screen == "party") {
-    show_party(commands_.account_index(), commands_.party_index());
-  } else if (screen == "account_battle") {
-    show_account_battle(commands_.account_index());
-  } else if (screen == "party_battle") {
-    show_party_battle(commands_.account_index(), commands_.party_index());
-  } else if (screen == "effect_gallery") {
-    show_effect_gallery();
-  } else if (screen == "libram") {
-    show_libram();
-  } else if (screen == "bestiary") {
-    show_bestiary();
-  } else if (screen == "story") {
-    show_village();
-  } else {
-    return false;
-  }
-  return active_screen_id() == screen;
-}
-
-bool RootComponent::invoke_generated_action(std::string_view action) {
-  if (action == "show_objectives") return OnEvent(ftxui::Event::Character("o"));
-  if (action == "show_village") return OnEvent(ftxui::Event::Character("v"));
-  if (action == "toggle_autoplay") return OnEvent(ftxui::Event::Character("a"));
-  if (action == "toggle_help") return OnEvent(ftxui::Event::Character("h"));
-  if (action == "return_to_town") return OnEvent(ftxui::Event::Character("r"));
-  if (action == "toggle_party_battle") return OnEvent(ftxui::Event::Character(" "));
-  if (action == "toggle_active_screen") return OnEvent(ftxui::Event::Character("/"));
-  if (action == "collapse_help") return OnEvent(ftxui::Event::Character(">"));
-  if (action == "expand_help") return OnEvent(ftxui::Event::Character("<"));
-  if (action == "overdrive_up") return OnEvent(ftxui::Event::Character("+"));
-  if (action == "overdrive_down") return OnEvent(ftxui::Event::Character("-"));
-  if (action == "previous_party") return OnEvent(ftxui::Event::Character("["));
-  if (action == "next_party") return OnEvent(ftxui::Event::Character("]"));
-  if (action == "previous_account") return OnEvent(ftxui::Event::Character("{"));
-  if (action == "next_account") return OnEvent(ftxui::Event::Character("}"));
-  if (action == "back_or_quit") return OnEvent(ftxui::Event::Escape);
   return false;
 }
 
-void RootComponent::show_account_battle(std::size_t account_index) {
-  if (raid_screen_locked()) {
-    return;
-  }
-  ctx_ = make_context(account_index);
-  if (auto* raid = ctx_.account_data().raid(); raid && raid->active()) {
-    shown_raid_ = std::pair{ctx_.account_data().account_id(), raid->id()};
-    active_screen_kind_ = ActiveScreen::raid;
-    replace_screen(ftxui::Make<RaidView>(ctx_));
-  } else {
-    active_screen_kind_ = ActiveScreen::account_battle;
-    replace_screen(ftxui::Make<AccountBattleView>(ctx_));
+void RootComponent::overlay_opened(generated::OverlayId overlay) {
+  if (overlay == generated::OverlayId::Console) {
+    console_overlay()->set_open(true);
+    console_overlay()->FocusInput();
+  } else if (overlay == generated::OverlayId::QuitConfirmation) {
+    quit_cancel_->TakeFocus();
   }
 }
 
-void RootComponent::show_party_battle(std::size_t account_index, std::size_t party_index) {
-  if (raid_screen_locked()) {
-    return;
-  }
-  ctx_ = make_context(account_index);
-  auto& parties = ctx_.account_data().parties();
-  if (!parties.empty()) {
-    party_index = std::min(party_index, parties.size() - 1);
-  } else {
-    party_index = 0;
-  }
-
-  active_screen_kind_ = ActiveScreen::party_battle;
-  replace_screen(ftxui::Make<PartyBattleScreen>(ctx_, party_index));
+void RootComponent::overlay_closed(generated::OverlayId overlay) {
+  if (overlay == generated::OverlayId::Console) console_overlay()->set_open(false);
 }
 
-void RootComponent::show_party(std::size_t account_index, std::size_t party_index) {
-  if (raid_screen_locked()) {
-    return;
-  }
-  ctx_ = make_context(account_index);
-  auto& parties = ctx_.account_data().parties();
-  if (!parties.empty()) {
-    party_index = std::min(party_index, parties.size() - 1);
-  } else {
-    party_index = 0;
-  }
-
-  active_screen_kind_ = ActiveScreen::party;
-  replace_screen(ftxui::Make<PartyView>(ctx_, party_index));
-}
-
-void RootComponent::show_effect_gallery() {
-  if (raid_screen_locked()) {
-    return;
-  }
-  active_screen_kind_ = ActiveScreen::effect_gallery;
-  replace_screen(ftxui::Make<EffectGalleryView>());
-}
-
-void RootComponent::replace_screen(ftxui::Component screen) {
-  normal_combat_resumed_ = false;
-  if (active_screen_) {
-    active_screen_->Detach();
-  }
-  active_screen_ = std::move(screen);
-  Add(active_screen_);
-  active_screen_->TakeFocus();
-}
-
-void RootComponent::on_party_combat_started(entt::entity account) {
-  if (active_screen_kind_ == ActiveScreen::raid && ctx_.account_data().account_id() == account &&
-      !ctx_.account_data().in_raid()) {
-    // Apply navigation on the next frame, outside the gameplay event dispatch.
-    normal_combat_resumed_ = true;
-  }
-}
-
-bool RootComponent::raid_screen_locked() const noexcept {
-  if (active_screen_kind_ != ActiveScreen::raid) {
-    return false;
-  }
-  const auto* raid = ctx_.account_data().raid();
-  return raid != nullptr && raid->active();
-}
-
-void RootComponent::show_libram(std::optional<fl::skills::SkillId> skill) {
-  if (raid_screen_locked()) {
-    return;
-  }
-  if (!discoveries_) return;
-  active_screen_kind_ = ActiveScreen::libram;
-  replace_screen(ftxui::Make<LibramView>(*discoveries_, skill));
-}
-
-void RootComponent::show_bestiary(std::optional<fl::monster::MonsterKind> monster) {
-  if (raid_screen_locked()) {
-    return;
-  }
-  if (!discoveries_) return;
-  active_screen_kind_ = ActiveScreen::bestiary;
-  replace_screen(ftxui::Make<BestiaryView>(
-      *discoveries_,
-      [this](fl::monster::MonsterKind kind, fl::skills::SkillId skill) {
-        return_monster_ = kind;
-        show_libram(skill);
-      },
-      monster));
-}
-
-void RootComponent::show_objectives() {
-  if (!objectives_ || raid_screen_locked()) return;
-  if (active_screen_kind_ != ActiveScreen::story) story_return_screen_ = active_screen_kind_;
-  auto& parties = ctx_.account_data().parties();
-  if (parties.empty()) return;
-  auto& party = parties[std::min(commands_.party_index(), parties.size() - 1)];
-  active_screen_kind_ = ActiveScreen::story;
-  replace_screen(ftxui::Make<StoryScreen>(
-      *objectives_, party, [this](std::string_view id) { objectives_->emit(id); },
-      [this] { objectives_->request_purchase("village_guard_hide"); },
-      [&party](std::string_view biome, int floor) { return party.select_tower(biome, floor); },
-      StoryScreen::Start::Objectives));
-}
-
-void RootComponent::show_village() {
-  if (!objectives_ || raid_screen_locked() || !village_available_from_current_screen()) return;
-  if (active_screen_kind_ != ActiveScreen::story) story_return_screen_ = active_screen_kind_;
-  auto& parties = ctx_.account_data().parties();
-  if (parties.empty()) return;
-  auto& party = parties[std::min(commands_.party_index(), parties.size() - 1)];
-  active_screen_kind_ = ActiveScreen::story;
-  replace_screen(ftxui::Make<StoryScreen>(
-      *objectives_, party, [this](std::string_view id) { objectives_->emit(id); },
-      [this] { objectives_->request_purchase("village_guard_hide"); },
-      [&party](std::string_view biome, int floor) { return party.select_tower(biome, floor); },
-      StoryScreen::Start::Village));
-}
-
-bool RootComponent::village_available_from_current_screen() const noexcept {
-  const auto origin = active_screen_kind_ == ActiveScreen::story
-                          ? story_return_screen_
-                          : std::optional{active_screen_kind_};
-  return origin == ActiveScreen::party || origin == ActiveScreen::party_battle;
-}
-
-void RootComponent::return_from_story() {
-  const auto destination = story_return_screen_.value_or(ActiveScreen::party_battle);
-  story_return_screen_.reset();
-  if (destination == ActiveScreen::party)
-    show_party(commands_.account_index(), commands_.party_index());
+bool RootComponent::toggle_autoplay(generated::ScreenId) {
+  if (!objectives_) return false;
+  if (objectives_->autoplay_enabled())
+    objectives_->request_autoplay(false);
   else
-    show_party_battle(commands_.account_index(), commands_.party_index());
+    shell_.open_overlay(generated::OverlayId::AutoplayConfirmation);
+  return true;
 }
 
-void RootComponent::toggle_active_screen() {
-  switch (active_screen_kind_) {
-  case ActiveScreen::raid:
-    if (raid_screen_locked()) {
-      return;
-    }
-    show_party(commands_.account_index(), commands_.party_index());
-    return;
-  case ActiveScreen::party: show_account_battle(commands_.account_index()); return;
-  case ActiveScreen::account_battle:
-  case ActiveScreen::party_battle:
-    show_party(commands_.account_index(), commands_.party_index());
-    return;
-  case ActiveScreen::libram:
-  case ActiveScreen::bestiary:
-  case ActiveScreen::effect_gallery:
-    show_party_battle(commands_.account_index(), commands_.party_index());
-    return;
-  case ActiveScreen::story: return_from_story(); return;
-  }
+bool RootComponent::toggle_help(generated::ScreenId) {
+  shell_.open_overlay(generated::OverlayId::KeybindHelp);
+  return true;
 }
 
-void RootComponent::toggle_party_battle_screen() {
-  switch (active_screen_kind_) {
-  case ActiveScreen::raid:
-    if (raid_screen_locked()) {
-      return;
-    }
-    show_party(commands_.account_index(), commands_.party_index());
-    return;
-  case ActiveScreen::account_battle:
-    show_party_battle(commands_.account_index(), commands_.party_index());
-    return;
-  case ActiveScreen::party_battle: show_account_battle(commands_.account_index()); return;
-  case ActiveScreen::party: return;
-  case ActiveScreen::libram:
-  case ActiveScreen::bestiary:
-  case ActiveScreen::effect_gallery:
-  case ActiveScreen::story:
-    show_party_battle(commands_.account_index(), commands_.party_index());
-    return;
-  }
-}
-
-bool RootComponent::return_selected_party_to_town() {
-  if (active_screen_kind_ != ActiveScreen::party &&
-      active_screen_kind_ != ActiveScreen::party_battle) {
+bool RootComponent::return_to_town(generated::ScreenId screen) {
+  if (screen != generated::ScreenId::Party && screen != generated::ScreenId::PartyBattle)
     return false;
-  }
-
   auto& parties = ctx_.account_data().parties();
-  if (parties.empty()) {
-    return false;
-  }
-
-  const auto party_index = std::min(commands_.party_index(), parties.size() - 1);
-  parties[party_index].party_bus().emit(
+  if (parties.empty()) return false;
+  parties[std::min(commands_.party_index(), parties.size() - 1)].party_bus().emit(
       fl::events::PartyEvent{fl::events::PartyReturnToTownRequested{}});
   return true;
 }
 
-void RootComponent::refresh_selected_account(std::size_t account_index, std::size_t party_index) {
-  switch (active_screen_kind_) {
-  case ActiveScreen::raid:
-    if (raid_screen_locked()) {
-      return;
-    }
-    show_account_battle(account_index);
-    return;
-  case ActiveScreen::account_battle: show_account_battle(account_index); return;
-  case ActiveScreen::party_battle: show_party_battle(account_index, party_index); return;
-  case ActiveScreen::party: show_party(account_index, party_index); return;
-  case ActiveScreen::effect_gallery:
-  case ActiveScreen::libram:
-  case ActiveScreen::bestiary:
-  case ActiveScreen::story: ctx_ = make_context(account_index); return;
-  }
+bool RootComponent::collapse_help(generated::ScreenId) {
+  help_hint_collapsed_ = true;
+  return true;
+}
+bool RootComponent::expand_help(generated::ScreenId) {
+  help_hint_collapsed_ = false;
+  return true;
+}
+bool RootComponent::overdrive_up(generated::ScreenId) {
+  commands_.adjust_overdrive(1);
+  return true;
+}
+bool RootComponent::overdrive_down(generated::ScreenId) {
+  commands_.adjust_overdrive(-1);
+  return true;
+}
+bool RootComponent::select_party(int delta) {
+  commands_.select_party_relative(delta);
+  return true;
+}
+bool RootComponent::previous_party(generated::ScreenId) {
+  return select_party(-1);
+}
+bool RootComponent::next_party(generated::ScreenId) {
+  return select_party(1);
+}
+bool RootComponent::select_account(int delta) {
+  commands_.select_account_relative(delta);
+  ctx_ = make_context(commands_.account_index());
+  return true;
+}
+bool RootComponent::previous_account(generated::ScreenId) {
+  return select_account(-1);
+}
+bool RootComponent::next_account(generated::ScreenId) {
+  return select_account(1);
+}
+
+std::size_t RootComponent::console_history_size() const {
+  return console_overlay() ? console_overlay()->history_size() : 0U;
+}
+std::string_view RootComponent::console_input_line() const {
+  return console_overlay() ? std::string_view{console_overlay()->input_line()} : std::string_view{};
+}
+void RootComponent::set_full_open() {
+  console_overlay()->set_full_open();
+}
+
+ConsoleOverlay* RootComponent::console_overlay() {
+  return dynamic_cast<ConsoleOverlay*>(console_overlay_.get());
+}
+const ConsoleOverlay* RootComponent::console_overlay() const {
+  return dynamic_cast<const ConsoleOverlay*>(console_overlay_.get());
 }
 
 fl::context::AccountCtx RootComponent::make_context(std::size_t account_index) {
   return fl::context::AccountCtx{ctx_.reg(), ctx_.rng(), accounts_->at(account_index)};
 }
 
-ConsoleOverlay* RootComponent::console_overlay() {
-  return dynamic_cast<ConsoleOverlay*>(console_overlay_.get());
+bool RootComponent::raid_locked() const noexcept {
+  return ctx_.account_data().in_raid();
+}
+
+void RootComponent::on_party_combat_started(entt::entity account) {
+  if (ctx_.account_data().account_id() == account && !ctx_.account_data().in_raid() &&
+      shell_.navigate)
+    shell_.navigate(generated::ScreenId::PartyBattle, false);
 }
 
 void RootComponent::update_fps_counter() {
@@ -771,50 +425,36 @@ void RootComponent::update_fps_counter() {
     displayed_fps_ = 0;
     return;
   }
-
   ++fps_frame_count_;
   const auto elapsed = now - fps_window_start_;
-  if (elapsed < std::chrono::milliseconds{500}) {
-    return;
-  }
-
+  if (elapsed < std::chrono::milliseconds{500}) return;
   const auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
-  if (elapsed_ms > 0) {
+  if (elapsed_ms > 0)
     displayed_fps_ = static_cast<int>(
         (static_cast<double>(fps_frame_count_) * 1000.0 / static_cast<double>(elapsed_ms)) + 0.5);
-  }
-
   fps_frame_count_ = 0;
   fps_window_start_ = now;
 }
 
 ftxui::Element RootComponent::render_help_hint() const {
   using namespace ftxui;
-
   const auto label = color(fl::lospec500::color_at(14));
   const auto value = color(fl::lospec500::color_at(28)) | bold;
   const auto key = color(fl::lospec500::color_at(15)) | bold;
   const auto edge = color(fl::lospec500::color_at(15));
   const auto muted = color(fl::lospec500::color_at(24));
-
   if (help_hint_collapsed_) {
     auto handle = vbox({text("┌"), text(",") | key, text("└")}) | edge | clear_under;
     return vbox({filler(), hbox({filler(), std::move(handle)}), text("")});
   }
-
   auto chunk = [](std::string name, std::string value_text, Decorator label_style,
                   Decorator value_style) {
-    return hbox({
-        text(std::move(name)) | label_style,
-        text(std::move(value_text)) | value_style,
-    });
+    return hbox({text(std::move(name)) | label_style, text(std::move(value_text)) | value_style});
   };
-
   const auto account_count = accounts_ ? accounts_->size() : 0U;
   const auto party_count = accounts_ && commands_.account_index() < accounts_->size()
                                ? accounts_->at(commands_.account_index()).parties().size()
                                : 0U;
-
   auto metrics = hbox({
       chunk("FPS ", std::to_string(displayed_fps_), label, value),
       text("  ") | muted,
@@ -829,7 +469,6 @@ ftxui::Element RootComponent::render_help_hint() const {
       text("  ") | muted,
       chunk("WT ", std::to_string(world_clock_->elapsed_beats()), label, value),
   });
-
   auto controls = hbox({
       render_help_keys("=/-"),
       text(" overdrive  ") | muted,
@@ -852,92 +491,38 @@ ftxui::Element RootComponent::render_help_hint() const {
       text(".") | key,
       text(" hide") | muted,
   });
-
   auto panel = vbox({metrics, controls}) | border | edge | clear_under;
-
-  return vbox({
-      filler(),
-      hbox({
-          filler(),
-          panel,
-      }),
-      text(""),
-  });
+  return vbox({filler(), hbox({filler(), panel}), text("")});
 }
 
 ftxui::Element RootComponent::render_keybind_help() const {
   using namespace ftxui;
-
   const auto chrome = fl::lospec500::on_not_black(fl::lospec500::color_at(32));
   const auto accent = fl::lospec500::on_not_black(fl::lospec500::color_at(15));
   const auto bg = bgcolor(fl::lospec500::color_at(0));
-
-  std::vector<Element> lines;
-  lines.push_back(text("Keybinds") | bold | accent);
-  lines.push_back(separator() | chrome);
-  lines.push_back(render_help_line("h", "        close this help"));
-  lines.push_back(render_help_line("`", "        open command console"));
-  lines.push_back(render_help_line(". / ,", "    collapse / expand metrics"));
-  lines.push_back(render_help_line("l / b", "    open libram / bestiary"));
+  std::vector<Element> lines{
+      text("Keybinds") | bold | accent,
+      separator() | chrome,
+      render_help_line("h / Esc", "  close this help"),
+      render_help_line("`", "        open command console"),
+      render_help_line(". / ,", "    collapse / expand metrics"),
+      render_help_line("l / b", "    open libram / bestiary"),
+      render_help_line("/", "        toggle account / party screen"),
+      render_help_line("Space", "    toggle account / party battle"),
+      render_help_line("= / -", "    change overdrive level"),
+      render_help_line("[ / ]", "    switch selected party"),
+      render_help_line("; / '", "    switch selected account"),
+      render_help_line("q / Esc", "  back, or confirm quit from gameplay"),
+      render_help_line("Ctrl-C", "   quit immediately"),
+  };
   if (objectives_) {
-    lines.push_back(render_help_line("o", "        open objectives"));
-    lines.push_back(render_help_line("v", "        visit village"));
-    lines.push_back(render_help_line("a", "        toggle story autoplay at any time"));
-    lines.push_back(render_help_line("` sandbox",
-                                     " switch to full-roster sandbox (story cannot be recovered)"));
+    lines.insert(lines.end() - 2, render_help_line("o", "        open objectives"));
+    lines.insert(lines.end() - 2, render_help_line("v", "        visit village from a party"));
+    lines.insert(lines.end() - 2,
+                 render_help_line("a", "        toggle story autoplay at any time"));
   }
-  lines.push_back(render_help_line("q / Esc", "  back, or confirm quit from gameplay"));
-
-  lines.push_back(render_help_line("Ctrl-C", "   quit immediately"));
-
-  if (active_screen_kind_ == ActiveScreen::effect_gallery) {
-    lines.push_back(separator() | chrome);
-    lines.push_back(text("Effect Gallery") | bold | accent);
-    lines.push_back(render_help_line("Left/Right or h/l/[ / ]", " cycle effects"));
-    lines.push_back(render_help_line("Up/Down or k/j", " cycle backgrounds"));
-    lines.push_back(render_help_line("1-6", "      set rendered combatant count"));
-    lines.push_back(render_help_line("q / Esc", "  return to normal battle screen"));
-  } else if (active_screen_kind_ == ActiveScreen::party) {
-    lines.push_back(separator() | chrome);
-    lines.push_back(text("Party") | bold | accent);
-    lines.push_back(render_help_line("/", "        toggle account / party screen"));
-    lines.push_back(render_help_line("= / -", "    change overdrive level"));
-    lines.push_back(render_help_line("[ / ]", "    switch selected party"));
-    lines.push_back(render_help_line("; / '", "    switch selected account"));
-    lines.push_back(render_help_line("r", "        return selected party to town"));
-    lines.push_back(render_help_line("Tab", "      switch inventory / player details focus"));
-    lines.push_back(render_help_line("Up/Down", "  select inventory item or player skill"));
-    lines.push_back(render_help_line("Left/Right", " cycle player when Player is focused"));
-    lines.push_back(render_help_line("Enter", "    open player inventory / slot / item"));
-    lines.push_back(render_help_line("Left/Backspace", " return from equipment selection"));
-    lines.push_back(render_help_line("Del", "      drop the selected player skill"));
-    lines.push_back(render_help_line("PgUp/PgDn", " move inventory by pages"));
-  } else {
-    lines.push_back(separator() | chrome);
-    lines.push_back(text("Account") | bold | accent);
-    lines.push_back(render_help_line("/", "        toggle account / party screen"));
-    lines.push_back(render_help_line("Space", "    toggle account / party battle"));
-    lines.push_back(render_help_line("= / -", "    change overdrive level"));
-    lines.push_back(render_help_line("[ / ]", "    switch selected party"));
-    lines.push_back(render_help_line("; / '", "    switch selected account"));
-    if (active_screen_kind_ == ActiveScreen::party_battle) {
-      lines.push_back(render_help_line("r", "        return selected party to town"));
-    }
-    lines.push_back(text("Use the console for account and party navigation") | chrome);
-  }
-
-  auto panel = window(text("Help") | accent, vbox(std::move(lines)) | bg) | chrome | bg |
-               clear_under | size(WIDTH, GREATER_THAN, 44);
-
-  return vbox({
-      filler(),
-      hbox({
-          filler(),
-          panel,
-          filler(),
-      }),
-      filler(),
-  });
+  return window(text("Help") | accent, vbox(std::move(lines)) | bg) | chrome | bg | clear_under |
+         size(WIDTH, GREATER_THAN, 44) | center;
 }
 
 } // namespace fl::widgets

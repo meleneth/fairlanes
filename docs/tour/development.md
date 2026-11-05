@@ -162,6 +162,23 @@ The check target is created only when native Ruby and both sibling generator
 repositories are available. Handwritten screen rendering and behavior remain
 under `src/fl/widgets` and do not require FTXer regeneration.
 
+The generated `CompositionRoot` is the only UI router. It owns the current
+screen component, navigation history, global key dispatch, the modal/console
+overlay stack, and focus restoration. `RootComponent` is a handwritten
+presentation host: it creates individual screens and overlays, executes
+gameplay-facing actions, subscribes to gameplay events, and asks the generated
+shell to navigate through callbacks. It must not mirror the current screen or
+maintain a second history. `FtxerUiAdapter` is deliberately mechanical; each
+generated screen/action method forwards directly to the presentation host.
+Adding a top-level screen means declaring it in `scripts/ftxer_ui.rb` and
+providing its local component factory, without adding a handwritten routing
+switch.
+
+FTXer generation compares bytes before writing, so a successful regeneration
+does not touch same-content generated files. If a broad rebuild follows an
+unchanged generation run, investigate other build inputs rather than assuming
+the checked-in composition was rewritten.
+
 The Ruby content declarations are the source of truth for generated skill
 metadata C++: stable IDs/enums, display names, learn chances, flee chances,
 execution kind tags, visual mappings, and random-combat membership. They also

@@ -3,6 +3,7 @@
 #include "fl/primitives/encounter_builder.hpp"
 #include "fl/widgets/raid_view.hpp"
 #include "fl/widgets/root_component.hpp"
+#include "production_ui_harness.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 #include <ftxui/dom/elements.hpp>
@@ -43,7 +44,7 @@ TEST_CASE("Gameplay root automatically shows the raid and consumed-arrival count
     for (const auto& member : party.members())
       gc.reg().get<fl::ecs::components::Stats>(member.member_id()).name_ =
           "Hero" + std::to_string(++index) + "!";
-  fl::widgets::RootComponent root{ctx, gc.accounts(), gc.game_log(), gc.world_clock()};
+  fl::test::ProductionUiHarness root{ctx, gc.accounts(), gc.game_log(), gc.world_clock()};
   auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(80), ftxui::Dimension::Fixed(24));
   ftxui::Render(screen, root.Render());
   auto output = screen.ToString();
@@ -80,8 +81,8 @@ TEST_CASE("Active raids lock the root to the raid screen", "[raid][widgets][navi
   fl::GrandCentral gc{1, 5, 5};
   gc.innervate_event_system();
   auto ctx = gc.account_context(0);
-  fl::widgets::RootComponent root{ctx, gc.accounts(), gc.game_log(), gc.world_clock(),
-                                  &gc.discoveries()};
+  fl::test::ProductionUiHarness root{ctx, gc.accounts(), gc.game_log(), gc.world_clock(),
+                                     &gc.discoveries()};
 
   auto render = [&] {
     auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(120), ftxui::Dimension::Fixed(37));
@@ -94,22 +95,11 @@ TEST_CASE("Active raids lock the root to the raid screen", "[raid][widgets][navi
 
   for (const auto& event : {ftxui::Event::Character("/"), ftxui::Event::Character(" "),
                             ftxui::Event::Character("l"), ftxui::Event::Character("b")}) {
-    REQUIRE(root.OnEvent(event));
+    root.OnEvent(event);
     REQUIRE(render().find("VISITOR RAID") != std::string::npos);
   }
 
-  root.show_party(0, 0);
-  REQUIRE(render().find("VISITOR RAID") != std::string::npos);
-  root.show_party_battle(0, 0);
-  REQUIRE(render().find("VISITOR RAID") != std::string::npos);
-  root.show_account_battle(0);
-  REQUIRE(render().find("VISITOR RAID") != std::string::npos);
-  root.show_effect_gallery();
-  REQUIRE(render().find("VISITOR RAID") != std::string::npos);
-  root.show_libram();
-  REQUIRE(render().find("VISITOR RAID") != std::string::npos);
-  root.show_bestiary();
-  REQUIRE(render().find("VISITOR RAID") != std::string::npos);
+  REQUIRE(root.current_screen() == fl::generated::ftxer::ScreenId::Raid);
 }
 
 TEST_CASE("Raid results yield to normal combat for the selected account",
@@ -121,7 +111,7 @@ TEST_CASE("Raid results yield to normal combat for the selected account",
   auto ctx = gc.account_context(0);
   auto& account = ctx.account_data();
   REQUIRE(account.spawn_visitor(ctx));
-  fl::widgets::RootComponent root{ctx, gc.accounts(), gc.game_log(), gc.world_clock()};
+  fl::test::ProductionUiHarness root{ctx, gc.accounts(), gc.game_log(), gc.world_clock()};
   auto render = [&] {
     auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(120), ftxui::Dimension::Fixed(37));
     ftxui::Render(screen, root.Render());

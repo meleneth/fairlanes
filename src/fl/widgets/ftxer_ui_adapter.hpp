@@ -2,36 +2,56 @@
 
 #include <memory>
 
-#include <ftxui/component/component.hpp>
-
 #include "fl/generated/ftxer_composition_root.hpp"
+#include "fl/widgets/root_component.hpp"
 
 namespace fl::widgets {
 
-class RootComponent;
-
 class FtxerUiAdapter final : public fl::generated::ftxer::ExternalUiAdapter {
 public:
-  explicit FtxerUiAdapter(ftxui::Component root);
+  explicit FtxerUiAdapter(std::unique_ptr<RootComponent> root);
 
-  ftxui::Component component() override;
-  ftxui::Element render() override;
-  bool on_event(const ftxui::Event& event) override;
-  fl::generated::ftxer::ScreenId current_screen() const override;
-  bool show_screen(fl::generated::ftxer::ScreenId screen) override;
-  bool invoke(fl::generated::ftxer::ExternalAction action) override;
-  bool console_open() const override;
-  void toggle_console() override;
-  void focus_console() override;
-  void restore_focus() override;
+  void bind_shell(fl::generated::ftxer::ShellCallbacks callbacks) override;
+  fl::generated::ftxer::ScreenId
+  initial_screen(fl::generated::ftxer::ScreenId declared) const override;
+  ftxui::Component makeRaid() override;
+  ftxui::Component makeParty() override;
+  ftxui::Component makeAccountBattle() override;
+  ftxui::Component makePartyBattle() override;
+  ftxui::Component makeEffectGallery() override;
+  ftxui::Component makeLibram() override;
+  ftxui::Component makeBestiary() override;
+  ftxui::Component makeObjectives() override;
+  ftxui::Component makeVillage() override;
+  ftxui::Component makeConsoleOverlay() override;
+  ftxui::Component makeQuitConfirmationOverlay() override;
+  ftxui::Component makeAutoplayConfirmationOverlay() override;
+  ftxui::Component makeSandboxConfirmationOverlay() override;
+  ftxui::Component makeKeybindHelpOverlay() override;
+  ftxui::Element decorate(fl::generated::ftxer::ScreenId screen, ftxui::Element content) override;
+  bool intercept(const ftxui::Event& event) override;
+  void overlay_opened(fl::generated::ftxer::OverlayId overlay) override;
+  void overlay_closed(fl::generated::ftxer::OverlayId overlay) override;
+  bool collapse_help(fl::generated::ftxer::ScreenId current) override;
+  bool expand_help(fl::generated::ftxer::ScreenId current) override;
+  bool next_account(fl::generated::ftxer::ScreenId current) override;
+  bool next_party(fl::generated::ftxer::ScreenId current) override;
+  bool overdrive_down(fl::generated::ftxer::ScreenId current) override;
+  bool overdrive_up(fl::generated::ftxer::ScreenId current) override;
+  bool previous_account(fl::generated::ftxer::ScreenId current) override;
+  bool previous_party(fl::generated::ftxer::ScreenId current) override;
+  bool return_to_town(fl::generated::ftxer::ScreenId current) override;
+  bool toggle_autoplay(fl::generated::ftxer::ScreenId current) override;
+  bool toggle_help(fl::generated::ftxer::ScreenId current) override;
   bool quit_requested() const override;
   bool sandbox_requested() const override;
 
-private:
-  RootComponent& root();
-  const RootComponent& root() const;
+  RootComponent& root() {
+    return *root_;
+  }
 
-  ftxui::Component root_;
+private:
+  std::unique_ptr<RootComponent> root_;
 };
 
 } // namespace fl::widgets

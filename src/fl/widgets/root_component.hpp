@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <deque>
+#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -10,7 +11,9 @@
 
 #include "fl/context.hpp"
 #include "fl/events/party_bus.hpp"
+#include "fl/events/raid_bus.hpp"
 #include "fl/fwd.hpp"
+#include "fl/generated/ftxer_composition_root.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/discovery_journal.hpp"
 #include "fl/primitives/objective_system.hpp"
@@ -24,7 +27,9 @@ namespace fl::widgets {
 class ConsoleOverlay;
 class FancyLog;
 
-class RootComponent : public ftxui::ComponentBase {
+// Owns Fairlanes presentation objects and gameplay-facing UI behavior. The
+// generated CompositionRoot is the sole owner of navigation and overlay state.
+class RootComponent {
 public:
   RootComponent(fl::context::AccountCtx ctx, std::deque<fl::primitives::AccountData>& accounts,
                 FancyLog& console_log, fl::primitives::WorldClock& world_clock,
@@ -32,9 +37,41 @@ public:
                 fl::events::AchievementBus* achievements = nullptr,
                 fl::primitives::ObjectiveSystem* objectives = nullptr);
 
-  bool OnEvent(ftxui::Event event) override;
-  ftxui::Element Render() override;
-  ftxui::Component ActiveChild() override;
+  void bind_shell(fl::generated::ftxer::ShellCallbacks callbacks);
+  fl::generated::ftxer::ScreenId initial_screen(fl::generated::ftxer::ScreenId declared) const;
+
+  ftxui::Component make_raid();
+  ftxui::Component make_party();
+  ftxui::Component make_account_battle();
+  ftxui::Component make_party_battle();
+  ftxui::Component make_effect_gallery();
+  ftxui::Component make_libram();
+  ftxui::Component make_bestiary();
+  ftxui::Component make_objectives();
+  ftxui::Component make_village();
+
+  ftxui::Component make_console_overlay();
+  ftxui::Component make_quit_confirmation_overlay();
+  ftxui::Component make_autoplay_confirmation_overlay();
+  ftxui::Component make_sandbox_confirmation_overlay();
+  ftxui::Component make_keybind_help_overlay();
+
+  ftxui::Element decorate(fl::generated::ftxer::ScreenId screen, ftxui::Element content);
+  bool intercept(const ftxui::Event& event);
+  void overlay_opened(fl::generated::ftxer::OverlayId overlay);
+  void overlay_closed(fl::generated::ftxer::OverlayId overlay);
+
+  bool toggle_autoplay(fl::generated::ftxer::ScreenId);
+  bool toggle_help(fl::generated::ftxer::ScreenId);
+  bool return_to_town(fl::generated::ftxer::ScreenId screen);
+  bool collapse_help(fl::generated::ftxer::ScreenId);
+  bool expand_help(fl::generated::ftxer::ScreenId);
+  bool overdrive_up(fl::generated::ftxer::ScreenId);
+  bool overdrive_down(fl::generated::ftxer::ScreenId);
+  bool previous_party(fl::generated::ftxer::ScreenId);
+  bool next_party(fl::generated::ftxer::ScreenId);
+  bool previous_account(fl::generated::ftxer::ScreenId);
+  bool next_account(fl::generated::ftxer::ScreenId);
 
   bool quit_requested() const {
     return quit_requested_;
@@ -42,51 +79,19 @@ public:
   bool sandbox_requested() const {
     return sandbox_requested_;
   }
-  bool console_open() const;
   std::size_t console_history_size() const;
   std::string_view console_input_line() const;
-  std::string_view active_screen_id() const noexcept;
-  std::string_view focus_owner() const noexcept;
-
-  void toggle_console();
-  void focus_console();
-  void restore_active_focus();
   void set_full_open();
-  bool show_generated_screen(std::string_view screen);
-  bool invoke_generated_action(std::string_view action);
-
-  void show_account_battle(std::size_t account_index);
-  void show_party_battle(std::size_t account_index, std::size_t party_index);
-  void show_party(std::size_t account_index, std::size_t party_index);
-  void show_effect_gallery();
-  void show_objectives();
-  void show_village();
-  void show_libram(std::optional<fl::skills::SkillId> skill = std::nullopt);
-  void show_bestiary(std::optional<fl::monster::MonsterKind> monster = std::nullopt);
 
 private:
-  enum class ActiveScreen {
-    raid,
-    party,
-    account_battle,
-    party_battle,
-    effect_gallery,
-    libram,
-    bestiary,
-    story,
-  };
-
-  void replace_screen(ftxui::Component screen);
-  void on_party_combat_started(entt::entity account);
-  bool raid_screen_locked() const noexcept;
   ConsoleOverlay* console_overlay();
+  const ConsoleOverlay* console_overlay() const;
   fl::context::AccountCtx make_context(std::size_t account_index);
-  void toggle_active_screen();
-  void toggle_party_battle_screen();
-  void return_from_story();
-  bool village_available_from_current_screen() const noexcept;
-  bool return_selected_party_to_town();
-  void refresh_selected_account(std::size_t account_index, std::size_t party_index);
+  bool raid_locked() const noexcept;
+  bool select_account(int delta);
+  bool select_party(int delta);
+  ftxui::Component make_story_screen(bool village);
+  void on_party_combat_started(entt::entity account);
   void update_fps_counter();
   ftxui::Element render_help_hint() const;
   ftxui::Element render_keybind_help() const;
@@ -96,21 +101,14 @@ private:
   FancyLog* console_log_{nullptr};
   fl::primitives::WorldClock* world_clock_{nullptr};
   UiCommandController commands_;
-  const fl::primitives::DiscoveryJournal* discoveries_;
+  const fl::primitives::DiscoveryJournal* discoveries_{nullptr};
   fl::primitives::ObjectiveSystem* objectives_{nullptr};
+  fl::generated::ftxer::ShellCallbacks shell_;
   std::optional<fl::monster::MonsterKind> return_monster_;
-  ActiveScreen active_screen_kind_{ActiveScreen::account_battle};
-  std::optional<ActiveScreen> story_return_screen_;
-  std::optional<std::pair<entt::entity, std::uint64_t>> shown_raid_;
-  bool keybind_help_open_{false};
-  bool quit_confirmation_open_{false};
+  std::optional<fl::skills::SkillId> selected_skill_;
   bool quit_requested_{false};
-  bool sandbox_confirmation_open_{false};
-  bool autoplay_confirmation_open_{false};
-  bool console_above_modals_{false};
   bool sandbox_requested_{false};
   bool help_hint_collapsed_{false};
-  bool normal_combat_resumed_{false};
   bool fps_initialized_{false};
   int fps_frame_count_{0};
   int displayed_fps_{0};
@@ -119,13 +117,15 @@ private:
   ImportantNoticeOverlay important_notices_;
   ftxui::Box viewport_box_{};
 
+  ftxui::Component console_overlay_;
   ftxui::Component quit_cancel_;
   ftxui::Component quit_confirmation_;
-  ftxui::Component active_screen_;
-  ftxui::Component console_overlay_;
-  // Account/party buses outlive the root; disconnect before its state dies.
+  ftxui::Component autoplay_confirmation_;
+  ftxui::Component sandbox_confirmation_;
+  ftxui::Component keybind_help_;
   std::vector<fl::events::ScopedPartyListener> combat_started_subs_;
   std::vector<fl::events::ScopedPartyListener> milestone_subs_;
+  std::vector<fl::events::ScopedRaidListener> raid_started_subs_;
   fl::events::ScopedAchievementListener achievement_sub_;
   fl::events::ScopedStoryListener objective_sub_;
   fl::events::ScopedStoryListener autoplay_sub_;

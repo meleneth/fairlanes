@@ -363,7 +363,7 @@ void GrandCentral::build_ui() {
 
   auto& account = accounts_.front();
 
-  auto existing_ui = ftxui::Make<fl::widgets::RootComponent>(
+  auto existing_ui = std::make_unique<fl::widgets::RootComponent>(
       fl::context::AccountCtx{reg_, rng_, account}, accounts_, *game_log_, world_clock_,
       &discoveries_, &raid_milestones_.bus(), objectives_.get());
   auto adapter = std::make_unique<fl::widgets::FtxerUiAdapter>(std::move(existing_ui));

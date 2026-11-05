@@ -27,6 +27,7 @@
 #include "fl/widgets/root_chrome.hpp"
 #include "fl/widgets/root_component.hpp"
 #include "fl/widgets/story_start_picker.hpp"
+#include "production_ui_harness.hpp"
 
 namespace {
 
@@ -46,7 +47,7 @@ std::string screen_text(const ftxui::Screen& screen) {
   return result;
 }
 
-std::string render_to_string(fl::widgets::RootComponent& root) {
+std::string render_to_string(fl::test::ProductionUiHarness& root) {
   auto element = root.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, kRenderWidth) |
                  ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, kRenderHeight);
   auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(kRenderWidth),
@@ -163,9 +164,8 @@ std::optional<std::string> line_at(const std::string& rendered, std::size_t targ
   return std::nullopt;
 }
 
-fl::widgets::RootComponent make_gameplay_root(fl::GrandCentral& gc) {
-  return fl::widgets::RootComponent{gc.account_context(0), gc.accounts(), gc.game_log(),
-                                    gc.world_clock()};
+fl::test::ProductionUiHarness make_gameplay_root(fl::GrandCentral& gc) {
+  return {gc.account_context(0), gc.accounts(), gc.game_log(), gc.world_clock()};
 }
 
 ftxui::Component make_all_account_surface(fl::GrandCentral& gc) {
@@ -250,9 +250,9 @@ TEST_CASE("Autoplay acknowledges each achievement-style notice after sixty secon
 TEST_CASE("Root queues milestone events and consumes the acknowledging key",
           "[widgets][root][notice]") {
   fl::GrandCentral gc{1, 1, 1};
-  auto root =
-      fl::widgets::RootComponent{gc.account_context(0), gc.accounts(), gc.game_log(),
-                                 gc.world_clock(),      nullptr,       &gc.raid_milestones().bus()};
+  auto root = fl::test::ProductionUiHarness{
+      gc.account_context(0), gc.accounts(), gc.game_log(),
+      gc.world_clock(),      nullptr,       &gc.raid_milestones().bus()};
   const auto baseline = render_to_string(root);
   auto& bus = gc.accounts().front().parties().front().party_bus();
   bus.emit(fl::events::PartyEvent{fl::events::BiomeUnlocked{"origin_plains_tower"}});
@@ -273,14 +273,16 @@ TEST_CASE("Root queues milestone events and consumes the acknowledging key",
 
 TEST_CASE("Story keys lead from the Visitor defeat to pub recruitment", "[widgets][root][story]") {
   fl::GrandCentral game{1, 1, 0, true, true, 42, true};
-  auto root = fl::widgets::RootComponent{game.account_context(0), game.accounts(),
-                                         game.game_log(),         game.world_clock(),
-                                         &game.discoveries(),     &game.raid_milestones().bus(),
-                                         game.objectives()};
+  auto root = fl::test::ProductionUiHarness{game.account_context(0), game.accounts(),
+                                            game.game_log(),         game.world_clock(),
+                                            &game.discoveries(),     &game.raid_milestones().bus(),
+                                            game.objectives()};
   game.innervate_event_system();
   game.advance_beat();
   REQUIRE(render_to_string(root).find("OBJECTIVE REVEALED") != std::string::npos);
   REQUIRE(root.OnEvent(ftxui::Event::Return));
+  REQUIRE(root.OnEvent(ftxui::Event::Character("/")));
+  REQUIRE(root.current_screen() == fl::generated::ftxer::ScreenId::Party);
   REQUIRE(root.OnEvent(ftxui::Event::Character("o")));
   REQUIRE(render_to_string(root).find("Recruit a hero") != std::string::npos);
   REQUIRE(render_to_string(root).find("Press v to visit the village") != std::string::npos);
@@ -298,19 +300,20 @@ TEST_CASE("Story keys lead from the Visitor defeat to pub recruitment", "[widget
 TEST_CASE("Manual village navigation is scoped to a selected party",
           "[widgets][root][story][tower]") {
   fl::GrandCentral game{1, 1, 1, true, true, 42, true};
-  auto root = fl::widgets::RootComponent{game.account_context(0), game.accounts(), game.game_log(),
-                                         game.world_clock(),      nullptr,         nullptr,
-                                         game.objectives()};
+  auto root =
+      fl::test::ProductionUiHarness{game.account_context(0), game.accounts(), game.game_log(),
+                                    game.world_clock(),      nullptr,         nullptr,
+                                    game.objectives()};
 
   // The account battle view is the multi-party surface and cannot choose a
   // route for whichever party happens to be selected in the command model.
   REQUIRE(root.OnEvent(ftxui::Event::Character(" ")));
-  REQUIRE(root.active_screen_id() == "account_battle");
-  REQUIRE(root.OnEvent(ftxui::Event::Character("v")));
-  REQUIRE(root.active_screen_id() == "account_battle");
+  REQUIRE(root.current_screen() == fl::generated::ftxer::ScreenId::AccountBattle);
+  REQUIRE_FALSE(root.OnEvent(ftxui::Event::Character("v")));
+  REQUIRE(root.current_screen() == fl::generated::ftxer::ScreenId::AccountBattle);
 
   REQUIRE(root.OnEvent(ftxui::Event::Character(" ")));
-  REQUIRE(root.active_screen_id() == "party_battle");
+  REQUIRE(root.current_screen() == fl::generated::ftxer::ScreenId::PartyBattle);
   REQUIRE(root.OnEvent(ftxui::Event::Character("v")));
   auto rendered = render_to_string(root);
   REQUIRE(rendered.find("Visit the pub") != std::string::npos);
@@ -337,9 +340,10 @@ TEST_CASE("Manual village navigation is scoped to a selected party",
 
 TEST_CASE("Sandbox console switch warns that story cannot be recovered", "[widgets][root][story]") {
   fl::GrandCentral game{1, 1, 0, true, true, 42, true};
-  auto root = fl::widgets::RootComponent{game.account_context(0), game.accounts(), game.game_log(),
-                                         game.world_clock(),      nullptr,         nullptr,
-                                         game.objectives()};
+  auto root =
+      fl::test::ProductionUiHarness{game.account_context(0), game.accounts(), game.game_log(),
+                                    game.world_clock(),      nullptr,         nullptr,
+                                    game.objectives()};
   REQUIRE(root.OnEvent(ftxui::Event::Character("`")));
   for (char character : std::string{"sandbox"})
     REQUIRE(root.OnEvent(ftxui::Event::Character(std::string(1, character))));
@@ -382,9 +386,10 @@ TEST_CASE("Attract exit picker offers manual story and autoplay with a toggle hi
 TEST_CASE("Story autoplay requires confirmation when enabled from the root",
           "[widgets][root][story]") {
   fl::GrandCentral game{1, 1, 0, true, true, 42, true};
-  auto root = fl::widgets::RootComponent{game.account_context(0), game.accounts(), game.game_log(),
-                                         game.world_clock(),      nullptr,         nullptr,
-                                         game.objectives()};
+  auto root =
+      fl::test::ProductionUiHarness{game.account_context(0), game.accounts(), game.game_log(),
+                                    game.world_clock(),      nullptr,         nullptr,
+                                    game.objectives()};
   REQUIRE_FALSE(game.objectives()->autoplay_enabled());
   REQUIRE(root.OnEvent(ftxui::Event::Character("a")));
   REQUIRE(render_to_string(root).find("Enable story autoplay") != std::string::npos);
@@ -586,7 +591,7 @@ TEST_CASE("Party screens dispatch return-to-town requests with r", "[widgets][ro
   SECTION("party battle") {}
 
   SECTION("player and inventory") {
-    root.show_party(0, 0);
+    REQUIRE(root.OnEvent(ftxui::Event::Character("/")));
   }
 
   REQUIRE(root.OnEvent(ftxui::Event::Character("r")));

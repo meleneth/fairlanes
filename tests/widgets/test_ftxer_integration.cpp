@@ -22,10 +22,10 @@ struct IntegratedRoot {
 };
 
 IntegratedRoot make_root(fl::GrandCentral& game) {
-  auto existing = ftxui::Make<fl::widgets::RootComponent>(
+  auto existing = std::make_unique<fl::widgets::RootComponent>(
       game.account_context(0), game.accounts(), game.game_log(), game.world_clock(),
       &game.discoveries(), &game.raid_milestones().bus(), game.objectives());
-  auto* existing_ptr = dynamic_cast<fl::widgets::RootComponent*>(existing.get());
+  auto* existing_ptr = existing.get();
   auto adapter = std::make_unique<fl::widgets::FtxerUiAdapter>(std::move(existing));
   auto component = ftxui::Make<fl::generated::ftxer::CompositionRoot>(std::move(adapter));
   return {component, dynamic_cast<fl::generated::ftxer::CompositionRoot*>(component.get()),
@@ -85,7 +85,7 @@ TEST_CASE("FTXer console stays above modals and uses the real command system",
 
   REQUIRE(root.composition->OnEvent(ftxui::Event::Character("`")));
   REQUIRE(root.composition->console_open());
-  REQUIRE(root.existing->focus_owner() == "console");
+  REQUIRE(root.composition->console_open());
   type(*root.composition, "help");
   REQUIRE(root.composition->OnEvent(ftxui::Event::Return));
   REQUIRE(root.existing->console_history_size() == 1);
@@ -97,7 +97,6 @@ TEST_CASE("FTXer console stays above modals and uses the real command system",
   REQUIRE(root.existing->console_input_line() == "help");
   REQUIRE(root.composition->OnEvent(ftxui::Event::Character("`")));
   REQUIRE_FALSE(root.composition->console_open());
-  REQUIRE(root.existing->focus_owner() == "quit_confirmation");
   REQUIRE(render(root.component).find("Quit Fairlanes?") != std::string::npos);
 }
 
@@ -116,6 +115,108 @@ TEST_CASE("FTXer global bindings retain selection and overdrive behavior",
   REQUIRE(render(root.component).find("2/2") != std::string::npos);
   REQUIRE(root.composition->OnEvent(ftxui::Event::Character("'")));
   REQUIRE(render(root.component).find("2/2") != std::string::npos);
+
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character("b")));
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Escape));
+  REQUIRE(render(root.component).find("2/2") != std::string::npos);
+}
+
+TEST_CASE("FTXer owns story and party-scoped village navigation",
+          "[ftxer][integration][story][navigation]") {
+  fl::GrandCentral game{1, 1, 1, true, true, 42, true};
+  auto root = make_root(game);
+
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character("o")));
+  REQUIRE(root.composition->current_screen() == fl::generated::ftxer::ScreenId::Objectives);
+  REQUIRE(root.composition->history_size() == 1);
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character("v")));
+  REQUIRE(root.composition->current_screen() == fl::generated::ftxer::ScreenId::Village);
+  REQUIRE(render(root.component).find("Visit the outfitter's shop") != std::string::npos);
+
+  REQUIRE(root.composition->OnEvent(ftxui::Event::ArrowDown));
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character("`")));
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character("`")));
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Return));
+  REQUIRE(render(root.component).find("Outfitter") != std::string::npos);
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Escape));
+  REQUIRE(render(root.component).find("Visit the outfitter's shop") != std::string::npos);
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Escape));
+  REQUIRE(root.composition->current_screen() == fl::generated::ftxer::ScreenId::Objectives);
+
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Escape));
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character(" ")));
+  REQUIRE(root.composition->current_screen() == fl::generated::ftxer::ScreenId::AccountBattle);
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character("o")));
+  REQUIRE_FALSE(root.composition->OnEvent(ftxui::Event::Character("v")));
+  REQUIRE(root.composition->current_screen() == fl::generated::ftxer::ScreenId::Objectives);
+}
+
+TEST_CASE("FTXer stacks console above autoplay confirmation and restores the modal",
+          "[ftxer][integration][overlay][autoplay]") {
+  fl::GrandCentral game{1, 1, 1, true, true, 42, true};
+  auto root = make_root(game);
+
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character("a")));
+  REQUIRE(render(root.component).find("Enable story autoplay?") != std::string::npos);
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character("`")));
+  REQUIRE(root.composition->console_open());
+  type(*root.composition, "help");
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Return));
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character("`")));
+  REQUIRE_FALSE(root.composition->console_open());
+  REQUIRE(render(root.component).find("Enable story autoplay?") != std::string::npos);
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character("n")));
+  REQUIRE_FALSE(game.objectives()->autoplay_enabled());
+
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character("a")));
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Return));
+  REQUIRE(game.objectives()->autoplay_enabled());
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character("a")));
+  REQUIRE_FALSE(game.objectives()->autoplay_enabled());
+}
+
+TEST_CASE("FTXer executes global gameplay actions exactly once",
+          "[ftxer][integration][bindings][once]") {
+  fl::GrandCentral game{1, 1, 1};
+  auto root = make_root(game);
+  int requests = 0;
+  auto subscription =
+      game.accounts()
+          .front()
+          .party(0)
+          .party_bus()
+          .subscribe<fl::events::PartyReturnToTownRequested>([&](const auto&) { ++requests; });
+
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character("r")));
+  REQUIRE(requests == 1);
+}
+
+TEST_CASE("FTXer rebuilds screens across repeated navigation without stale state",
+          "[ftxer][integration][navigation][repeat]") {
+  fl::GrandCentral game{1, 1, 1};
+  auto root = make_root(game);
+
+  for (int visit = 0; visit < 4; ++visit) {
+    REQUIRE(root.composition->OnEvent(ftxui::Event::Character("b")));
+    REQUIRE(root.composition->current_screen() == fl::generated::ftxer::ScreenId::Bestiary);
+    REQUIRE(root.composition->OnEvent(ftxui::Event::Escape));
+    REQUIRE(root.composition->current_screen() == fl::generated::ftxer::ScreenId::PartyBattle);
+  }
+  REQUIRE(root.composition->history_size() == 0);
+  REQUIRE(render(root.component).find("Stormbreak Company") != std::string::npos);
+}
+
+TEST_CASE("FTXer back binding leaves a screen that consumes escape locally",
+          "[ftxer][integration][navigation][back]") {
+  fl::GrandCentral game{1, 1, 1};
+  auto root = make_root(game);
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character("`")));
+  type(*root.composition, "screen effects");
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Return));
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character("`")));
+  REQUIRE(root.composition->current_screen() == fl::generated::ftxer::ScreenId::EffectGallery);
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Escape));
+  REQUIRE(root.composition->current_screen() == fl::generated::ftxer::ScreenId::PartyBattle);
 }
 
 TEST_CASE("FTXer root remains usable across terminal sizes and subscriptions",

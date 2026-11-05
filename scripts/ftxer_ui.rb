@@ -13,20 +13,30 @@ FAIRLANES_UI = FTXer.integration :fairlanes, namespace: "fl::generated::ftxer" d
   screen :effect_gallery
   screen :libram
   screen :bestiary
-  screen :story
+  screen :objectives
+  screen :village
   initial :party_battle
 
   console toggle: "`"
+  overlay :quit_confirmation
+  overlay :autoplay_confirmation
+  overlay :sandbox_confirmation
+  overlay :keybind_help
+  empty_back opens: :quit_confirmation
 
-  key "l", navigate: :libram
-  key "b", navigate: :bestiary
-  key "o", action: :show_objectives
-  key "v", action: :show_village
+  key "l", navigate: :libram, on: %i[raid party account_battle party_battle libram bestiary objectives village]
+  key "b", navigate: :bestiary, on: %i[raid party account_battle party_battle libram bestiary objectives village]
+  key "o", navigate: :objectives
+  key "v", navigate: :village, on: %i[party party_battle]
+  key "v", navigate: :village, on: :objectives, after: %i[party party_battle]
   key "a", action: :toggle_autoplay
   key "h", action: :toggle_help
   key "r", action: :return_to_town
-  key " ", action: :toggle_party_battle
-  key "/", action: :toggle_active_screen
+  key " ", navigate: :party_battle, on: %i[account_battle libram bestiary effect_gallery objectives village]
+  key " ", navigate: :account_battle, on: :party_battle
+  key "/", navigate: :account_battle, on: :party
+  key "/", navigate: :party, on: %i[raid account_battle party_battle]
+  key "/", navigate: :party_battle, on: %i[effect_gallery libram bestiary objectives village]
   key ">", action: :collapse_help
   key ".", action: :collapse_help
   key "<", action: :expand_help
@@ -34,14 +44,17 @@ FAIRLANES_UI = FTXer.integration :fairlanes, namespace: "fl::generated::ftxer" d
   key "+", action: :overdrive_up
   key "=", action: :overdrive_up
   key "-", action: :overdrive_down
-  key "[", action: :previous_party
-  key "]", action: :next_party
-  key "{", action: :previous_account
-  key ";", action: :previous_account
-  key "}", action: :next_account
-  key "'", action: :next_account
-  key "escape", back: true
-  key "q", back: true
+  key "[", action: :previous_party, refresh: true
+  key "]", action: :next_party, refresh: true
+  key "{", action: :previous_account, refresh: true
+  key ";", action: :previous_account, refresh: true
+  key "}", action: :next_account, refresh: true
+  key "'", action: :next_account, refresh: true
+  key "enter", navigate: :party_battle, on: :raid
+  key "escape", back: true, on: %i[party objectives village], screen_first: true
+  key "escape", back: true, on: %i[raid account_battle party_battle effect_gallery libram bestiary]
+  key "q", back: true, on: %i[party objectives village], screen_first: true
+  key "q", back: true, on: %i[raid account_battle party_battle effect_gallery libram bestiary]
 end
 
 if $PROGRAM_NAME == __FILE__

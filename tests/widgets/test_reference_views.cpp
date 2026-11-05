@@ -8,9 +8,15 @@
 #include "fl/widgets/bestiary_view.hpp"
 #include "fl/widgets/libram_view.hpp"
 #include "fl/widgets/root_component.hpp"
+#include "production_ui_harness.hpp"
 
 namespace {
 std::string render(ftxui::ComponentBase& view) {
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(100), ftxui::Dimension::Fixed(24));
+  ftxui::Render(screen, view.Render());
+  return screen.ToString();
+}
+std::string render(fl::test::ProductionUiHarness& view) {
   auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(100), ftxui::Dimension::Fixed(24));
   ftxui::Render(screen, view.Render());
   return screen.ToString();
@@ -61,8 +67,8 @@ TEST_CASE("Shell follows bestiary links and returns to the monster", "[discovery
   game.reg().emplace<fl::ecs::components::MonsterIdentity>(cat,
                                                            fl::monster::MonsterKind::ScaredyCat);
   bus.emit(fl::events::PartyEvent{fl::events::SkillWitnessed{cat, fl::skills::SkillId::Thump}});
-  fl::widgets::RootComponent root{game.account_context(0), game.accounts(), game.game_log(),
-                                  game.world_clock(), &game.discoveries()};
+  fl::test::ProductionUiHarness root{game.account_context(0), game.accounts(), game.game_log(),
+                                     game.world_clock(), &game.discoveries()};
   root.OnEvent(ftxui::Event::Character("b"));
   REQUIRE(render(root).find("Bestiary") != std::string::npos);
   root.OnEvent(ftxui::Event::Tab);
@@ -77,8 +83,8 @@ TEST_CASE("Shell follows bestiary links and returns to the monster", "[discovery
 TEST_CASE("Gameplay quit requires an explicit selection and defaults to cancel",
           "[widgets][root][quit]") {
   fl::GrandCentral game{1, 1, 1};
-  fl::widgets::RootComponent root{game.account_context(0), game.accounts(), game.game_log(),
-                                  game.world_clock(), &game.discoveries()};
+  fl::test::ProductionUiHarness root{game.account_context(0), game.accounts(), game.game_log(),
+                                     game.world_clock(), &game.discoveries()};
   for (const auto& key : {ftxui::Event::Escape, ftxui::Event::Character("q")}) {
     REQUIRE(root.OnEvent(key));
     REQUIRE(render(root).find("Quit Fairlanes?") != std::string::npos);
@@ -108,8 +114,8 @@ TEST_CASE("Gameplay quit requires an explicit selection and defaults to cancel",
 TEST_CASE("Back leaves reference screens and overlays without requesting quit",
           "[discovery][widgets][root][quit]") {
   fl::GrandCentral game{1, 1, 1};
-  fl::widgets::RootComponent root{game.account_context(0), game.accounts(), game.game_log(),
-                                  game.world_clock(), &game.discoveries()};
+  fl::test::ProductionUiHarness root{game.account_context(0), game.accounts(), game.game_log(),
+                                     game.world_clock(), &game.discoveries()};
   for (const auto& key : {ftxui::Event::Escape, ftxui::Event::Character("q")}) {
     for (const auto& open : {"l", "b"}) {
       root.OnEvent(ftxui::Event::Character(open));
@@ -125,7 +131,11 @@ TEST_CASE("Back leaves reference screens and overlays without requesting quit",
     REQUIRE_FALSE(root.quit_requested());
     REQUIRE(render(root).find("Quit Fairlanes?") == std::string::npos);
   }
-  root.show_effect_gallery();
+  root.OnEvent(ftxui::Event::Character("`"));
+  for (char character : std::string{"screen effects"})
+    root.OnEvent(ftxui::Event::Character(std::string(1, character)));
+  root.OnEvent(ftxui::Event::Return);
+  root.OnEvent(ftxui::Event::Character("`"));
   REQUIRE(root.OnEvent(ftxui::Event::Escape));
   REQUIRE_FALSE(root.quit_requested());
   REQUIRE(render(root).find("Quit Fairlanes?") == std::string::npos);
