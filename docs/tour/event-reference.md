@@ -31,11 +31,12 @@ emitted when a valid skill action starts scheduling, independently of Observe,
 learning chance, damage, and eventual victory. An interrupted effect can still
 have been witnessed; a rejected prerequisite emits no discovery event.
 
-`DiscoveryJournalListener` subscribes to normal-game party buses and records
-encountered kinds, globally witnessed skills, and witnessed skills per monster
-kind. The game owns the journal and its RAII listener; listener destruction
-precedes destruction of the buses and journal. The attract demo constructs its
-game with discovery recording disabled, so these subscriptions are absent.
+`DiscoveryJournalListener` subscribes to an account's normal-game party buses
+and records encountered kinds, account-witnessed skills, and witnessed skills
+per monster kind. The account owns the journal and its RAII listener; listener
+destruction precedes destruction of the buses and journal. The attract demo
+constructs its game with discovery recording disabled, so these subscriptions
+are absent.
 
 The libram exposes only witnessed skill descriptions. The bestiary exposes only
 encountered monsters and uses `--` for each declared but unwitnessed skill.
@@ -105,6 +106,31 @@ or heal/resurrect participants. The account raid controller is not wired yet.
 
 Emitted during `PartyData::leave_combat()` or `summon_to_raid()` before encounter
 teardown. Observed by status cleanup listeners while the old scheduler is still alive.
+
+### `fl::events::PartyEncounterBoundary`
+
+Emitted after normal encounter teardown and pending strategic destination
+changes. Account-owned roster transfers use it to commit only when both parties
+are outside encounters.
+
+### Tower and farming destination events
+
+`TowerDestinationRequested` / `TowerDestinationChanged` and
+`FarmingTargetRequested` / `FarmingTargetChanged` distinguish strategic
+requests from committed state. `TowerFloorCleared` is emitted only for a newly
+committed frontier clear; `TowerCompleted` follows the first floor-100 clear.
+
+### Roster transfer events
+
+`RosterTransferRequested` records a validated same-account request.
+`RosterTransferCommitted` follows the authoritative account mutation at a safe
+boundary.
+
+### `fl::events::PartyGainedXP`
+
+Emitted once per eligible living encounter participant after
+`GrantXPToParty::commit_victory(...)` applies that character's individual
+award.
 
 ### `fl::events::PartyGainedLevel`
 
@@ -184,10 +210,6 @@ Defined but not emitted. Party construction currently logs directly.
 ### `fl::events::MemberJoined`
 
 Defined but not emitted. Member creation currently logs directly.
-
-### `fl::events::PartyGainedXP`
-
-Defined but not emitted. `GrantXPToParty::commit(...)` currently logs and applies XP directly.
 
 ## Scheduler Payloads
 

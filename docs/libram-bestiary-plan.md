@@ -4,7 +4,7 @@ Every monster declaration includes a nonempty flavor description. The bestiary
 shows that description when the monster is encountered, above its base stats and
 witnessed skill links. Descriptions do not mark skills as witnessed.
 
-Implement these goals in order. The game-wide reference is the libram; a
+Implement these goals in order. The account reference is the libram; a
 member's collection of learned, ranked skills remains the grimoire.
 
 Skill descriptions are part of the implementation requirements. Every new or
@@ -21,11 +21,11 @@ review must still verify that those numbers match the implementation.
 
 1. **Reference and discovery data.** Give every skill a textual description in
    content metadata. Track encountered monster kinds and witnessed skill uses
-   for the game session, shared across accounts. A discovered monster exposes
+   for the account's game session. A discovered monster exposes
    one slot per declared skill; an unwitnessed skill projects as `--` without an
    identifier or link. Discovery does not require Observe or a victory. Party
    discovery events populate the journal through listeners owned by the normal
-   game; the attract demo does not wire those listeners.
+   account; the attract demo does not wire those listeners.
 2. **Reference screens.** Witnessed skills unlock descriptions in the libram. Browse
    discovered monsters in the bestiary and follow witnessed skills into the
    libram. Keep screen navigation in the shell and projection in the views.

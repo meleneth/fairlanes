@@ -12,6 +12,8 @@
 #include <entt/entity/registry.hpp>
 
 #include "fl/fwd.hpp"
+#include "fl/primitives/discovery_journal.hpp"
+#include "fl/primitives/member_data.hpp"
 #include "fl/primitives/moon_calendar.hpp"
 #include "fl/primitives/raid_data.hpp"
 #include "fl/primitives/raid_statistics.hpp"
@@ -112,6 +114,20 @@ public:
   const TowerBalance& tower_balance() const noexcept {
     return tower_balance_;
   }
+  MemberData& create_character(entt::entity member_id, std::string name);
+  void enable_roster_transfers();
+  bool request_roster_transfer(fl::context::AccountCtx ctx, entt::entity member,
+                               std::size_t destination_party);
+  std::size_t character_count() const noexcept {
+    return characters_.size();
+  }
+  void enable_discoveries(entt::registry& reg);
+  DiscoveryJournal& discoveries() noexcept {
+    return discoveries_;
+  }
+  const DiscoveryJournal& discoveries() const noexcept {
+    return discoveries_;
+  }
   void enable_origin_recruitment();
   void resolve_recruitment_events(fl::context::AccountCtx ctx);
   bool claim_recruitment(fl::context::AccountCtx ctx, std::string_view opportunity_id);
@@ -125,7 +141,11 @@ private:
   entt::entity account_id_{entt::null};
   std::unique_ptr<fl::widgets::FancyLog> log_{};
 
+  // Declared before parties so stable character records outlive roster views.
+  std::deque<MemberData> characters_;
   std::deque<PartyData> parties_{}; // owned parties
+  DiscoveryJournal discoveries_;
+  std::unique_ptr<DiscoveryJournalListener> discovery_listener_;
   std::unique_ptr<fl::events::RaidBus> raid_bus_{std::make_unique<fl::events::RaidBus>()};
   std::unique_ptr<RaidStatistics> statistics_;
   TowerBalance tower_balance_{};
@@ -135,6 +155,11 @@ private:
   seerin::BeatSub progression_sub_{};
   bool try_start_visitor(fl::context::AccountCtx ctx);
   void bind_recruitment_party(std::size_t party_index);
+  void bind_boundary_party(std::size_t party_index);
+  void process_pending_transfers(fl::context::AccountCtx ctx);
+  bool commit_transfer(fl::context::AccountCtx ctx, entt::entity member, std::size_t source_party,
+                       std::size_t destination_party);
+  void refresh_transfer_blocks();
   bool ensure_party_unlocked(fl::context::AccountCtx ctx, std::size_t party_index);
   void unlock_floor_opportunities(fl::context::AccountCtx ctx);
   void unlock_completion_opportunities(fl::context::AccountCtx ctx, std::size_t party_index);
@@ -144,6 +169,14 @@ private:
   bool recruitment_enabled_{false};
   std::vector<RecruitmentOpportunity> recruitment_opportunities_;
   std::vector<fl::events::ScopedPartyListener> recruitment_subscriptions_;
+  std::vector<fl::events::ScopedPartyListener> boundary_subscriptions_;
+  struct PendingTransfer {
+    entt::entity member{entt::null};
+    std::size_t source_party{0};
+    std::size_t destination_party{0};
+  };
+  std::vector<PendingTransfer> pending_transfers_;
+  bool roster_transfers_enabled_{false};
   std::array<bool, 5> completed_rosters_{};
   std::unordered_set<std::string> claimed_story_recruits_;
   std::unordered_set<std::string> committed_floor_clears_;

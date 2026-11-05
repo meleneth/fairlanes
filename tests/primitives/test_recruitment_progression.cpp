@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "fl/ecs/components/track_xp.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/primitives/account_data.hpp"
@@ -79,6 +80,19 @@ TEST_CASE("Story recruits consume capacity while excess floor-five opportunities
   REQUIRE(opportunity(account, caves).state ==
           fl::primitives::RecruitmentOpportunityState::Available);
   REQUIRE(recruited == 5);
+
+  const auto veteran = account.parties().front().members()[2].member_id();
+  REQUIRE(account.request_roster_transfer(ctx, veteran, 1));
+  REQUIRE(account.parties().front().members().size() == 4);
+  REQUIRE(account.parties()[1].members().size() == 1);
+  REQUIRE(account.claim_recruitment(ctx, caves));
+  REQUIRE(account.parties().front().members().size() == 5);
+  const auto fresh_recruit = account.parties().front().members().back().member_id();
+  const auto& fresh_xp = ctx.reg().get<fl::ecs::components::TrackXP>(fresh_recruit);
+  REQUIRE(fresh_xp.level_ == 1);
+  REQUIRE(fresh_xp.xp_ == 0);
+  REQUIRE(opportunity(account, caves).state ==
+          fl::primitives::RecruitmentOpportunityState::Claimed);
 }
 
 TEST_CASE("Milestone tiers unlock parties independently and party four unlocks party five once",

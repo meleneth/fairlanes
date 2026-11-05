@@ -50,6 +50,14 @@ The intended model keeps four concerns distinct:
 3. Suppression based on character level relative to encounter difficulty.
 4. Suppression based on repeated farming of the same content.
 
+**Decided:** XP is committed only after encounter victory and only to living
+characters who participated in that encounter. It is calculated independently
+for each eligible character. Dead participants, characters outside the winning
+encounter, and later roster additions receive none. Underleveled characters
+receive the ordinary applicable reward without an underlevel bonus or automatic
+catch-up multiplier. Newly recruited characters begin at level 1 with no prior
+combat XP.
+
 **Unresolved:** Formulas, thresholds, history scope, distribution, catch-up
 rules, and the mathematical relationship among these mechanisms. They are
 explored in [`brainstorms/character-progression.md`](../brainstorms/character-progression.md)
@@ -69,8 +77,11 @@ decision.
 - **Planned:** Level progression beyond 100. `TrackXP` currently stops producing
   a next-level threshold after level 100, while the accepted progression spans
   approximately 400 levels.
-- **Planned:** Challenge-relative and repetition XP suppression. Current kills
-  grant a flat 256 XP to every member of the killer's party, regardless of
-  level, encounter difficulty, or farming history.
-- **Unresolved:** The current XP curve, equal whole-party award, and permanent
-  max-HP gain on level-up are implementation choices, not canonical formulas.
+- **Planned:** Challenge-relative and repetition XP suppression. The temporary
+  base reward may remain while a narrow per-character policy boundary is used;
+  that boundary is not an approved suppression curve.
+- **Unresolved:** The current XP curve and permanent max-HP gain on level-up are
+  implementation choices, not canonical formulas.
+
+Victory-only, living-participant eligibility and independent per-character
+calculation are **Implemented** without an underlevel bonus.

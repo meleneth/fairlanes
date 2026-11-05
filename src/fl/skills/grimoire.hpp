@@ -27,9 +27,17 @@ public:
   [[nodiscard]] std::span<const SkillKey> known_skills() const noexcept {
     return known_;
   }
+  [[nodiscard]] bool previously_learned(SkillKey skill) const noexcept;
+  [[nodiscard]] bool forgotten(SkillKey skill) const noexcept {
+    return previously_learned(skill) && !knows(skill);
+  }
+  [[nodiscard]] std::span<const SkillKey> learned_history() const noexcept {
+    return learned_history_;
+  }
 
 private:
   std::vector<SkillKey> known_;
+  std::vector<SkillKey> learned_history_;
 };
 
 } // namespace fl::skills

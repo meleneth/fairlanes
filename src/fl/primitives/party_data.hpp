@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <deque>
 #include <functional> // std::invoke
+#include <iterator>
 #include <list>
 #include <memory>
 #include <optional>
@@ -29,6 +30,89 @@
 #include "sr/beat_bus.hpp"
 
 namespace fl::primitives {
+
+class PartyRoster {
+  template <class BaseIterator, class Reference, class Pointer> class IndirectIterator {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = MemberData;
+    using difference_type = std::ptrdiff_t;
+    using reference = Reference;
+    using pointer = Pointer;
+
+    IndirectIterator() = default;
+    explicit IndirectIterator(BaseIterator iterator) : iterator_(iterator) {}
+    reference operator*() const {
+      return **iterator_;
+    }
+    pointer operator->() const {
+      return *iterator_;
+    }
+    IndirectIterator& operator++() {
+      ++iterator_;
+      return *this;
+    }
+    IndirectIterator operator++(int) {
+      auto copy = *this;
+      ++*this;
+      return copy;
+    }
+    friend bool operator==(const IndirectIterator&, const IndirectIterator&) = default;
+
+  private:
+    BaseIterator iterator_{};
+  };
+
+public:
+  using iterator = IndirectIterator<std::vector<MemberData*>::iterator, MemberData&, MemberData*>;
+  using const_iterator = IndirectIterator<std::vector<MemberData*>::const_iterator,
+                                          const MemberData&, const MemberData*>;
+
+  iterator begin() noexcept {
+    return iterator{members_.begin()};
+  }
+  iterator end() noexcept {
+    return iterator{members_.end()};
+  }
+  const_iterator begin() const noexcept {
+    return const_iterator{members_.begin()};
+  }
+  const_iterator end() const noexcept {
+    return const_iterator{members_.end()};
+  }
+  bool empty() const noexcept {
+    return members_.empty();
+  }
+  std::size_t size() const noexcept {
+    return members_.size();
+  }
+  MemberData& front() noexcept {
+    return *members_.front();
+  }
+  const MemberData& front() const noexcept {
+    return *members_.front();
+  }
+  MemberData& back() noexcept {
+    return *members_.back();
+  }
+  const MemberData& back() const noexcept {
+    return *members_.back();
+  }
+  MemberData& operator[](std::size_t index) noexcept {
+    return *members_[index];
+  }
+  const MemberData& operator[](std::size_t index) const noexcept {
+    return *members_[index];
+  }
+  void add(MemberData& member) {
+    members_.push_back(&member);
+  }
+  bool remove(entt::entity member);
+  bool contains(entt::entity member) const noexcept;
+
+private:
+  std::vector<MemberData*> members_;
+};
 
 struct PartyData {
 public:
@@ -60,10 +144,10 @@ public:
     return static_cast<bool>(log_);
   }
 
-  std::deque<fl::primitives::MemberData>& members() noexcept {
+  PartyRoster& members() noexcept {
     return members_;
   }
-  const std::deque<fl::primitives::MemberData>& members() const noexcept {
+  const PartyRoster& members() const noexcept {
     return members_;
   }
 
@@ -123,6 +207,18 @@ public:
   int latest_tower_floor(std::string_view biome_id) const noexcept;
   int highest_tower_floor_cleared(std::string_view biome_id) const noexcept;
   void begin_tower_encounter();
+  bool tower_encounter_ready() const noexcept {
+    return !encounter_start_blocked_ && !tower_complete_waiting_;
+  }
+  bool at_encounter_boundary() const noexcept {
+    return !has_encounter() && !in_raid();
+  }
+  void block_encounter_start(bool blocked) noexcept {
+    encounter_start_blocked_ = blocked;
+  }
+  bool encounter_start_blocked() const noexcept {
+    return encounter_start_blocked_;
+  }
   bool plains_unlocked() const noexcept {
     return plains_unlocked_;
   }
@@ -176,6 +272,14 @@ public:
   }
   void watch_skill_learned_this_combat(entt::entity member, fl::skills::SkillKey skill);
   bool drop_skill(entt::entity member, std::size_t slot_index);
+  struct TeacherEncounter {
+    std::string biome_id;
+    int floor{0};
+    fl::monster::MonsterKind monster;
+  };
+  std::optional<TeacherEncounter> find_accessible_teacher(entt::entity member,
+                                                          fl::skills::SkillKey skill) const;
+  bool farm_for_forgotten_skill(entt::entity member, fl::skills::SkillKey skill);
 
   GrimoireDiscipline grimoire_discipline() const noexcept {
     return grimoire_discipline_;
@@ -243,13 +347,14 @@ private:
   std::unique_ptr<fl::fsm::PartyLoopMachine> party_loop_machine_;
   std::unique_ptr<fl::primitives::EncounterData> encounter_data_{nullptr};
   EncounterData* raid_encounter_{nullptr}; // borrowed from account RaidData
-  std::deque<fl::primitives::MemberData> members_;
+  PartyRoster members_;
   seerin::AtbEngine atb_;
   std::vector<entt::entity> inventory_;
   GrimoireDiscipline grimoire_discipline_{GrimoireDiscipline::Brawn};
   FarmingPlan farming_plan_{make_farming_plan(GrimoireDiscipline::Brawn, FarmFocus::Brawn)};
   ProgressionControlMode progression_control_mode_{ProgressionControlMode::Manual};
   std::optional<FarmFocus> previous_farm_focus_;
+  std::optional<FarmingPlan> pending_farming_plan_;
   bool farm_focus_selected_{false};
   EncounterMode encounter_mode_{EncounterMode::ChaosAttractor};
   std::string tower_biome_{};
@@ -267,6 +372,15 @@ private:
   bool story_shop_pending_{false};
   int darrin_marks_{0};
   bool plains_reward_awarded_{false};
+  struct PendingTowerDestination {
+    std::string biome_id;
+    int floor{1};
+    bool repeat{false};
+  };
+  std::optional<PendingTowerDestination> pending_tower_destination_;
+  bool repeat_selected_floor_{false};
+  bool encounter_start_blocked_{false};
+  bool tower_complete_waiting_{false};
 
   seerin::BeatBus party_beat_bus_{};
   seerin::BeatSub gc_forward_sub_{};
@@ -290,6 +404,12 @@ private:
   bool leaving_combat_{false};
   bool preserve_terminal_encounter_{false};
   void cleanup_encounter();
+  void commit_tower_victory();
+  bool request_tower_destination(std::string_view biome_id, int floor, bool repeat);
+  bool commit_tower_destination(std::string_view biome_id, int floor, bool repeat);
+  void apply_pending_tower_destination();
+  void commit_farming_plan(FarmingPlan plan);
+  void apply_pending_farming_plan();
   void clear_combat_visuals();
   void restore_observe_to_open_first_slots();
 

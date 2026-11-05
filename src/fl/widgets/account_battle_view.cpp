@@ -128,7 +128,7 @@ ftxui::Element AccountBattleView::Render() {
            ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, combatant_row_height);
   };
 
-  auto render_memberdata_row_5 = [&](const std::deque<fl::primitives::MemberData>& members) {
+  auto render_memberdata_row_5 = [&](const fl::primitives::PartyRoster& members) {
     std::vector<ftxui::Element> row;
     row.reserve(column_count);
 

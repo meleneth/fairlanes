@@ -6,8 +6,9 @@
 namespace fl::widgets {
 
 LibramView::LibramView(const fl::primitives::DiscoveryJournal& journal,
-                       std::optional<fl::skills::SkillId> selected)
-    : journal_(journal) {
+                       std::optional<fl::skills::SkillId> selected,
+                       fl::primitives::PartyData* party)
+    : journal_(journal), party_(party) {
   refresh();
   if (selected) {
     const auto found = std::ranges::find(skills_, *selected);
@@ -17,6 +18,28 @@ LibramView::LibramView(const fl::primitives::DiscoveryJournal& journal,
   }
   menu_ = ftxui::Menu(&names_, &selected_);
   Add(menu_);
+}
+
+bool LibramView::OnEvent(ftxui::Event event) {
+  if (party_ && !party_->members().empty() &&
+      (event == ftxui::Event::ArrowLeft || event == ftxui::Event::ArrowRight)) {
+    const int count = static_cast<int>(party_->members().size());
+    member_ =
+        event == ftxui::Event::ArrowRight ? (member_ + 1) % count : (member_ + count - 1) % count;
+    action_status_.clear();
+    return true;
+  }
+  if (party_ && !party_->members().empty() && !skills_.empty() &&
+      event == ftxui::Event::Character("f")) {
+    member_ = std::clamp(member_, 0, static_cast<int>(party_->members().size()) - 1);
+    const auto member = party_->members()[static_cast<std::size_t>(member_)].member_id();
+    const fl::skills::SkillKey skill{skills_[static_cast<std::size_t>(selected_)]};
+    action_status_ = party_->farm_for_forgotten_skill(member, skill)
+                         ? "Farming request accepted for the next encounter boundary."
+                         : "No accessible teacher for this character and party.";
+    return true;
+  }
+  return ComponentBase::OnEvent(event);
 }
 
 void LibramView::refresh() {
@@ -48,19 +71,33 @@ ftxui::Element LibramView::Render() {
                                             "their descriptions."));
   }
   const auto& entry = fl::skills::definition(skills_[static_cast<std::size_t>(selected_)]);
+  Elements details{text(std::string{entry.display_name}) | bold, separator(),
+                   paragraph(std::string{entry.description})};
+  if (party_ && !party_->members().empty()) {
+    member_ = std::clamp(member_, 0, static_cast<int>(party_->members().size()) - 1);
+    const auto& member = party_->members()[static_cast<std::size_t>(member_)];
+    const fl::skills::SkillKey skill{entry.key.base};
+    const auto& grimoire = member.grimoire();
+    const std::string state = grimoire.knows(skill)       ? "known"
+                              : grimoire.forgotten(skill) ? "forgotten"
+                                                          : "not learned";
+    details.push_back(separator());
+    details.push_back(text(member.name() + ": " + state));
+    if (grimoire.forgotten(skill)) details.push_back(text("f: Farm for this skill"));
+    if (!action_status_.empty()) details.push_back(paragraph(action_status_));
+  }
   return window(
       text("Libram"),
       vbox({hbox({menu_->Render() | vscroll_indicator | yframe | size(WIDTH, LESS_THAN, 30),
-                  separator(),
-                  vbox({text(std::string{entry.display_name}) | bold, separator(),
-                        paragraph(std::string{entry.description})}) |
-                      flex}) |
+                  separator(), vbox(std::move(details)) | flex}) |
                 flex,
             separator(),
             paragraph("No balance passes have been done. Damage numbers "
                       "are base values before misses, armor, shields "
                       "and field modifiers. Times use combat seconds."),
-            text("Up/Down: skill   Esc: back   b: bestiary") | dim}));
+            text("Up/Down: skill   Left/Right: character   f: farm forgotten   Esc: back   b: "
+                 "bestiary") |
+                dim}));
 }
 
 } // namespace fl::widgets

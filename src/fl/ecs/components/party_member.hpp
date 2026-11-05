@@ -59,6 +59,10 @@ struct PartyMember {
 
   [[nodiscard]] bool can_equip_skill(fl::skills::SkillKey skill) const;
   bool equip_known_skill(fl::skills::SkillKey skill) noexcept;
+  void reassign(fl::context::EntityCtx ctx, entt::entity party) noexcept {
+    ctx_ = std::move(ctx);
+    party_ = party;
+  }
 };
 
 template <typename PM = PartyMember, typename Fn>

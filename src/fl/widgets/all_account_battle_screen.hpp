@@ -44,8 +44,7 @@ private:
                                       entt::entity active = entt::null) const;
   ftxui::Element render_roster(std::span<const entt::entity> entities, int width,
                                bool show_levels = false) const;
-  ftxui::Element render_member_roster(const std::deque<fl::primitives::MemberData>& members,
-                                      int width) const;
+  ftxui::Element render_member_roster(const fl::primitives::PartyRoster& members, int width) const;
   std::string entity_level_chip(entt::entity entity, std::size_t max_name_width) const;
   std::string entity_chip(entt::entity entity, std::size_t max_name_width) const;
 

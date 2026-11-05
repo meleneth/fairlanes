@@ -140,8 +140,7 @@ TEST_CASE("The story party clears the physical slice and can return to Woodland 
     return member.grimoire().knows(fl::skills::SkillId::Brace);
   }));
   REQUIRE(party.latest_tower_floor("origin_woodland_tower") == 10);
-  REQUIRE(party.tower_choice_pending());
-  REQUIRE_FALSE(party.has_encounter());
+  REQUIRE_FALSE(party.tower_choice_pending());
   REQUIRE(party.select_tower("origin_plains_tower"));
 
   while (party.latest_tower_floor("origin_plains_tower") < 4 && beats < 80000) {

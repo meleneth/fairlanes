@@ -227,7 +227,10 @@ ftxui::Component RootComponent::make_effect_gallery() {
 
 ftxui::Component RootComponent::make_libram() {
   if (raid_locked() || !discoveries_) return {};
-  auto screen = ftxui::Make<LibramView>(*discoveries_, selected_skill_);
+  auto& parties = ctx_.account_data().parties();
+  auto* party =
+      parties.empty() ? nullptr : &parties[std::min(commands_.party_index(), parties.size() - 1)];
+  auto screen = ftxui::Make<LibramView>(ctx_.account_data().discoveries(), selected_skill_, party);
   selected_skill_.reset();
   return screen;
 }
@@ -237,7 +240,7 @@ ftxui::Component RootComponent::make_bestiary() {
   auto selected = return_monster_;
   return_monster_.reset();
   return ftxui::Make<BestiaryView>(
-      *discoveries_,
+      ctx_.account_data().discoveries(),
       [this](fl::monster::MonsterKind kind, fl::skills::SkillId skill) {
         return_monster_ = kind;
         selected_skill_ = skill;

@@ -1333,8 +1333,9 @@ TEST_CASE("Returning to town rolls back provisional skills and restores Observe"
                                                      fl::skills::SkillId::Thump, 1));
   REQUIRE(members.back().grimoire().learn(fl::skills::SkillId::Flee));
   REQUIRE(observer_member.equip_known_skill(fl::skills::SkillId::Flee));
-  REQUIRE(party.drop_skill(observer, 0));
-  REQUIRE_FALSE(observer_member.closet().skill_slots[0].has_value());
+  REQUIRE_FALSE(party.drop_skill(observer, 0));
+  REQUIRE(observer_member.closet().skill_slots[0] ==
+          fl::skills::SkillKey{fl::skills::SkillId::Observe});
   int victory_count = 0;
   auto victory_sub =
       party.party_bus().subscribe<fl::events::PartyVictory>([&](const auto&) { ++victory_count; });

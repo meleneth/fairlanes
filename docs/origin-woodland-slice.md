@@ -6,12 +6,12 @@ next floor and funding the village hide purchase. Use `tower woodland` or
 floor. Add a floor number, such as `tower woodland 1`, to replay any floor up
 to that biome's latest unlocked floor. A win unlocks the next floor only when
 the latest floor is cleared; a wipe retries the floor after recovery. A clear
-returns the party to full effective HP. Clearing Woodland
-floor 9 pauses the route until the player chooses `tower plains` or
-`tower woodland`. The party may clear Plains floor 1 for a cape,
-equip it in the party inventory, then use `tower woodland` to return to floor
-10. `tower status` shows the current route. Encounter selection outside a
-selected tower remains unchanged.
+returns the party to full effective HP. Clearing Woodland floor 9 unlocks
+Plains while automatic Woodland progression continues. A destination request
+made during combat takes effect after that encounter. The party may select
+Plains, clear floor 1 for a cape, equip it in the party inventory, and later
+return to its own Woodland frontier. `tower status` shows the current route.
+Encounter selection outside a selected tower remains unchanged.
 
 A wipe keeps the selected biome and floor. After the existing 60-second town
 recovery, manual play and story autoplay both start another attempt on that

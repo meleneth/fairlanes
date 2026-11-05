@@ -4,12 +4,30 @@
 #include <algorithm>
 
 #include "fl/ecs/components/is_party.hpp"
+#include "fl/ecs/components/party_member.hpp"
+#include "fl/ecs/components/track_xp.hpp"
 #include "fl/generated/monster_content.hpp"
 #include "fl/generated/recruitment_content.hpp"
 #include "fl/primitives/hero_names.hpp"
 #include "fl/primitives/party_names.hpp"
 
 namespace fl::primitives {
+
+MemberData& AccountData::create_character(entt::entity member_id, std::string name) {
+  return characters_.emplace_back(member_id, std::move(name));
+}
+
+void AccountData::enable_roster_transfers() {
+  if (roster_transfers_enabled_) return;
+  roster_transfers_enabled_ = true;
+  for (std::size_t index = 0; index < parties_.size(); ++index) bind_boundary_party(index);
+}
+
+void AccountData::enable_discoveries(entt::registry& reg) {
+  if (discovery_listener_) return;
+  discovery_listener_ = std::make_unique<DiscoveryJournalListener>(discoveries_, reg);
+  for (auto& party : parties_) discovery_listener_->bind(party.party_bus());
+}
 
 void AccountData::hook_to_beat(fl::context::AccountCtx ctx, seerin::BeatBus& beats,
                                WorldClock& world_clock, bool enable_visitors) {
@@ -63,6 +81,18 @@ void AccountData::enable_origin_recruitment() {
   for (std::size_t index = 0; index < parties_.size(); ++index) bind_recruitment_party(index);
 }
 
+void AccountData::bind_boundary_party(std::size_t party_index) {
+  auto& bus = parties_.at(party_index).party_bus();
+  boundary_subscriptions_.emplace_back(
+      bus, std::in_place_type<fl::events::PartyEncounterBoundary>,
+      [this, party_index](const fl::events::PartyEncounterBoundary&) {
+        if (pending_transfers_.empty()) return;
+        process_pending_transfers(
+            fl::context::AccountCtx{parties_.at(party_index).party_ctx().reg(),
+                                    parties_.at(party_index).party_ctx().rng(), *this});
+      });
+}
+
 void AccountData::bind_recruitment_party(std::size_t party_index) {
   auto& bus = parties_.at(party_index).party_bus();
   recruitment_subscriptions_.emplace_back(bus, std::in_place_type<fl::events::TowerFloorCleared>,
@@ -89,9 +119,90 @@ bool AccountData::ensure_party_unlocked(fl::context::AccountCtx ctx, std::size_t
   const auto party_id = ctx.reg().create();
   auto& party = parties_.emplace_back(party_id, ctx, party_names.at(party_index));
   ctx.reg().emplace<fl::ecs::components::IsParty>(party_id, party_id, party);
+  if (roster_transfers_enabled_) bind_boundary_party(party_index);
+  if (discovery_listener_) discovery_listener_->bind(party.party_bus());
   bind_recruitment_party(party_index);
   log().append_plain(fmt::format("Party {} unlocked: {}.", party_index + 1, party.name()));
   return true;
+}
+
+bool AccountData::request_roster_transfer(fl::context::AccountCtx ctx, entt::entity member,
+                                          std::size_t destination_party) {
+  using fl::ecs::components::PartyMember;
+  auto* assignment = ctx.reg().try_get<PartyMember>(member);
+  if (assignment == nullptr || destination_party >= parties_.size()) {
+    log().append_plain("Roster transfer rejected: character or destination is unavailable.");
+    return false;
+  }
+  const auto source = std::ranges::find_if(
+      parties_, [&](const PartyData& party) { return party.party_id() == assignment->party_; });
+  if (source == parties_.end()) {
+    log().append_plain("Roster transfer rejected: character belongs to another account.");
+    return false;
+  }
+  const auto source_party = static_cast<std::size_t>(std::distance(parties_.begin(), source));
+  if (source_party == destination_party || parties_[destination_party].members().size() >= 5 ||
+      std::ranges::any_of(pending_transfers_, [&](const PendingTransfer& pending) {
+        return pending.member == member;
+      })) {
+    log().append_plain(
+        "Roster transfer rejected: assignment is unchanged, full, or already pending.");
+    return false;
+  }
+  parties_[source_party].party_bus().emit(
+      fl::events::PartyEvent{fl::events::RosterTransferRequested{
+          member, parties_[source_party].party_id(), parties_[destination_party].party_id()}});
+  pending_transfers_.push_back({member, source_party, destination_party});
+  refresh_transfer_blocks();
+  process_pending_transfers(ctx);
+  return true;
+}
+
+void AccountData::process_pending_transfers(fl::context::AccountCtx ctx) {
+  for (auto it = pending_transfers_.begin(); it != pending_transfers_.end();) {
+    if (!parties_[it->source_party].at_encounter_boundary() ||
+        !parties_[it->destination_party].at_encounter_boundary()) {
+      ++it;
+      continue;
+    }
+    const auto pending = *it;
+    it = pending_transfers_.erase(it);
+    if (!commit_transfer(ctx, pending.member, pending.source_party, pending.destination_party)) {
+      log().append_plain("Roster transfer rejected at encounter boundary.");
+    }
+  }
+  refresh_transfer_blocks();
+}
+
+bool AccountData::commit_transfer(fl::context::AccountCtx ctx, entt::entity member,
+                                  std::size_t source_party, std::size_t destination_party) {
+  using fl::ecs::components::PartyMember;
+  if (source_party >= parties_.size() || destination_party >= parties_.size() ||
+      parties_[destination_party].members().size() >= 5 ||
+      !parties_[source_party].members().contains(member))
+    return false;
+  auto* assignment = ctx.reg().try_get<PartyMember>(member);
+  if (assignment == nullptr || assignment->party_ != parties_[source_party].party_id())
+    return false;
+  auto* character = &assignment->member_data();
+  if (!parties_[source_party].members().remove(member)) return false;
+  parties_[destination_party].members().add(*character);
+  assignment->reassign(parties_[destination_party].party_ctx().entity_context(member),
+                       parties_[destination_party].party_id());
+  if (auto* xp = ctx.reg().try_get<fl::ecs::components::TrackXP>(member))
+    xp->ctx_ = parties_[destination_party].party_ctx().entity_context(member);
+  parties_[source_party].party_bus().emit(
+      fl::events::PartyEvent{fl::events::RosterTransferCommitted{
+          member, parties_[source_party].party_id(), parties_[destination_party].party_id()}});
+  return true;
+}
+
+void AccountData::refresh_transfer_blocks() {
+  for (auto& party : parties_) party.block_encounter_start(false);
+  for (const auto& pending : pending_transfers_) {
+    parties_[pending.source_party].block_encounter_start(true);
+    parties_[pending.destination_party].block_encounter_start(true);
+  }
 }
 
 void AccountData::unlock_floor_opportunities(fl::context::AccountCtx ctx) {

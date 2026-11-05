@@ -18,6 +18,24 @@
 #include "fl/primitives/tower_balance.hpp"
 #include "fl/widgets/ui_command_controller.hpp"
 
+namespace {
+
+void clear_selected_tower_floor(fl::context::PartyCtx ctx) {
+  auto& party = ctx.party_data();
+  const auto route = party.tower_route();
+  REQUIRE(route.has_value());
+  party.begin_tower_encounter();
+  auto& fight = fl::primitives::EncounterBuilder{ctx, fl::primitives::EncounterMode::ChaosAttractor,
+                                                 fl::primitives::EncounterBuilder::TowerFloor{
+                                                     std::string(route->biome_id), route->floor}}
+                    .thump_it_out();
+  for (const auto enemy : fight.attackers().members())
+    ctx.reg().get<fl::ecs::components::Stats>(enemy).hp_ = 0;
+  party.leave_combat();
+}
+
+} // namespace
+
 TEST_CASE("Tower command selects an unlocked floor and rejects a locked floor",
           "[tower][command]") {
   fl::GrandCentral game{1, 1, 1};
@@ -187,7 +205,7 @@ TEST_CASE("Woodland floor nine unlocks Plains, whose first clear rewards the cap
   REQUIRE(party.select_tower("origin_woodland_tower", 1));
   REQUIRE(party.tower_route()->floor == 1);
   clear_current_floor();
-  REQUIRE(party.tower_route()->floor == 2);
+  REQUIRE(party.tower_route()->floor == 1);
   REQUIRE(party.latest_tower_floor("origin_woodland_tower") == 10);
   REQUIRE(party.select_tower("origin_woodland_tower"));
   REQUIRE(party.plains_unlocked());
@@ -243,13 +261,15 @@ TEST_CASE("Seeded production beats can clear Woodland nine and take the Plains "
     ++beats;
   }
   REQUIRE(party.tower_route()->floor == 10);
-  REQUIRE(party.tower_choice_pending());
+  REQUIRE_FALSE(party.tower_choice_pending());
   REQUIRE(party.plains_unlocked());
   for (int wait = 0; wait < 12; ++wait) game.advance_beat();
-  REQUIRE_FALSE(party.has_encounter());
+  REQUIRE(party.has_encounter());
   REQUIRE(party.tower_route()->floor == 10);
   REQUIRE(party.select_tower("origin_plains_tower"));
-  while (party.tower_route()->floor < 2 && beats < 30000) {
+  while (
+      (party.tower_route()->biome_id != "origin_plains_tower" || party.tower_route()->floor < 2) &&
+      beats < 30000) {
     game.advance_beat();
     ++beats;
   }
@@ -265,5 +285,112 @@ TEST_CASE("Seeded production beats can clear Woodland nine and take the Plains "
       fl::events::EquipmentEquipRequested{hero, fl::loot::EquipmentSlot::cape, *reward}});
   REQUIRE(fl::ecs::systems::effective_combat_stats(ctx.reg(), hero).armor >= 3);
   REQUIRE(party.select_tower("origin_woodland_tower"));
-  REQUIRE(party.tower_route()->floor == 10);
+  REQUIRE(party.tower_route()->floor == 11);
+}
+
+TEST_CASE("Tower destinations requested during combat commit at the boundary",
+          "[tower][progression][boundary]") {
+  fl::GrandCentral game{1, 1, 1};
+  auto ctx = game.account_context(0).party_context(0);
+  auto& party = ctx.party_data();
+  REQUIRE(party.select_tower("origin_woodland_tower", 1));
+  party.begin_tower_encounter();
+  auto& first = fl::primitives::EncounterBuilder{ctx, fl::primitives::EncounterMode::ChaosAttractor,
+                                                 fl::primitives::EncounterBuilder::TowerFloor{
+                                                     "origin_woodland_tower", 1}}
+                    .thump_it_out();
+  for (auto enemy : first.attackers().members())
+    ctx.reg().get<fl::ecs::components::Stats>(enemy).hp_ = 0;
+  party.leave_combat();
+  REQUIRE(party.tower_route()->floor == 2);
+
+  party.begin_tower_encounter();
+  auto& fight = fl::primitives::EncounterBuilder{ctx, fl::primitives::EncounterMode::ChaosAttractor,
+                                                 fl::primitives::EncounterBuilder::TowerFloor{
+                                                     "origin_woodland_tower", 2}}
+                    .thump_it_out();
+  REQUIRE(party.select_tower("origin_woodland_tower", 1));
+  REQUIRE(party.tower_route()->floor == 2);
+
+  for (auto enemy : fight.attackers().members())
+    ctx.reg().get<fl::ecs::components::Stats>(enemy).hp_ = 0;
+  party.leave_combat();
+  REQUIRE(party.tower_route()->floor == 1);
+}
+
+TEST_CASE("Frontier clears are exact once and floor one hundred completes without floor 101",
+          "[tower][progression][completion][idempotency]") {
+  fl::GrandCentral game{1, 1, 1};
+  auto ctx = game.account_context(0).party_context(0);
+  auto& party = ctx.party_data();
+  REQUIRE(party.select_tower("origin_woodland_tower"));
+  int clears = 0;
+  int completions = 0;
+  fl::events::ScopedPartyListener clear_sub{party.party_bus(),
+                                            std::in_place_type<fl::events::TowerFloorCleared>,
+                                            [&](const auto&) { ++clears; }};
+  fl::events::ScopedPartyListener completion_sub{party.party_bus(),
+                                                 std::in_place_type<fl::events::TowerCompleted>,
+                                                 [&](const auto&) { ++completions; }};
+
+  for (int floor = 1; floor <= 100; ++floor) {
+    REQUIRE(party.tower_route()->floor == floor);
+    clear_selected_tower_floor(ctx);
+  }
+  REQUIRE(party.highest_tower_floor_cleared("origin_woodland_tower") == 100);
+  REQUIRE(party.latest_tower_floor("origin_woodland_tower") == 100);
+  REQUIRE(party.tower_route()->floor == 100);
+  REQUIRE(clears == 100);
+  REQUIRE(completions == 1);
+
+  // Completion waits for a new strategic request. Explicitly selecting 100
+  // turns it into a farming floor and cannot repeat first-clear facts.
+  REQUIRE(party.select_tower("origin_woodland_tower", 100));
+  clear_selected_tower_floor(ctx);
+  REQUIRE(party.tower_route()->floor == 100);
+  REQUIRE(clears == 100);
+  REQUIRE(completions == 1);
+}
+
+TEST_CASE("Cleared milestone farming never re-emits its floor-clear fact",
+          "[tower][progression][farming][idempotency]") {
+  fl::GrandCentral game{1, 1, 1};
+  auto ctx = game.account_context(0).party_context(0);
+  auto& party = ctx.party_data();
+  REQUIRE(party.select_tower("origin_woodland_tower"));
+  int floor_25_clears = 0;
+  fl::events::ScopedPartyListener clear_sub{
+      party.party_bus(), std::in_place_type<fl::events::TowerFloorCleared>, [&](const auto& event) {
+        if (event.floor == 25) ++floor_25_clears;
+      }};
+  for (int floor = 1; floor <= 25; ++floor) clear_selected_tower_floor(ctx);
+  REQUIRE(floor_25_clears == 1);
+  REQUIRE(party.select_tower("origin_woodland_tower", 25));
+  for (int repeat = 0; repeat < 3; ++repeat) clear_selected_tower_floor(ctx);
+  REQUIRE(party.tower_route()->floor == 25);
+  REQUIRE(floor_25_clears == 1);
+}
+
+TEST_CASE("Tower and biome progression remain independent when veterans change parties",
+          "[tower][progression][party][transfer]") {
+  fl::GrandCentral game{1, 2, 1};
+  auto account_ctx = game.account_context(0);
+  auto first_ctx = account_ctx.party_context(0);
+  auto& first = first_ctx.party_data();
+  auto& second = account_ctx.account_data().party(1);
+  REQUIRE(first.select_tower("origin_woodland_tower"));
+  for (int floor = 1; floor <= 9; ++floor) clear_selected_tower_floor(first_ctx);
+  REQUIRE(first.plains_unlocked());
+  REQUIRE_FALSE(second.plains_unlocked());
+  REQUIRE(first.highest_tower_floor_cleared("origin_woodland_tower") == 9);
+  REQUIRE(second.highest_tower_floor_cleared("origin_woodland_tower") == 0);
+
+  const auto veteran = first.members().front().member_id();
+  auto& xp = account_ctx.reg().get<fl::ecs::components::TrackXP>(veteran);
+  const int retained_xp = xp.xp_;
+  REQUIRE(account_ctx.account_data().request_roster_transfer(account_ctx, veteran, 1));
+  REQUIRE(second.members().back().member_id() == veteran);
+  REQUIRE(xp.xp_ == retained_xp);
+  REQUIRE(second.highest_tower_floor_cleared("origin_woodland_tower") == 0);
+  REQUIRE_FALSE(second.plains_unlocked());
 }

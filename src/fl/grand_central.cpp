@@ -91,6 +91,7 @@ void GrandCentral::_create_initial_accounts() {
       if (!story_mode_ || !party_data.members().empty())
         fl::ecs::systems::SpecialFestivalEvent::grant_starting_drops(party_data.party_ctx());
     }
+    account_data.enable_roster_transfers();
   }
 
   TracyPlot("GC.AccountCount", static_cast<double>(accounts_.size()));
@@ -112,24 +113,12 @@ GrandCentral::GrandCentral(uint8_t num_accounts, uint8_t num_parties_per_account
   fl::monster::register_all_monsters();
   _create_initial_accounts();
   if (record_discoveries) {
-    discovery_listener_ =
-        std::make_unique<fl::primitives::DiscoveryJournalListener>(discoveries_, reg_);
-    for (auto& account : accounts_)
-      for (auto& party : account.parties()) discovery_listener_->bind(party.party_bus());
+    for (auto& account : accounts_) account.enable_discoveries(reg_);
   }
   if (story_mode) {
     for (std::size_t index = 0; index < accounts_.size(); ++index) {
       auto& account = accounts_[index];
       account.enable_origin_recruitment();
-      if (discovery_listener_ && !account.parties().empty()) {
-        party_unlock_subscriptions_.emplace_back(
-            account.parties().front().party_bus(), std::in_place_type<fl::events::PartyUnlocked>,
-            [this, index](const fl::events::PartyUnlocked& event) {
-              auto& parties = accounts_.at(index).parties();
-              if (event.party_index < parties.size())
-                discovery_listener_->bind(parties[event.party_index].party_bus());
-            });
-      }
     }
   }
   if (story_mode && !accounts_.empty())
@@ -377,7 +366,7 @@ void GrandCentral::build_ui() {
 
   auto existing_ui = std::make_unique<fl::widgets::RootComponent>(
       fl::context::AccountCtx{reg_, rng_, account}, accounts_, *game_log_, world_clock_,
-      &discoveries_, &raid_milestones_.bus(), objectives_.get());
+      &account.discoveries(), &raid_milestones_.bus(), objectives_.get());
   auto adapter = std::make_unique<fl::widgets::FtxerUiAdapter>(std::move(existing_ui));
   root_component_ = ftxui::Make<fl::generated::ftxer::CompositionRoot>(std::move(adapter));
 }

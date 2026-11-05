@@ -106,7 +106,7 @@ std::uint32_t forest_seed_for_party(const std::string& party_name, std::size_t p
   return seed;
 }
 
-std::vector<entt::entity> member_entities(const std::deque<fl::primitives::MemberData>& members) {
+std::vector<entt::entity> member_entities(const fl::primitives::PartyRoster& members) {
   std::vector<entt::entity> entities;
   entities.reserve(std::min(members.size(), kMaxCombatants));
 

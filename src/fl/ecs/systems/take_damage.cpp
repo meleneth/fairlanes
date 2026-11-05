@@ -15,7 +15,6 @@
 #include "fl/primitives/damage.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/widgets/fancy_log.hpp"
-#include "grant_xp_to_party.hpp"
 #include "take_damage.hpp"
 
 #include <chrono>
@@ -90,7 +89,6 @@ int TakeDamage::commit(fl::context::AttackCtx& ctx, ftxui::Color damage_number_c
     }
 
     if (party_member && !party_member->party().party_data().in_raid()) {
-      fl::systems::GrantXPToParty::commit(ctx.entity_context(party_member->party_), 256);
       auto& party_data = party_member->party().party_data();
       party_data.party_bus().emit(fl::events::PartyEvent{
           fl::events::LootDropRequested{ctx.defender(), party_member->party_}});

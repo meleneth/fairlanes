@@ -144,19 +144,22 @@ so contexts can stay lightweight without becoming dangling traps.
 Current ownership shape:
 
 - `GrandCentral` owns `std::deque<AccountData> accounts_`.
-- `AccountData` owns `std::deque<PartyData> parties_`, an account `FancyLog`,
-  and an account bus.
-- `PartyData` owns `std::deque<MemberData> members_`, a party `FancyLog`, a
-  `PartyCtx`, a `PartyLoopMachine`, optional `EncounterData`, and a party bus.
+- `AccountData` owns stable `std::deque<MemberData> characters_`,
+  `std::deque<PartyData> parties_`, an account `FancyLog`, and account-scoped
+  discovery.
+- `PartyData` owns a non-owning `PartyRoster` assignment view, a party
+  `FancyLog`, a `PartyCtx`, a `PartyLoopMachine`, optional `EncounterData`, and
+  a party bus.
 - `PartyData::party_ctx_` points back into the account/party/world objects it was
   built from.
 - `GrandCentral` owns the master `FancyLog` through `std::unique_ptr` and wires a
   `FancyLogSink` to the `LogBus`.
 
 The use of `std::deque` is important. Code stores references and pointers into
-the account, party, and member collections through contexts, components, and UI
-objects. Do not casually replace these deques with vectors: vector reallocation
-would invalidate handles that the current API relies on being stable.
+the account, party, and account-owned character collections through contexts,
+components, roster views, and UI objects. Do not casually replace these deques
+with vectors: vector reallocation would invalidate handles that the current API
+relies on being stable.
 
 The `std::unique_ptr<FancyLog>` members are also part of the stability story:
 moving an `AccountData` or `PartyData` should not move the actual log object that
@@ -512,12 +515,13 @@ Lore/design brainstorm:
 
 ## Libram, Bestiary, and Monster Rules
 
-The per-member `Grimoire` remains the collection of learned ranked skills.
-The game-wide **libram** displays only witnessed skill descriptions. The
-**bestiary** displays encountered monsters with links for witnessed skills and
-`--` for declared but unwitnessed skills. Discovery is shared across accounts
-for the game session and populated by `MonsterEncountered` and `SkillWitnessed`
-party events. `GrandCentral` owns the journal and scoped listeners; attract-demo
+The per-member `Grimoire` remains the collection of learned ranked skills and
+their forgotten-skill history. The account **libram** displays only witnessed
+skill descriptions. The **bestiary** displays encountered monsters with links
+for witnessed skills and `--` for declared but unwitnessed skills. Discovery is
+account-scoped for the game session and populated by `MonsterEncountered` and
+`SkillWitnessed` party events. `AccountData` owns the journal and scoped
+listeners; attract-demo
 construction explicitly disables those listeners. Do not populate discovery
 from rendering, character learning, or the attract demo.
 

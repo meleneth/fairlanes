@@ -10,11 +10,14 @@
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/ecs/systems/effective_combat_stats.hpp"
+#include "fl/ecs/systems/grant_xp_to_party.hpp"
 #include "fl/ecs/systems/loot_drop.hpp"
 #include "fl/ecs/systems/manual_equipment.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/fsm/party_loop_machine.hpp"
+#include "fl/generated/floor_content.hpp"
 #include "fl/generated/gear_content.hpp"
+#include "fl/generated/monster_content.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/skills/skill.hpp"
 #include "fl/widgets/fancy_log.hpp"
@@ -22,6 +25,19 @@
 #include "sr/beat_bus.hpp"
 
 namespace fl::primitives {
+
+bool PartyRoster::remove(entt::entity member) {
+  const auto found = std::ranges::find_if(
+      members_, [member](const MemberData* candidate) { return candidate->member_id() == member; });
+  if (found == members_.end()) return false;
+  members_.erase(found);
+  return true;
+}
+
+bool PartyRoster::contains(entt::entity member) const noexcept {
+  return std::ranges::any_of(
+      members_, [member](const MemberData* candidate) { return candidate->member_id() == member; });
+}
 
 PartyData::PartyData(entt::entity party_id, fl::context::AccountCtx& account_ctx, std::string name)
     : party_id_(party_id), name_(std::move(name)),
@@ -37,50 +53,58 @@ PartyData::PartyData(entt::entity party_id, fl::context::AccountCtx& account_ctx
   manual_equipment_sub_ = fl::ecs::systems::ManualEquipmentSystem::bind_listener(party_ctx_);
   tower_progress_sub_ = fl::events::ScopedPartyListener{
       party_bus_, std::in_place_type<fl::events::PartyVictory>,
-      [this](const fl::events::PartyVictory&) {
-        if (in_raid() || !encounter_data_ || encounter_tower_biome_.empty()) return;
-        if (encounter_tower_biome_ == "origin_woodland_tower") {
-          woodland_cleared_floor_ = std::max(woodland_cleared_floor_, encounter_tower_floor_);
-          if (encounter_tower_floor_ == 9 && !plains_unlocked_) {
-            plains_unlocked_ = true;
-            tower_choice_pending_ = true;
-            party_bus_.emit(
-                fl::events::PartyEvent{fl::events::BiomeUnlocked{"origin_plains_tower"}});
-            log_->append_plain("Origin Plains Tower unlocked. Choose tower plains for the detour "
-                               "or tower woodland for floor 10.");
-          }
-          const int next = std::min(100, encounter_tower_floor_ + 1);
-          if (encounter_tower_floor_ == woodland_latest_floor_) {
-            woodland_latest_floor_ = next;
-            if (next > encounter_tower_floor_)
-              party_bus_.emit(fl::events::PartyEvent{
-                  fl::events::TowerFloorCleared{encounter_tower_biome_, encounter_tower_floor_}});
-          }
-          woodland_floor_ = next;
-          tower_floor_attempts_ = 0;
-        } else if (encounter_tower_biome_ == "origin_plains_tower") {
-          plains_cleared_floor_ = std::max(plains_cleared_floor_, encounter_tower_floor_);
-          if (encounter_tower_floor_ == 1 && !plains_reward_awarded_) {
-            fl::ecs::systems::LootDropSystem::grant_unique(
-                party_ctx_, fl::loot::generated_content::GearId::MossboundCape);
-            plains_reward_awarded_ = true;
-            log_->append_plain(
-                "Plains floor 1 reward: Mossbound Cape. Equip it in the party inventory.");
-          }
-          const int next = std::min(100, encounter_tower_floor_ + 1);
-          if (encounter_tower_floor_ == plains_latest_floor_) {
-            plains_latest_floor_ = next;
-            if (next > encounter_tower_floor_)
-              party_bus_.emit(fl::events::PartyEvent{
-                  fl::events::TowerFloorCleared{encounter_tower_biome_, encounter_tower_floor_}});
-          }
-          plains_floor_ = next;
-          tower_floor_attempts_ = 0;
-        }
-        // Tower travel returns through town; begin the next floor at full
-        // effective HP without adding HP when an item is equipped mid-fight.
-        revitalize_members();
-      }};
+      [this](const fl::events::PartyVictory&) { commit_tower_victory(); }};
+}
+
+void PartyData::commit_tower_victory() {
+  if (in_raid() || !encounter_data_ || encounter_tower_biome_.empty()) return;
+
+  int* selected = nullptr;
+  int* latest = nullptr;
+  int* cleared = nullptr;
+  if (encounter_tower_biome_ == "origin_woodland_tower") {
+    selected = &woodland_floor_;
+    latest = &woodland_latest_floor_;
+    cleared = &woodland_cleared_floor_;
+  } else if (encounter_tower_biome_ == "origin_plains_tower") {
+    selected = &plains_floor_;
+    latest = &plains_latest_floor_;
+    cleared = &plains_cleared_floor_;
+  } else {
+    return;
+  }
+
+  const bool frontier = encounter_tower_floor_ == *latest && encounter_tower_floor_ > *cleared;
+  if (frontier) {
+    *cleared = encounter_tower_floor_;
+    party_bus_.emit(fl::events::PartyEvent{
+        fl::events::TowerFloorCleared{encounter_tower_biome_, encounter_tower_floor_}});
+
+    if (encounter_tower_biome_ == "origin_woodland_tower" && encounter_tower_floor_ == 9 &&
+        !plains_unlocked_) {
+      plains_unlocked_ = true;
+      party_bus_.emit(fl::events::PartyEvent{fl::events::BiomeUnlocked{"origin_plains_tower"}});
+      log_->append_plain("Origin Plains Tower unlocked. Woodland progression continues until a "
+                         "new destination is selected.");
+    }
+    if (encounter_tower_biome_ == "origin_plains_tower" && encounter_tower_floor_ == 1 &&
+        !plains_reward_awarded_) {
+      fl::ecs::systems::LootDropSystem::grant_unique(
+          party_ctx_, fl::loot::generated_content::GearId::MossboundCape);
+      plains_reward_awarded_ = true;
+      log_->append_plain("Plains floor 1 reward: Mossbound Cape. Equip it in the party inventory.");
+    }
+
+    if (encounter_tower_floor_ == 100) {
+      tower_complete_waiting_ = !repeat_selected_floor_;
+      party_bus_.emit(fl::events::PartyEvent{fl::events::TowerCompleted{encounter_tower_biome_}});
+    } else {
+      *latest = encounter_tower_floor_ + 1;
+      if (!repeat_selected_floor_) *selected = *latest;
+    }
+  }
+  tower_floor_attempts_ = 0;
+  revitalize_members();
 }
 
 std::optional<PartyData::TowerRoute> PartyData::tower_route() const noexcept {
@@ -109,23 +133,59 @@ int PartyData::highest_tower_floor_cleared(std::string_view biome_id) const noex
 }
 
 bool PartyData::select_tower(std::string_view biome_id, std::optional<int> floor) {
-  if (biome_id != "origin_woodland_tower" && biome_id != "origin_plains_tower") return false;
+  if (biome_id != "origin_woodland_tower" && biome_id != "origin_plains_tower") {
+    log_->append_plain("Tower destination rejected: unknown biome.");
+    return false;
+  }
   const int latest = latest_tower_floor(biome_id);
-  if (latest == 0 || (floor && (*floor < 1 || *floor > latest))) return false;
+  if (latest == 0 || (floor && (*floor < 1 || *floor > latest))) {
+    log_->append_plain("Tower destination rejected: floor is not accessible to this party.");
+    return false;
+  }
   const int selected_floor = floor.value_or(latest);
+  const bool repeat = floor.has_value() && selected_floor <= highest_tower_floor_cleared(biome_id);
+  return request_tower_destination(biome_id, selected_floor, repeat);
+}
+
+bool PartyData::request_tower_destination(std::string_view biome_id, int selected_floor,
+                                          bool repeat) {
+  party_bus_.emit(fl::events::PartyEvent{
+      fl::events::TowerDestinationRequested{std::string(biome_id), selected_floor}});
+  if (has_encounter()) {
+    pending_tower_destination_ =
+        PendingTowerDestination{std::string(biome_id), selected_floor, repeat};
+    return true;
+  }
+  return commit_tower_destination(biome_id, selected_floor, repeat);
+}
+
+bool PartyData::commit_tower_destination(std::string_view biome_id, int selected_floor,
+                                         bool repeat) {
   const auto current = tower_route();
   const bool changed = tower_biome_ != biome_id || !current || current->floor != selected_floor;
   tower_biome_ = biome_id;
   (biome_id == "origin_woodland_tower" ? woodland_floor_ : plains_floor_) = selected_floor;
   if (changed) tower_floor_attempts_ = 0;
   tower_choice_pending_ = false;
+  tower_complete_waiting_ = false;
+  repeat_selected_floor_ = repeat;
+  party_bus_.emit(fl::events::PartyEvent{
+      fl::events::TowerDestinationChanged{std::string(biome_id), selected_floor}});
   return true;
+}
+
+void PartyData::apply_pending_tower_destination() {
+  if (!pending_tower_destination_) return;
+  auto pending = std::move(*pending_tower_destination_);
+  pending_tower_destination_.reset();
+  commit_tower_destination(pending.biome_id, pending.floor, pending.repeat);
 }
 
 entt::entity PartyData::recruit_member(std::string name) {
   if (members_.size() >= 5) return entt::null;
   auto& reg = party_ctx_.reg();
-  auto& member = members_.emplace_back(reg.create(), std::move(name));
+  auto& member = party_ctx_.account_data().create_character(reg.create(), std::move(name));
+  members_.add(member);
   const auto id = member.member_id();
   reg.emplace<fl::ecs::components::Stats>(id, member.name());
   member.hook_level_progression(reg);
@@ -211,6 +271,7 @@ void PartyData::leave_combat() {
   leaving_combat_ = true;
 
   if (!all_members_dead()) {
+    fl::systems::GrantXPToParty::commit_victory(party_ctx_, *encounter_data_);
     party_bus_.emit(fl::events::PartyEvent{fl::events::PartyVictory{}});
   }
 
@@ -264,6 +325,9 @@ void PartyData::cleanup_encounter() {
   encounter_data_->clear_pending_events();
   encounter_data_->finalize();
   encounter_data_.reset();
+  apply_pending_tower_destination();
+  apply_pending_farming_plan();
+  party_bus_.emit(fl::events::PartyEvent{fl::events::PartyEncounterBoundary{party_id_}});
 }
 
 void PartyData::clear_combat_visuals() {
@@ -336,7 +400,8 @@ bool PartyData::drop_skill(entt::entity member, std::size_t slot_index) {
   using fl::ecs::components::PartyMember;
 
   auto* party_member = party_ctx_.reg().try_get<PartyMember>(member);
-  if (party_member == nullptr || slot_index >= party_member->closet().skill_slots.size()) {
+  if (party_member == nullptr || slot_index == 0 ||
+      slot_index >= party_member->closet().skill_slots.size()) {
     return false;
   }
 
@@ -352,6 +417,49 @@ bool PartyData::drop_skill(entt::entity member, std::size_t slot_index) {
                                   party_member->member_data().name(),
                                   fl::skills::display_name(skill)));
   return true;
+}
+
+std::optional<PartyData::TeacherEncounter>
+PartyData::find_accessible_teacher(entt::entity member, fl::skills::SkillKey skill) const {
+  if (!members_.contains(member)) return std::nullopt;
+
+  constexpr std::array<std::string_view, 5> kOriginBiomes{
+      "origin_woodland_tower", "origin_plains_tower", "origin_murky_swamp_tower",
+      "origin_caves_tower", "origin_desert_tower"};
+  std::optional<TeacherEncounter> best;
+  for (const auto biome : kOriginBiomes) {
+    const int accessible = latest_tower_floor(biome);
+    for (int floor = 1; floor <= accessible; ++floor) {
+      const auto* lineup = fl::primitives::generated_content::floor_lineup(biome, floor);
+      if (lineup == nullptr) continue;
+      for (std::size_t index = 0; index < lineup->monster_count; ++index) {
+        const auto monster = lineup->monsters[index];
+        const auto skills = fl::monster::generated_content::known_skills(monster);
+        if (std::ranges::find(skills, skill.base) == skills.end()) continue;
+        if (!best || floor > best->floor)
+          best = TeacherEncounter{std::string(biome), floor, monster};
+      }
+    }
+  }
+  return best;
+}
+
+bool PartyData::farm_for_forgotten_skill(entt::entity member, fl::skills::SkillKey skill) {
+  if (!members_.contains(member)) return false;
+  const auto data = std::ranges::find_if(
+      members_, [member](const MemberData& candidate) { return candidate.member_id() == member; });
+  if (data == members_.end() || !data->grimoire().forgotten(skill)) return false;
+  const auto teacher = find_accessible_teacher(member, skill);
+  if (!teacher) {
+    log_->append_markup(fmt::format("No accessible teacher can demonstrate [ability]({}).",
+                                    fl::skills::display_name(skill)));
+    return false;
+  }
+  log_->append_markup(fmt::format("Farming {} floor {} for [ability]({}); learning still requires "
+                                  "Observe.",
+                                  teacher->biome_id, teacher->floor,
+                                  fl::skills::display_name(skill)));
+  return request_tower_destination(teacher->biome_id, teacher->floor, true);
 }
 
 void PartyData::resolve_pending_learned_skill(std::list<PendingLearnedSkill>::iterator it,
@@ -406,17 +514,37 @@ void PartyData::apply_recommended_farming_plan() {
 }
 
 void PartyData::select_farming_plan(GrimoireDiscipline discipline, FarmFocus focus) {
+  const auto plan = make_farming_plan(discipline, focus);
+  party_bus_.emit(fl::events::PartyEvent{
+      fl::events::FarmingTargetRequested{std::string(display_name(plan.focus))}});
+  if (has_encounter()) {
+    pending_farming_plan_ = plan;
+    return;
+  }
+  commit_farming_plan(plan);
+}
+
+void PartyData::commit_farming_plan(FarmingPlan plan) {
   if (farm_focus_selected_) {
     previous_farm_focus_ = farming_plan_.focus;
   }
-  grimoire_discipline_ = discipline;
-  farming_plan_ = make_farming_plan(discipline, focus);
+  grimoire_discipline_ = plan.discipline;
+  farming_plan_ = plan;
   farm_focus_selected_ = true;
   log_->append_markup(
       fmt::format("Farming focus set: [ability]({}) discipline, [ability]({}) focus; "
                   "reward path is [xp]({}).",
                   display_name(farming_plan_.discipline), display_name(farming_plan_.focus),
                   display_name(farming_plan_.reward_class)));
+  party_bus_.emit(fl::events::PartyEvent{
+      fl::events::FarmingTargetChanged{std::string(display_name(farming_plan_.focus))}});
+}
+
+void PartyData::apply_pending_farming_plan() {
+  if (!pending_farming_plan_) return;
+  const auto plan = *pending_farming_plan_;
+  pending_farming_plan_.reset();
+  commit_farming_plan(plan);
 }
 
 void PartyData::tick_town_penalty() {

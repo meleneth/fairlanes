@@ -440,7 +440,7 @@ ftxui::Element AllAccountBattleScreen::render_roster(std::span<const entt::entit
 }
 
 ftxui::Element
-AllAccountBattleScreen::render_member_roster(const std::deque<fl::primitives::MemberData>& members,
+AllAccountBattleScreen::render_member_roster(const fl::primitives::PartyRoster& members,
                                              int width) const {
   std::vector<entt::entity> entities;
   entities.reserve(members.size());

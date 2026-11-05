@@ -48,14 +48,16 @@ TEST_CASE("Discovery listener disconnects before its captures die", "[discovery]
   REQUIRE_FALSE(journal.knows(SkillId::Flee));
 }
 
-TEST_CASE("Normal accounts share discovery and attract games leave it unwired", "[discovery]") {
+TEST_CASE("Normal accounts keep independent discovery and attract games leave it unwired",
+          "[discovery]") {
   fl::GrandCentral game{2, 1, 1};
   game.accounts()[0].party(0).party_bus().emit(
       fl::events::PartyEvent{fl::events::MonsterEncountered{MonsterKind::FieldMouse}});
   game.accounts()[1].party(0).party_bus().emit(fl::events::PartyEvent{fl::events::SkillWitnessed{
       game.accounts()[1].party(0).members()[0].member_id(), SkillId::Observe}});
   REQUIRE(game.discoveries().monsters().contains(MonsterKind::FieldMouse));
-  REQUIRE(game.discoveries().knows(SkillId::Observe));
+  REQUIRE_FALSE(game.discoveries().knows(SkillId::Observe));
+  REQUIRE(game.accounts()[1].discoveries().knows(SkillId::Observe));
 
   fl::GrandCentral attract{1, 1, 1, false};
   attract.accounts()[0].party(0).party_bus().emit(

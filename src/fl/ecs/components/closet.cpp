@@ -55,8 +55,8 @@ bool Closet::has_equipped_skill(fl::skills::SkillKey skill) const noexcept {
 }
 
 bool Closet::has_open_skill_slot() const noexcept {
-  for (const auto equipped : skill_slots) {
-    if (!equipped.has_value()) {
+  for (std::size_t index = 1; index < skill_slots.size(); ++index) {
+    if (!skill_slots[index].has_value()) {
       return true;
     }
   }
@@ -64,13 +64,18 @@ bool Closet::has_open_skill_slot() const noexcept {
 }
 
 bool Closet::equip_skill(fl::skills::SkillKey skill) noexcept {
+  if (skill.base == fl::skills::SkillId::Observe) {
+    if (skill_slots[0] == skill) return false;
+    skill_slots[0] = skill;
+    return true;
+  }
   if (has_equipped_skill(skill)) {
     return false;
   }
 
-  for (auto& equipped : skill_slots) {
-    if (!equipped.has_value()) {
-      equipped = skill;
+  for (std::size_t index = 1; index < skill_slots.size(); ++index) {
+    if (!skill_slots[index].has_value()) {
+      skill_slots[index] = skill;
       return true;
     }
   }
@@ -79,9 +84,11 @@ bool Closet::equip_skill(fl::skills::SkillKey skill) noexcept {
 }
 
 bool Closet::unequip_skill(fl::skills::SkillKey skill) noexcept {
-  for (auto& equipped : skill_slots) {
-    if (equipped == skill) {
-      equipped.reset();
+  const std::size_t begin = skill.base == fl::skills::SkillId::Observe ? 0 : 1;
+  const std::size_t end = skill.base == fl::skills::SkillId::Observe ? 1 : skill_slots.size();
+  for (std::size_t index = begin; index < end; ++index) {
+    if (skill_slots[index] == skill) {
+      skill_slots[index].reset();
       return true;
     }
   }

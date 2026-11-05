@@ -16,6 +16,11 @@ defensive mechanism must answer every threat. Significant encounters should
 permit more than one viable solution through preparation, party construction,
 loadout, and tactical choices.
 
+**Decided:** Party composition, farming destination, biome destination, and
+skill-recovery farming are strategic state. Requests made during an active
+encounter take effect only at its boundary; combat membership and the current
+encounter are never mutated in place.
+
 ## Existing defensive lessons
 
 - **Implemented:** Brace mitigates qualifying direct physical damage. Its

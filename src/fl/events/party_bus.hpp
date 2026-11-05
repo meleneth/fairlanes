@@ -22,9 +22,39 @@ struct MemberJoined {
 };
 struct PartyWiped {};
 struct PartyVictory {};
+struct PartyEncounterBoundary {
+  entt::entity party{entt::null};
+};
 struct TowerFloorCleared {
   std::string biome_id;
   int floor{1};
+};
+struct TowerCompleted {
+  std::string biome_id;
+};
+struct TowerDestinationRequested {
+  std::string biome_id;
+  int floor{1};
+};
+struct TowerDestinationChanged {
+  std::string biome_id;
+  int floor{1};
+};
+struct FarmingTargetRequested {
+  std::string focus;
+};
+struct FarmingTargetChanged {
+  std::string focus;
+};
+struct RosterTransferRequested {
+  entt::entity member{entt::null};
+  entt::entity source_party{entt::null};
+  entt::entity destination_party{entt::null};
+};
+struct RosterTransferCommitted {
+  entt::entity member{entt::null};
+  entt::entity source_party{entt::null};
+  entt::entity destination_party{entt::null};
 };
 struct RecruitmentOpportunityUnlocked {
   std::string opportunity_id;
@@ -60,6 +90,7 @@ struct PartyRaidResolved {
   bool victory{false};
 };
 struct PartyGainedXP {
+  entt::entity member{entt::null};
   int amount{0};
 };
 struct PartyGainedLevel {
@@ -95,14 +126,15 @@ struct EquipmentEquipped {
   entt::entity previous{entt::null};
 };
 
-using PartyEvent =
-    std::variant<PartyCreated, MemberJoined, PartyWiped, PartyVictory, TowerFloorCleared,
-                 RecruitmentOpportunityUnlocked, HeroRecruited, PartyRosterCompleted, PartyUnlocked,
-                 BiomeUnlocked, CycleUnlocked, PartyCombatStarted, PartyLeftCombat,
-                 PartyReturnToTownRequested, PartyReturnedToTown, PartySummonedToRaid,
-                 PartyRaidResolved, PartyGainedXP, PartyGainedLevel, PartyHealed,
-                 PartyRevitalizeRequested, LootDropRequested, PartyTick, MonsterEncountered,
-                 SkillWitnessed, EquipmentEquipRequested, EquipmentEquipped>;
+using PartyEvent = std::variant<
+    PartyCreated, MemberJoined, PartyWiped, PartyVictory, PartyEncounterBoundary, TowerFloorCleared,
+    TowerCompleted, TowerDestinationRequested, TowerDestinationChanged, FarmingTargetRequested,
+    FarmingTargetChanged, RosterTransferRequested, RosterTransferCommitted,
+    RecruitmentOpportunityUnlocked, HeroRecruited, PartyRosterCompleted, PartyUnlocked,
+    BiomeUnlocked, CycleUnlocked, PartyCombatStarted, PartyLeftCombat, PartyReturnToTownRequested,
+    PartyReturnedToTown, PartySummonedToRaid, PartyRaidResolved, PartyGainedXP, PartyGainedLevel,
+    PartyHealed, PartyRevitalizeRequested, LootDropRequested, PartyTick, MonsterEncountered,
+    SkillWitnessed, EquipmentEquipRequested, EquipmentEquipped>;
 
 using PartyBus = seerin::VariantBus<PartyEvent>;
 

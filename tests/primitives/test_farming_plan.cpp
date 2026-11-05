@@ -3,8 +3,10 @@
 #include <array>
 #include <set>
 
+#include "fl/ecs/components/stats.hpp"
 #include "fl/fsm/party_loop.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/primitives/encounter_builder.hpp"
 #include "fl/primitives/encounter_mode.hpp"
 #include "fl/primitives/farming_plan.hpp"
 #include "fl/widgets/farming_choice_view.hpp"
@@ -215,4 +217,21 @@ TEST_CASE("Previous farm focus is exposed for full-control display", "[farming][
   party.set_progression_control_mode(fl::primitives::ProgressionControlMode::Manual);
   fl::widgets::FarmingChoiceView choice{party, fl::primitives::GrimoireDiscipline::Brawn};
   REQUIRE(choice.state().selected_focus() == fl::primitives::FarmFocus::Gear);
+}
+
+TEST_CASE("Farming focus requested in combat changes at the encounter boundary",
+          "[farming][control][boundary]") {
+  fl::GrandCentral game{1, 1, 1};
+  auto ctx = game.account_context(0).party_context(0);
+  auto& party = ctx.party_data();
+  party.select_farming_plan(fl::primitives::GrimoireDiscipline::Brawn,
+                            fl::primitives::FarmFocus::Brawn);
+  auto& fight = fl::primitives::EncounterBuilder{ctx}.thump_it_out();
+  party.select_farming_plan(fl::primitives::GrimoireDiscipline::Wisdom,
+                            fl::primitives::FarmFocus::Wisdom);
+  REQUIRE(party.farming_plan().focus == fl::primitives::FarmFocus::Brawn);
+  for (const auto enemy : fight.attackers().members())
+    ctx.reg().get<fl::ecs::components::Stats>(enemy).hp_ = 0;
+  party.leave_combat();
+  REQUIRE(party.farming_plan().focus == fl::primitives::FarmFocus::Wisdom);
 }

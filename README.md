@@ -141,6 +141,10 @@ battles, celestial timing, exclusive rewards, and progression gates. The
 [statistics and achievement design](docs/statistics-achievements-design.md)
 tracks the related measurement and milestone systems.
 
+Current character ownership, per-party towers, boundary transfers, victory XP,
+and forgotten-skill recovery are described in
+[Party progression and character development](docs/party-progression.md).
+
 ## Contributing Notes
 
 Keep UI widgets as projections. Gameplay authority belongs in systems, state machines, context-scoped logic, and data models.

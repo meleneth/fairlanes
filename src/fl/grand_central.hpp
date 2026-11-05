@@ -64,7 +64,7 @@ public:
     return reg_;
   }
   const fl::primitives::DiscoveryJournal& discoveries() const noexcept {
-    return discoveries_;
+    return accounts_.front().discoveries();
   }
   const entt::registry& reg() const noexcept {
     return reg_;
@@ -149,9 +149,6 @@ private:
   fl::primitives::RaidMilestones raid_milestones_;
   std::unique_ptr<fl::primitives::ObjectiveSystem> objectives_;
   std::vector<fl::events::ScopedRaidListener> raid_log_subscriptions_;
-  fl::primitives::DiscoveryJournal discoveries_;
-  std::unique_ptr<fl::primitives::DiscoveryJournalListener> discovery_listener_;
-  std::vector<fl::events::ScopedPartyListener> party_unlock_subscriptions_;
 
   std::unique_ptr<fl::widgets::FancyLog> game_log_;
   std::unique_ptr<fl::primitives::FancyLogSink> fancy_log_sink_;

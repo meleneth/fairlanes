@@ -10,6 +10,11 @@ struct TrackXp;
 
 namespace fl::context {
 struct EntityCtx;
+struct PartyCtx;
+} // namespace fl::context
+
+namespace fl::primitives {
+struct EncounterData;
 }
 
 namespace fl::systems {
@@ -17,7 +22,8 @@ using fl::context::EntityCtx;
 
 class GrantXPToParty {
 public:
-  static void commit(const fl::context::EntityCtx& ctx, int amount);
+  static void commit_victory(const fl::context::PartyCtx& ctx,
+                             const fl::primitives::EncounterData& encounter);
 };
 
 } // namespace fl::systems

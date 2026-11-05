@@ -52,9 +52,8 @@ identities outside the twenty biome milestones. They use the same account and
 party mutation path and occupy two of party 1's five slots. Consequently only
 three of its floor-5 opportunities can be claimed. The other two stay Available
 on the recruitment board: they are neither discarded nor converted into extra
-members. This is current behavior, not an accepted resolution: canonical design
-leaves the interaction between the two story recruits and five floor-5
-opportunities unresolved.
+members. Canonical design preserves those unused Party 1 opportunities so a
+later transfer can create a vacancy for another level-1 recruit.
 
 Ordinary generated recruits use the existing deterministic hero-name sequence
 for their destination party and receive the same opening Thump setup as the two

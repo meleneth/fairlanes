@@ -16,6 +16,19 @@ directly to the same floor number in every biome. Players should move between
 biomes for useful skills, equipment, recruitment opportunities, and other
 capabilities.
 
+**Decided:** Tower history, biome unlocks, the selected farming destination,
+and pending destination changes are party-scoped. Strategic destination
+requests made during combat commit at the encounter boundary; the latest valid
+request wins. Manual play chooses the plan but still advances encounters and
+frontier floors automatically. Autoplay uses the same machinery and additionally
+makes strategic choices.
+
+Only a newly committed frontier clear advances highest-cleared progress or
+emits a floor-clear fact. A cleared-floor victory repeats the selected farming
+floor. A wipe recovers and retries the same selected floor. Floor 100 completes
+the tower exactly once, never constructs floor 101, and does not choose another
+biome without a separate strategic decision.
+
 Generated floor manifests and the generated
 [`brainstorms/biome-tower-map.md`](../brainstorms/biome-tower-map.md) report
 current declarations. They do not override this intended structure.
@@ -50,3 +63,8 @@ the broader Origin difficulty curve. Candidate questions belong in
 **Implemented:** Current declarations place Honey Badger at Woodland floor 50.
 The first playable slice and its current numbers are documented in
 [the Origin Woodland progression slice](../docs/origin-woodland-slice.md).
+
+Per-party Woodland/Plains histories, automatic frontier continuation,
+repeat-floor farming, wipe retry, boundary destination changes, and floor-100
+completion are **Implemented**. The remaining declared biomes still require
+resolved encounter content before they can use the same runtime path.

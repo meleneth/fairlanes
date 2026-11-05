@@ -14,7 +14,13 @@ bool Grimoire::learn(SkillKey skill) {
   }
 
   known_.push_back(skill);
+  if (!previously_learned(skill)) learned_history_.push_back(skill);
   return true;
+}
+
+bool Grimoire::previously_learned(SkillKey skill) const noexcept {
+  return std::find(learned_history_.begin(), learned_history_.end(), skill) !=
+         learned_history_.end();
 }
 
 bool Grimoire::unlearn(SkillKey skill) {
