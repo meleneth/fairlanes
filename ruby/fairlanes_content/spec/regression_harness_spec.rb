@@ -68,7 +68,7 @@ RSpec.describe FairlanesRegression do
         described_class::CommandRunner.new.run(command, log_path: log, chdir: dir)
       end.to raise_error(described_class::Error) { |error|
         expect(error.status).to eq(7)
-        expect(error.message).to include("error: useful diagnostic", "exit=7", "log=#{log}")
+        expect(error.message).to include("error: useful diagnostic", "Exit: 7", "Log: #{log}")
       }
       expect(File.read(log)).to include("error: useful diagnostic")
     end

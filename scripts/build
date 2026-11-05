@@ -1,0 +1,89 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "optparse"
+require_relative "quiet_command"
+
+ROOT = File.expand_path("..", __dir__)
+
+options = {build_dir: "build-linux-debug", test: false, verbose: false,
+           configure: false, jobs: 2}
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: scripts/build [TARGET] [options]"
+  opts.on("--test", "Build the test binary and run CTest") { options[:test] = true }
+  opts.on("--configure", "Configure the build tree before building") { options[:configure] = true }
+  opts.on("--build-dir DIR", "Build tree (default: build-linux-debug)") { |value| options[:build_dir] = value }
+  opts.on("-j", "--jobs N", Integer, "Parallel build jobs (default: 2)") { |value| options[:jobs] = value }
+  opts.on("--verbose", "Show normal underlying command output") { options[:verbose] = true }
+end
+
+def duration(seconds)
+  format("%.2fs", seconds)
+end
+
+def pass_report(label, target, result)
+  puts label
+  puts "  Target: #{target}"
+  puts "  Duration: #{duration(result.duration)}"
+  puts "  Compiled units: #{result.compiled_units}" if result.compiled_units.positive?
+  puts "  Warnings: #{result.warnings}"
+  puts "  Log: #{result.log_path}"
+end
+
+def test_counts(path)
+  text = File.read(path)
+  match = text.match(/(\d+)% tests passed, (\d+) tests failed out of (\d+)/)
+  return [nil, nil] unless match
+
+  [match[3].to_i - match[2].to_i, match[2].to_i]
+end
+
+begin
+  parser.parse!(ARGV)
+  raise OptionParser::InvalidArgument, "jobs must be positive" unless options[:jobs].positive?
+  raise OptionParser::InvalidArgument, "only one build target may be supplied" if ARGV.length > 1
+  if options[:test] && !ARGV.empty?
+    raise OptionParser::InvalidArgument, "--test selects fairlanes_tests and does not accept another target"
+  end
+
+  target = ARGV.shift
+  build_dir = File.expand_path(options[:build_dir], ROOT)
+  logs = File.join(build_dir, "logs")
+  cache = File.join(build_dir, "CMakeCache.txt")
+  configure = options[:configure] || !File.file?(cache)
+
+  if configure
+    result = FairlanesQuietCommand.run(
+      ["cmake", "-S", ROOT, "-B", build_dir], log_path: File.join(logs, "configure.log"),
+      chdir: ROOT, verbose: options[:verbose]
+    )
+    pass_report("CONFIGURE PASS", File.basename(build_dir), result)
+  end
+
+  effective_target = options[:test] ? "fairlanes_tests" : (target || "all")
+  command = ["cmake", "--build", build_dir, "-j", options[:jobs].to_s]
+  command.concat(["--target", effective_target]) unless effective_target == "all"
+  result = FairlanesQuietCommand.run(command, log_path: File.join(logs, "build.log"),
+                                     chdir: ROOT, verbose: options[:verbose])
+  pass_report("BUILD PASS", effective_target, result)
+
+  if options[:test]
+    test_result = FairlanesQuietCommand.run(
+      ["ctest", "--test-dir", build_dir, "--output-on-failure"],
+      log_path: File.join(logs, "tests.log"), chdir: ROOT, verbose: options[:verbose]
+    )
+    passed, failed = test_counts(test_result.log_path)
+    puts "TEST PASS"
+    puts "  Passed: #{passed}" unless passed.nil?
+    puts "  Failed: #{failed}" unless failed.nil?
+    puts "  Duration: #{duration(test_result.duration)}"
+    puts "  Log: #{test_result.log_path}"
+  end
+rescue FairlanesQuietCommand::Failure => e
+  warn e.message
+  exit e.result.exitstatus
+rescue OptionParser::ParseError => e
+  warn e.message
+  warn parser
+  exit 2
+end

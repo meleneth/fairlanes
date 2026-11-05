@@ -5,6 +5,10 @@ existing production regression executable, stores detailed output under
 `build-linux-debug/regression-artifacts`, and prints an aggregate report instead
 of compiler commands or combat events.
 
+The regression harness shares its command capture and diagnostic extraction
+with `scripts/build`. Use `scripts/build --test` for the complete CTest suite;
+see [Quiet builds and tests](quiet-build.md).
+
 ```sh
 scripts/regress summary
 scripts/regress compare origin_woodland_brace_progression
@@ -49,10 +53,10 @@ keeping detailed Catch output in the regression artifact log.
 
 ## Low-level runner and recording format
 
-Build the client and regression runner:
+Build the client and regression runner through the quiet entry point:
 
 ```sh
-cmake --build build-linux-debug -j 4
+scripts/build fairlanes_regression
 ```
 
 The underlying executable remains available for runner development and pinned

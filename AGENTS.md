@@ -12,7 +12,11 @@
   changes are committed. Verify Git status before reporting completion; do not
   leave validated work uncommitted.
 
-- Use the existing `build-linux-debug` tree for normal compile and test checks: `cmake --build build-linux-debug` and `ctest --test-dir build-linux-debug --output-on-failure`.
+- Use the existing `build-linux-debug` tree through the quiet wrapper for normal
+  checks: `scripts/build` to compile, `scripts/build fairlanes_tests` for a
+  target, and `scripts/build --test` to compile and run CTest. It keeps complete
+  output in `build-linux-debug/logs` while showing only concise results. Use
+  `--verbose` only when live underlying output is genuinely useful.
 
 # Local Debugging
 
@@ -39,12 +43,11 @@ top.
 
 ## Build And Test
 
-Typical local build:
+Typical local build and test:
 
 ```sh
-cmake -S . -B build
-cmake --build build
-ctest --test-dir build --output-on-failure
+scripts/build
+scripts/build --test
 ```
 
 
@@ -54,6 +57,11 @@ Formatting target mentioned by README:
 ```sh
 cmake --build . --target clang-format
 ```
+
+Automated agents should use `scripts/build`, `scripts/build --test`, and
+`scripts/regress` instead of raw CMake, Ninja, CTest, or full recording output.
+On failure, inspect the concise diagnostic first and open the log path it reports
+only when more context is necessary. See `docs/quiet-build.md`.
 
 Tracy profiling is integrated. Windows may show a network access warning when the
 game runs because Tracy opens a connection for live profiling.

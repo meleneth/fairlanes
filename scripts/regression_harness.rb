@@ -2,8 +2,8 @@
 
 require "fileutils"
 require "json"
-require "open3"
 require "pathname"
+require_relative "quiet_command"
 
 module FairlanesRegression
   SUMMARY_SCHEMA = "fairlanes-regression-experiment-summary"
@@ -19,18 +19,11 @@ module FairlanesRegression
   end
 
   class CommandRunner
-    DIAGNOSTIC = /(error:|fatal:|FAILED:|failed:|Assertion|undefined reference|replay divergence)/i
-
     def run(command, log_path:, chdir:)
-      FileUtils.mkdir_p(File.dirname(log_path))
-      stdout, stderr, status = Open3.capture3(*command, chdir: chdir)
-      File.write(log_path, stdout + stderr)
-      return stdout if status.success?
-
-      diagnostics = (stdout + stderr).lines.grep(DIAGNOSTIC).first(20).join
-      diagnostics = "No focused diagnostic found; see the complete log.\n" if diagnostics.empty?
-      raise Error.new("FAILED: #{command.join(' ')}\nexit=#{status.exitstatus}\n#{diagnostics}log=#{log_path}",
-                      status: status.exitstatus)
+      FairlanesQuietCommand.run(command, log_path:, chdir:)
+      ""
+    rescue FairlanesQuietCommand::Failure => e
+      raise Error.new(e.message, status: e.result.exitstatus)
     end
   end
 
