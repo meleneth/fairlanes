@@ -53,6 +53,8 @@ void DireBleedSystem::apply(fl::context::EncounterCtx& party_ctx, Scheduler& sch
                   party_ctx.log().name_tag_for(entt::handle{reg, source}),
                   party_ctx.log().name_tag_for(entt::handle{reg, target})));
   fl::ecs::components::safe_add_hp_bar_color(reg, target, fl::lospec500::color_at(4));
+  party_ctx.encounter().combatant_bus(target).emit(
+      fl::events::DireBleedApplied{source, target, damage_per_tick});
   DireBleedSystem::bind_cleanup_and_schedule(party_ctx, scheduler, target);
 }
 
@@ -107,14 +109,19 @@ void DireBleedSystem::schedule_tick(fl::context::EncounterCtx& party_ctx, Schedu
           return;
         }
 
-        auto attack_ctx = fl::context::AttackCtx::make_attack(party_ctx, bleed->source, target);
-        attack_ctx.damage().physical = bleed->damage_per_tick;
+        const auto source = bleed->source;
+        const auto damage = bleed->damage_per_tick;
+        auto attack_ctx = fl::context::AttackCtx::make_attack(party_ctx, source, target);
+        attack_ctx.damage().physical = damage;
         attack_ctx.set_hit_kind(fl::primitives::HitKind::Periodic);
         party_ctx.log().append_markup(fmt::format("[error](Dire Bleed) tears at "
                                                   "[player_name]({}) for [error]({}) "
                                                   "damage.",
-                                                  target_stats->name_, bleed->damage_per_tick));
+                                                  target_stats->name_, damage));
         fl::ecs::systems::TakeDamage::commit(attack_ctx);
+
+        party_ctx.encounter().combatant_bus(target).emit(fl::events::DireBleedTicked{
+            source, target, damage, target_stats->hp_, !target_stats->is_alive()});
 
         if (reg.valid(target) && reg.any_of<fl::ecs::components::DireBleed>(target)) {
           DireBleedSystem::schedule_tick(party_ctx, scheduler, target);
@@ -138,6 +145,7 @@ void DireBleedSystem::clear(fl::context::EncounterCtx& party_ctx, entt::entity t
   lifetime.clear_scheduled();
   lifetime.destroy_instance_entity();
 
+  party_ctx.encounter().combatant_bus(target).emit(fl::events::DireBleedCleared{target});
   fl::ecs::components::safe_clear_hp_bar_color(reg, target);
   reg.remove<fl::ecs::components::DireBleed>(target);
 }

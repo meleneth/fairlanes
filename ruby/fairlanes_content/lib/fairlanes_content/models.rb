@@ -27,8 +27,8 @@ module FairlanesContent
     keyword_init: true
   )
   Biome = Struct.new(:id, :display, :floors, :bands, :overrides, :pattern, keyword_init: true)
-  RegressionScenario = Struct.new(:id, :encounter, :party, :seeds, :beat_cap,
-                                  :variants, keyword_init: true)
+  RegressionScenario = Struct.new(:id, :encounter, :encounters, :party, :seeds, :beat_cap,
+                                  :recording_version, :variants, keyword_init: true)
   BiomePlan = Struct.new(:id, :cycle, :order, :monsters, keyword_init: true)
   StoryEvent = Struct.new(:id, :handled, keyword_init: true)
   Objective = Struct.new(:id, :title, :description, :revealed_by, :completed_by, keyword_init: true)

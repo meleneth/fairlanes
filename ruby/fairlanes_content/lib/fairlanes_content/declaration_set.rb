@@ -146,9 +146,12 @@ module FairlanesContent
       )
     end
 
-    def regression(id, encounter:, party:, seeds:, beat_cap:, variants:)
-      regressions << RegressionScenario.new(id: id, encounter: encounter,
-        party: party, seeds: seeds, beat_cap: beat_cap, variants: variants)
+    def regression(id, encounter: nil, encounters: nil, party:, seeds:, beat_cap:,
+                   recording_version: 1, variants:)
+      sequence = encounters || [encounter]
+      regressions << RegressionScenario.new(id: id, encounter: sequence.first,
+        encounters: sequence, party: party, seeds: seeds, beat_cap: beat_cap,
+        recording_version: recording_version, variants: variants)
     end
 
     def biome_plan(id, cycle:, order:, monsters:)

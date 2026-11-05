@@ -189,6 +189,9 @@ module FairlanesContent
           "  MemberSetup{#{member[:hp]}, #{member[:attack]}, #{member[:armor]}, #{resistance_cpp(member.fetch(:resistances, {}))}, fl::skills::SkillId::#{skills.find { |skill| skill.id == member[:skill] }.cpp_id}, ActionPolicy::SingleEquippedSkill},"
         end.join("\n")
         seeds = scenario.seeds.join(", ")
+        encounters = scenario.encounters.map do |encounter|
+          "  EncounterSetup{#{cpp_string(encounter[:biome].to_s)}, #{encounter[:floor]}},"
+        end.join("\n")
         variants = scenario.variants.map do |variant|
           wins = variant[:expected_wins]
           item = variant[:equipped_item] ? "fl::loot::generated_content::GearId::#{camel(variant[:equipped_item])}" : "std::nullopt"
@@ -197,11 +200,15 @@ module FairlanesContent
             skill_id ? "fl::skills::SkillId::#{skills.find { |skill| skill.id == skill_id }.cpp_id}" : "std::nullopt"
           end.join(", ")
           observers = (0...5).map { |member_index| variant.fetch(:observe_members, []).include?(member_index) ? "true" : "false" }.join(", ")
-          "  Variant{#{cpp_string(variant[:id].to_s)}, #{item}, {#{overrides}}, {#{observers}}, #{wins ? wins.begin : 0}, #{wins ? wins.end : 0}, #{wins ? 'true' : 'false'}},"
+          next_skill = variant[:next_skill] ? "fl::skills::SkillId::#{skills.find { |skill| skill.id == variant[:next_skill] }.cpp_id}" : "std::nullopt"
+          "  Variant{#{cpp_string(variant[:id].to_s)}, #{item}, {#{overrides}}, {#{observers}}, #{next_skill}, #{wins ? wins.begin : 0}, #{wins ? wins.end : 0}, #{wins ? 'true' : 'false'}},"
         end.join("\n")
         <<~CPP
           inline constexpr std::array<MemberSetup, #{scenario.party.size}> kMembers#{index}{{
           #{members}
+          }};
+          inline constexpr std::array<EncounterSetup, #{scenario.encounters.size}> kEncounters#{index}{{
+          #{encounters}
           }};
           inline constexpr std::array<std::uint64_t, #{scenario.seeds.size}> kSeeds#{index}{{#{seeds}}};
           inline constexpr std::array<Variant, #{scenario.variants.size}> kVariants#{index}{{
@@ -210,7 +217,7 @@ module FairlanesContent
         CPP
       end.join("\n")
       rows = regressions.each_with_index.map do |scenario, index|
-        "  Scenario{#{cpp_string(scenario.id.to_s)}, #{cpp_string(scenario.encounter[:biome].to_s)}, #{scenario.encounter[:floor]}, kMembers#{index}, kSeeds#{index}, #{scenario.beat_cap}, kVariants#{index}},"
+        "  Scenario{#{cpp_string(scenario.id.to_s)}, kEncounters#{index}, kMembers#{index}, kSeeds#{index}, #{scenario.beat_cap}, #{scenario.recording_version}, kVariants#{index}},"
       end.join("\n")
       <<~CPP
         #pragma once
@@ -225,6 +232,10 @@ module FairlanesContent
 
         namespace fl::regression::generated_content {
         enum class ActionPolicy { SingleEquippedSkill };
+        struct EncounterSetup {
+          std::string_view biome_id;
+          int floor;
+        };
         struct MemberSetup {
           int hp;
           int attack;
@@ -238,17 +249,18 @@ module FairlanesContent
           std::optional<fl::loot::generated_content::GearId> equipped_item;
           std::array<std::optional<fl::skills::SkillId>, 5> skill_overrides;
           std::array<bool, 5> observe_equipped;
+          std::optional<fl::skills::SkillId> next_skill;
           int min_wins;
           int max_wins;
           bool asserted;
         };
         struct Scenario {
           std::string_view id;
-          std::string_view biome_id;
-          int floor;
+          std::span<const EncounterSetup> encounters;
           std::span<const MemberSetup> party;
           std::span<const std::uint64_t> seeds;
           std::uint64_t beat_cap;
+          int recording_version;
           std::span<const Variant> variants;
         };
         #{definitions}
@@ -500,6 +512,7 @@ module FairlanesContent
         enum class Pool {
           CommonWoodland,
           RareWoodland,
+          AuthoredOnly,
           Raid,
         };
 
@@ -688,6 +701,13 @@ module FairlanesContent
               const auto pool = fl::primitives::EncounterBuilder::rare_woodland();
               REQUIRE(std::find(pool.begin(), pool.end(), expected.monster) !=
                       pool.end());
+            } else if (expected.pool == Pool::AuthoredOnly) {
+              const auto common = fl::primitives::EncounterBuilder::common_woodland();
+              const auto rare = fl::primitives::EncounterBuilder::rare_woodland();
+              const auto raid = fl::monster::generated_content::raid_bosses();
+              REQUIRE(std::find(common.begin(), common.end(), expected.monster) == common.end());
+              REQUIRE(std::find(rare.begin(), rare.end(), expected.monster) == rare.end());
+              REQUIRE(std::find(raid.begin(), raid.end(), expected.monster) == raid.end());
             } else if (expected.pool == Pool::Raid) {
               const auto pool = fl::monster::generated_content::raid_bosses();
               REQUIRE(std::find(pool.begin(), pool.end(), expected.monster) != pool.end());
@@ -1480,12 +1500,17 @@ module FairlanesContent
           { "id" => scenario.id.to_s,
             "encounter" => { "biome" => scenario.encounter[:biome].to_s,
                              "floor" => scenario.encounter[:floor] },
+            "encounters" => scenario.encounters.map do |encounter|
+              { "biome" => encounter[:biome].to_s, "floor" => encounter[:floor] }
+            end,
             "party" => scenario.party.map { |member| member.transform_values { |value| value.is_a?(Symbol) ? value.to_s : value } },
             "seeds" => scenario.seeds, "beat_cap" => scenario.beat_cap,
+            "recording_version" => scenario.recording_version,
             "variants" => scenario.variants.map do |variant|
               { "id" => variant[:id].to_s, "equipped_item" => variant[:equipped_item]&.to_s,
                 "skill_overrides" => variant.fetch(:skill_overrides, {}).transform_keys(&:to_s).transform_values(&:to_s),
                 "observe_members" => variant.fetch(:observe_members, []),
+                "next_skill" => variant[:next_skill]&.to_s,
                 "expected_wins" => variant[:expected_wins] && [variant[:expected_wins].begin, variant[:expected_wins].end] }
             end }
         end
@@ -1602,11 +1627,14 @@ module FairlanesContent
             "steps" => { "type" => "array", "minItems" => 1,
                          "items" => { "type" => "object" } }
           }),
-          "regressions" => array_schema(%w[id encounter party seeds beat_cap variants], {
+          "regressions" => array_schema(%w[id encounter encounters party seeds beat_cap recording_version variants], {
             "id" => string_type, "encounter" => { "type" => "object" },
+            "encounters" => { "type" => "array", "minItems" => 1,
+                                "items" => { "type" => "object" } },
             "party" => { "type" => "array", "items" => { "type" => "object" } },
             "seeds" => { "type" => "array", "items" => { "type" => "integer", "minimum" => 0 } },
             "beat_cap" => { "type" => "integer", "minimum" => 1 },
+            "recording_version" => { "type" => "integer", "enum" => [1, 2] },
             "variants" => { "type" => "array", "items" => { "type" => "object" } }
           })
         }
@@ -1671,7 +1699,8 @@ module FairlanesContent
     end
 
     def pool_cpp(pool)
-      { common_woodland: "CommonWoodland", rare_woodland: "RareWoodland", raid: "Raid" }.fetch(pool)
+      { common_woodland: "CommonWoodland", rare_woodland: "RareWoodland",
+        authored_only: "AuthoredOnly", raid: "Raid" }.fetch(pool)
     end
 
     def monsters_by_skill_map

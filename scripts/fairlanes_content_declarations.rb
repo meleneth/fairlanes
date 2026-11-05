@@ -305,7 +305,7 @@ monster :honey_badger,
         cycle: :origin,
         hp: 120,
         known_skills: %i[eviscerate],
-        pool: :rare_woodland
+        pool: :authored_only
 
 monster :bumpkin_hare,
         cycle: :origin,
@@ -731,7 +731,8 @@ biome :origin_woodland_tower, display: "Origin Woodland Tower", floors: 100,
         {floor: 7, lineup: %i[antler_stag], hp_percent: 25},
         {floor: 8, lineup: %i[bark_smack bark_smack]},
         {floor: 9, lineup: %i[field_mouse bumpkin_hare bark_smack]},
-        {floor: 10, lineup: %i[honey_badger field_mouse field_mouse field_mouse field_mouse]}
+        {floor: 10, lineup: %i[antler_stag bark_smack bumpkin_hare]},
+        {floor: 50, lineup: %i[honey_badger]}
       ]
 
 # Plains follows Woodland in the first playable Origin route. The historical

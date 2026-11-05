@@ -15,7 +15,7 @@ Generated from scripts/fairlanes_content_declarations.rb.
 | `origin_woodland_tower/007` | override | 10% | antler_stag | -- |
 | `origin_woodland_tower/008` | override | 10% | bark_smack, bark_smack | -- |
 | `origin_woodland_tower/009` | override | 10% | field_mouse, bumpkin_hare, bark_smack | -- |
-| `origin_woodland_tower/010` | override | 10% | honey_badger, field_mouse, field_mouse, field_mouse, field_mouse | -- |
+| `origin_woodland_tower/010` | override | 10% | antler_stag, bark_smack, bumpkin_hare | -- |
 | `origin_woodland_tower/011` | woodland_progression | 15% | field_mouse, field_mouse, field_mouse, field_mouse, field_mouse | -- |
 | `origin_woodland_tower/012` | woodland_progression | 15% | field_mouse, field_mouse, field_mouse, field_mouse, bumpkin_hare | -- |
 | `origin_woodland_tower/013` | woodland_progression | 15% | field_mouse, field_mouse, field_mouse, bumpkin_hare, bumpkin_hare | -- |
@@ -55,7 +55,7 @@ Generated from scripts/fairlanes_content_declarations.rb.
 | `origin_woodland_tower/047` | woodland_progression | 50% | field_mouse, field_mouse, field_mouse, field_mouse, bumpkin_hare | -- |
 | `origin_woodland_tower/048` | woodland_progression | 50% | field_mouse, field_mouse, field_mouse, bumpkin_hare, bumpkin_hare | -- |
 | `origin_woodland_tower/049` | woodland_progression | 50% | field_mouse, field_mouse, bumpkin_hare, bumpkin_hare, mire_squish | -- |
-| `origin_woodland_tower/050` | woodland_progression | 50% | field_mouse, bumpkin_hare, mire_squish, bark_smack, poison_toad | -- |
+| `origin_woodland_tower/050` | override | 50% | honey_badger | -- |
 | `origin_woodland_tower/051` | woodland_progression | 55% | field_mouse, field_mouse, field_mouse, field_mouse, field_mouse | -- |
 | `origin_woodland_tower/052` | woodland_progression | 55% | field_mouse, field_mouse, field_mouse, field_mouse, bumpkin_hare | -- |
 | `origin_woodland_tower/053` | woodland_progression | 55% | field_mouse, field_mouse, field_mouse, bumpkin_hare, bumpkin_hare | -- |

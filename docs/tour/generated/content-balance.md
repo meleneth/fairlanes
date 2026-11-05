@@ -13,7 +13,7 @@ Generated artifacts currently provide runtime skill metadata C++, status metadat
 | Status declarations | 3 | Ruby DSL generated C++ status metadata table |
 | Monster declarations | 72 | Ruby DSL generated C++ monster topology table |
 | Common woodland monsters | 69 | Ruby DSL generated C++ encounter pool |
-| Rare woodland monsters | 2 | Ruby DSL generated C++ encounter pool |
+| Rare woodland monsters | 1 | Ruby DSL generated C++ encounter pool |
 
 ## Monsters by Cycle
 
@@ -191,7 +191,7 @@ Initial themed assignments for content planning; cycle metadata does not filter 
 | Monster | C++ ID | Cycle | HP | Level | Known skills | Pool |
 | --- | --- | --- | ---: | --- | --- | --- |
 | Field Mouse | FieldMouse | Origin | 5 |  | Thump | common_woodland |
-| Honey Badger | HoneyBadger | Origin | 120 |  | Eviscerate | rare_woodland |
+| Honey Badger | HoneyBadger | Origin | 120 |  | Eviscerate | authored_only |
 | Bumpkin Hare | BumpkinHare | Origin | 7 | 2 | Bump | common_woodland |
 | Scaredy Cat | ScaredyCat | Origin | 6 | 2 | Flee, Thump | common_woodland |
 | Mire Squish | MireSquish | Origin | 9 | 3 | Squish | common_woodland |

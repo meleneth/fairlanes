@@ -107,8 +107,7 @@ TEST_CASE("The first physical progression floors resolve to authored lineups",
       std::vector{MonsterKind::AntlerStag},
       std::vector{MonsterKind::BarkSmack, MonsterKind::BarkSmack},
       std::vector{MonsterKind::FieldMouse, MonsterKind::BumpkinHare, MonsterKind::BarkSmack},
-      std::vector{MonsterKind::HoneyBadger, MonsterKind::FieldMouse, MonsterKind::FieldMouse,
-                  MonsterKind::FieldMouse, MonsterKind::FieldMouse}};
+      std::vector{MonsterKind::AntlerStag, MonsterKind::BarkSmack, MonsterKind::BumpkinHare}};
   for (std::size_t index = 0; index < woodland.size(); ++index) {
     const auto* floor = fl::primitives::generated_content::floor_lineup(
         "origin_woodland_tower", static_cast<int>(index + 1));
@@ -117,6 +116,11 @@ TEST_CASE("The first physical progression floors resolve to authored lineups",
                         floor->monsters.begin() +
                             static_cast<std::ptrdiff_t>(floor->monster_count)) == woodland[index]);
   }
+  const auto* honey_badger =
+      fl::primitives::generated_content::floor_lineup("origin_woodland_tower", 50);
+  REQUIRE(honey_badger != nullptr);
+  REQUIRE(honey_badger->monster_count == 1);
+  REQUIRE(honey_badger->monsters.front() == MonsterKind::HoneyBadger);
 
   const std::array plains{std::vector{MonsterKind::PrairieMeerkat},
                           std::vector{MonsterKind::PrairieMeerkat, MonsterKind::GrassWolf},
@@ -210,7 +214,7 @@ TEST_CASE("Woodland floor nine unlocks Plains, whose first clear rewards the cap
   const auto* floor_ten = fl::primitives::generated_content::floor_lineup(
       party.tower_route()->biome_id, party.tower_route()->floor);
   REQUIRE(floor_ten != nullptr);
-  REQUIRE(floor_ten->monsters.front() == fl::monster::MonsterKind::HoneyBadger);
+  REQUIRE(floor_ten->monsters.front() == fl::monster::MonsterKind::AntlerStag);
 }
 
 TEST_CASE("Seeded production beats can clear Woodland nine and take the Plains "

@@ -1,0 +1,1856 @@
+{
+  "beat_cap": 3200,
+  "build": {
+    "revision": "ca755b7fdb3a4661c3fbe582cea5bcee1caa4b95",
+    "source_dirty": true,
+    "version": "0.1.0"
+  },
+  "content_sha256": "a35f79991f5f2a5620930ccf7517b03a403747101acf6cbe4ca1d80b9059888e",
+  "encounter_results": [
+    {
+      "beats": 451,
+      "bleed_active_at_end": 0,
+      "bleed_applications": 0,
+      "bleed_clears": 0,
+      "bleed_deaths": 0,
+      "bleed_tick_damage": 0,
+      "bleed_ticks": 0,
+      "brace_applications": 2,
+      "brace_consumptions": 1,
+      "encounter_index": 0,
+      "eviscerate_casts": 0,
+      "incoming_damage": 13,
+      "longest_bleed_seconds": 0.0,
+      "longest_bleed_uwu": 0,
+      "outcome": "hero_victory",
+      "remaining_hp": {
+        "enemy1": 0,
+        "hero1": 16,
+        "hero2": 11
+      },
+      "simulated_seconds": 37.583333333333336,
+      "survivors": 2
+    },
+    {
+      "beats": 479,
+      "bleed_active_at_end": 0,
+      "bleed_applications": 0,
+      "bleed_clears": 0,
+      "bleed_deaths": 0,
+      "bleed_tick_damage": 0,
+      "bleed_ticks": 0,
+      "brace_applications": 3,
+      "brace_consumptions": 3,
+      "encounter_index": 1,
+      "eviscerate_casts": 0,
+      "incoming_damage": 4,
+      "longest_bleed_seconds": 0.0,
+      "longest_bleed_uwu": 0,
+      "outcome": "hero_victory",
+      "remaining_hp": {
+        "enemy1": 0,
+        "enemy2": 0,
+        "hero1": 16,
+        "hero2": 20
+      },
+      "simulated_seconds": 39.916666666666664,
+      "survivors": 2
+    }
+  ],
+  "encounters": [
+    {
+      "biome": "origin_woodland_tower",
+      "floor": 7
+    },
+    {
+      "biome": "origin_woodland_tower",
+      "floor": 8
+    }
+  ],
+  "events": [
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 4800,
+      "seq": 0,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 4800,
+      "world_beat": 61
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 4800,
+      "seq": 1,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 4800,
+      "world_beat": 61
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 4800,
+      "seq": 2,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero1",
+      "uwu": 4800,
+      "world_beat": 61
+    },
+    {
+      "actor": "hero1",
+      "damage": 5,
+      "encounter_index": 0,
+      "encounter_uwu": 6880,
+      "hp_after": 20,
+      "seq": 3,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 6880,
+      "world_beat": 87
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 20,
+        "statuses": []
+      },
+      "before": {
+        "hp": 25,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 6880,
+      "seq": 4,
+      "type": "state",
+      "uwu": 6960,
+      "world_beat": 87
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 7280,
+      "seq": 5,
+      "type": "cast_finish",
+      "uwu": 7280,
+      "world_beat": 92
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 7280,
+      "seq": 6,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 7280,
+      "world_beat": 92
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 7280,
+      "seq": 7,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 7280,
+      "world_beat": 92
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 7280,
+      "seq": 8,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero2",
+      "uwu": 7280,
+      "world_beat": 92
+    },
+    {
+      "actor": "hero2",
+      "damage": 3,
+      "encounter_index": 0,
+      "encounter_uwu": 9360,
+      "hp_after": 17,
+      "seq": 9,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 9360,
+      "world_beat": 118
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 17,
+        "statuses": []
+      },
+      "before": {
+        "hp": 20,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 9360,
+      "seq": 10,
+      "type": "state",
+      "uwu": 9440,
+      "world_beat": 118
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 9760,
+      "seq": 11,
+      "type": "cast_finish",
+      "uwu": 9760,
+      "world_beat": 123
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 9760,
+      "seq": 12,
+      "skill": "brace/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 9760,
+      "world_beat": 123
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 9760,
+      "seq": 13,
+      "skill": "brace/1",
+      "type": "cast_start",
+      "uwu": 9760,
+      "world_beat": 123
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 9760,
+      "seq": 14,
+      "skill": "brace/1",
+      "type": "skill_witnessed",
+      "user": "enemy1",
+      "uwu": 9760,
+      "world_beat": 123
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 17,
+        "statuses": [
+          "Brace"
+        ]
+      },
+      "before": {
+        "hp": 17,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 9840,
+      "seq": 15,
+      "type": "state",
+      "uwu": 9920,
+      "world_beat": 124
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 9920,
+      "seq": 16,
+      "type": "cast_finish",
+      "uwu": 9920,
+      "world_beat": 125
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 14480,
+      "seq": 17,
+      "skill": "brace/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 14480,
+      "world_beat": 182
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 14480,
+      "seq": 18,
+      "skill": "brace/1",
+      "type": "cast_start",
+      "uwu": 14480,
+      "world_beat": 182
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 14480,
+      "seq": 19,
+      "skill": "brace/1",
+      "type": "skill_witnessed",
+      "user": "hero1",
+      "uwu": 14480,
+      "world_beat": 182
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 20,
+        "statuses": [
+          "Brace"
+        ]
+      },
+      "before": {
+        "hp": 20,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 14560,
+      "seq": 20,
+      "type": "state",
+      "uwu": 14640,
+      "world_beat": 183
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 14640,
+      "seq": 21,
+      "type": "cast_finish",
+      "uwu": 14640,
+      "world_beat": 184
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 14640,
+      "seq": 22,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 14640,
+      "world_beat": 184
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 14640,
+      "seq": 23,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 14640,
+      "world_beat": 184
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 14640,
+      "seq": 24,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero2",
+      "uwu": 14640,
+      "world_beat": 184
+    },
+    {
+      "actor": "hero2",
+      "damage": 3,
+      "encounter_index": 0,
+      "encounter_uwu": 16720,
+      "hp_after": 14,
+      "seq": 25,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 16720,
+      "world_beat": 210
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 14,
+        "statuses": []
+      },
+      "before": {
+        "hp": 17,
+        "statuses": [
+          "Brace"
+        ]
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 16720,
+      "seq": 26,
+      "type": "state",
+      "uwu": 16800,
+      "world_beat": 210
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 17120,
+      "seq": 27,
+      "type": "cast_finish",
+      "uwu": 17120,
+      "world_beat": 215
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 17120,
+      "seq": 28,
+      "skill": "bumper_rush/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 17120,
+      "world_beat": 215
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 17120,
+      "seq": 29,
+      "skill": "bumper_rush/1",
+      "type": "cast_start",
+      "uwu": 17120,
+      "world_beat": 215
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 17120,
+      "seq": 30,
+      "skill": "bumper_rush/1",
+      "type": "skill_witnessed",
+      "user": "enemy1",
+      "uwu": 17120,
+      "world_beat": 215
+    },
+    {
+      "actor": "enemy1",
+      "damage": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 18080,
+      "hp_after": 18,
+      "seq": 31,
+      "skill": "bumper_rush/1",
+      "target": "hero1",
+      "type": "hit",
+      "uwu": 18080,
+      "world_beat": 227
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 18,
+        "statuses": []
+      },
+      "before": {
+        "hp": 20,
+        "statuses": [
+          "Brace"
+        ]
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 18080,
+      "seq": 32,
+      "type": "state",
+      "uwu": 18160,
+      "world_beat": 227
+    },
+    {
+      "actor": "enemy1",
+      "damage": 5,
+      "encounter_index": 0,
+      "encounter_uwu": 18320,
+      "hp_after": 15,
+      "seq": 33,
+      "skill": "bumper_rush/1",
+      "target": "hero2",
+      "type": "hit",
+      "uwu": 18320,
+      "world_beat": 230
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 15,
+        "statuses": []
+      },
+      "before": {
+        "hp": 20,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 18320,
+      "seq": 34,
+      "type": "state",
+      "uwu": 18400,
+      "world_beat": 230
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 18400,
+      "seq": 35,
+      "type": "cast_finish",
+      "uwu": 18400,
+      "world_beat": 231
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 22960,
+      "seq": 36,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 22960,
+      "world_beat": 288
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 22960,
+      "seq": 37,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 22960,
+      "world_beat": 288
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 22960,
+      "seq": 38,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero1",
+      "uwu": 22960,
+      "world_beat": 288
+    },
+    {
+      "actor": "hero1",
+      "damage": 6,
+      "encounter_index": 0,
+      "encounter_uwu": 25040,
+      "hp_after": 8,
+      "seq": 39,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 25040,
+      "world_beat": 314
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 8,
+        "statuses": []
+      },
+      "before": {
+        "hp": 14,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 25040,
+      "seq": 40,
+      "type": "state",
+      "uwu": 25120,
+      "world_beat": 314
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 25440,
+      "seq": 41,
+      "type": "cast_finish",
+      "uwu": 25440,
+      "world_beat": 319
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 25440,
+      "seq": 42,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 25440,
+      "world_beat": 319
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 25440,
+      "seq": 43,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 25440,
+      "world_beat": 319
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 25440,
+      "seq": 44,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero2",
+      "uwu": 25440,
+      "world_beat": 319
+    },
+    {
+      "actor": "hero2",
+      "damage": 5,
+      "encounter_index": 0,
+      "encounter_uwu": 27520,
+      "hp_after": 3,
+      "seq": 45,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 27520,
+      "world_beat": 345
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 3,
+        "statuses": []
+      },
+      "before": {
+        "hp": 8,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 27520,
+      "seq": 46,
+      "type": "state",
+      "uwu": 27600,
+      "world_beat": 345
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 27920,
+      "seq": 47,
+      "type": "cast_finish",
+      "uwu": 27920,
+      "world_beat": 350
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 27920,
+      "seq": 48,
+      "skill": "bumper_rush/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 27920,
+      "world_beat": 350
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 27920,
+      "seq": 49,
+      "skill": "bumper_rush/1",
+      "type": "cast_start",
+      "uwu": 27920,
+      "world_beat": 350
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 27920,
+      "seq": 50,
+      "skill": "bumper_rush/1",
+      "type": "skill_witnessed",
+      "user": "enemy1",
+      "uwu": 27920,
+      "world_beat": 350
+    },
+    {
+      "actor": "enemy1",
+      "damage": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 28880,
+      "hp_after": 16,
+      "seq": 51,
+      "skill": "bumper_rush/1",
+      "target": "hero1",
+      "type": "hit",
+      "uwu": 28880,
+      "world_beat": 362
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 16,
+        "statuses": []
+      },
+      "before": {
+        "hp": 18,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 28880,
+      "seq": 52,
+      "type": "state",
+      "uwu": 28960,
+      "world_beat": 362
+    },
+    {
+      "actor": "enemy1",
+      "damage": 4,
+      "encounter_index": 0,
+      "encounter_uwu": 29120,
+      "hp_after": 11,
+      "seq": 53,
+      "skill": "bumper_rush/1",
+      "target": "hero2",
+      "type": "hit",
+      "uwu": 29120,
+      "world_beat": 365
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 11,
+        "statuses": []
+      },
+      "before": {
+        "hp": 15,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 29120,
+      "seq": 54,
+      "type": "state",
+      "uwu": 29200,
+      "world_beat": 365
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 29200,
+      "seq": 55,
+      "type": "cast_finish",
+      "uwu": 29200,
+      "world_beat": 366
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 33760,
+      "seq": 56,
+      "skill": "brace/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 33760,
+      "world_beat": 423
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 33760,
+      "seq": 57,
+      "skill": "brace/1",
+      "type": "cast_start",
+      "uwu": 33760,
+      "world_beat": 423
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 33760,
+      "seq": 58,
+      "skill": "brace/1",
+      "type": "skill_witnessed",
+      "user": "hero1",
+      "uwu": 33760,
+      "world_beat": 423
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 16,
+        "statuses": [
+          "Brace"
+        ]
+      },
+      "before": {
+        "hp": 16,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 33840,
+      "seq": 59,
+      "type": "state",
+      "uwu": 33920,
+      "world_beat": 424
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 33920,
+      "seq": 60,
+      "type": "cast_finish",
+      "uwu": 33920,
+      "world_beat": 425
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 33920,
+      "seq": 61,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 33920,
+      "world_beat": 425
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 33920,
+      "seq": 62,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 33920,
+      "world_beat": 425
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 33920,
+      "seq": 63,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero2",
+      "uwu": 33920,
+      "world_beat": 425
+    },
+    {
+      "actor": "hero2",
+      "damage": 3,
+      "encounter_index": 0,
+      "encounter_uwu": 36000,
+      "hp_after": 0,
+      "seq": 64,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 36000,
+      "world_beat": 451
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 3,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 36000,
+      "seq": 65,
+      "type": "state",
+      "uwu": 36080,
+      "world_beat": 451
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 36000,
+      "outcome": "hero_victory",
+      "seq": 66,
+      "type": "end",
+      "uwu": 36080,
+      "world_beat": 451
+    },
+    {
+      "biome": "origin_woodland_tower",
+      "encounter_index": 1,
+      "encounter_uwu": 0,
+      "floor": 8,
+      "party_state": [
+        {
+          "hp": 20,
+          "id": "hero1",
+          "known_skills": [
+            "observe/1",
+            "thump/1",
+            "brace/1"
+          ],
+          "loadout": [
+            "brace/1"
+          ]
+        },
+        {
+          "hp": 20,
+          "id": "hero2",
+          "known_skills": [
+            "observe/1",
+            "thump/1"
+          ],
+          "loadout": [
+            "thump/1"
+          ]
+        }
+      ],
+      "seq": 67,
+      "type": "encounter_start",
+      "uwu": 36080,
+      "world_beat": 451
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 1,
+      "encounter_uwu": 4800,
+      "seq": 68,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 40800,
+      "world_beat": 511
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 1,
+      "encounter_uwu": 4800,
+      "seq": 69,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 40800,
+      "world_beat": 511
+    },
+    {
+      "encounter_index": 1,
+      "encounter_uwu": 4800,
+      "seq": 70,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero2",
+      "uwu": 40800,
+      "world_beat": 511
+    },
+    {
+      "actor": "hero2",
+      "damage": 7,
+      "encounter_index": 1,
+      "encounter_uwu": 6880,
+      "hp_after": 3,
+      "seq": 71,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 42880,
+      "world_beat": 537
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 3,
+        "statuses": []
+      },
+      "before": {
+        "hp": 10,
+        "statuses": []
+      },
+      "encounter_index": 1,
+      "encounter_uwu": 6880,
+      "seq": 72,
+      "type": "state",
+      "uwu": 42960,
+      "world_beat": 537
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 1,
+      "encounter_uwu": 7280,
+      "seq": 73,
+      "type": "cast_finish",
+      "uwu": 43280,
+      "world_beat": 542
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 1,
+      "encounter_uwu": 7280,
+      "seq": 74,
+      "skill": "brace/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 43280,
+      "world_beat": 542
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 1,
+      "encounter_uwu": 7280,
+      "seq": 75,
+      "skill": "brace/1",
+      "type": "cast_start",
+      "uwu": 43280,
+      "world_beat": 542
+    },
+    {
+      "encounter_index": 1,
+      "encounter_uwu": 7280,
+      "seq": 76,
+      "skill": "brace/1",
+      "type": "skill_witnessed",
+      "user": "hero1",
+      "uwu": 43280,
+      "world_beat": 542
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 20,
+        "statuses": [
+          "Brace"
+        ]
+      },
+      "before": {
+        "hp": 20,
+        "statuses": []
+      },
+      "encounter_index": 1,
+      "encounter_uwu": 7360,
+      "seq": 77,
+      "type": "state",
+      "uwu": 43440,
+      "world_beat": 543
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 1,
+      "encounter_uwu": 7440,
+      "seq": 78,
+      "type": "cast_finish",
+      "uwu": 43440,
+      "world_beat": 544
+    },
+    {
+      "actor": "enemy2",
+      "encounter_index": 1,
+      "encounter_uwu": 7440,
+      "seq": 79,
+      "skill": "smack/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 43440,
+      "world_beat": 544
+    },
+    {
+      "actor": "enemy2",
+      "encounter_index": 1,
+      "encounter_uwu": 7440,
+      "seq": 80,
+      "skill": "smack/1",
+      "type": "cast_start",
+      "uwu": 43440,
+      "world_beat": 544
+    },
+    {
+      "encounter_index": 1,
+      "encounter_uwu": 7440,
+      "seq": 81,
+      "skill": "smack/1",
+      "type": "skill_witnessed",
+      "user": "enemy2",
+      "uwu": 43440,
+      "world_beat": 544
+    },
+    {
+      "actor": "enemy2",
+      "damage": 1,
+      "encounter_index": 1,
+      "encounter_uwu": 9520,
+      "hp_after": 19,
+      "seq": 82,
+      "skill": "smack/1",
+      "target": "hero1",
+      "type": "hit",
+      "uwu": 45520,
+      "world_beat": 570
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 19,
+        "statuses": []
+      },
+      "before": {
+        "hp": 20,
+        "statuses": [
+          "Brace"
+        ]
+      },
+      "encounter_index": 1,
+      "encounter_uwu": 9520,
+      "seq": 83,
+      "type": "state",
+      "uwu": 45600,
+      "world_beat": 570
+    },
+    {
+      "actor": "enemy2",
+      "encounter_index": 1,
+      "encounter_uwu": 9920,
+      "seq": 84,
+      "type": "cast_finish",
+      "uwu": 45920,
+      "world_beat": 575
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 1,
+      "encounter_uwu": 9920,
+      "seq": 85,
+      "skill": "smack/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 45920,
+      "world_beat": 575
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 1,
+      "encounter_uwu": 9920,
+      "seq": 86,
+      "skill": "smack/1",
+      "type": "cast_start",
+      "uwu": 45920,
+      "world_beat": 575
+    },
+    {
+      "encounter_index": 1,
+      "encounter_uwu": 9920,
+      "seq": 87,
+      "skill": "smack/1",
+      "type": "skill_witnessed",
+      "user": "enemy1",
+      "uwu": 45920,
+      "world_beat": 575
+    },
+    {
+      "actor": "enemy1",
+      "damage": 1,
+      "encounter_index": 1,
+      "encounter_uwu": 12000,
+      "hp_after": 18,
+      "seq": 88,
+      "skill": "smack/1",
+      "target": "hero1",
+      "type": "hit",
+      "uwu": 48000,
+      "world_beat": 601
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 18,
+        "statuses": []
+      },
+      "before": {
+        "hp": 19,
+        "statuses": []
+      },
+      "encounter_index": 1,
+      "encounter_uwu": 12000,
+      "seq": 89,
+      "type": "state",
+      "uwu": 48080,
+      "world_beat": 601
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 1,
+      "encounter_uwu": 12400,
+      "seq": 90,
+      "type": "cast_finish",
+      "uwu": 48400,
+      "world_beat": 606
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 1,
+      "encounter_uwu": 16880,
+      "seq": 91,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 52880,
+      "world_beat": 662
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 1,
+      "encounter_uwu": 16880,
+      "seq": 92,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 52880,
+      "world_beat": 662
+    },
+    {
+      "encounter_index": 1,
+      "encounter_uwu": 16880,
+      "seq": 93,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero2",
+      "uwu": 52880,
+      "world_beat": 662
+    },
+    {
+      "actor": "hero2",
+      "damage": 5,
+      "encounter_index": 1,
+      "encounter_uwu": 18960,
+      "hp_after": 0,
+      "seq": 94,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 54960,
+      "world_beat": 688
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 3,
+        "statuses": []
+      },
+      "encounter_index": 1,
+      "encounter_uwu": 18960,
+      "seq": 95,
+      "type": "state",
+      "uwu": 55040,
+      "world_beat": 688
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 1,
+      "encounter_uwu": 19360,
+      "seq": 96,
+      "type": "cast_finish",
+      "uwu": 55360,
+      "world_beat": 693
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 1,
+      "encounter_uwu": 19360,
+      "seq": 97,
+      "skill": "brace/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 55360,
+      "world_beat": 693
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 1,
+      "encounter_uwu": 19360,
+      "seq": 98,
+      "skill": "brace/1",
+      "type": "cast_start",
+      "uwu": 55360,
+      "world_beat": 693
+    },
+    {
+      "encounter_index": 1,
+      "encounter_uwu": 19360,
+      "seq": 99,
+      "skill": "brace/1",
+      "type": "skill_witnessed",
+      "user": "hero1",
+      "uwu": 55360,
+      "world_beat": 693
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 18,
+        "statuses": [
+          "Brace"
+        ]
+      },
+      "before": {
+        "hp": 18,
+        "statuses": []
+      },
+      "encounter_index": 1,
+      "encounter_uwu": 19440,
+      "seq": 100,
+      "type": "state",
+      "uwu": 55520,
+      "world_beat": 694
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 1,
+      "encounter_uwu": 19520,
+      "seq": 101,
+      "type": "cast_finish",
+      "uwu": 55520,
+      "world_beat": 695
+    },
+    {
+      "actor": "enemy2",
+      "encounter_index": 1,
+      "encounter_uwu": 19520,
+      "seq": 102,
+      "skill": "smack/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 55520,
+      "world_beat": 695
+    },
+    {
+      "actor": "enemy2",
+      "encounter_index": 1,
+      "encounter_uwu": 19520,
+      "seq": 103,
+      "skill": "smack/1",
+      "type": "cast_start",
+      "uwu": 55520,
+      "world_beat": 695
+    },
+    {
+      "encounter_index": 1,
+      "encounter_uwu": 19520,
+      "seq": 104,
+      "skill": "smack/1",
+      "type": "skill_witnessed",
+      "user": "enemy2",
+      "uwu": 55520,
+      "world_beat": 695
+    },
+    {
+      "actor": "enemy2",
+      "damage": 1,
+      "encounter_index": 1,
+      "encounter_uwu": 21600,
+      "hp_after": 17,
+      "seq": 105,
+      "skill": "smack/1",
+      "target": "hero1",
+      "type": "hit",
+      "uwu": 57600,
+      "world_beat": 721
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 17,
+        "statuses": []
+      },
+      "before": {
+        "hp": 18,
+        "statuses": [
+          "Brace"
+        ]
+      },
+      "encounter_index": 1,
+      "encounter_uwu": 21600,
+      "seq": 106,
+      "type": "state",
+      "uwu": 57680,
+      "world_beat": 721
+    },
+    {
+      "actor": "enemy2",
+      "encounter_index": 1,
+      "encounter_uwu": 22000,
+      "seq": 107,
+      "type": "cast_finish",
+      "uwu": 58000,
+      "world_beat": 726
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 1,
+      "encounter_uwu": 26560,
+      "seq": 108,
+      "skill": "thump/1",
+      "target": "enemy2",
+      "type": "action",
+      "uwu": 62560,
+      "world_beat": 783
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 1,
+      "encounter_uwu": 26560,
+      "seq": 109,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 62560,
+      "world_beat": 783
+    },
+    {
+      "encounter_index": 1,
+      "encounter_uwu": 26560,
+      "seq": 110,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero2",
+      "uwu": 62560,
+      "world_beat": 783
+    },
+    {
+      "actor": "hero2",
+      "damage": 5,
+      "encounter_index": 1,
+      "encounter_uwu": 28640,
+      "hp_after": 5,
+      "seq": 111,
+      "skill": "thump/1",
+      "target": "enemy2",
+      "type": "hit",
+      "uwu": 64640,
+      "world_beat": 809
+    },
+    {
+      "actor": "enemy2",
+      "after": {
+        "hp": 5,
+        "statuses": []
+      },
+      "before": {
+        "hp": 10,
+        "statuses": []
+      },
+      "encounter_index": 1,
+      "encounter_uwu": 28640,
+      "seq": 112,
+      "type": "state",
+      "uwu": 64720,
+      "world_beat": 809
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 1,
+      "encounter_uwu": 29040,
+      "seq": 113,
+      "type": "cast_finish",
+      "uwu": 65040,
+      "world_beat": 814
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 1,
+      "encounter_uwu": 29040,
+      "seq": 114,
+      "skill": "brace/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 65040,
+      "world_beat": 814
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 1,
+      "encounter_uwu": 29040,
+      "seq": 115,
+      "skill": "brace/1",
+      "type": "cast_start",
+      "uwu": 65040,
+      "world_beat": 814
+    },
+    {
+      "encounter_index": 1,
+      "encounter_uwu": 29040,
+      "seq": 116,
+      "skill": "brace/1",
+      "type": "skill_witnessed",
+      "user": "hero1",
+      "uwu": 65040,
+      "world_beat": 814
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 17,
+        "statuses": [
+          "Brace"
+        ]
+      },
+      "before": {
+        "hp": 17,
+        "statuses": []
+      },
+      "encounter_index": 1,
+      "encounter_uwu": 29120,
+      "seq": 117,
+      "type": "state",
+      "uwu": 65200,
+      "world_beat": 815
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 1,
+      "encounter_uwu": 29200,
+      "seq": 118,
+      "type": "cast_finish",
+      "uwu": 65200,
+      "world_beat": 816
+    },
+    {
+      "actor": "enemy2",
+      "encounter_index": 1,
+      "encounter_uwu": 29200,
+      "seq": 119,
+      "skill": "smack/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 65200,
+      "world_beat": 816
+    },
+    {
+      "actor": "enemy2",
+      "encounter_index": 1,
+      "encounter_uwu": 29200,
+      "seq": 120,
+      "skill": "smack/1",
+      "type": "cast_start",
+      "uwu": 65200,
+      "world_beat": 816
+    },
+    {
+      "encounter_index": 1,
+      "encounter_uwu": 29200,
+      "seq": 121,
+      "skill": "smack/1",
+      "type": "skill_witnessed",
+      "user": "enemy2",
+      "uwu": 65200,
+      "world_beat": 816
+    },
+    {
+      "actor": "enemy2",
+      "damage": 1,
+      "encounter_index": 1,
+      "encounter_uwu": 31280,
+      "hp_after": 16,
+      "seq": 122,
+      "skill": "smack/1",
+      "target": "hero1",
+      "type": "hit",
+      "uwu": 67280,
+      "world_beat": 842
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 16,
+        "statuses": []
+      },
+      "before": {
+        "hp": 17,
+        "statuses": [
+          "Brace"
+        ]
+      },
+      "encounter_index": 1,
+      "encounter_uwu": 31280,
+      "seq": 123,
+      "type": "state",
+      "uwu": 67360,
+      "world_beat": 842
+    },
+    {
+      "actor": "enemy2",
+      "encounter_index": 1,
+      "encounter_uwu": 31680,
+      "seq": 124,
+      "type": "cast_finish",
+      "uwu": 67680,
+      "world_beat": 847
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 1,
+      "encounter_uwu": 36240,
+      "seq": 125,
+      "skill": "thump/1",
+      "target": "enemy2",
+      "type": "action",
+      "uwu": 72240,
+      "world_beat": 904
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 1,
+      "encounter_uwu": 36240,
+      "seq": 126,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 72240,
+      "world_beat": 904
+    },
+    {
+      "encounter_index": 1,
+      "encounter_uwu": 36240,
+      "seq": 127,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero2",
+      "uwu": 72240,
+      "world_beat": 904
+    },
+    {
+      "actor": "hero2",
+      "damage": 5,
+      "encounter_index": 1,
+      "encounter_uwu": 38320,
+      "hp_after": 0,
+      "seq": 128,
+      "skill": "thump/1",
+      "target": "enemy2",
+      "type": "hit",
+      "uwu": 74320,
+      "world_beat": 930
+    },
+    {
+      "actor": "enemy2",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 5,
+        "statuses": []
+      },
+      "encounter_index": 1,
+      "encounter_uwu": 38320,
+      "seq": 129,
+      "type": "state",
+      "uwu": 74400,
+      "world_beat": 930
+    },
+    {
+      "encounter_index": 1,
+      "encounter_uwu": 38320,
+      "outcome": "hero_victory",
+      "seq": 130,
+      "type": "end",
+      "uwu": 74400,
+      "world_beat": 930
+    }
+  ],
+  "expected_outcome": null,
+  "external_inputs": [
+    {
+      "encounter_index": 1,
+      "member": "hero1",
+      "skill": "brace/1",
+      "type": "skill_selection",
+      "world_beat": 451
+    }
+  ],
+  "final_party_state": [
+    {
+      "hp": 16,
+      "id": "hero1",
+      "known_skills": [
+        "observe/1",
+        "thump/1",
+        "brace/1"
+      ],
+      "loadout": [
+        "brace/1"
+      ]
+    },
+    {
+      "hp": 20,
+      "id": "hero2",
+      "known_skills": [
+        "observe/1",
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ]
+    }
+  ],
+  "fixture": "origin_woodland_brace_progression",
+  "fixture_parameters": {
+    "equipped_item": null,
+    "tower_max_attack": 20,
+    "tower_max_hp": 100,
+    "tower_max_level": 20,
+    "variant": "learn_brace"
+  },
+  "format": "fairlanes-combat-recording",
+  "gameplay_seed": 1,
+  "gameplay_sequence": 0,
+  "initial_party_state": [
+    {
+      "hp": 20,
+      "id": "hero1",
+      "known_skills": [
+        "observe/1",
+        "thump/1"
+      ],
+      "loadout": [
+        "observe/1",
+        "thump/1"
+      ]
+    },
+    {
+      "hp": 20,
+      "id": "hero2",
+      "known_skills": [
+        "observe/1",
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ]
+    }
+  ],
+  "initial_state": [
+    {
+      "action_policy": "single_equipped_skill",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "hero1",
+      "kind": "player",
+      "known_skills": [
+        "observe/1",
+        "thump/1"
+      ],
+      "loadout": [
+        "observe/1",
+        "thump/1"
+      ],
+      "name": "Regression Hero 1",
+      "stats": {
+        "armor": 1,
+        "attack": 2,
+        "hp": 20,
+        "max_hp": 20,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    },
+    {
+      "action_policy": "single_equipped_skill",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "hero2",
+      "kind": "player",
+      "known_skills": [
+        "observe/1",
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ],
+      "name": "Regression Hero 2",
+      "stats": {
+        "armor": 0,
+        "attack": 2,
+        "hp": 20,
+        "max_hp": 20,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    },
+    {
+      "action_policy": "monster_decision_rules",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "enemy1",
+      "kind": "monster",
+      "known_skills": [
+        "brace/1",
+        "bumper_rush/1",
+        "smackdown_sweep/1"
+      ],
+      "loadout": [
+        "brace/1",
+        "bumper_rush/1",
+        "smackdown_sweep/1"
+      ],
+      "name": "Antler Stag",
+      "stats": {
+        "armor": 0,
+        "attack": 2,
+        "hp": 25,
+        "max_hp": 25,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    }
+  ],
+  "result": {
+    "beats": 930,
+    "bleed_active_at_end": 0,
+    "bleed_applications": 0,
+    "bleed_clears": 0,
+    "bleed_deaths": 0,
+    "bleed_tick_damage": 0,
+    "bleed_ticks": 0,
+    "brace_applications": 3,
+    "brace_consumptions": 3,
+    "encounter_index": 1,
+    "eviscerate_casts": 0,
+    "incoming_damage": 4,
+    "longest_bleed_seconds": 0.0,
+    "longest_bleed_uwu": 0,
+    "outcome": "hero_victory",
+    "remaining_hp": {
+      "enemy1": 0,
+      "enemy2": 0,
+      "hero1": 16,
+      "hero2": 20
+    },
+    "simulated_seconds": 77.5,
+    "survivors": 2,
+    "uwu": 74400
+  },
+  "starting_uwu": 0,
+  "starting_world_beat": 0,
+  "version": 2
+}

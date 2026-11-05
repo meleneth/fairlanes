@@ -112,7 +112,7 @@ TEST_CASE("Autoplay follows the Ruby-authored opening path on production beats",
   REQUIRE(game.accounts().front().parties().front().members().size() == 2);
 }
 
-TEST_CASE("The story party clears the physical slice and can return to Badger",
+TEST_CASE("The story party clears the physical slice and can return to Woodland ten",
           "[story][tower][physical-slice]") {
   fl::GrandCentral game{1, 1, 0, true, true, 7, true, true};
   auto* story = game.objectives();

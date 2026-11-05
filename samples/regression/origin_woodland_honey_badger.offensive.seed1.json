@@ -1,0 +1,1676 @@
+{
+  "beat_cap": 4000,
+  "build": {
+    "revision": "ca755b7fdb3a4661c3fbe582cea5bcee1caa4b95",
+    "source_dirty": true,
+    "version": "0.1.0"
+  },
+  "content_sha256": "a35f79991f5f2a5620930ccf7517b03a403747101acf6cbe4ca1d80b9059888e",
+  "encounter_results": [
+    {
+      "beats": 773,
+      "bleed_active_at_end": 1,
+      "bleed_applications": 5,
+      "bleed_clears": 4,
+      "bleed_deaths": 1,
+      "bleed_tick_damage": 24,
+      "bleed_ticks": 12,
+      "brace_applications": 0,
+      "brace_consumptions": 0,
+      "encounter_index": 0,
+      "eviscerate_casts": 5,
+      "incoming_damage": 24,
+      "longest_bleed_seconds": 11.916666666666666,
+      "longest_bleed_uwu": 11440,
+      "outcome": "hero_victory",
+      "remaining_hp": {
+        "enemy1": 0,
+        "hero1": 0,
+        "hero2": 16
+      },
+      "simulated_seconds": 64.41666666666667,
+      "survivors": 1
+    }
+  ],
+  "encounters": [
+    {
+      "biome": "origin_woodland_tower",
+      "floor": 50
+    }
+  ],
+  "events": [
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 4800,
+      "seq": 0,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 4800,
+      "world_beat": 61
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 4800,
+      "seq": 1,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 4800,
+      "world_beat": 61
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 4800,
+      "seq": 2,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero1",
+      "uwu": 4800,
+      "world_beat": 61
+    },
+    {
+      "actor": "hero1",
+      "damage": 5,
+      "encounter_index": 0,
+      "encounter_uwu": 6880,
+      "hp_after": 45,
+      "seq": 3,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 6880,
+      "world_beat": 87
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 45,
+        "statuses": []
+      },
+      "before": {
+        "hp": 50,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 6880,
+      "seq": 4,
+      "type": "state",
+      "uwu": 6960,
+      "world_beat": 87
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 7280,
+      "seq": 5,
+      "type": "cast_finish",
+      "uwu": 7280,
+      "world_beat": 92
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 7280,
+      "seq": 6,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 7280,
+      "world_beat": 92
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 7280,
+      "seq": 7,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 7280,
+      "world_beat": 92
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 7280,
+      "seq": 8,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero2",
+      "uwu": 7280,
+      "world_beat": 92
+    },
+    {
+      "actor": "hero2",
+      "damage": 3,
+      "encounter_index": 0,
+      "encounter_uwu": 9360,
+      "hp_after": 42,
+      "seq": 9,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 9360,
+      "world_beat": 118
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 42,
+        "statuses": []
+      },
+      "before": {
+        "hp": 45,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 9360,
+      "seq": 10,
+      "type": "state",
+      "uwu": 9440,
+      "world_beat": 118
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 9760,
+      "seq": 11,
+      "type": "cast_finish",
+      "uwu": 9760,
+      "world_beat": 123
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 9760,
+      "seq": 12,
+      "skill": "eviscerate/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 9760,
+      "world_beat": 123
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 9760,
+      "seq": 13,
+      "skill": "eviscerate/1",
+      "type": "cast_start",
+      "uwu": 9760,
+      "world_beat": 123
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 9760,
+      "seq": 14,
+      "skill": "eviscerate/1",
+      "type": "skill_witnessed",
+      "user": "enemy1",
+      "uwu": 9760,
+      "world_beat": 123
+    },
+    {
+      "actor": "enemy1",
+      "damage_per_tick": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 11680,
+      "seq": 15,
+      "target": "hero1",
+      "type": "dire_bleed_applied",
+      "uwu": 11680,
+      "world_beat": 147
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 11680,
+      "seq": 16,
+      "type": "cast_finish",
+      "uwu": 11680,
+      "world_beat": 147
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 20,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 20,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 11680,
+      "seq": 17,
+      "type": "state",
+      "uwu": 11760,
+      "world_beat": 147
+    },
+    {
+      "actor": "enemy1",
+      "damage": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 14560,
+      "hp_after": 18,
+      "killed": false,
+      "seq": 18,
+      "target": "hero1",
+      "type": "dire_bleed_tick",
+      "uwu": 14560,
+      "world_beat": 183
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 18,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 20,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 14560,
+      "seq": 19,
+      "type": "state",
+      "uwu": 14640,
+      "world_beat": 183
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 16240,
+      "seq": 20,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 16240,
+      "world_beat": 204
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 16240,
+      "seq": 21,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 16240,
+      "world_beat": 204
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 16240,
+      "seq": 22,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero1",
+      "uwu": 16240,
+      "world_beat": 204
+    },
+    {
+      "actor": "enemy1",
+      "damage": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 17440,
+      "hp_after": 16,
+      "killed": false,
+      "seq": 23,
+      "target": "hero1",
+      "type": "dire_bleed_tick",
+      "uwu": 17440,
+      "world_beat": 219
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 16,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 18,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 17440,
+      "seq": 24,
+      "type": "state",
+      "uwu": 17520,
+      "world_beat": 219
+    },
+    {
+      "actor": "hero1",
+      "damage": 6,
+      "encounter_index": 0,
+      "encounter_uwu": 18320,
+      "hp_after": 36,
+      "seq": 25,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 18320,
+      "world_beat": 230
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 36,
+        "statuses": []
+      },
+      "before": {
+        "hp": 42,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 18320,
+      "seq": 26,
+      "type": "state",
+      "uwu": 18400,
+      "world_beat": 230
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 18720,
+      "seq": 27,
+      "type": "cast_finish",
+      "uwu": 18720,
+      "world_beat": 235
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 18720,
+      "seq": 28,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 18720,
+      "world_beat": 235
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 18720,
+      "seq": 29,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 18720,
+      "world_beat": 235
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 18720,
+      "seq": 30,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero2",
+      "uwu": 18720,
+      "world_beat": 235
+    },
+    {
+      "actor": "enemy1",
+      "damage": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 20320,
+      "hp_after": 14,
+      "killed": false,
+      "seq": 31,
+      "target": "hero1",
+      "type": "dire_bleed_tick",
+      "uwu": 20320,
+      "world_beat": 255
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 14,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 16,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 20320,
+      "seq": 32,
+      "type": "state",
+      "uwu": 20400,
+      "world_beat": 255
+    },
+    {
+      "actor": "hero2",
+      "damage": 6,
+      "encounter_index": 0,
+      "encounter_uwu": 20800,
+      "hp_after": 30,
+      "seq": 33,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 20800,
+      "world_beat": 261
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 30,
+        "statuses": []
+      },
+      "before": {
+        "hp": 36,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 20800,
+      "seq": 34,
+      "type": "state",
+      "uwu": 20880,
+      "world_beat": 261
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 21200,
+      "seq": 35,
+      "type": "cast_finish",
+      "uwu": 21200,
+      "world_beat": 266
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 21200,
+      "seq": 36,
+      "skill": "eviscerate/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 21200,
+      "world_beat": 266
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 21200,
+      "seq": 37,
+      "skill": "eviscerate/1",
+      "type": "cast_start",
+      "uwu": 21200,
+      "world_beat": 266
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 21200,
+      "seq": 38,
+      "skill": "eviscerate/1",
+      "type": "skill_witnessed",
+      "user": "enemy1",
+      "uwu": 21200,
+      "world_beat": 266
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 23120,
+      "seq": 39,
+      "target": "hero1",
+      "type": "dire_bleed_cleared",
+      "uwu": 23120,
+      "world_beat": 290
+    },
+    {
+      "actor": "enemy1",
+      "damage_per_tick": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 23120,
+      "seq": 40,
+      "target": "hero1",
+      "type": "dire_bleed_applied",
+      "uwu": 23120,
+      "world_beat": 290
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 23120,
+      "seq": 41,
+      "type": "cast_finish",
+      "uwu": 23120,
+      "world_beat": 290
+    },
+    {
+      "actor": "enemy1",
+      "damage": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 26000,
+      "hp_after": 12,
+      "killed": false,
+      "seq": 42,
+      "target": "hero1",
+      "type": "dire_bleed_tick",
+      "uwu": 26000,
+      "world_beat": 326
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 12,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 14,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 26000,
+      "seq": 43,
+      "type": "state",
+      "uwu": 26080,
+      "world_beat": 326
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 27680,
+      "seq": 44,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 27680,
+      "world_beat": 347
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 27680,
+      "seq": 45,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 27680,
+      "world_beat": 347
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 27680,
+      "seq": 46,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero1",
+      "uwu": 27680,
+      "world_beat": 347
+    },
+    {
+      "actor": "enemy1",
+      "damage": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 28880,
+      "hp_after": 10,
+      "killed": false,
+      "seq": 47,
+      "target": "hero1",
+      "type": "dire_bleed_tick",
+      "uwu": 28880,
+      "world_beat": 362
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 10,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 12,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 28880,
+      "seq": 48,
+      "type": "state",
+      "uwu": 28960,
+      "world_beat": 362
+    },
+    {
+      "actor": "hero1",
+      "damage": 4,
+      "encounter_index": 0,
+      "encounter_uwu": 29760,
+      "hp_after": 26,
+      "seq": 49,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 29760,
+      "world_beat": 373
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 26,
+        "statuses": []
+      },
+      "before": {
+        "hp": 30,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 29760,
+      "seq": 50,
+      "type": "state",
+      "uwu": 29840,
+      "world_beat": 373
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 30160,
+      "seq": 51,
+      "type": "cast_finish",
+      "uwu": 30160,
+      "world_beat": 378
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 30160,
+      "seq": 52,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 30160,
+      "world_beat": 378
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 30160,
+      "seq": 53,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 30160,
+      "world_beat": 378
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 30160,
+      "seq": 54,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero2",
+      "uwu": 30160,
+      "world_beat": 378
+    },
+    {
+      "actor": "enemy1",
+      "damage": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 31760,
+      "hp_after": 8,
+      "killed": false,
+      "seq": 55,
+      "target": "hero1",
+      "type": "dire_bleed_tick",
+      "uwu": 31760,
+      "world_beat": 398
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 8,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 10,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 31760,
+      "seq": 56,
+      "type": "state",
+      "uwu": 31840,
+      "world_beat": 398
+    },
+    {
+      "actor": "hero2",
+      "damage": 5,
+      "encounter_index": 0,
+      "encounter_uwu": 32240,
+      "hp_after": 21,
+      "seq": 57,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 32240,
+      "world_beat": 404
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 21,
+        "statuses": []
+      },
+      "before": {
+        "hp": 26,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 32240,
+      "seq": 58,
+      "type": "state",
+      "uwu": 32320,
+      "world_beat": 404
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 32640,
+      "seq": 59,
+      "type": "cast_finish",
+      "uwu": 32640,
+      "world_beat": 409
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 32640,
+      "seq": 60,
+      "skill": "eviscerate/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 32640,
+      "world_beat": 409
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 32640,
+      "seq": 61,
+      "skill": "eviscerate/1",
+      "type": "cast_start",
+      "uwu": 32640,
+      "world_beat": 409
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 32640,
+      "seq": 62,
+      "skill": "eviscerate/1",
+      "type": "skill_witnessed",
+      "user": "enemy1",
+      "uwu": 32640,
+      "world_beat": 409
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 34560,
+      "seq": 63,
+      "target": "hero1",
+      "type": "dire_bleed_cleared",
+      "uwu": 34560,
+      "world_beat": 433
+    },
+    {
+      "actor": "enemy1",
+      "damage_per_tick": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 34560,
+      "seq": 64,
+      "target": "hero1",
+      "type": "dire_bleed_applied",
+      "uwu": 34560,
+      "world_beat": 433
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 34560,
+      "seq": 65,
+      "type": "cast_finish",
+      "uwu": 34560,
+      "world_beat": 433
+    },
+    {
+      "actor": "enemy1",
+      "damage": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 37440,
+      "hp_after": 6,
+      "killed": false,
+      "seq": 66,
+      "target": "hero1",
+      "type": "dire_bleed_tick",
+      "uwu": 37440,
+      "world_beat": 469
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 6,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 8,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 37440,
+      "seq": 67,
+      "type": "state",
+      "uwu": 37520,
+      "world_beat": 469
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 39120,
+      "seq": 68,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 39120,
+      "world_beat": 490
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 39120,
+      "seq": 69,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 39120,
+      "world_beat": 490
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 39120,
+      "seq": 70,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero1",
+      "uwu": 39120,
+      "world_beat": 490
+    },
+    {
+      "actor": "enemy1",
+      "damage": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 40320,
+      "hp_after": 4,
+      "killed": false,
+      "seq": 71,
+      "target": "hero1",
+      "type": "dire_bleed_tick",
+      "uwu": 40320,
+      "world_beat": 505
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 4,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 6,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 40320,
+      "seq": 72,
+      "type": "state",
+      "uwu": 40400,
+      "world_beat": 505
+    },
+    {
+      "actor": "hero1",
+      "damage": 7,
+      "encounter_index": 0,
+      "encounter_uwu": 41200,
+      "hp_after": 14,
+      "seq": 73,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 41200,
+      "world_beat": 516
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 14,
+        "statuses": []
+      },
+      "before": {
+        "hp": 21,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 41200,
+      "seq": 74,
+      "type": "state",
+      "uwu": 41280,
+      "world_beat": 516
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 41600,
+      "seq": 75,
+      "type": "cast_finish",
+      "uwu": 41600,
+      "world_beat": 521
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 41600,
+      "seq": 76,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 41600,
+      "world_beat": 521
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 41600,
+      "seq": 77,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 41600,
+      "world_beat": 521
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 41600,
+      "seq": 78,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero2",
+      "uwu": 41600,
+      "world_beat": 521
+    },
+    {
+      "actor": "enemy1",
+      "damage": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 43200,
+      "hp_after": 2,
+      "killed": false,
+      "seq": 79,
+      "target": "hero1",
+      "type": "dire_bleed_tick",
+      "uwu": 43200,
+      "world_beat": 541
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 2,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 4,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 43200,
+      "seq": 80,
+      "type": "state",
+      "uwu": 43280,
+      "world_beat": 541
+    },
+    {
+      "actor": "hero2",
+      "damage": 3,
+      "encounter_index": 0,
+      "encounter_uwu": 43680,
+      "hp_after": 11,
+      "seq": 81,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 43680,
+      "world_beat": 547
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 11,
+        "statuses": []
+      },
+      "before": {
+        "hp": 14,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 43680,
+      "seq": 82,
+      "type": "state",
+      "uwu": 43760,
+      "world_beat": 547
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 44080,
+      "seq": 83,
+      "type": "cast_finish",
+      "uwu": 44080,
+      "world_beat": 552
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 44080,
+      "seq": 84,
+      "skill": "eviscerate/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 44080,
+      "world_beat": 552
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 44080,
+      "seq": 85,
+      "skill": "eviscerate/1",
+      "type": "cast_start",
+      "uwu": 44080,
+      "world_beat": 552
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 44080,
+      "seq": 86,
+      "skill": "eviscerate/1",
+      "type": "skill_witnessed",
+      "user": "enemy1",
+      "uwu": 44080,
+      "world_beat": 552
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 46000,
+      "seq": 87,
+      "target": "hero1",
+      "type": "dire_bleed_cleared",
+      "uwu": 46000,
+      "world_beat": 576
+    },
+    {
+      "actor": "enemy1",
+      "damage_per_tick": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 46000,
+      "seq": 88,
+      "target": "hero1",
+      "type": "dire_bleed_applied",
+      "uwu": 46000,
+      "world_beat": 576
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 46000,
+      "seq": 89,
+      "type": "cast_finish",
+      "uwu": 46000,
+      "world_beat": 576
+    },
+    {
+      "actor": "hero1",
+      "encounter_index": 0,
+      "encounter_uwu": 48880,
+      "seq": 90,
+      "type": "cast_finish",
+      "uwu": 48880,
+      "world_beat": 612
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 48880,
+      "seq": 91,
+      "target": "hero1",
+      "type": "dire_bleed_cleared",
+      "uwu": 48880,
+      "world_beat": 612
+    },
+    {
+      "actor": "enemy1",
+      "damage": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 48880,
+      "hp_after": 0,
+      "killed": true,
+      "seq": 92,
+      "target": "hero1",
+      "type": "dire_bleed_tick",
+      "uwu": 48880,
+      "world_beat": 612
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 2,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 48880,
+      "seq": 93,
+      "type": "state",
+      "uwu": 48960,
+      "world_beat": 612
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 50640,
+      "seq": 94,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 50640,
+      "world_beat": 634
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 50640,
+      "seq": 95,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 50640,
+      "world_beat": 634
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 50640,
+      "seq": 96,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero2",
+      "uwu": 50640,
+      "world_beat": 634
+    },
+    {
+      "actor": "hero2",
+      "damage": 7,
+      "encounter_index": 0,
+      "encounter_uwu": 52720,
+      "hp_after": 4,
+      "seq": 97,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 52720,
+      "world_beat": 660
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 4,
+        "statuses": []
+      },
+      "before": {
+        "hp": 11,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 52720,
+      "seq": 98,
+      "type": "state",
+      "uwu": 52800,
+      "world_beat": 660
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 53120,
+      "seq": 99,
+      "type": "cast_finish",
+      "uwu": 53120,
+      "world_beat": 665
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 53120,
+      "seq": 100,
+      "skill": "eviscerate/1",
+      "target": "hero2",
+      "type": "action",
+      "uwu": 53120,
+      "world_beat": 665
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 53120,
+      "seq": 101,
+      "skill": "eviscerate/1",
+      "type": "cast_start",
+      "uwu": 53120,
+      "world_beat": 665
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 53120,
+      "seq": 102,
+      "skill": "eviscerate/1",
+      "type": "skill_witnessed",
+      "user": "enemy1",
+      "uwu": 53120,
+      "world_beat": 665
+    },
+    {
+      "actor": "enemy1",
+      "damage_per_tick": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 55040,
+      "seq": 103,
+      "target": "hero2",
+      "type": "dire_bleed_applied",
+      "uwu": 55040,
+      "world_beat": 689
+    },
+    {
+      "actor": "enemy1",
+      "encounter_index": 0,
+      "encounter_uwu": 55040,
+      "seq": 104,
+      "type": "cast_finish",
+      "uwu": 55040,
+      "world_beat": 689
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 20,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 20,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 55040,
+      "seq": 105,
+      "type": "state",
+      "uwu": 55120,
+      "world_beat": 689
+    },
+    {
+      "actor": "enemy1",
+      "damage": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 57920,
+      "hp_after": 18,
+      "killed": false,
+      "seq": 106,
+      "target": "hero2",
+      "type": "dire_bleed_tick",
+      "uwu": 57920,
+      "world_beat": 725
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 18,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 20,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 57920,
+      "seq": 107,
+      "type": "state",
+      "uwu": 58000,
+      "world_beat": 725
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 59680,
+      "seq": 108,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 59680,
+      "world_beat": 747
+    },
+    {
+      "actor": "hero2",
+      "encounter_index": 0,
+      "encounter_uwu": 59680,
+      "seq": 109,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 59680,
+      "world_beat": 747
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 59680,
+      "seq": 110,
+      "skill": "thump/1",
+      "type": "skill_witnessed",
+      "user": "hero2",
+      "uwu": 59680,
+      "world_beat": 747
+    },
+    {
+      "actor": "enemy1",
+      "damage": 2,
+      "encounter_index": 0,
+      "encounter_uwu": 60800,
+      "hp_after": 16,
+      "killed": false,
+      "seq": 111,
+      "target": "hero2",
+      "type": "dire_bleed_tick",
+      "uwu": 60800,
+      "world_beat": 761
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 16,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "before": {
+        "hp": 18,
+        "statuses": [
+          "Dire Bleed"
+        ]
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 60800,
+      "seq": 112,
+      "type": "state",
+      "uwu": 60880,
+      "world_beat": 761
+    },
+    {
+      "actor": "hero2",
+      "damage": 5,
+      "encounter_index": 0,
+      "encounter_uwu": 61760,
+      "hp_after": 0,
+      "seq": 113,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 61760,
+      "world_beat": 773
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 4,
+        "statuses": []
+      },
+      "encounter_index": 0,
+      "encounter_uwu": 61760,
+      "seq": 114,
+      "type": "state",
+      "uwu": 61840,
+      "world_beat": 773
+    },
+    {
+      "encounter_index": 0,
+      "encounter_uwu": 61760,
+      "outcome": "hero_victory",
+      "seq": 115,
+      "type": "end",
+      "uwu": 61840,
+      "world_beat": 773
+    }
+  ],
+  "expected_outcome": null,
+  "external_inputs": [],
+  "final_party_state": [
+    {
+      "hp": 0,
+      "id": "hero1",
+      "known_skills": [
+        "observe/1",
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ]
+    },
+    {
+      "hp": 16,
+      "id": "hero2",
+      "known_skills": [
+        "observe/1",
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ]
+    }
+  ],
+  "fixture": "origin_woodland_honey_badger",
+  "fixture_parameters": {
+    "equipped_item": null,
+    "tower_max_attack": 20,
+    "tower_max_hp": 100,
+    "tower_max_level": 20,
+    "variant": "offensive"
+  },
+  "format": "fairlanes-combat-recording",
+  "gameplay_seed": 1,
+  "gameplay_sequence": 0,
+  "initial_party_state": [
+    {
+      "hp": 20,
+      "id": "hero1",
+      "known_skills": [
+        "observe/1",
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ]
+    },
+    {
+      "hp": 20,
+      "id": "hero2",
+      "known_skills": [
+        "observe/1",
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ]
+    }
+  ],
+  "initial_state": [
+    {
+      "action_policy": "single_equipped_skill",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "hero1",
+      "kind": "player",
+      "known_skills": [
+        "observe/1",
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ],
+      "name": "Regression Hero 1",
+      "stats": {
+        "armor": 1,
+        "attack": 2,
+        "hp": 20,
+        "max_hp": 20,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    },
+    {
+      "action_policy": "single_equipped_skill",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "hero2",
+      "kind": "player",
+      "known_skills": [
+        "observe/1",
+        "thump/1"
+      ],
+      "loadout": [
+        "thump/1"
+      ],
+      "name": "Regression Hero 2",
+      "stats": {
+        "armor": 0,
+        "attack": 2,
+        "hp": 20,
+        "max_hp": 20,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    },
+    {
+      "action_policy": "monster_decision_rules",
+      "atb": {
+        "charge": 0,
+        "charge_per_beat": 80,
+        "max_charge": 4800
+      },
+      "gear": [],
+      "id": "enemy1",
+      "kind": "monster",
+      "known_skills": [
+        "eviscerate/1"
+      ],
+      "loadout": [
+        "eviscerate/1"
+      ],
+      "name": "Honey Badger",
+      "stats": {
+        "armor": 0,
+        "attack": 10,
+        "hp": 50,
+        "max_hp": 50,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      },
+      "statuses": []
+    }
+  ],
+  "result": {
+    "beats": 773,
+    "bleed_active_at_end": 1,
+    "bleed_applications": 5,
+    "bleed_clears": 4,
+    "bleed_deaths": 1,
+    "bleed_tick_damage": 24,
+    "bleed_ticks": 12,
+    "brace_applications": 0,
+    "brace_consumptions": 0,
+    "encounter_index": 0,
+    "eviscerate_casts": 5,
+    "incoming_damage": 24,
+    "longest_bleed_seconds": 11.916666666666666,
+    "longest_bleed_uwu": 11440,
+    "outcome": "hero_victory",
+    "remaining_hp": {
+      "enemy1": 0,
+      "hero1": 0,
+      "hero2": 16
+    },
+    "simulated_seconds": 64.41666666666667,
+    "survivors": 1,
+    "uwu": 61840
+  },
+  "starting_uwu": 0,
+  "starting_world_beat": 0,
+  "version": 2
+}

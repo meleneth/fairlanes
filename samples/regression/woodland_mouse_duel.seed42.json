@@ -1,11 +1,11 @@
 {
   "beat_cap": 1200,
   "build": {
-    "revision": "8e8c865cb174ef54241e6255e1cee3251e60d86d",
+    "revision": "ca755b7fdb3a4661c3fbe582cea5bcee1caa4b95",
     "source_dirty": true,
     "version": "0.1.0"
   },
-  "content_sha256": "470b98a95d6631ac5bb1e2af96fc070fa4cb950d409e1314516aa29a74cebefd",
+  "content_sha256": "a35f79991f5f2a5620930ccf7517b03a403747101acf6cbe4ca1d80b9059888e",
   "events": [
     {
       "actor": "hero",
@@ -147,7 +147,10 @@
   "external_inputs": [],
   "fixture": "woodland_mouse_duel",
   "fixture_parameters": {
-    "hero_armor": 0
+    "hero_armor": 0,
+    "tower_max_attack": 20,
+    "tower_max_hp": 100,
+    "tower_max_level": 20
   },
   "format": "fairlanes-combat-recording",
   "gameplay_seed": 42,

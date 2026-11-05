@@ -52,7 +52,8 @@ achievement event. Combat and progression continue while a notice is shown.
 | Woodland 7 | Antler Stag | Observe and learn rank-one Brace |
 | Woodland 8 | Two Bark Smacks | Spend Brace against direct physical hits |
 | Woodland 9 | Field Mouse, Hare, and Bark Smack | Short mixed gate fight; unlock Plains on victory |
-| Woodland 10 | Honey Badger and four Field Mice | Optional milestone before or after Plains |
+| Woodland 10 | Antler Stag, Bark Smack, and Bumpkin Hare | Consolidate timing, Brace, composition, and early equipment decisions without requiring Brace |
+| Woodland 50 | Honey Badger | Later status-management milestone; cleansing is intentionally not designed yet |
 | Plains 1 | Prairie Meerkat | Physical Pebble Spit projectile; awards Mossbound Cape |
 | Plains 2 | Prairie Meerkat and Grass Wolf | Ranged and melee composition |
 | Plains 3 | Prairie Meerkat and Bristle Boar | Projectile Cover and its Bumper Rush opening |
@@ -85,32 +86,56 @@ per Cycle, monster skill lists, current runtime pools, and assignment gaps.
 Effective bonuses read current equipment. Equipping never heals; removing
 Max HP clamps current HP to the new cap. Resistance bonuses remain intact.
 
-## Floor-10 Ruby regression
+## Woodland regression baselines
 
 The [Ruby declaration](../scripts/fairlanes_regression_declarations.rb)
-shares a five-hero setup across two variants. Each hero has 20 base HP,
-2 Attack, 0 Armor, and rank-one Thump. Only the leader's cape changes;
-the town heal fills effective Max HP before combat. Both use the generated
-Woodland floor-10 lineup, seeds 1–8, and a 2400-beat cap. Honey Badger now
-uses the floor's 10% scaling. With the default maxima, every floor-10 enemy
-has 10 HP, level 2, and 2 Attack. Both cape variants currently win all eight
-seeds. At seed 1 their hit sequence and 688-beat timing are identical, while
-the return cape leaves the leader at 25 HP instead of the arrival cape's 20 HP.
-Plains does not add a player skill or interrupt in this slice, so the detour is
-primarily a route, encounter, and isolated cape comparison. These assertions
-protect deterministic execution while the runtime maximum flags are used to
-search for useful balance ranges.
+uses the current two-member opening party for floor 10. Both members have 20 HP,
+2 Attack, and rank-one Thump; the leader wears the Village Guard Hide. Across
+seeds 1–8, the offensive pair wins 8/8 in 568–659 beats. Replacing the leader's
+Thump with Brace wins 2/8 in 798–1330 beats. Brace is useful when it catches a
+physical hit, but repeatedly defending with half of this small party sacrifices
+too much damage. The encounter therefore rewards sensible timing and composition
+without making Brace mandatory or introducing a new mechanic.
+
+The longitudinal `origin_woodland_brace_progression` fixture retains one party
+across production floor-7 and floor-8 encounters. Its learning variant equips
+Observe normally, witnesses the stag's Brace, retains the learned skill on
+victory, and selects it through `PartyMember::equip_known_skill` before floor 8.
+The paired variant selects Thump instead. Both variants win 8/8. At seed 1,
+Brace applies and is consumed three times on floor 8. The Brace route takes 4
+damage and finishes both fights in 930 beats, while the offensive route takes 1
+damage on floor 8 and finishes in 641 beats. Individual Brace hits are mitigated,
+but the longer fight creates more opportunities for incoming damage. This is an
+actual result of giving one of two heroes a purely defensive action, not a claim
+that Brace is generally harmful.
+
+Honey Badger is excluded from random Woodland pools and explicitly authored at
+floor 50, so no generated floor before 50 can introduce it. The exploratory
+no-cleansing baseline uses twelve seeds. The two-Thump party wins 6/12; its runs
+record 60 Eviscerate casts, 56 bleed applications, 202 ticks for 404 damage, and
+18 bleed-attributed deaths. A one-Brace/one-Thump party wins 0/12 and records
+81 casts, 78 applications, 240 ticks for 480 damage, and 24 bleed deaths.
+Offensive runs last 54.1–73.8 simulated seconds; defensive runs last 50.8–79.3.
+This is the intended counter relationship: Brace cannot mitigate periodic Dire
+Bleed, so it loses decisively without the later cleansing answer. Dire Bleed
+persists until its owner dies or combat cleanup occurs; a dead source is noticed
+and cleared at the next scheduled tick. Eviscerate has no immediate hit, and
+recasting replaces the status and restarts its scheduled tick cadence. Those are
+current implementation facts, not a final balance prescription. No cleansing
+skill is implemented or assigned in this slice.
 
 ```sh
 cmake --build build-linux-debug -j 4
-build-linux-debug/fairlanes_regression --fixture origin_woodland_floor10 --variant arrival --all-seeds --record-dir /tmp/fairlanes-floor10-arrival --assert-expected
-build-linux-debug/fairlanes_regression --fixture origin_woodland_floor10 --variant detour --all-seeds --record-dir /tmp/fairlanes-floor10-detour --assert-expected
-build-linux-debug/fairlanes_regression --fixture origin_woodland_floor10 --variant arrival --all-seeds --record-dir /tmp/fairlanes-floor10-sweep --tower-max-level 40 --tower-max-hp 400 --tower-max-attack 60
+build-linux-debug/fairlanes_regression --fixture origin_woodland_floor10 --variant offensive --all-seeds --record-dir /tmp/fairlanes-floor10-offensive --assert-expected
+build-linux-debug/fairlanes_regression --fixture origin_woodland_floor10 --variant defensive --all-seeds --record-dir /tmp/fairlanes-floor10-defensive --assert-expected
+build-linux-debug/fairlanes_regression --fixture origin_woodland_brace_progression --variant learn_brace --all-seeds --record-dir /tmp/fairlanes-brace-progression --assert-expected
+build-linux-debug/fairlanes_regression --fixture origin_woodland_honey_badger --variant offensive --all-seeds --record-dir /tmp/fairlanes-floor50 --assert-expected
 build-linux-debug/fairlanes --replay samples/regression/origin_woodland_stag_lesson.observe_equipped.seed1.json --overdrive 8
 build-linux-debug/fairlanes --replay samples/regression/origin_woodland_brace_practice.braced.seed1.json --overdrive 8
 build-linux-debug/fairlanes --replay samples/regression/origin_plains_cover_lesson.cover.seed1.json --overdrive 8
-build-linux-debug/fairlanes --replay samples/regression/origin_woodland_floor10.arrival.seed1.json --overdrive 8
-build-linux-debug/fairlanes --replay samples/regression/origin_woodland_floor10.detour.seed1.json --overdrive 8
+build-linux-debug/fairlanes --replay samples/regression/origin_woodland_floor10.offensive.seed1.json --overdrive 8
+build-linux-debug/fairlanes --replay samples/regression/origin_woodland_brace_progression.learn_brace.seed1.json --overdrive 8
+build-linux-debug/fairlanes --replay samples/regression/origin_woodland_honey_badger.offensive.seed1.json --overdrive 8
 ```
 
 The replay commands open the actual client combat view. Quit with `q` and

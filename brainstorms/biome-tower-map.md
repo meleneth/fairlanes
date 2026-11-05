@@ -10,7 +10,7 @@ Each Cycle has five ordered 100-floor tower biomes. `Playable` means the biome h
 | Monster ID | Current skills | Current HP | Current runtime pool |
 | --- | --- | ---: | --- |
 | `field_mouse` | `thump` | 5 | `common_woodland` |
-| `honey_badger` | `eviscerate` | 120 | `rare_woodland` |
+| `honey_badger` | `eviscerate` | 120 | `authored_only` |
 | `bumpkin_hare` | `bump` | 7 | `common_woodland` |
 | `scaredy_cat` | `flee`, `thump` | 6 | `common_woodland` |
 | `mire_squish` | `squish` | 9 | `common_woodland` |

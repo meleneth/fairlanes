@@ -13,7 +13,7 @@ module FairlanesContent
   end
 
   class Validator
-    VALID_POOLS = Set[:common_woodland, :rare_woodland, :raid].freeze
+    VALID_POOLS = Set[:common_woodland, :rare_woodland, :authored_only, :raid].freeze
     GEAR_SLOTS = Set[:mainhand, :offhand, :chest, :helm, :pants, :boots,
                      :gloves, :sleeves, :belt, :cape, :necklace, :ring_1,
                      :ring_2, :knife].freeze
@@ -313,10 +313,14 @@ module FairlanesContent
       scenarios.each do |scenario|
         prefix = "regression #{scenario.id}"
         errors << "#{prefix} has invalid stable id" unless stable_id?(scenario.id)
-        encounter = scenario.encounter
-        unless encounter.is_a?(Hash) && (encounter.keys - %i[biome floor]).empty? &&
-               declarations.biomes.any? { |b| b.id == encounter[:biome] && valid_floor?(encounter[:floor], b.floors) }
-          errors << "#{prefix} references unknown encounter floor"
+        unless scenario.encounters.is_a?(Array) && !scenario.encounters.empty?
+          errors << "#{prefix} needs encounters"
+        end
+        Array(scenario.encounters).each do |encounter|
+          unless encounter.is_a?(Hash) && (encounter.keys - %i[biome floor]).empty? &&
+                 declarations.biomes.any? { |b| b.id == encounter[:biome] && valid_floor?(encounter[:floor], b.floors) }
+            errors << "#{prefix} references unknown encounter floor"
+          end
         end
         unless scenario.party.is_a?(Array) && (1..5).cover?(scenario.party.size)
           errors << "#{prefix} needs one to five party members"
@@ -338,6 +342,10 @@ module FairlanesContent
           errors << "#{prefix} has invalid seeds"
         end
         errors << "#{prefix} has invalid beat cap" unless positive_integer?(scenario.beat_cap)
+        errors << "#{prefix} has invalid recording version" unless [1, 2].include?(scenario.recording_version)
+        if Array(scenario.encounters).size > 1 && scenario.recording_version != 2
+          errors << "#{prefix} needs recording version 2 for multiple encounters"
+        end
         variants = scenario.variants
         unless variants.is_a?(Array) && !variants.empty?
           errors << "#{prefix} needs variants"
@@ -347,7 +355,7 @@ module FairlanesContent
         errors << "#{prefix} has duplicate variants" unless variant_ids.uniq.size == variant_ids.size
         variants.each do |variant|
           unless variant.is_a?(Hash) &&
-                 (variant.keys - %i[id equipped_item skill_overrides observe_members expected_wins]).empty?
+                 (variant.keys - %i[id equipped_item skill_overrides observe_members next_skill expected_wins]).empty?
             errors << "#{prefix} variant has unknown fields"
           end
           errors << "#{prefix} has invalid variant id" unless stable_id?(variant[:id])
@@ -366,6 +374,10 @@ module FairlanesContent
           unless observers.is_a?(Array) && observers.uniq == observers &&
                  observers.all? { |index| index.is_a?(Integer) && (0...scenario.party.size).cover?(index) }
             errors << "#{prefix} has invalid Observe members"
+          end
+          next_skill = variant[:next_skill]
+          if next_skill && !declarations.skills.any? { |entry| entry.id == next_skill }
+            errors << "#{prefix} references unknown next skill #{next_skill}"
           end
           wins = variant[:expected_wins]
           if wins && (!wins.is_a?(Range) || !non_negative_integer?(wins.begin) ||

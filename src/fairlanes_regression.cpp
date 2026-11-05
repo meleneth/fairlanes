@@ -68,7 +68,8 @@ int main(int argc, char** argv) {
         std::cout << "seed=" << seed << " outcome=" << session.outcome()
                   << " beats=" << session.beats()
                   << " remaining_hp=" << session.recording().at("result").at("remaining_hp").dump()
-                  << " recording=" << path << '\n';
+                  << " metrics=" << session.recording().at("result").dump() << " recording=" << path
+                  << '\n';
       }
       std::cout << "fixture=" << options.fixture << " variant=" << options.variant
                 << " wins=" << wins << "/" << scenario->seeds.size() << " caps=" << caps << '\n';
@@ -88,7 +89,7 @@ int main(int argc, char** argv) {
               << " outcome=" << session.outcome() << " beats=" << session.beats()
               << " uwu=" << session.uwu()
               << " remaining_hp=" << session.recording().at("result").at("remaining_hp").dump()
-              << " simulated_seconds="
+              << " metrics=" << session.recording().at("result").dump() << " simulated_seconds="
               << static_cast<double>(session.beats()) / fl::primitives::WorldClock::kBeatsPerSecond
               << " recording=" << output_path << '\n';
     if (assert_expected && options.fixture != fl::regression::kSmokeFixture) {

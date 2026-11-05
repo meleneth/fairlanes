@@ -131,19 +131,24 @@ TEST_CASE("HeroesJourney encounter mode keeps the woodland spawn pools",
     REQUIRE((contains_monster(fl::primitives::EncounterBuilder::common_woodland(), kind) ||
              contains_monster(fl::primitives::EncounterBuilder::rare_woodland(), kind)));
   }
+  REQUIRE_FALSE(contains_monster(fl::primitives::EncounterBuilder::common_woodland(),
+                                 fl::monster::MonsterKind::HoneyBadger));
+  REQUIRE_FALSE(contains_monster(fl::primitives::EncounterBuilder::rare_woodland(),
+                                 fl::monster::MonsterKind::HoneyBadger));
 }
 
 TEST_CASE("Declared tower floors use the normal encounter construction path",
           "[generated][content][floors][encounter_builder]") {
   using fl::primitives::EncounterBuilder;
-  for (const int floor : {1, 10}) {
+  for (const int floor : {1, 10, 50}) {
     fl::GrandCentral gc{1, 1, 3};
     auto party = gc.account_context(0).party_context(0);
     const auto* declared =
         fl::primitives::generated_content::floor_lineup("origin_woodland_tower", floor);
     REQUIRE(declared != nullptr);
-    REQUIRE(declared->id ==
-            (floor == 10 ? "origin_woodland_tower/010" : "origin_woodland_tower/001"));
+    REQUIRE(declared->id == (floor == 1    ? "origin_woodland_tower/001"
+                             : floor == 10 ? "origin_woodland_tower/010"
+                                           : "origin_woodland_tower/050"));
     EncounterBuilder builder{party, fl::primitives::EncounterMode::HeroesJourney,
                              EncounterBuilder::TowerFloor{"origin_woodland_tower", floor}};
     auto& encounter = builder.thump_it_out();
@@ -152,6 +157,11 @@ TEST_CASE("Declared tower floors use the normal encounter construction path",
                                declared->monsters.begin() + declared->monster_count));
     REQUIRE(encounter.defenders().members().size() == 3);
     if (floor == 10) {
+      REQUIRE(actual == std::vector{fl::monster::MonsterKind::AntlerStag,
+                                    fl::monster::MonsterKind::BarkSmack,
+                                    fl::monster::MonsterKind::BumpkinHare});
+    }
+    if (floor == 50) {
       REQUIRE(actual.front() == fl::monster::MonsterKind::HoneyBadger);
     }
   }

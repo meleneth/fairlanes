@@ -4,6 +4,7 @@
 #include <array>
 #include <fstream>
 #include <stdexcept>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -104,6 +105,25 @@ struct Session::Impl {
   std::vector<Actor> actors;
   std::size_t hero_count{1};
   std::vector<fl::events::ScopedCombatantListener> listeners;
+  std::vector<fl::events::ScopedPartyListener> party_listeners;
+  const generated_content::Scenario* scenario{};
+  const generated_content::Variant* variant{};
+  bool extended_recording{false};
+  std::size_t encounter_index{0};
+  std::uint64_t encounter_start_beat{0};
+  struct Metrics {
+    int brace_applications{0};
+    int brace_consumptions{0};
+    int incoming_damage{0};
+    int eviscerate_casts{0};
+    int bleed_applications{0};
+    int bleed_ticks{0};
+    int bleed_tick_damage{0};
+    int bleed_deaths{0};
+    int bleed_clears{0};
+    std::int64_t longest_bleed_uwu{0};
+  } metrics;
+  std::unordered_map<entt::entity, std::int64_t> active_bleeds;
   Json recording;
   std::uint64_t beats{0};
   std::string outcome;
@@ -210,7 +230,8 @@ struct Session::Impl {
   }
 
   void setup_generated(const generated_content::Scenario& scenario) {
-    const auto* variant = generated_content::find_variant(scenario, options.variant);
+    this->scenario = &scenario;
+    variant = generated_content::find_variant(scenario, options.variant);
     if (!variant) throw std::invalid_argument("unknown regression variant: " + options.variant);
     if (options.hero_armor != 0)
       throw std::invalid_argument("generated regression does not accept --armor");
@@ -260,14 +281,16 @@ struct Session::Impl {
     }
     party.revitalize_members();
 
+    const auto first_encounter = scenario.encounters.front();
     auto& built =
-        fl::primitives::EncounterBuilder{party_ctx, fl::primitives::EncounterMode::HeroesJourney,
-                                         fl::primitives::EncounterBuilder::TowerFloor{
-                                             std::string(scenario.biome_id), scenario.floor}}
+        fl::primitives::EncounterBuilder{
+            party_ctx, fl::primitives::EncounterMode::HeroesJourney,
+            fl::primitives::EncounterBuilder::TowerFloor{std::string(first_encounter.biome_id),
+                                                         first_encounter.floor}}
             .thump_it_out();
     encounter = &built;
-    const auto* floor =
-        fl::primitives::generated_content::floor_lineup(scenario.biome_id, scenario.floor);
+    const auto* floor = fl::primitives::generated_content::floor_lineup(first_encounter.biome_id,
+                                                                        first_encounter.floor);
     for (std::size_t i = 0; i < built.attackers().members().size(); ++i)
       actors.push_back({"enemy" + std::to_string(i + 1), built.attackers().members()[i], {}});
     for (auto& actor : actors) actor.prior_state = state(actor.entity);
@@ -305,8 +328,9 @@ struct Session::Impl {
            {"gear", hero && i == 0 && equipped_item_id ? Json::array({*equipped_item_id})
                                                        : Json::array()}});
     }
+    extended_recording = scenario.recording_version == 2;
     recording = {{"format", "fairlanes-combat-recording"},
-                 {"version", 1},
+                 {"version", extended_recording ? 2 : 1},
                  {"fixture", options.fixture},
                  {"build",
                   {{"version", fl::build_identity::version},
@@ -329,7 +353,22 @@ struct Session::Impl {
                  {"initial_state", initial},
                  {"events", Json::array()},
                  {"result", nullptr}};
+    if (extended_recording) {
+      recording["encounters"] = Json::array();
+      for (const auto setup : scenario.encounters)
+        recording["encounters"].push_back({{"biome", setup.biome_id}, {"floor", setup.floor}});
+      recording["encounter_results"] = Json::array();
+      recording["initial_party_state"] = party_state();
+    }
     for (const auto& actor : actors) bind_events(actor.entity);
+    if (extended_recording)
+      party_listeners.emplace_back(party.party_bus(),
+                                   std::in_place_type<fl::events::SkillWitnessed>,
+                                   [this](const auto& event) {
+                                     append({{"type", "skill_witnessed"},
+                                             {"user", actor_id(event.user)},
+                                             {"skill", skill_id(event.skill)}});
+                                   });
     game.innervate_event_system(false);
   }
 
@@ -345,11 +384,44 @@ struct Session::Impl {
             {"statuses", statuses_for(game.reg(), entity)}};
   }
 
+  Json party_state() {
+    Json result = Json::array();
+    const auto& party = party_ctx.party_data();
+    for (std::size_t index = 0; index < party.members().size(); ++index) {
+      const auto entity = party.members()[index].member_id();
+      Json known = Json::array();
+      for (const auto skill : party.members()[index].grimoire().known_skills())
+        known.push_back(skill_id(skill));
+      Json loadout = Json::array();
+      const auto& closet = game.reg().get<fl::ecs::components::PartyMember>(entity).closet();
+      for (const auto skill : closet.skill_slots)
+        if (skill) loadout.push_back(skill_id(*skill));
+      result.push_back({{"id", "hero" + std::to_string(index + 1)},
+                        {"hp", game.reg().get<Stats>(entity).hp_},
+                        {"known_skills", std::move(known)},
+                        {"loadout", std::move(loadout)}});
+    }
+    return result;
+  }
+
   void append(Json event) {
     auto& events = recording["events"];
     event["seq"] = events.size();
-    event["uwu"] = encounter->visual_time().v;
+    if (recording.value("version", 1) == 1) {
+      event["uwu"] = encounter->visual_time().v;
+    } else {
+      event["encounter_index"] = encounter_index;
+      event["world_beat"] = game.world_clock().elapsed_beats();
+      event["uwu"] = static_cast<std::int64_t>(beats) * seerin::UWU_PER_BEAT.v;
+      event["encounter_uwu"] = encounter->visual_time().v;
+    }
     events.push_back(std::move(event));
+  }
+
+  std::int64_t current_uwu() const {
+    return recording.value("version", 1) == 1
+               ? encounter->visual_time().v
+               : static_cast<std::int64_t>(beats) * seerin::UWU_PER_BEAT.v;
   }
 
   void bind_events(entt::entity actor) {
@@ -363,12 +435,17 @@ struct Session::Impl {
                            });
     listeners.emplace_back(bus, std::in_place_type<fl::events::SkillCastStarted>,
                            [this](const auto& event) {
+                             if (event.skill.base == fl::skills::SkillId::Eviscerate)
+                               ++metrics.eviscerate_casts;
                              append({{"type", "cast_start"},
                                      {"actor", actor_id(event.caster)},
                                      {"skill", skill_id(event.skill)}});
                            });
     listeners.emplace_back(bus, std::in_place_type<fl::events::SkillHitLanded>,
                            [this](const auto& event) {
+                             const auto target = actor_id(event.target);
+                             if (target.starts_with("hero"))
+                               metrics.incoming_damage += event.damage;
                              append({{"type", "hit"},
                                      {"actor", actor_id(event.source)},
                                      {"target", actor_id(event.target)},
@@ -376,10 +453,127 @@ struct Session::Impl {
                                      {"damage", event.damage},
                                      {"hp_after", game.reg().get<Stats>(event.target).hp_}});
                            });
+    listeners.emplace_back(bus, std::in_place_type<fl::events::DireBleedApplied>,
+                           [this](const auto& event) {
+                             ++metrics.bleed_applications;
+                             active_bleeds[event.target] = current_uwu();
+                             append({{"type", "dire_bleed_applied"},
+                                     {"actor", actor_id(event.source)},
+                                     {"target", actor_id(event.target)},
+                                     {"damage_per_tick", event.damage_per_tick}});
+                           });
+    listeners.emplace_back(bus, std::in_place_type<fl::events::DireBleedTicked>,
+                           [this](const auto& event) {
+                             ++metrics.bleed_ticks;
+                             metrics.bleed_tick_damage += event.damage;
+                             if (actor_id(event.target).starts_with("hero"))
+                               metrics.incoming_damage += event.damage;
+                             if (event.killed) ++metrics.bleed_deaths;
+                             append({{"type", "dire_bleed_tick"},
+                                     {"actor", actor_id(event.source)},
+                                     {"target", actor_id(event.target)},
+                                     {"damage", event.damage},
+                                     {"hp_after", event.hp_after},
+                                     {"killed", event.killed}});
+                           });
+    listeners.emplace_back(
+        bus, std::in_place_type<fl::events::DireBleedCleared>, [this](const auto& event) {
+          ++metrics.bleed_clears;
+          if (const auto found = active_bleeds.find(event.target); found != active_bleeds.end()) {
+            metrics.longest_bleed_uwu =
+                std::max(metrics.longest_bleed_uwu, current_uwu() - found->second);
+            active_bleeds.erase(found);
+          }
+          append({{"type", "dire_bleed_cleared"}, {"target", actor_id(event.target)}});
+        });
     listeners.emplace_back(bus, std::in_place_type<fl::events::SkillCastFinished>,
                            [this](const auto& event) {
                              append({{"type", "cast_finish"}, {"actor", actor_id(event.caster)}});
                            });
+  }
+
+  Json encounter_result(std::string_view resolved) {
+    Json remaining_hp = Json::object();
+    int survivors = 0;
+    for (std::size_t index = 0; index < actors.size(); ++index) {
+      const auto hp = game.reg().get<Stats>(actors[index].entity).hp_;
+      remaining_hp[actors[index].id] = hp;
+      if (index < hero_count && hp > 0) ++survivors;
+    }
+    const auto segment_beats = beats - encounter_start_beat;
+    auto longest_bleed_uwu = metrics.longest_bleed_uwu;
+    for (const auto& [target, started] : active_bleeds) {
+      (void)target;
+      longest_bleed_uwu = std::max(longest_bleed_uwu, current_uwu() - started);
+    }
+    return {{"encounter_index", encounter_index},
+            {"outcome", resolved},
+            {"beats", segment_beats},
+            {"simulated_seconds",
+             static_cast<double>(segment_beats) / fl::primitives::WorldClock::kBeatsPerSecond},
+            {"remaining_hp", std::move(remaining_hp)},
+            {"survivors", survivors},
+            {"brace_applications", metrics.brace_applications},
+            {"brace_consumptions", metrics.brace_consumptions},
+            {"incoming_damage", metrics.incoming_damage},
+            {"eviscerate_casts", metrics.eviscerate_casts},
+            {"bleed_applications", metrics.bleed_applications},
+            {"bleed_ticks", metrics.bleed_ticks},
+            {"bleed_tick_damage", metrics.bleed_tick_damage},
+            {"bleed_deaths", metrics.bleed_deaths},
+            {"bleed_clears", metrics.bleed_clears},
+            {"bleed_active_at_end", active_bleeds.size()},
+            {"longest_bleed_uwu", longest_bleed_uwu},
+            {"longest_bleed_seconds",
+             static_cast<double>(longest_bleed_uwu) /
+                 static_cast<double>(seerin::UWU_PER_BEAT.v *
+                                     fl::primitives::WorldClock::kBeatsPerSecond)}};
+  }
+
+  void start_next_encounter() {
+    auto& party = party_ctx.party_data();
+    listeners.clear();
+    actors.resize(hero_count);
+    party.leave_combat();
+    party.revitalize_members();
+
+    if (!variant->next_skill)
+      throw std::runtime_error("progression regression has no next skill selection");
+    auto& member = game.reg().get<fl::ecs::components::PartyMember>(actors.front().entity);
+    std::vector<fl::skills::SkillKey> equipped;
+    for (const auto skill : member.closet().skill_slots)
+      if (skill) equipped.push_back(*skill);
+    for (const auto skill : equipped) member.closet().unequip_skill(skill);
+    if (!member.equip_known_skill(*variant->next_skill))
+      throw std::runtime_error("progression regression could not equip retained next skill");
+
+    ++encounter_index;
+    encounter_start_beat = beats;
+    metrics = {};
+    active_bleeds.clear();
+    const auto setup = scenario->encounters[encounter_index];
+    auto& built =
+        fl::primitives::EncounterBuilder{
+            party_ctx, fl::primitives::EncounterMode::HeroesJourney,
+            fl::primitives::EncounterBuilder::TowerFloor{std::string(setup.biome_id), setup.floor}}
+            .thump_it_out();
+    encounter = &built;
+    for (std::size_t index = 0; index < built.attackers().members().size(); ++index)
+      actors.push_back(
+          {"enemy" + std::to_string(index + 1), built.attackers().members()[index], {}});
+    for (auto& actor : actors) actor.prior_state = state(actor.entity);
+    for (const auto& actor : actors) bind_events(actor.entity);
+
+    const auto selection = skill_id(fl::skills::SkillKey{*variant->next_skill});
+    recording["external_inputs"].push_back({{"type", "skill_selection"},
+                                            {"encounter_index", encounter_index},
+                                            {"member", "hero1"},
+                                            {"skill", selection},
+                                            {"world_beat", game.world_clock().elapsed_beats()}});
+    append({{"type", "encounter_start"},
+            {"biome", setup.biome_id},
+            {"floor", setup.floor},
+            {"party_state", party_state()}});
   }
 
   void observe() {
@@ -388,6 +582,14 @@ struct Session::Impl {
     for (auto& actor : actors) {
       auto next = state(actor.entity);
       if (next != actor.prior_state) {
+        if (actor.id.starts_with("hero")) {
+          const auto had_brace = std::ranges::find(actor.prior_state["statuses"], "Brace") !=
+                                 actor.prior_state["statuses"].end();
+          const auto has_brace =
+              std::ranges::find(next["statuses"], "Brace") != next["statuses"].end();
+          if (!had_brace && has_brace) ++metrics.brace_applications;
+          if (had_brace && !has_brace) ++metrics.brace_consumptions;
+        }
         append({{"type", "state"},
                 {"actor", actor.id},
                 {"before", actor.prior_state},
@@ -413,17 +615,36 @@ struct Session::Impl {
       outcome = "beat_cap";
 
     if (!outcome.empty()) {
-      append({{"type", "end"}, {"outcome", outcome}});
-      Json remaining_hp = Json::object();
-      for (const auto& actor : actors)
-        remaining_hp[actor.id] = game.reg().get<Stats>(actor.entity).hp_;
-      recording["result"] = {
-          {"outcome", outcome},
-          {"beats", beats},
-          {"uwu", encounter->visual_time().v},
-          {"remaining_hp", remaining_hp},
-          {"simulated_seconds",
-           static_cast<double>(beats) / fl::primitives::WorldClock::kBeatsPerSecond}};
+      const auto resolved = outcome;
+      append({{"type", "end"}, {"outcome", resolved}});
+      const auto result = encounter_result(resolved);
+      if (recording.value("version", 1) == 2) {
+        recording["encounter_results"].push_back(result);
+        if (resolved == "hero_victory" && encounter_index + 1 < scenario->encounters.size()) {
+          outcome.clear();
+          start_next_encounter();
+          return;
+        }
+        recording["final_party_state"] = party_state();
+      }
+      if (recording.value("version", 1) == 1) {
+        Json remaining_hp = Json::object();
+        for (const auto& actor : actors)
+          remaining_hp[actor.id] = game.reg().get<Stats>(actor.entity).hp_;
+        recording["result"] = {
+            {"outcome", outcome},
+            {"beats", beats},
+            {"uwu", encounter->visual_time().v},
+            {"remaining_hp", std::move(remaining_hp)},
+            {"simulated_seconds",
+             static_cast<double>(beats) / fl::primitives::WorldClock::kBeatsPerSecond}};
+      } else {
+        recording["result"] = result;
+        recording["result"]["beats"] = beats;
+        recording["result"]["uwu"] = static_cast<std::int64_t>(beats) * seerin::UWU_PER_BEAT.v;
+        recording["result"]["simulated_seconds"] =
+            static_cast<double>(beats) / fl::primitives::WorldClock::kBeatsPerSecond;
+      }
     }
   }
 };
@@ -448,6 +669,8 @@ std::uint64_t Session::beats() const {
   return impl_->beats;
 }
 std::int64_t Session::uwu() const {
+  if (impl_->recording.value("version", 1) == 2)
+    return static_cast<std::int64_t>(impl_->beats) * seerin::UWU_PER_BEAT.v;
   return impl_->encounter->visual_time().v;
 }
 const nlohmann::json& Session::recording() const {
@@ -465,15 +688,32 @@ void Session::write(const std::string& path) const {
 }
 
 std::optional<std::string> Session::first_divergence(const nlohmann::json& expected) const {
+  if (expected.value("format", std::string{}) != "fairlanes-combat-recording" ||
+      expected.value("version", 0) != impl_->recording.value("version", 0)) {
+    return "recording format or version differs";
+  }
   if (!expected.contains("build") || !expected.at("build").is_object() ||
       expected.at("build").value("version", std::string{}) != fl::build_identity::version) {
     return "recording build version differs";
   }
-  for (const auto* key : {"fixture", "content_sha256", "gameplay_seed", "gameplay_sequence",
-                          "beat_cap", "starting_world_beat", "starting_uwu", "initial_state",
-                          "external_inputs", "fixture_parameters"}) {
+  for (const auto* key :
+       {"fixture", "content_sha256", "gameplay_seed", "gameplay_sequence", "beat_cap",
+        "starting_world_beat", "starting_uwu", "initial_state", "fixture_parameters"}) {
     if (!expected.contains(key) || expected.at(key) != impl_->recording.at(key)) {
       return std::string("recording metadata differs at ") + key;
+    }
+  }
+  if (!expected.contains("external_inputs") || !expected.at("external_inputs").is_array())
+    return "recording has no external input array";
+  const auto& expected_inputs = expected.at("external_inputs");
+  const auto& actual_inputs = impl_->recording.at("external_inputs");
+  if (actual_inputs.size() > expected_inputs.size() ||
+      !std::equal(actual_inputs.begin(), actual_inputs.end(), expected_inputs.begin()))
+    return "recording external inputs differ";
+  if (impl_->recording.value("version", 1) == 2) {
+    for (const auto* key : {"encounters", "initial_party_state"}) {
+      if (!expected.contains(key) || expected.at(key) != impl_->recording.at(key))
+        return std::string("recording metadata differs at ") + key;
     }
   }
   if (!expected.contains("events") || !expected.at("events").is_array()) {
@@ -499,6 +739,12 @@ std::optional<std::string> Session::first_divergence(const nlohmann::json& expec
       return "terminal result differs: expected " + expected.value("result", Json{}).dump() +
              ", got " + impl_->recording.at("result").dump();
     }
+    if (impl_->recording.value("version", 1) == 2 &&
+        (!expected.contains("encounter_results") ||
+         expected.at("encounter_results") != impl_->recording.at("encounter_results") ||
+         !expected.contains("final_party_state") ||
+         expected.at("final_party_state") != impl_->recording.at("final_party_state")))
+      return "progression result differs";
   }
   return std::nullopt;
 }
@@ -507,8 +753,9 @@ nlohmann::json read_recording(const std::string& path) {
   std::ifstream in(path);
   if (!in) throw std::runtime_error("cannot open recording: " + path);
   auto result = nlohmann::json::parse(in);
+  const auto version = result.value("version", 0);
   if (result.value("format", std::string{}) != "fairlanes-combat-recording" ||
-      result.value("version", 0) != 1) {
+      (version != 1 && version != 2)) {
     throw std::runtime_error("unsupported combat recording format or version");
   }
   return result;

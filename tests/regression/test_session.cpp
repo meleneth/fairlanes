@@ -64,32 +64,92 @@ TEST_CASE("Beat cap is recorded separately from a loss and divergence is located
   REQUIRE(divergence->find("event 0") != std::string::npos);
 }
 
-TEST_CASE("Ruby floor ten variants use the generated lineup and gear in combat",
+TEST_CASE("Ruby floor ten consolidates early physical combat for the opening party",
           "[regression][generated]") {
   const auto* scenario = fl::regression::generated_content::find("origin_woodland_floor10");
   REQUIRE(scenario != nullptr);
   REQUIRE(scenario->seeds.size() == 8);
-  fl::regression::Options arrival{"origin_woodland_floor10", 1, 2400, 0, "arrival"};
-  fl::regression::Options detour = arrival;
-  detour.variant = "detour";
-  fl::regression::Session first{arrival};
-  fl::regression::Session second{detour};
+  fl::regression::Options offense{"origin_woodland_floor10", 1, 2400, 0, "offensive"};
+  auto defense = offense;
+  defense.variant = "defensive";
+  fl::regression::Session first{offense};
+  fl::regression::Session second{defense};
   const auto& base = first.recording().at("initial_state");
-  const auto& upgraded = second.recording().at("initial_state");
-  REQUIRE(base.size() == 10);
-  REQUIRE(base.at(5).at("name") == "Honey Badger");
-  REQUIRE(base.at(5).at("stats").at("max_hp") == 10);
-  REQUIRE(base.at(5).at("stats").at("attack") == 2);
+  const auto& defensive = second.recording().at("initial_state");
+  REQUIRE(base.size() == 5);
+  REQUIRE(base.at(2).at("name") == "Antler Stag");
+  REQUIRE(base.at(3).at("name") == "Bark Smack");
+  REQUIRE(base.at(4).at("name") == "Bumpkin Hare");
   REQUIRE(base.at(0).at("stats").at("armor") == 1);
-  REQUIRE(upgraded.at(0).at("stats").at("armor") == 3);
-  REQUIRE(upgraded.at(0).at("stats").at("max_hp") == 25);
+  REQUIRE(base.at(0).at("gear") == nlohmann::json::array({"village_guard_hide"}));
+  REQUIRE(base.at(0).at("loadout") == nlohmann::json::array({"thump/1"}));
+  REQUIRE(defensive.at(0).at("loadout") == nlohmann::json::array({"brace/1"}));
   while (!first.finished()) first.advance_beat();
   while (!second.finished()) second.advance_beat();
   REQUIRE(first.outcome() == "hero_victory");
-  REQUIRE(second.outcome() == "hero_victory");
-  fl::regression::Session repeated{detour};
+  REQUIRE(second.outcome() == "enemy_victory");
+  REQUIRE(first.recording().at("result").at("beats") < second.recording().at("result").at("beats"));
+  REQUIRE(second.recording().at("result").at("brace_consumptions") > 0);
+  fl::regression::Session repeated{defense};
   while (!repeated.finished()) repeated.advance_beat();
   REQUIRE(repeated.recording().at("events") == second.recording().at("events"));
+}
+
+TEST_CASE("Brace learning persists into the next authored encounter and is selected normally",
+          "[regression][generated][brace][learning][progression]") {
+  fl::regression::Options learned{"origin_woodland_brace_progression", 1, 3200, 0, "learn_brace"};
+  auto control = learned;
+  control.variant = "no_brace";
+  fl::regression::Session progression{learned};
+  fl::regression::Session without_brace{control};
+  while (!progression.finished()) progression.advance_beat();
+  while (!without_brace.finished()) without_brace.advance_beat();
+
+  const auto& recording = progression.recording();
+  REQUIRE(recording.at("version") == 2);
+  REQUIRE(recording.at("encounters").size() == 2);
+  REQUIRE(recording.at("encounter_results").size() == 2);
+  REQUIRE(recording.at("encounter_results").at(0).at("outcome") == "hero_victory");
+  REQUIRE(recording.at("encounter_results").at(1).at("outcome") == "hero_victory");
+  REQUIRE(std::ranges::any_of(recording.at("events"), [](const auto& event) {
+    return event.value("type", "") == "skill_witnessed" && event.value("skill", "") == "brace/1";
+  }));
+  REQUIRE(recording.at("external_inputs").at(0).at("skill") == "brace/1");
+  REQUIRE(
+      std::ranges::find(recording.at("final_party_state").at(0).at("known_skills"), "brace/1") !=
+      recording.at("final_party_state").at(0).at("known_skills").end());
+  REQUIRE(recording.at("final_party_state").at(0).at("loadout") ==
+          nlohmann::json::array({"brace/1"}));
+  REQUIRE(recording.at("encounter_results").at(1).at("brace_applications") > 0);
+  REQUIRE(recording.at("encounter_results").at(1).at("brace_consumptions") > 0);
+  REQUIRE(without_brace.recording().at("encounter_results").at(1).at("brace_applications") == 0);
+  REQUIRE(without_brace.recording().at("external_inputs").at(0).at("skill") == "thump/1");
+  REQUIRE(recording.at("result").at("beats") > without_brace.recording().at("result").at("beats"));
+
+  fl::regression::Session repeated{learned};
+  while (!repeated.finished()) repeated.advance_beat();
+  REQUIRE(repeated.recording().at("events") == recording.at("events"));
+  REQUIRE(repeated.recording().at("encounter_results") == recording.at("encounter_results"));
+}
+
+TEST_CASE("Floor fifty records Honey Badger Dire Bleed without changing its danger",
+          "[regression][generated][dire-bleed]") {
+  fl::regression::Session baseline{{"origin_woodland_honey_badger", 1, 4000, 0, "offensive"}};
+  while (!baseline.finished()) baseline.advance_beat();
+  const auto& initial = baseline.recording().at("initial_state");
+  const auto& result = baseline.recording().at("result");
+  REQUIRE(initial.size() == 3);
+  REQUIRE(initial.at(2).at("name") == "Honey Badger");
+  REQUIRE(result.at("eviscerate_casts") == 5);
+  REQUIRE(result.at("bleed_applications") == 5);
+  REQUIRE(result.at("bleed_ticks") == 12);
+  REQUIRE(result.at("bleed_tick_damage") == 24);
+  REQUIRE(result.at("bleed_deaths") == 1);
+  REQUIRE(result.at("bleed_clears") == 4);
+  REQUIRE(result.at("bleed_active_at_end") == 1);
+  REQUIRE(result.at("longest_bleed_seconds") > 11.0);
+  REQUIRE(result.at("survivors") == 1);
+  REQUIRE(baseline.outcome() == "hero_victory");
 }
 
 TEST_CASE("Stag lesson requires equipped Observe and retains learned Brace",
