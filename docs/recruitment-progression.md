@@ -1,9 +1,15 @@
 # Origin recruitment progression
 
-The Ruby content DSL is authoritative for recruitment identities and triggers.
-It declares twenty biome milestones plus five party-five opportunities; generated
-`fl/generated/recruitment_content.hpp` is the runtime table and the generated
-[recruitment review](tour/generated/recruitment-progression.md) lists every row.
+This document describes the current implementation. Canonical recruitment
+intent lives in
+[parties and recruitment](../design/parties-and-recruitment.md). Where they
+differ, the canonical design is authoritative and the difference is an
+implementation gap rather than a reason to rewrite design.
+
+The Ruby content DSL currently declares twenty biome milestones plus five
+party-five opportunities. Generated `fl/generated/recruitment_content.hpp` is
+the runtime table, and the generated build artifact
+`generated/recruitment-progression.md` lists every row.
 
 | Committed tower clear | Destination | Opportunities across Origin |
 | --- | --- | ---: |
@@ -46,7 +52,9 @@ identities outside the twenty biome milestones. They use the same account and
 party mutation path and occupy two of party 1's five slots. Consequently only
 three of its floor-5 opportunities can be claimed. The other two stay Available
 on the recruitment board: they are neither discarded nor converted into extra
-members.
+members. This is current behavior, not an accepted resolution: canonical design
+leaves the interaction between the two story recruits and five floor-5
+opportunities unresolved.
 
 Ordinary generated recruits use the existing deterministic hero-name sequence
 for their destination party and receive the same opening Thump setup as the two

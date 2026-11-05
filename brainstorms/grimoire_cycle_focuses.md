@@ -1,5 +1,10 @@
 # Grimoire Cycle Focuses
 
+> **Brainstorm — non-canonical.** The disciplines, armor affinities, traits,
+> focus grid, and implementation prompt below are exploratory proposals. They do
+> not override the classless character model in
+> [`design/characters.md`](../design/characters.md).
+
 ## Purpose
 
 This note defines the first focused progression coordinate system for grimoires.

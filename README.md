@@ -120,6 +120,10 @@ Useful source entry points:
 
 ## Design Direction
 
+Accepted gameplay intent lives in the canonical
+[game-design authority](design/README.md). Implementation and generated reports
+describe current behavior; exploratory proposals remain under `brainstorms/`.
+
 The gameplay loop is:
 
 ```text
@@ -128,7 +132,9 @@ go to an area -> fight -> get loot/xp -> return to town -> recover -> maintain g
 
 Skill learning is still one of the central images: a party member sees a creature use a skill, studies it through Observe, and may carry that skill forward if the fight is won.
 
-Longer-term lore and item ideas, including Cycles, filigree armor, and Darrin-mark, live in the docs and brainstorm files until the code promotes them into runtime systems.
+Longer-term lore and item ideas, including filigree armor and Darrin-mark, remain
+exploratory until explicitly accepted in `design/`. Implementation alone does
+not promote an idea into canonical design.
 
 The evolving [account raid design](docs/raid-design.md) records shared five-party
 battles, celestial timing, exclusive rewards, and progression gates. The

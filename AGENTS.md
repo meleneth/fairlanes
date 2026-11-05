@@ -41,6 +41,26 @@ experiment. The current architecture is intentionally built around:
 The design priority is clarity of structure first, then gameplay complexity on
 top.
 
+## Canonical game design
+
+Before implementing gameplay, read the relevant documents under
+[`design/`](design/README.md). That directory is authoritative for accepted
+design intent. Treat `brainstorms/` as exploratory and generated documents as
+implementation/declaration reports, not design authority.
+
+Keep intended behavior distinct from implemented behavior. Report
+contradictions instead of silently resolving them, and never promote a
+speculative idea into a canonical rule without explicit approval. In
+particular, do not introduce character classes, innate role specializations, or
+biome-derived hero abilities; see
+[`design/characters.md`](design/characters.md). Preserve the event-operated
+progression architecture described in
+[`design/parties-and-recruitment.md`](design/parties-and-recruitment.md).
+
+Use `scripts/build` and `scripts/regress` for token-efficient validation. A
+canonical design change and its gameplay implementation should be reviewed as
+separate changes when appropriate.
+
 ## Build And Test
 
 Typical local build and test:
