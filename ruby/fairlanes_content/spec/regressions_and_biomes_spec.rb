@@ -22,6 +22,9 @@ RSpec.describe "Ruby regression and biome plans" do
     expect(progression.encounters.map { |entry| entry.fetch(:floor) }).to eq([7, 8])
     expect(progression.recording_version).to eq(2)
     expect(progression.variants.map { |variant| variant[:next_skill] }).to eq(%i[brace thump])
+    expect(progression.variants.first.fetch(:assertions)).to include(:brace_learned,
+                                                                     :brace_retained,
+                                                                     :brace_mitigated)
     honey = declarations.monsters.find { |entry| entry.id == :honey_badger }
     expect(honey.pool).to eq(:authored_only)
     woodland = declarations.biomes.find { |entry| entry.id == :origin_woodland_tower }
@@ -48,10 +51,12 @@ RSpec.describe "Ruby regression and biome plans" do
     scenario = declarations.regressions.first
     scenario.variants.first[:equipped_item] = :unknown_cape
     scenario.variants.first[:next_skill] = :unknown_skill
+    scenario.variants.first[:assertions] = [:unknown_assertion]
     scenario.variants.last[:id] = scenario.variants.first[:id]
     errors = FairlanesContent::Validator.new(declarations).validate
     expect(errors).to include("regression origin_woodland_floor10 references unknown gear unknown_cape",
                               "regression origin_woodland_floor10 references unknown next skill unknown_skill",
+                              "regression origin_woodland_floor10 has invalid semantic assertions",
                               "regression origin_woodland_floor10 has duplicate variants")
   end
 end

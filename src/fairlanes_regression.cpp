@@ -16,12 +16,16 @@ int main(int argc, char** argv) {
   fl::regression::Options options;
   std::string output_path;
   std::string output_dir;
+  std::string summary_path;
+  std::string summary_dir;
   bool assert_expected = false;
   bool all_seeds = false;
   app.add_option("--fixture", options.fixture, "Fixture ID")->required();
   auto* seed_option = app.add_option("--seed", options.seed, "Gameplay RNG seed");
   app.add_option("--record", output_path, "Recording JSON output path");
   app.add_option("--record-dir", output_dir, "Batch recording directory");
+  app.add_option("--summary", summary_path, "Compact run summary JSON output path");
+  app.add_option("--summary-dir", summary_dir, "Batch compact summary directory");
   app.add_option("--variant", options.variant, "Generated regression variant ID");
   app.add_flag("--all-seeds", all_seeds, "Run the declaration's full seed set");
   auto* beat_cap_option = app.add_option("--beat-cap", options.beat_cap, "Maximum simulated beats");
@@ -52,6 +56,7 @@ int main(int argc, char** argv) {
           fl::regression::generated_content::find_variant(*scenario, options.variant);
       if (!variant) throw std::invalid_argument("unknown regression variant");
       std::filesystem::create_directories(output_dir);
+      if (!summary_dir.empty()) std::filesystem::create_directories(summary_dir);
       int wins = 0;
       int caps = 0;
       for (const auto seed : scenario->seeds) {
@@ -63,6 +68,13 @@ int main(int argc, char** argv) {
              (options.fixture + "." + options.variant + ".seed" + std::to_string(seed) + ".json"))
                 .string();
         session.write(path);
+        if (!summary_dir.empty()) {
+          const auto summary_output = (std::filesystem::path(summary_dir) /
+                                       (options.fixture + "." + options.variant + ".seed" +
+                                        std::to_string(seed) + ".summary.json"))
+                                          .string();
+          session.write_summary(summary_output);
+        }
         wins += session.outcome() == "hero_victory" ? 1 : 0;
         caps += session.outcome() == "beat_cap" ? 1 : 0;
         std::cout << "seed=" << seed << " outcome=" << session.outcome()
@@ -85,6 +97,7 @@ int main(int argc, char** argv) {
     fl::regression::Session session{options};
     while (!session.finished()) session.advance_beat();
     session.write(output_path);
+    if (!summary_path.empty()) session.write_summary(summary_path);
     std::cout << "fixture=" << options.fixture << " seed=" << options.seed
               << " outcome=" << session.outcome() << " beats=" << session.beats()
               << " uwu=" << session.uwu()

@@ -12,7 +12,8 @@ regression :origin_woodland_floor10,
   variants: [
     {id: :offensive, equipped_item: :village_guard_hide, expected_wins: 8..8},
     {id: :defensive, equipped_item: :village_guard_hide,
-     skill_overrides: {0 => :brace}, expected_wins: 2..2}
+     skill_overrides: {0 => :brace}, expected_wins: 2..2,
+     assertions: %i[brace_applied brace_consumed brace_mitigated]}
   ]
 
 # This sequence keeps one production party alive across both authored floors.
@@ -32,7 +33,9 @@ regression :origin_woodland_brace_progression,
   beat_cap: 3200,
   recording_version: 2,
   variants: [
-    {id: :learn_brace, observe_members: [0], next_skill: :brace, expected_wins: 8..8},
+    {id: :learn_brace, observe_members: [0], next_skill: :brace, expected_wins: 8..8,
+     assertions: %i[brace_learned brace_retained brace_equipped brace_applied
+                    brace_consumed brace_mitigated]},
     {id: :no_brace, next_skill: :thump, expected_wins: 8..8}
   ]
 
@@ -49,8 +52,10 @@ regression :origin_woodland_honey_badger,
   beat_cap: 4000,
   recording_version: 2,
   variants: [
-    {id: :offensive, expected_wins: 6..6},
-    {id: :defensive, skill_overrides: {0 => :brace}, expected_wins: 0..0}
+    {id: :offensive, expected_wins: 6..6,
+     assertions: %i[eviscerate_cast bleed_applied bleed_ticked bleed_death]},
+    {id: :defensive, skill_overrides: {0 => :brace}, expected_wins: 0..0,
+     assertions: %i[eviscerate_cast bleed_applied bleed_ticked bleed_death]}
   ]
 
 regression :origin_woodland_stag_lesson,
@@ -64,7 +69,8 @@ regression :origin_woodland_stag_lesson,
   seeds: [1],
   beat_cap: 1200,
   variants: [
-    {id: :observe_equipped, observe_members: [0], expected_wins: 1..1},
+    {id: :observe_equipped, observe_members: [0], expected_wins: 1..1,
+     assertions: %i[brace_learned brace_equipped brace_applied brace_consumed brace_mitigated]},
     {id: :observe_unequipped, expected_wins: 1..1}
   ]
 
@@ -79,7 +85,8 @@ regression :origin_woodland_brace_practice,
   seeds: [1],
   beat_cap: 1600,
   variants: [
-    {id: :braced, skill_overrides: {0 => :brace}, expected_wins: 1..1},
+    {id: :braced, skill_overrides: {0 => :brace}, expected_wins: 1..1,
+     assertions: %i[brace_applied brace_consumed brace_mitigated]},
     {id: :unbraced, expected_wins: 1..1}
   ]
 
@@ -94,5 +101,6 @@ regression :origin_plains_cover_lesson,
   seeds: [1],
   beat_cap: 1600,
   variants: [
-    {id: :cover, expected_wins: 0..0}
+    {id: :cover, expected_wins: 0..0,
+     assertions: %i[cover_intercepted cover_released]}
   ]

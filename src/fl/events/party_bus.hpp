@@ -120,6 +120,11 @@ struct DireBleedTicked {
 struct DireBleedCleared {
   entt::entity target{entt::null};
 };
+struct BraceMitigated {
+  entt::entity source{entt::null};
+  entt::entity target{entt::null};
+  int damage{0};
+};
 struct SkillHitLanded {
   entt::entity source{entt::null};
   entt::entity target{entt::null};
@@ -154,8 +159,9 @@ struct PlayerDied {
 
 using CombatantEvent =
     std::variant<PoisonApplied, FreezeApplied, FreezeStarted, FreezeEnded, DireBleedApplied,
-                 DireBleedTicked, DireBleedCleared, SkillHitLanded, SkillCastStarted,
-                 SkillActionSelected, SkillCastFinished, FleeAttempted, CombatantFled, PlayerDied>;
+                 DireBleedTicked, DireBleedCleared, BraceMitigated, SkillHitLanded,
+                 SkillCastStarted, SkillActionSelected, SkillCastFinished, FleeAttempted,
+                 CombatantFled, PlayerDied>;
 
 using CombatantBus = seerin::VariantBus<CombatantEvent>;
 

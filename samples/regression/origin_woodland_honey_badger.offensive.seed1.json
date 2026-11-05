@@ -1,11 +1,11 @@
 {
   "beat_cap": 4000,
   "build": {
-    "revision": "ca755b7fdb3a4661c3fbe582cea5bcee1caa4b95",
+    "revision": "38caa98954e589ba471831834b82656ea6073b0e",
     "source_dirty": true,
     "version": "0.1.0"
   },
-  "content_sha256": "a35f79991f5f2a5620930ccf7517b03a403747101acf6cbe4ca1d80b9059888e",
+  "content_sha256": "406dd43e5bc5663d4fdaed2f5161ea75c1cb09e3573ad4f2b76f80f0dc9c99cd",
   "encounter_results": [
     {
       "beats": 773,
@@ -17,6 +17,8 @@
       "bleed_ticks": 12,
       "brace_applications": 0,
       "brace_consumptions": 0,
+      "brace_mitigated_damage": 0,
+      "brace_mitigated_hits": 0,
       "encounter_index": 0,
       "eviscerate_casts": 5,
       "incoming_damage": 24,
@@ -1655,6 +1657,8 @@
     "bleed_ticks": 12,
     "brace_applications": 0,
     "brace_consumptions": 0,
+    "brace_mitigated_damage": 0,
+    "brace_mitigated_hits": 0,
     "encounter_index": 0,
     "eviscerate_casts": 5,
     "incoming_damage": 24,

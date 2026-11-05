@@ -114,6 +114,8 @@ struct Session::Impl {
   struct Metrics {
     int brace_applications{0};
     int brace_consumptions{0};
+    int brace_mitigated_hits{0};
+    int brace_mitigated_damage{0};
     int incoming_damage{0};
     int eviscerate_casts{0};
     int bleed_applications{0};
@@ -125,6 +127,10 @@ struct Session::Impl {
   } metrics;
   std::unordered_map<entt::entity, std::int64_t> active_bleeds;
   Json recording;
+  Json compact_summary;
+  Json initial_party_snapshot;
+  Json encounter_party_states = Json::array();
+  Json compact_encounter_results = Json::array();
   std::uint64_t beats{0};
   std::string outcome;
 
@@ -226,6 +232,8 @@ struct Session::Impl {
         {"result", nullptr}};
 
     for (const auto& actor : actors) bind_events(actor.entity);
+    initial_party_snapshot = party_state();
+    encounter_party_states.push_back(initial_party_snapshot);
     game.innervate_event_system(false);
   }
 
@@ -361,14 +369,15 @@ struct Session::Impl {
       recording["initial_party_state"] = party_state();
     }
     for (const auto& actor : actors) bind_events(actor.entity);
-    if (extended_recording)
-      party_listeners.emplace_back(party.party_bus(),
-                                   std::in_place_type<fl::events::SkillWitnessed>,
-                                   [this](const auto& event) {
+    party_listeners.emplace_back(party.party_bus(), std::in_place_type<fl::events::SkillWitnessed>,
+                                 [this](const auto& event) {
+                                   if (extended_recording)
                                      append({{"type", "skill_witnessed"},
                                              {"user", actor_id(event.user)},
                                              {"skill", skill_id(event.skill)}});
-                                   });
+                                 });
+    initial_party_snapshot = party_state();
+    encounter_party_states.push_back(initial_party_snapshot);
     game.innervate_event_system(false);
   }
 
@@ -486,6 +495,19 @@ struct Session::Impl {
           }
           append({{"type", "dire_bleed_cleared"}, {"target", actor_id(event.target)}});
         });
+    listeners.emplace_back(bus, std::in_place_type<fl::events::BraceMitigated>,
+                           [this](const auto& event) {
+                             const auto target = actor_id(event.target);
+                             if (target.starts_with("hero")) {
+                               ++metrics.brace_mitigated_hits;
+                               metrics.brace_mitigated_damage += event.damage;
+                             }
+                             if (extended_recording && target.starts_with("hero"))
+                               append({{"type", "brace_mitigated"},
+                                       {"actor", actor_id(event.source)},
+                                       {"target", actor_id(event.target)},
+                                       {"damage", event.damage}});
+                           });
     listeners.emplace_back(bus, std::in_place_type<fl::events::SkillCastFinished>,
                            [this](const auto& event) {
                              append({{"type", "cast_finish"}, {"actor", actor_id(event.caster)}});
@@ -515,6 +537,8 @@ struct Session::Impl {
             {"survivors", survivors},
             {"brace_applications", metrics.brace_applications},
             {"brace_consumptions", metrics.brace_consumptions},
+            {"brace_mitigated_hits", metrics.brace_mitigated_hits},
+            {"brace_mitigated_damage", metrics.brace_mitigated_damage},
             {"incoming_damage", metrics.incoming_damage},
             {"eviscerate_casts", metrics.eviscerate_casts},
             {"bleed_applications", metrics.bleed_applications},
@@ -574,6 +598,40 @@ struct Session::Impl {
             {"biome", setup.biome_id},
             {"floor", setup.floor},
             {"party_state", party_state()}});
+    encounter_party_states.push_back(party_state());
+  }
+
+  void finish_summary(const Json& final_result) {
+    int remaining_party_hp = 0;
+    int survivors = 0;
+    for (std::size_t index = 0; index < hero_count; ++index) {
+      const auto hp = game.reg().get<Stats>(actors[index].entity).hp_;
+      remaining_party_hp += hp;
+      if (hp > 0) ++survivors;
+    }
+    Json expectation = nullptr;
+    if (variant)
+      expectation = {{"asserted", variant->asserted},
+                     {"min_wins", variant->min_wins},
+                     {"max_wins", variant->max_wins}};
+    compact_summary = {{"schema", "fairlanes-regression-run-summary"},
+                       {"version", 1},
+                       {"fixture", options.fixture},
+                       {"variant", options.variant.empty() ? Json(nullptr) : Json(options.variant)},
+                       {"seed", options.seed},
+                       {"outcome", outcome},
+                       {"beat_cap_reached", outcome == "beat_cap"},
+                       {"beats", beats},
+                       {"simulated_seconds",
+                        static_cast<double>(beats) / fl::primitives::WorldClock::kBeatsPerSecond},
+                       {"remaining_party_hp", remaining_party_hp},
+                       {"survivors", survivors},
+                       {"expectation", std::move(expectation)},
+                       {"initial_party_state", initial_party_snapshot},
+                       {"party_state_before_encounters", encounter_party_states},
+                       {"final_party_state", party_state()},
+                       {"encounters", compact_encounter_results},
+                       {"final_encounter", final_result}};
   }
 
   void observe() {
@@ -618,6 +676,7 @@ struct Session::Impl {
       const auto resolved = outcome;
       append({{"type", "end"}, {"outcome", resolved}});
       const auto result = encounter_result(resolved);
+      compact_encounter_results.push_back(result);
       if (recording.value("version", 1) == 2) {
         recording["encounter_results"].push_back(result);
         if (resolved == "hero_victory" && encounter_index + 1 < scenario->encounters.size()) {
@@ -645,6 +704,7 @@ struct Session::Impl {
         recording["result"]["simulated_seconds"] =
             static_cast<double>(beats) / fl::primitives::WorldClock::kBeatsPerSecond;
       }
+      finish_summary(result);
     }
   }
 };
@@ -676,6 +736,9 @@ std::int64_t Session::uwu() const {
 const nlohmann::json& Session::recording() const {
   return impl_->recording;
 }
+const nlohmann::json& Session::summary() const {
+  return impl_->compact_summary;
+}
 fl::GrandCentral& Session::game() {
   return impl_->game;
 }
@@ -685,6 +748,13 @@ void Session::write(const std::string& path) const {
   if (!out) throw std::runtime_error("cannot open recording for writing: " + path);
   out << impl_->recording.dump(2) << '\n';
   if (!out) throw std::runtime_error("cannot write recording: " + path);
+}
+
+void Session::write_summary(const std::string& path) const {
+  std::ofstream out(path);
+  if (!out) throw std::runtime_error("cannot open summary for writing: " + path);
+  out << impl_->compact_summary.dump(2) << '\n';
+  if (!out) throw std::runtime_error("cannot write summary: " + path);
 }
 
 std::optional<std::string> Session::first_divergence(const nlohmann::json& expected) const {

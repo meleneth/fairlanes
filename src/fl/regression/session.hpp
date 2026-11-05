@@ -43,8 +43,10 @@ public:
   [[nodiscard]] std::uint64_t beats() const;
   [[nodiscard]] std::int64_t uwu() const;
   [[nodiscard]] const nlohmann::json& recording() const;
+  [[nodiscard]] const nlohmann::json& summary() const;
   [[nodiscard]] fl::GrandCentral& game();
   void write(const std::string& path) const;
+  void write_summary(const std::string& path) const;
   [[nodiscard]] std::optional<std::string> first_divergence(const nlohmann::json& expected) const;
 
 private:

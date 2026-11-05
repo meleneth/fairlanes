@@ -1,0 +1,130 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "json"
+require "optparse"
+require_relative "regression_harness"
+
+ROOT = File.expand_path("..", __dir__)
+
+def number(value)
+  value.nil? ? "n/a" : format("%.2f", value)
+end
+
+def print_experiment(report, seed_breakdown: false)
+  puts "#{report.fetch('fixture')}"
+  report.fetch("variants").each do |variant|
+    pass = variant.dig("correctness", "all_declared_assertions_passed")
+    puts "  #{variant.fetch('variant')}: #{pass.nil? ? 'UNASSERTED' : pass ? 'PASS' : 'FAIL'}"
+    puts "    seeds=#{variant.fetch('seeds')} wins=#{variant.fetch('victories')} losses=#{variant.fetch('losses')} caps=#{variant.fetch('beat_caps')}"
+    duration = variant.fetch("duration_seconds")
+    hp = variant.fetch("remaining_party_hp")
+    survivors = variant.fetch("survivors")
+    puts "    duration=#{number(duration['mean'])}s (#{number(duration['min'])}..#{number(duration['max'])})"
+    puts "    party_hp=#{number(hp['mean'])} (#{hp['min']}..#{hp['max']}) survivors=#{number(survivors['mean'])} (#{survivors['min']}..#{survivors['max']})"
+    if seed_breakdown
+      variant.fetch("seed_results").each do |seed|
+        puts "    seed=#{seed['seed']} outcome=#{seed['outcome']} duration=#{number(seed['simulated_seconds'])}s hp=#{seed['remaining_party_hp']} survivors=#{seed['survivors']}"
+      end
+    end
+    variant.dig("correctness", "semantic_assertions").each do |assertion|
+      puts "    #{assertion['passed'] ? 'PASS' : 'FAIL'}: #{assertion['id']} (observed=#{assertion['observed']})"
+    end
+    observe = variant.dig("mechanics", "observe")
+    brace = variant.dig("mechanics", "brace")
+    bleed = variant.dig("mechanics", "bleed")
+    cover = variant.dig("mechanics", "cover")
+    if observe["successful_observations"].positive? || !observe["skills_learned"].empty?
+      puts "    observe: successful=#{observe['successful_observations']} learned=#{observe['skills_learned']} retained=#{observe['skills_retained']} equipped=#{observe['final_equipped_skills']}"
+    end
+    puts "    brace: applied=#{brace['applications']} consumed=#{brace['consumptions']} mitigated_hits=#{brace['qualifying_hits_mitigated']} prevented=#{brace['damage_prevented']}" if brace.values.any?(&:positive?)
+    puts "    bleed: casts=#{bleed['eviscerate_casts']} applied=#{bleed['applications']} ticks=#{bleed['ticks']} damage=#{bleed['damage']} deaths=#{bleed['deaths']}" if bleed.values.any?(&:positive?)
+    if cover["interceptions"].positive? || cover["release_events"].positive?
+      puts "    cover: interceptions=#{cover['interceptions']} release=#{cover['release_skill'] || 'n/a'} condition=#{cover['release_condition'] || 'n/a'}"
+    end
+  end
+  report.fetch("comparisons").each do |comparison|
+    delta = comparison.fetch("delta")
+    puts "  OBSERVATION #{comparison['candidate']} - #{comparison['baseline']}: wins=#{delta['victories'] >= 0 ? '+' : ''}#{delta['victories']}, duration=#{number(delta['mean_duration_seconds'])}s, party_hp=#{number(delta['mean_remaining_party_hp'])}, survivors=#{number(delta['mean_survivors'])}"
+  end
+  puts "  artifacts: #{report.fetch('artifacts')}"
+end
+
+def print_timeline(report)
+  puts "#{report['fixture']} seed=#{report['seed']} outcome=#{report['outcome']}"
+  report.fetch("events").each do |event|
+    detail = %w[actor target skill damage hp_after outcome].filter_map do |key|
+      "#{key}=#{event[key]}" if event.key?(key)
+    end.join(" ")
+    puts format("  #%s t=%s %-22s %s", event["seq"], event["uwu"], event["type"], detail)
+  end
+  puts "  ... timeline truncated; use --limit to expand" if report["truncated"]
+  puts "  recording: #{report['recording']}"
+end
+
+command = ARGV.shift || "help"
+options = {json: false, build: true, variants: [], limit: 60, seeds: false, replay: false}
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: scripts/regress COMMAND [FIXTURE|RECORDING] [options]"
+  opts.on("--json", "Emit compact versioned JSON") { options[:json] = true }
+  opts.on("--no-build", "Use the existing build and manifest") { options[:build] = false }
+  opts.on("--variant ID", "Run only this variant (repeatable)") { |value| options[:variants] << value }
+  opts.on("--encounter N", Integer, "Inspect one encounter index") { |value| options[:encounter] = value }
+  opts.on("--skill ID", "Inspect one skill ID, such as brace/1") { |value| options[:skill] = value }
+  opts.on("--mechanic NAME", "Inspect brace, bleed, or cover events") { |value| options[:mechanic] = value }
+  opts.on("--limit N", Integer, "Maximum timeline events (default 60)") { |value| options[:limit] = value }
+  opts.on("--seeds", "Include the seed-by-seed result table") { options[:seeds] = true }
+  opts.on("--replay", "Verify the inspected recording through production replay") { options[:replay] = true }
+end
+
+begin
+  parser.parse!(ARGV)
+  harness = FairlanesRegression::Harness.new(root: ROOT)
+  case command
+  when "summary"
+    harness.build if options[:build]
+    data = harness.catalog.regressions.map do |fixture|
+      {"fixture" => fixture["id"], "seeds" => fixture["seeds"].length,
+       "variants" => fixture["variants"].map { |variant| variant["id"] }}
+    end
+    if options[:json]
+      puts JSON.pretty_generate({"schema" => "fairlanes-regression-catalog", "version" => 1,
+                                 "fixtures" => data})
+    else
+      data.each { |entry| puts "#{entry['fixture']}: #{entry['variants'].join(', ')} (#{entry['seeds']} seeds)" }
+    end
+  when "run", "compare"
+    fixture = ARGV.shift || raise(FairlanesRegression::Error, "#{command} needs a fixture")
+    raise FairlanesRegression::Error, "unexpected arguments: #{ARGV.join(' ')}" unless ARGV.empty?
+    report = harness.experiment(fixture, requested_variants: options[:variants],
+                                build_first: options[:build])
+    if options[:json]
+      puts JSON.pretty_generate(report)
+    else
+      print_experiment(report, seed_breakdown: options[:seeds])
+    end
+    exit 2 unless report.fetch("success")
+  when "inspect"
+    path = ARGV.shift || raise(FairlanesRegression::Error, "inspect needs a recording path")
+    raise FairlanesRegression::Error, "unexpected arguments: #{ARGV.join(' ')}" unless ARGV.empty?
+    replay = harness.verify_recording(path) if options[:replay]
+    report = harness.inspect_recording(path, encounter: options[:encounter], skill: options[:skill],
+                                       mechanic: options[:mechanic], limit: options[:limit])
+    report["replay"] = replay if replay
+    puts(options[:json] ? JSON.pretty_generate(report) : print_timeline(report))
+  when "verify"
+    passed = harness.verify
+    puts(options[:json] ? JSON.pretty_generate({"schema" => "fairlanes-regression-verification",
+                                                "version" => 1, "passed" => passed}) :
+                           "PASS: #{passed.join(', ')}\nlogs: #{harness.artifact_root}/logs")
+  else
+    puts parser
+    puts "Commands: summary, run FIXTURE, compare FIXTURE, inspect RECORDING, verify"
+  end
+rescue FairlanesRegression::Error => e
+  warn e.message
+  exit e.status
+rescue OptionParser::ParseError => e
+  warn e.message
+  exit 1
+end

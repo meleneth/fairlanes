@@ -1,4 +1,47 @@
-# Combat regression smoke fixture
+# Combat regression harness
+
+Use `scripts/regress` as the normal entry point. It builds quietly, drives the
+existing production regression executable, stores detailed output under
+`build-linux-debug/regression-artifacts`, and prints an aggregate report instead
+of compiler commands or combat events.
+
+```sh
+scripts/regress summary
+scripts/regress compare origin_woodland_brace_progression
+scripts/regress compare origin_woodland_honey_badger --json
+scripts/regress inspect build-linux-debug/regression-artifacts/origin_woodland_brace_progression/learn_brace/recordings/origin_woodland_brace_progression.learn_brace.seed1.json --mechanic brace
+scripts/regress verify
+```
+
+`run` and `compare` accept `--variant ID`, `--no-build`, and `--seeds`. Both run
+all declared seeds and variants by default; `compare` is the conventional name
+when interpreting paired variants. Recording and summary directories are made
+automatically. Normal output gives outcomes, beat caps, simulated duration,
+remaining HP, survivors, declared correctness checks, focused mechanic counts,
+and paired deltas. Balance differences are labelled `OBSERVATION` and never
+become failures unless the Ruby declaration explicitly asserts them.
+
+For investigation, start with the concise comparison, identify the unexpected
+variant or seed, and then use `inspect` with `--encounter`, `--skill`, or
+`--mechanic brace|bleed|cover`. Add `--replay` to locate the first deterministic
+replay divergence. Open the full recording only if that focused timeline is not
+enough. Do not pipe whole recordings or build logs into an automated agent's
+context.
+
+`--json` emits `fairlanes-regression-experiment-summary` version 1. It contains
+aggregates, compact per-seed outcomes, semantic assertion results, mechanic
+metrics, and comparison deltas—not the event stream. Measurements unavailable
+from authoritative data are `null`. Full recordings remain beside the compact
+per-run `fairlanes-regression-run-summary` version 1 files. These summary schemas
+are independent of combat recording versions.
+
+Successful build and test output is captured rather than printed. A failure
+reports the command, original exit status, focused compiler/assertion/replay
+diagnostics, and the complete log path. `scripts/regress verify` checks the
+regression tests, Ruby specs, generated content consistency, and every pinned
+recording.
+
+## Low-level runner and recording format
 
 Build the client and regression runner:
 
@@ -6,7 +49,8 @@ Build the client and regression runner:
 cmake --build build-linux-debug -j 4
 ```
 
-Run the one authored fixture and require its expected `hero_victory`:
+The underlying executable remains available for runner development and pinned
+recording maintenance:
 
 ```sh
 build-linux-debug/fairlanes_regression --fixture woodland_mouse_duel --seed 42 \
@@ -64,7 +108,9 @@ members, replace a member's one configured combat skill, select a retained skill
 between declared encounters, and omit gear. This
 keeps paired variants identical except for the mechanic under test. Add
 `--assert-expected` to require the declared win-count range and reject any beat
-cap.
+cap. Ruby variants may also declare focused semantic assertions. The harness
+evaluates only those declarations; an unasserted balance disadvantage does not
+fail correctness.
 
 The physical progression fixtures are:
 
@@ -84,14 +130,8 @@ The Cover fixture's declared result is an enemy victory; its purpose is the
 causal interception sequence, while the production story-route test proves the
 normal party can clear Plains 1–3.
 
-```sh
-build-linux-debug/fairlanes_regression --fixture origin_woodland_stag_lesson --variant observe_equipped --all-seeds --record-dir /tmp/fairlanes-stag --assert-expected
-build-linux-debug/fairlanes_regression --fixture origin_woodland_brace_practice --variant braced --all-seeds --record-dir /tmp/fairlanes-brace --assert-expected
-build-linux-debug/fairlanes_regression --fixture origin_woodland_brace_progression --variant learn_brace --all-seeds --record-dir /tmp/fairlanes-brace-progression --assert-expected
-build-linux-debug/fairlanes_regression --fixture origin_plains_cover_lesson --variant cover --all-seeds --record-dir /tmp/fairlanes-cover --assert-expected
-build-linux-debug/fairlanes_regression --fixture origin_woodland_floor10 --variant offensive --all-seeds --record-dir /tmp/fairlanes-floor10 --assert-expected
-build-linux-debug/fairlanes_regression --fixture origin_woodland_honey_badger --variant offensive --all-seeds --record-dir /tmp/fairlanes-badger --assert-expected
-```
+Use `scripts/regress compare FIXTURE` for these experiments. The lower-level
+equivalent still supports `--all-seeds`, `--record-dir`, and `--summary-dir`.
 
 Readable pinned recordings are replayed through the client path with:
 

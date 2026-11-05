@@ -32,7 +32,15 @@ nlohmann::json completed_recording(int overdrive, bool render_view = false) {
 } // namespace
 
 TEST_CASE("Seeded regression fights repeat their ordered events", "[regression][determinism]") {
-  const auto first = completed_recording(1);
+  fl::regression::Session compact{{"woodland_mouse_duel", 42, 1200}};
+  while (!compact.finished()) compact.advance_beat();
+  REQUIRE(compact.summary().at("schema") == "fairlanes-regression-run-summary");
+  REQUIRE(compact.summary().at("version") == 1);
+  REQUIRE(compact.summary().at("seed") == 42);
+  REQUIRE(compact.summary().at("outcome") == "hero_victory");
+  REQUIRE(compact.recording().at("version") == 1);
+
+  const auto first = compact.recording();
   const auto second = completed_recording(1);
   REQUIRE(first.at("events") == second.at("events"));
   REQUIRE(first.at("result") == second.at("result"));
@@ -122,9 +130,16 @@ TEST_CASE("Brace learning persists into the next authored encounter and is selec
           nlohmann::json::array({"brace/1"}));
   REQUIRE(recording.at("encounter_results").at(1).at("brace_applications") > 0);
   REQUIRE(recording.at("encounter_results").at(1).at("brace_consumptions") > 0);
+  REQUIRE(recording.at("encounter_results").at(1).at("brace_mitigated_damage") > 0);
   REQUIRE(without_brace.recording().at("encounter_results").at(1).at("brace_applications") == 0);
+  REQUIRE(without_brace.recording().at("encounter_results").at(1).at("brace_mitigated_damage") ==
+          0);
   REQUIRE(without_brace.recording().at("external_inputs").at(0).at("skill") == "thump/1");
   REQUIRE(recording.at("result").at("beats") > without_brace.recording().at("result").at("beats"));
+  REQUIRE(progression.summary().at("encounters").size() == 2);
+  REQUIRE(progression.summary().at("encounters").at(1).at("brace_mitigated_hits") > 0);
+  REQUIRE(progression.summary().at("encounters").at(1).at("brace_mitigated_damage") > 0);
+  REQUIRE(progression.summary().at("party_state_before_encounters").size() == 2);
 
   fl::regression::Session repeated{learned};
   while (!repeated.finished()) repeated.advance_beat();

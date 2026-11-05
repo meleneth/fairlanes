@@ -14,6 +14,10 @@ module FairlanesContent
 
   class Validator
     VALID_POOLS = Set[:common_woodland, :rare_woodland, :authored_only, :raid].freeze
+    VALID_REGRESSION_ASSERTIONS = Set[:brace_learned, :brace_retained, :brace_equipped,
+                                      :brace_applied, :brace_consumed, :brace_mitigated,
+                                      :eviscerate_cast, :bleed_applied, :bleed_ticked,
+                                      :bleed_death, :cover_intercepted, :cover_released].freeze
     GEAR_SLOTS = Set[:mainhand, :offhand, :chest, :helm, :pants, :boots,
                      :gloves, :sleeves, :belt, :cape, :necklace, :ring_1,
                      :ring_2, :knife].freeze
@@ -355,7 +359,7 @@ module FairlanesContent
         errors << "#{prefix} has duplicate variants" unless variant_ids.uniq.size == variant_ids.size
         variants.each do |variant|
           unless variant.is_a?(Hash) &&
-                 (variant.keys - %i[id equipped_item skill_overrides observe_members next_skill expected_wins]).empty?
+                 (variant.keys - %i[id equipped_item skill_overrides observe_members next_skill expected_wins assertions]).empty?
             errors << "#{prefix} variant has unknown fields"
           end
           errors << "#{prefix} has invalid variant id" unless stable_id?(variant[:id])
@@ -383,6 +387,11 @@ module FairlanesContent
           if wins && (!wins.is_a?(Range) || !non_negative_integer?(wins.begin) ||
                       !non_negative_integer?(wins.end) || wins.end > scenario.seeds.size || wins.begin > wins.end)
             errors << "#{prefix} has invalid expected win range"
+          end
+          assertions = variant.fetch(:assertions, [])
+          unless assertions.is_a?(Array) && assertions.uniq.size == assertions.size &&
+                 assertions.all? { |assertion| VALID_REGRESSION_ASSERTIONS.include?(assertion) }
+            errors << "#{prefix} has invalid semantic assertions"
           end
         end
       end

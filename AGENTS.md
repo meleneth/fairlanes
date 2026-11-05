@@ -644,6 +644,16 @@ The first combat regression fixture is `woodland_mouse_duel`. The separate
 time; `fairlanes --replay` re-simulates a versioned recording in the existing
 party combat view and checks ordered events. See `docs/combat-regression.md`.
 
+Use `scripts/regress` as the preferred regression workflow for people and
+automated agents. Start with `scripts/regress compare <fixture>` for concise
+correctness, balance, and mechanic summaries. Use `--seeds` only to identify a
+specific run, then `scripts/regress inspect <recording>` with an encounter,
+skill, or mechanic filter. Read a full JSON recording only when the focused
+timeline is insufficient. `scripts/regress verify` captures successful build
+and test output to `build-linux-debug/regression-artifacts/logs`; on failure it
+prints the focused diagnostic, original exit status, and complete log path.
+Do not repeatedly print full build logs or recordings into agent context.
+
 Generated content also includes special gear, resolved 100-floor tower data,
 and typed Ruby-authored regression setup. Gear declarations support Attack,
 Armor, Max HP, and per-channel resistances through `EquipmentBuilder`.
