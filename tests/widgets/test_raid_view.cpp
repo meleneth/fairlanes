@@ -8,49 +8,43 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
 
-TEST_CASE("Raid layout exposes all twenty-five members at terminal sizes",
-          "[raid][widgets]") {
+TEST_CASE("Raid layout exposes all twenty-five members at terminal sizes", "[raid][widgets]") {
   fl::GrandCentral gc{1, 5, 5};
   gc.innervate_event_system();
   auto ctx = gc.account_context(0);
   int index = 0;
-  for (const auto &party : ctx.account_data().parties())
-    for (const auto &member : party.members())
+  for (const auto& party : ctx.account_data().parties())
+    for (const auto& member : party.members())
       gc.reg().get<fl::ecs::components::Stats>(member.member_id()).name_ =
           "Hero" + std::to_string(++index) + "!";
   fl::widgets::RaidView view{ctx};
   for (auto [width, height] : {std::pair{80, 21}, std::pair{120, 37}}) {
-    auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(width),
-                                        ftxui::Dimension::Fixed(height));
+    auto screen =
+        ftxui::Screen::Create(ftxui::Dimension::Fixed(width), ftxui::Dimension::Fixed(height));
     ftxui::Render(screen, view.Render());
     REQUIRE(screen.PixelAt(width - 1, height / 3 - 1).background_color ==
             ftxui::Color::RGB(12, 5, 25));
-    REQUIRE(screen.PixelAt(width - 1, height / 3).background_color !=
-            ftxui::Color::RGB(12, 5, 25));
+    REQUIRE(screen.PixelAt(width - 1, height / 3).background_color != ftxui::Color::RGB(12, 5, 25));
     auto output = screen.ToString();
     REQUIRE(output.find("Visitor's Herald") != std::string::npos);
     REQUIRE(output.find("paused") != std::string::npos);
     for (int hero = 1; hero <= 25; ++hero)
-      REQUIRE(output.find("Hero" + std::to_string(hero) + "!") !=
-              std::string::npos);
+      REQUIRE(output.find("Hero" + std::to_string(hero) + "!") != std::string::npos);
   }
 }
 
-TEST_CASE(
-    "Gameplay root automatically shows the raid and consumed-arrival countdown",
-    "[raid][widgets][calendar]") {
+TEST_CASE("Gameplay root automatically shows the raid and consumed-arrival countdown",
+          "[raid][widgets][calendar]") {
   fl::GrandCentral gc{1, 5, 5};
   gc.innervate_event_system();
   auto ctx = gc.account_context(0);
   int index = 0;
-  for (const auto &party : ctx.account_data().parties())
-    for (const auto &member : party.members())
+  for (const auto& party : ctx.account_data().parties())
+    for (const auto& member : party.members())
       gc.reg().get<fl::ecs::components::Stats>(member.member_id()).name_ =
           "Hero" + std::to_string(++index) + "!";
-  fl::widgets::RootComponent root{ctx, gc.accounts(), gc.game_log(),
-                                  gc.world_clock()};
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(80),
-                                      ftxui::Dimension::Fixed(24));
+  fl::widgets::RootComponent root{ctx, gc.accounts(), gc.game_log(), gc.world_clock()};
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(80), ftxui::Dimension::Fixed(24));
   ftxui::Render(screen, root.Render());
   auto output = screen.ToString();
   root.OnEvent(ftxui::Event::Return);
@@ -59,8 +53,7 @@ TEST_CASE(
   REQUIRE(output.find("PAUSED") != std::string::npos);
   REQUIRE(output.find("Visitor today") == std::string::npos);
   for (int hero = 1; hero <= 25; ++hero)
-    REQUIRE(output.find("Hero" + std::to_string(hero) + "!") !=
-            std::string::npos);
+    REQUIRE(output.find("Hero" + std::to_string(hero) + "!") != std::string::npos);
   for (auto id : ctx.account_data().raid()->encounter().defenders())
     gc.reg().get<fl::ecs::components::Stats>(id).hp_ = 0;
   gc.beat_bus().emit(seerin::Beat{});
@@ -69,10 +62,11 @@ TEST_CASE(
   output = screen.ToString();
   REQUIRE(output.find("PAUSED") == std::string::npos);
   REQUIRE(output.find("Wipes: 1") != std::string::npos);
-  auto &raid = *ctx.account_data().raid();
+  auto& raid = *ctx.account_data().raid();
   REQUIRE_FALSE(raid.result_expired(*raid.resolved_at() + std::chrono::seconds(299)));
   REQUIRE(raid.result_expired(*raid.resolved_at() + std::chrono::minutes(5)));
-  auto log_screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(180), ftxui::Dimension::Fixed(12));
+  auto log_screen =
+      ftxui::Screen::Create(ftxui::Dimension::Fixed(180), ftxui::Dimension::Fixed(12));
   ftxui::Render(log_screen, gc.game_log().Render());
   REQUIRE(log_screen.ToString().find("Visitor raid: Account 1 - wipe") != std::string::npos);
   REQUIRE(output.find("Next Visitor: 22h 3m 0s") != std::string::npos);
@@ -82,17 +76,15 @@ TEST_CASE(
   REQUIRE(screen.ToString().find("VISITOR RAID") == std::string::npos);
 }
 
-TEST_CASE("Active raids lock the root to the raid screen",
-          "[raid][widgets][navigation]") {
+TEST_CASE("Active raids lock the root to the raid screen", "[raid][widgets][navigation]") {
   fl::GrandCentral gc{1, 5, 5};
   gc.innervate_event_system();
   auto ctx = gc.account_context(0);
-  fl::widgets::RootComponent root{ctx, gc.accounts(), gc.game_log(),
-                                  gc.world_clock(), &gc.discoveries()};
+  fl::widgets::RootComponent root{ctx, gc.accounts(), gc.game_log(), gc.world_clock(),
+                                  &gc.discoveries()};
 
   auto render = [&] {
-    auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(120),
-                                        ftxui::Dimension::Fixed(37));
+    auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(120), ftxui::Dimension::Fixed(37));
     ftxui::Render(screen, root.Render());
     return screen.ToString();
   };
@@ -100,10 +92,8 @@ TEST_CASE("Active raids lock the root to the raid screen",
   REQUIRE(ctx.account_data().raid()->active());
   REQUIRE(render().find("VISITOR RAID") != std::string::npos);
 
-  for (const auto &event : {ftxui::Event::Character("/"),
-                            ftxui::Event::Character(" "),
-                            ftxui::Event::Character("l"),
-                            ftxui::Event::Character("b")}) {
+  for (const auto& event : {ftxui::Event::Character("/"), ftxui::Event::Character(" "),
+                            ftxui::Event::Character("l"), ftxui::Event::Character("b")}) {
     REQUIRE(root.OnEvent(event));
     REQUIRE(render().find("VISITOR RAID") != std::string::npos);
   }
@@ -125,29 +115,24 @@ TEST_CASE("Active raids lock the root to the raid screen",
 TEST_CASE("Raid results yield to normal combat for the selected account",
           "[raid][widgets][navigation][events]") {
   using fl::events::RaidResult;
-  const auto result = GENERATE(RaidResult::Victory, RaidResult::Defeat,
-                               RaidResult::MutualDestruction);
+  const auto result =
+      GENERATE(RaidResult::Victory, RaidResult::Defeat, RaidResult::MutualDestruction);
   fl::GrandCentral gc{2, 2, 1};
   auto ctx = gc.account_context(0);
-  auto &account = ctx.account_data();
+  auto& account = ctx.account_data();
   REQUIRE(account.spawn_visitor(ctx));
-  fl::widgets::RootComponent root{ctx, gc.accounts(), gc.game_log(),
-                                  gc.world_clock()};
+  fl::widgets::RootComponent root{ctx, gc.accounts(), gc.game_log(), gc.world_clock()};
   auto render = [&] {
-    auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(120),
-                                        ftxui::Dimension::Fixed(37));
+    auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(120), ftxui::Dimension::Fixed(37));
     ftxui::Render(screen, root.Render());
     return screen.ToString();
   };
   REQUIRE(render().find("VISITOR RAID") != std::string::npos);
 
-  auto &raid = *account.raid();
+  auto& raid = *account.raid();
   // On victory the selected party is wiped: another party resuming must still
   // return the screen to the selected party's ordinary recovery/combat view.
-  gc.reg()
-      .get<fl::ecs::components::Stats>(
-          account.party(0).members().front().member_id())
-      .hp_ = 0;
+  gc.reg().get<fl::ecs::components::Stats>(account.party(0).members().front().member_id()).hp_ = 0;
   if (result != RaidResult::Victory) {
     for (auto member : raid.encounter().defenders())
       gc.reg().get<fl::ecs::components::Stats>(member).hp_ = 0;
@@ -165,15 +150,12 @@ TEST_CASE("Raid results yield to normal combat for the selected account",
   REQUIRE(render().find("VISITOR RAID") != std::string::npos);
 
   int starts = 0;
-  auto started =
-      account.party(1).party_bus().subscribe<fl::events::PartyCombatStarted>(
-          [&](const auto &) { ++starts; });
-  for (int beat = 0;
-       starts == 0 && beat < fl::primitives::PartyData::kTownPenaltyBeats + 10;
+  auto started = account.party(1).party_bus().subscribe<fl::events::PartyCombatStarted>(
+      [&](const auto&) { ++starts; });
+  for (int beat = 0; starts == 0 && beat < fl::primitives::PartyData::kTownPenaltyBeats + 10;
        ++beat) {
     account.advance_beat(ctx, false);
-    if (starts == 0)
-      REQUIRE(render().find("VISITOR RAID") != std::string::npos);
+    if (starts == 0) REQUIRE(render().find("VISITOR RAID") != std::string::npos);
   }
   REQUIRE(starts == 1);
   REQUIRE(account.party(1).in_combat());

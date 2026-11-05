@@ -18,22 +18,20 @@ std::string days_text(std::uint64_t days) {
   return std::to_string(days) + "d";
 }
 
-ftxui::Element moon_status_line(const fl::primitives::MoonStatus &moon) {
+ftxui::Element moon_status_line(const fl::primitives::MoonStatus& moon) {
   using namespace ftxui;
 
   return hbox({
       text(std::string(moon.name) + ": ") | bold,
       text(std::string(fl::primitives::MoonCalendar::phase_name(moon.phase))),
-      text(" d" + std::to_string(moon.day_in_cycle) + "/" +
-           std::to_string(moon.cycle_days)),
+      text(" d" + std::to_string(moon.day_in_cycle) + "/" + std::to_string(moon.cycle_days)),
   });
 }
 
 } // namespace
 
-ftxui::Element
-render_moon_calendar(const fl::primitives::WorldClock &world_clock,
-                     std::optional<VisitorCountdown> visitor) {
+ftxui::Element render_moon_calendar(const fl::primitives::WorldClock& world_clock,
+                                    std::optional<VisitorCountdown> visitor) {
   using namespace ftxui;
   const auto snapshot = fl::primitives::MoonCalendar::snapshot(world_clock);
   const auto chrome = fl::lospec500::color_at(32);
@@ -44,13 +42,13 @@ render_moon_calendar(const fl::primitives::WorldClock &world_clock,
     const auto rate = world_clock.effective_beats_per_wall_second();
     const auto seconds = (visitor->remaining_beats + rate - 1) / rate;
     visitor_text = "Next Visitor: " + std::to_string(seconds / 3600) + "h " +
-        std::to_string((seconds / 60) % 60) + "m " + std::to_string(seconds % 60) + "s" +
-        (visitor->paused ? " PAUSED" : "");
+                   std::to_string((seconds / 60) % 60) + "m " + std::to_string(seconds % 60) + "s" +
+                   (visitor->paused ? " PAUSED" : "");
   }
   auto primary = hbox({
       hbox({text("Moons | Day " + std::to_string(snapshot.day)), text(" | "),
-            moon_status_line(snapshot.runner), text(" | "),
-            moon_status_line(snapshot.elder)}) | xflex,
+            moon_status_line(snapshot.runner), text(" | "), moon_status_line(snapshot.elder)}) |
+          xflex,
       text(" | x" + std::to_string(world_clock.beat_rate_multiplier()) + " | "),
       text(visitor_text) | color(accent),
   });
@@ -63,8 +61,7 @@ render_moon_calendar(const fl::primitives::WorldClock &world_clock,
   });
 
   Elements lines{primary, events | dim};
-  return vbox(std::move(lines)) | bgcolor(fl::lospec500::color_at(0)) |
-         color(chrome);
+  return vbox(std::move(lines)) | bgcolor(fl::lospec500::color_at(0)) | color(chrome);
 }
 
 } // namespace fl::widgets

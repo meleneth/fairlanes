@@ -15,35 +15,42 @@
 
 namespace fl::primitives {
 class EntityBuilder {
-  fl::context::BuildCtx &ctx_;
+  fl::context::BuildCtx& ctx_;
   entt::entity ent_{entt::null};
 
 public:
-  explicit EntityBuilder(fl::context::BuildCtx &context)
+  explicit EntityBuilder(fl::context::BuildCtx& context)
       : ctx_(context), ent_(ctx_.reg().create()) {}
 
-  template <typename C> EntityBuilder &with(C c) {
+  template <typename C> EntityBuilder& with(C c) {
     ctx_.reg().emplace_or_replace<C>(ent_, std::move(c));
     return *this;
   }
 
-  template <typename C> EntityBuilder &with_default() {
+  template <typename C> EntityBuilder& with_default() {
     auto entity_ctx = ctx_.entity_context(ent_);
-    ctx_.reg().emplace_or_replace<C>(ent_,
-                                     ComponentBuilder<C>::defaults(entity_ctx));
+    ctx_.reg().emplace_or_replace<C>(ent_, ComponentBuilder<C>::defaults(entity_ctx));
     return *this;
   }
 
   // ---- New: accessors so archetype functions can poke internals ----
-  fl::context::BuildCtx &ctx() { return ctx_; }
-  const fl::context::BuildCtx &ctx() const { return ctx_; }
+  fl::context::BuildCtx& ctx() {
+    return ctx_;
+  }
+  const fl::context::BuildCtx& ctx() const {
+    return ctx_;
+  }
 
-  entt::entity entity() const { return ent_; }
+  entt::entity entity() const {
+    return ent_;
+  }
   // ------------------------------------------------------------------
 
-  entt::entity build() const { return ent_; }
+  entt::entity build() const {
+    return ent_;
+  }
 
-  EntityBuilder &with_monster_defaults() {
+  EntityBuilder& with_monster_defaults() {
     using fl::ecs::components::Stats;
     // using fl::ecs::components::Tags;
     using fl::ecs::components::TrackXP;
@@ -56,11 +63,11 @@ public:
     return *this;
   }
 
-  EntityBuilder &monster(fl::monster::MonsterKind kind) {
+  EntityBuilder& monster(fl::monster::MonsterKind kind) {
     using fl::monster::monster_registry;
     with_monster_defaults();
     with(fl::ecs::components::MonsterIdentity{kind});
-    auto &reg = monster_registry();
+    auto& reg = monster_registry();
     auto it = reg.find(kind);
     if (it == reg.end()) {
       // For now, crash loudly if you forgot to register.

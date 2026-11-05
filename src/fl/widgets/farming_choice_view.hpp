@@ -32,13 +32,13 @@ private:
 
 class FarmingChoiceView : public ftxui::ComponentBase {
 public:
-  FarmingChoiceView(fl::primitives::PartyData &party,
+  FarmingChoiceView(fl::primitives::PartyData& party,
                     fl::primitives::GrimoireDiscipline discipline);
 
   bool OnEvent(ftxui::Event event) override;
   ftxui::Element Render() override;
 
-  [[nodiscard]] const FarmingChoiceState &state() const noexcept {
+  [[nodiscard]] const FarmingChoiceState& state() const noexcept {
     return state_;
   }
 
@@ -46,13 +46,12 @@ private:
   void initialize_selection_from_mode();
   void apply_selected_focus();
 
-  fl::primitives::PartyData *party_{nullptr};
+  fl::primitives::PartyData* party_{nullptr};
   fl::primitives::GrimoireDiscipline discipline_;
   fl::primitives::FarmingChoiceAdvice advice_;
   FarmingChoiceState state_;
 };
 
-ftxui::Element
-render_farming_plan_summary(const fl::primitives::FarmingPlan &plan, int width);
+ftxui::Element render_farming_plan_summary(const fl::primitives::FarmingPlan& plan, int width);
 
 } // namespace fl::widgets

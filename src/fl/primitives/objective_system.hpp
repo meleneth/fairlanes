@@ -18,11 +18,13 @@ namespace fl::primitives {
 class ObjectiveSystem {
 public:
   explicit ObjectiveSystem(fl::context::AccountCtx account);
-  ObjectiveSystem(const ObjectiveSystem &) = delete;
-  ObjectiveSystem &operator=(const ObjectiveSystem &) = delete;
+  ObjectiveSystem(const ObjectiveSystem&) = delete;
+  ObjectiveSystem& operator=(const ObjectiveSystem&) = delete;
 
   void emit(std::string_view event_id);
-  fl::events::StoryBus &bus() noexcept { return bus_; }
+  fl::events::StoryBus& bus() noexcept {
+    return bus_;
+  }
   bool active(std::string_view objective_id) const;
   bool completed(std::string_view objective_id) const;
   bool can_talk(std::string_view dialogue_id) const;
@@ -31,10 +33,16 @@ public:
   int darrin_marks() const;
   void request_autoplay(bool enabled);
   void request_purchase(std::string_view item_id);
-  bool autoplay_enabled() const noexcept { return autoplay_enabled_; }
-  std::size_t autoplay_step_index() const noexcept { return autoplay_step_index_; }
+  bool autoplay_enabled() const noexcept {
+    return autoplay_enabled_;
+  }
+  std::size_t autoplay_step_index() const noexcept {
+    return autoplay_step_index_;
+  }
   void advance_autoplay();
-  const std::vector<std::string> &unhandled_events() const { return unhandled_; }
+  const std::vector<std::string>& unhandled_events() const {
+    return unhandled_;
+  }
   static bool supports(std::string_view event_id);
 
 private:

@@ -16,8 +16,8 @@
 #include "fl/ecs/systems/combatant_status_visuals.hpp"
 #include "fl/ecs/systems/visual_resolver.hpp"
 #include "fl/events/party_bus.hpp"
-#include "fl/grand_central.hpp"
 #include "fl/generated/floor_content.hpp"
+#include "fl/grand_central.hpp"
 #include "fl/lospec500.hpp"
 #include "fl/monsters/monster_registry.hpp"
 #include "fl/primitives/encounter_builder.hpp"
@@ -29,7 +29,7 @@
 
 namespace {
 
-bool contains_monster(const auto &pool, fl::monster::MonsterKind kind) {
+bool contains_monster(const auto& pool, fl::monster::MonsterKind kind) {
   return std::find(pool.begin(), pool.end(), kind) != pool.end();
 }
 
@@ -44,17 +44,15 @@ public:
   }
 
 private:
-  std::unordered_map<fl::monster::MonsterKind, fl::monster::MonsterDefinition>
-      saved_;
+  std::unordered_map<fl::monster::MonsterKind, fl::monster::MonsterDefinition> saved_;
 };
 
 void register_test_monster(fl::monster::MonsterKind kind) {
-  fl::monster::register_monster(kind, [](fl::primitives::EntityBuilder &) {});
+  fl::monster::register_monster(kind, [](fl::primitives::EntityBuilder&) {});
 }
 
-std::vector<fl::monster::MonsterKind>
-monster_kinds_for(const std::vector<entt::entity> &entities,
-                  entt::registry &reg) {
+std::vector<fl::monster::MonsterKind> monster_kinds_for(const std::vector<entt::entity>& entities,
+                                                        entt::registry& reg) {
   std::vector<fl::monster::MonsterKind> kinds;
   kinds.reserve(entities.size());
   for (const auto entity : entities) {
@@ -71,18 +69,17 @@ TEST_CASE("EncounterBuilder::thump_it_out returns the created EncounterData",
   auto party_ctx = account_ctx.party_context(0);
 
   int starts = 0;
-  auto started = party_ctx.bus().subscribe<fl::events::PartyCombatStarted>(
-      [&](const auto &) {
-        ++starts;
-        const auto &ready = party_ctx.party_data().encounter_data();
-        REQUIRE(party_ctx.party_data().in_combat());
-        REQUIRE(ready.attackers().members().size() ==
-                fl::primitives::EncounterBuilder::kEnemyPartySize);
-        REQUIRE(ready.defenders().members().size() == 3);
-      });
+  auto started = party_ctx.bus().subscribe<fl::events::PartyCombatStarted>([&](const auto&) {
+    ++starts;
+    const auto& ready = party_ctx.party_data().encounter_data();
+    REQUIRE(party_ctx.party_data().in_combat());
+    REQUIRE(ready.attackers().members().size() ==
+            fl::primitives::EncounterBuilder::kEnemyPartySize);
+    REQUIRE(ready.defenders().members().size() == 3);
+  });
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
   REQUIRE(starts == 1);
 
   REQUIRE(&encounter == &party_ctx.party_data().encounter_data());
@@ -96,8 +93,7 @@ TEST_CASE("ChaosAttractor encounter mode uses the registered monster catalog",
   register_test_monster(fl::monster::MonsterKind::HoneyBadger);
   register_test_monster(fl::monster::MonsterKind::FireDrake);
 
-  const auto pool =
-      fl::primitives::EncounterBuilder::chaos_attractor_monster_pool();
+  const auto pool = fl::primitives::EncounterBuilder::chaos_attractor_monster_pool();
   REQUIRE(pool.size() == 3);
   REQUIRE(contains_monster(pool, fl::monster::MonsterKind::FieldMouse));
   REQUIRE(contains_monster(pool, fl::monster::MonsterKind::HoneyBadger));
@@ -112,12 +108,10 @@ TEST_CASE("EncounterBuilder defaults to ChaosAttractor spawns",
 
   auto party_ctx = gc.account_context(0).party_context(0);
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
-  const auto kinds =
-      monster_kinds_for(encounter.attackers().members(), party_ctx.reg());
-  REQUIRE(kinds.size() ==
-          fl::primitives::EncounterBuilder::kEnemyPartySize);
+  const auto kinds = monster_kinds_for(encounter.attackers().members(), party_ctx.reg());
+  REQUIRE(kinds.size() == fl::primitives::EncounterBuilder::kEnemyPartySize);
   for (const auto kind : kinds) {
     REQUIRE(kind == fl::monster::MonsterKind::HoneyBadger);
   }
@@ -128,19 +122,14 @@ TEST_CASE("HeroesJourney encounter mode keeps the woodland spawn pools",
   fl::GrandCentral gc{1, 1, 3};
 
   auto party_ctx = gc.account_context(0).party_context(0);
-  fl::primitives::EncounterBuilder builder(
-      party_ctx, fl::primitives::EncounterMode::HeroesJourney);
-  auto &encounter = builder.thump_it_out();
+  fl::primitives::EncounterBuilder builder(party_ctx, fl::primitives::EncounterMode::HeroesJourney);
+  auto& encounter = builder.thump_it_out();
 
-  const auto kinds =
-      monster_kinds_for(encounter.attackers().members(), party_ctx.reg());
-  REQUIRE(kinds.size() ==
-          fl::primitives::EncounterBuilder::kEnemyPartySize);
+  const auto kinds = monster_kinds_for(encounter.attackers().members(), party_ctx.reg());
+  REQUIRE(kinds.size() == fl::primitives::EncounterBuilder::kEnemyPartySize);
   for (const auto kind : kinds) {
-    REQUIRE((contains_monster(fl::primitives::EncounterBuilder::common_woodland(),
-                              kind) ||
-             contains_monster(fl::primitives::EncounterBuilder::rare_woodland(),
-                              kind)));
+    REQUIRE((contains_monster(fl::primitives::EncounterBuilder::common_woodland(), kind) ||
+             contains_monster(fl::primitives::EncounterBuilder::rare_woodland(), kind)));
   }
 }
 
@@ -150,15 +139,14 @@ TEST_CASE("Declared tower floors use the normal encounter construction path",
   for (const int floor : {1, 10}) {
     fl::GrandCentral gc{1, 1, 3};
     auto party = gc.account_context(0).party_context(0);
-    const auto *declared = fl::primitives::generated_content::floor_lineup(
-        "origin_woodland_tower", floor);
+    const auto* declared =
+        fl::primitives::generated_content::floor_lineup("origin_woodland_tower", floor);
     REQUIRE(declared != nullptr);
-    REQUIRE(declared->id == (floor == 10 ? "origin_woodland_tower/010"
-                                         : "origin_woodland_tower/001"));
-    EncounterBuilder builder{
-        party, fl::primitives::EncounterMode::HeroesJourney,
-        EncounterBuilder::TowerFloor{"origin_woodland_tower", floor}};
-    auto &encounter = builder.thump_it_out();
+    REQUIRE(declared->id ==
+            (floor == 10 ? "origin_woodland_tower/010" : "origin_woodland_tower/001"));
+    EncounterBuilder builder{party, fl::primitives::EncounterMode::HeroesJourney,
+                             EncounterBuilder::TowerFloor{"origin_woodland_tower", floor}};
+    auto& encounter = builder.thump_it_out();
     const auto actual = monster_kinds_for(encounter.attackers().members(), party.reg());
     REQUIRE(std::ranges::equal(actual.begin(), actual.end(), declared->monsters.begin(),
                                declared->monsters.begin() + declared->monster_count));
@@ -179,7 +167,7 @@ TEST_CASE("EncounterBuilder::thump_it_out wires encounter teams and members",
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   REQUIRE(encounter.defenders().members().size() == 3);
   REQUIRE(encounter.attackers().members().size() ==
@@ -202,7 +190,7 @@ TEST_CASE("EncounterBuilder::thump_it_out enrolls party members as defenders",
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   REQUIRE(encounter.defenders().members().size() == 3);
 
@@ -213,16 +201,15 @@ TEST_CASE("EncounterBuilder::thump_it_out enrolls party members as defenders",
   }
 }
 
-TEST_CASE(
-    "EncounterBuilder::thump_it_out creates an enemy party owned by encounter",
-    "[encounter_builder][encounter][combat]") {
+TEST_CASE("EncounterBuilder::thump_it_out creates an enemy party owned by encounter",
+          "[encounter_builder][encounter][combat]") {
   fl::GrandCentral gc{1, 1, 3};
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   REQUIRE(encounter.attackers().members().size() ==
           fl::primitives::EncounterBuilder::kEnemyPartySize);
@@ -245,19 +232,18 @@ TEST_CASE("EncounterBuilder gives each enemy a stable combatant bus",
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
-  REQUIRE(encounter.enemy_combatant_buses().size() ==
-          encounter.attackers().members().size());
+  REQUIRE(encounter.enemy_combatant_buses().size() == encounter.attackers().members().size());
 
   const auto first_enemy = encounter.attackers().members().front();
-  auto *first_bus = encounter.enemy_combatant_bus(first_enemy);
+  auto* first_bus = encounter.enemy_combatant_bus(first_enemy);
   REQUIRE(first_bus != nullptr);
 
   int first_bus_events = 0;
   fl::events::ScopedCombatantListener first_sub{
       *first_bus, std::in_place_type<fl::events::PlayerDied>,
-      [&](const fl::events::PlayerDied &) { ++first_bus_events; }};
+      [&](const fl::events::PlayerDied&) { ++first_bus_events; }};
 
   first_bus->emit(fl::events::CombatantEvent{
       fl::events::PlayerDied{.player = first_enemy, .killer = entt::null}});
@@ -267,38 +253,35 @@ TEST_CASE("EncounterBuilder gives each enemy a stable combatant bus",
     CHECK(encounter.enemy_combatant_bus(enemy) != nullptr);
   }
 
-  const auto *stable_first_bus = encounter.enemy_combatant_bus(first_enemy);
+  const auto* stable_first_bus = encounter.enemy_combatant_bus(first_enemy);
   REQUIRE(stable_first_bus == first_bus);
 }
 
-TEST_CASE("Thump ranks produce distinct damage bands",
-          "[encounter][skills][rank][thump]") {
+TEST_CASE("Thump ranks produce distinct damage bands", "[encounter][skills][rank][thump]") {
   fl::GrandCentral gc{1, 1, 1};
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   const entt::entity attacker = encounter.attackers().members().front();
   const entt::entity target = encounter.defenders().members().front();
-  auto &target_stats = party_ctx.reg().get<fl::ecs::components::Stats>(target);
+  auto& target_stats = party_ctx.reg().get<fl::ecs::components::Stats>(target);
   target_stats.max_hp_ = 100;
 
   auto damage_for = [&](fl::skills::SkillKey skill) {
     target_stats.hp_ = target_stats.max_hp_;
     fl::skills::Thump thump;
-    return thump.thump(
-        fl::context::AttackCtx::make_attack(party_ctx, attacker, target),
-        skill);
+    return thump.thump(fl::context::AttackCtx::make_attack(party_ctx, attacker, target), skill);
   };
 
   const auto thump_i = fl::skills::SkillKey{fl::skills::SkillId::Thump};
-  const auto thump_iii = fl::skills::SkillKey{
-      fl::skills::SkillId::Thump, fl::skills::SkillRank::require(3)};
-  const auto thump_v = fl::skills::SkillKey{fl::skills::SkillId::Thump,
-                                            fl::skills::SkillRank::require(5)};
+  const auto thump_iii =
+      fl::skills::SkillKey{fl::skills::SkillId::Thump, fl::skills::SkillRank::require(3)};
+  const auto thump_v =
+      fl::skills::SkillKey{fl::skills::SkillId::Thump, fl::skills::SkillRank::require(5)};
 
   const int damage_i = damage_for(thump_i);
   const int damage_iii = damage_for(thump_iii);
@@ -318,11 +301,11 @@ TEST_CASE("Attack applies once to Thump while other thump-like skills opt out",
           "[encounter][skills][thump][damage][stats]") {
   fl::GrandCentral gc{1, 1, 1};
   auto party = gc.account_context(0).party_context(0);
-  auto &encounter = fl::primitives::EncounterBuilder{party}.thump_it_out();
+  auto& encounter = fl::primitives::EncounterBuilder{party}.thump_it_out();
   const auto attacker = encounter.attackers().members().front();
   const auto defender = encounter.defenders().members().front();
-  auto &source = party.reg().get<fl::ecs::components::Stats>(attacker);
-  auto &target = party.reg().get<fl::ecs::components::Stats>(defender);
+  auto& source = party.reg().get<fl::ecs::components::Stats>(attacker);
+  auto& target = party.reg().get<fl::ecs::components::Stats>(defender);
   target.max_hp_ = 100;
   fl::skills::Thump thump;
 
@@ -359,51 +342,46 @@ TEST_CASE("Thump applies mitigation before resolving lethal overkill",
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   const entt::entity attacker = encounter.attackers().members().front();
   const entt::entity target = encounter.defenders().members().front();
-  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(target);
+  auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(target);
   stats.hp_ = 1;
   stats.max_hp_ = 100;
   stats.armor_ = 7;
 
   fl::skills::Thump thump;
-  const auto thump_v = fl::skills::SkillKey{fl::skills::SkillId::Thump,
-                                            fl::skills::SkillRank::require(5)};
-  const int damage = thump.thump(
-      fl::context::AttackCtx::make_attack(party_ctx, attacker, target),
-      thump_v);
+  const auto thump_v =
+      fl::skills::SkillKey{fl::skills::SkillId::Thump, fl::skills::SkillRank::require(5)};
+  const int damage =
+      thump.thump(fl::context::AttackCtx::make_attack(party_ctx, attacker, target), thump_v);
 
   REQUIRE(damage >= 6);
   REQUIRE(damage <= 10);
   REQUIRE(stats.hp_ == 0);
 }
 
-TEST_CASE("Thump ranks pay distinct tempo costs",
-          "[encounter][timing][rank][thump]") {
-  auto run_rank = [](fl::skills::SkillKey skill, int damage_beat,
-                     int finish_beat) {
+TEST_CASE("Thump ranks pay distinct tempo costs", "[encounter][timing][rank][thump]") {
+  auto run_rank = [](fl::skills::SkillKey skill, int damage_beat, int finish_beat) {
     fl::GrandCentral gc{1, 1, 1};
 
     auto account_ctx = gc.account_context(0);
     auto party_ctx = account_ctx.party_context(0);
 
     fl::primitives::EncounterBuilder builder(party_ctx);
-    auto &encounter = builder.thump_it_out();
+    auto& encounter = builder.thump_it_out();
 
     const entt::entity attacker = encounter.attackers().members().front();
     const entt::entity target = encounter.defenders().members().front();
-    auto &target_stats =
-        party_ctx.reg().get<fl::ecs::components::Stats>(target);
+    auto& target_stats = party_ctx.reg().get<fl::ecs::components::Stats>(target);
     target_stats.max_hp_ = 100;
     target_stats.hp_ = 100;
 
     bool finished = false;
     seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
     fl::skills::SkillSequencer sequencer{
-        party_ctx, scheduler,
-        [&](entt::entity entity) { finished = entity == attacker; }};
+        party_ctx, scheduler, [&](entt::entity entity) { finished = entity == attacker; }};
     sequencer.schedule(attacker, target, skill);
 
     int current_beat = 0;
@@ -430,12 +408,10 @@ TEST_CASE("Thump ranks pay distinct tempo costs",
   };
 
   run_rank(fl::skills::SkillKey{fl::skills::SkillId::Thump}, 26, 31);
-  run_rank(fl::skills::SkillKey{fl::skills::SkillId::Thump,
-                                fl::skills::SkillRank::require(3)},
-           30, 37);
-  run_rank(fl::skills::SkillKey{fl::skills::SkillId::Thump,
-                                fl::skills::SkillRank::require(5)},
-           34, 43);
+  run_rank(fl::skills::SkillKey{fl::skills::SkillId::Thump, fl::skills::SkillRank::require(3)}, 30,
+           37);
+  run_rank(fl::skills::SkillKey{fl::skills::SkillId::Thump, fl::skills::SkillRank::require(5)}, 34,
+           43);
 }
 
 TEST_CASE("SkillSequencer thump-like flash uses two red pulses then yellow",
@@ -446,24 +422,21 @@ TEST_CASE("SkillSequencer thump-like flash uses two red pulses then yellow",
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   const entt::entity attacker = encounter.attackers().members().front();
   const entt::entity target = encounter.defenders().members().front();
-  auto &reg = party_ctx.reg();
+  auto& reg = party_ctx.reg();
 
   const auto red = fl::lospec500::color_at(4);
   const auto yellow = fl::lospec500::color_at(14);
   const auto scheduled_red = ftxui::Color::Interpolate(0.0F, red, red);
-  const auto scheduled_yellow =
-      ftxui::Color::Interpolate(0.0F, yellow, yellow);
+  const auto scheduled_yellow = ftxui::Color::Interpolate(0.0F, yellow, yellow);
 
-  REQUIRE_FALSE(
-      reg.any_of<fl::ecs::components::ResolvedColorOverride>(attacker));
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::ResolvedColorOverride>(attacker));
 
   seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
-  fl::skills::SkillSequencer sequencer{party_ctx, scheduler,
-                                       [](entt::entity) {}};
+  fl::skills::SkillSequencer sequencer{party_ctx, scheduler, [](entt::entity) {}};
   sequencer.schedule(attacker, target, fl::skills::SkillId::Thump);
 
   int current_beat = 0;
@@ -476,25 +449,21 @@ TEST_CASE("SkillSequencer thump-like flash uses two red pulses then yellow",
   };
 
   advance_to(10);
-  REQUIRE(
-      reg.get<fl::ecs::components::ResolvedColorOverride>(attacker).color.Print(
-          false) == scheduled_red.Print(false));
+  REQUIRE(reg.get<fl::ecs::components::ResolvedColorOverride>(attacker).color.Print(false) ==
+          scheduled_red.Print(false));
 
   advance_to(14);
   REQUIRE_FALSE(reg.any_of<fl::ecs::components::DamageFlash>(attacker));
-  REQUIRE_FALSE(
-      reg.any_of<fl::ecs::components::ResolvedColorOverride>(attacker));
+  REQUIRE_FALSE(reg.any_of<fl::ecs::components::ResolvedColorOverride>(attacker));
 
   advance_to(18);
-  REQUIRE(
-      reg.get<fl::ecs::components::ResolvedColorOverride>(attacker).color.Print(
-          false) == scheduled_red.Print(false));
+  REQUIRE(reg.get<fl::ecs::components::ResolvedColorOverride>(attacker).color.Print(false) ==
+          scheduled_red.Print(false));
 
   advance_to(22);
   REQUIRE_FALSE(reg.any_of<fl::ecs::components::DamageFlash>(attacker));
-  REQUIRE(
-      reg.get<fl::ecs::components::ResolvedColorOverride>(target).color.Print(
-          false) == scheduled_yellow.Print(false));
+  REQUIRE(reg.get<fl::ecs::components::ResolvedColorOverride>(target).color.Print(false) ==
+          scheduled_yellow.Print(false));
 
   advance_to(30);
   REQUIRE_FALSE(reg.any_of<fl::ecs::components::DamageFlash>(target));
@@ -509,25 +478,23 @@ TEST_CASE("SkillSequencer Flame Strike animates before damage",
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   const entt::entity attacker = encounter.attackers().members().front();
   const entt::entity target = encounter.defenders().members().front();
-  auto &reg = party_ctx.reg();
+  auto& reg = party_ctx.reg();
 
   seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
   bool finished = false;
-  fl::skills::SkillSequencer sequencer{
-      party_ctx, scheduler,
-      [&](entt::entity entity) { finished = entity == attacker; }};
+  fl::skills::SkillSequencer sequencer{party_ctx, scheduler,
+                                       [&](entt::entity entity) { finished = entity == attacker; }};
 
   sequencer.schedule(attacker, target, fl::skills::SkillId::FlameStrike);
   const auto log_size_after_schedule = party_ctx.log().size();
 
   REQUIRE(reg.any_of<fl::ecs::components::CombatantDecals>(target));
-  REQUIRE(reg.get<fl::ecs::components::CombatantDecals>(target)
-              .effects.front()
-              .duration == std::chrono::milliseconds{1000});
+  REQUIRE(reg.get<fl::ecs::components::CombatantDecals>(target).effects.front().duration ==
+          std::chrono::milliseconds{1000});
 
   for (int i = 0; i < seerin::BEATS_PER_SEC - 1; ++i) {
     scheduler.on_beat();
@@ -559,18 +526,17 @@ TEST_CASE("SkillSequencer Flame Wave staggers all alive opponents",
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   const entt::entity attacker = encounter.attackers().members().front();
   const auto targets = encounter.defenders().alive_members(party_ctx);
   REQUIRE(targets.size() == 3);
 
-  auto &reg = party_ctx.reg();
+  auto& reg = party_ctx.reg();
   seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
   bool finished = false;
-  fl::skills::SkillSequencer sequencer{
-      party_ctx, scheduler,
-      [&](entt::entity entity) { finished = entity == attacker; }};
+  fl::skills::SkillSequencer sequencer{party_ctx, scheduler,
+                                       [&](entt::entity entity) { finished = entity == attacker; }};
 
   sequencer.schedule(attacker, targets.front(), fl::skills::SkillId::FlameWave);
   const auto log_size_after_schedule = party_ctx.log().size();
@@ -620,9 +586,9 @@ TEST_CASE("Healing skills target the lowest-health teammate",
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
-  auto &reg = party_ctx.reg();
+  auto& reg = party_ctx.reg();
   const auto enemies = encounter.attackers().members();
   REQUIRE(enemies.size() >= 3);
   const entt::entity enemy_attacker = enemies[0];
@@ -632,8 +598,7 @@ TEST_CASE("Healing skills target the lowest-health teammate",
   reg.get<fl::ecs::components::Stats>(wounded_enemy).hp_ = 2;
   reg.get<fl::ecs::components::Stats>(dead_enemy).hp_ = 0;
 
-  for (const auto skill :
-       {fl::skills::SkillId::Mercyburst, fl::skills::SkillId::Mercywave}) {
+  for (const auto skill : {fl::skills::SkillId::Mercyburst, fl::skills::SkillId::Mercywave}) {
     CAPTURE(fl::skills::display_name(skill));
     REQUIRE(encounter.target_for_skill(enemy_attacker, skill) == wounded_enemy);
   }
@@ -647,11 +612,9 @@ TEST_CASE("Healing skills target the lowest-health teammate",
   reg.get<fl::ecs::components::Stats>(wounded_defender).hp_ = 1;
   reg.get<fl::ecs::components::Stats>(dead_defender).hp_ = 0;
 
-  for (const auto skill :
-       {fl::skills::SkillId::Mercyburst, fl::skills::SkillId::Mercywave}) {
+  for (const auto skill : {fl::skills::SkillId::Mercyburst, fl::skills::SkillId::Mercywave}) {
     CAPTURE(fl::skills::display_name(skill));
-    REQUIRE(encounter.target_for_skill(defender_attacker, skill) ==
-            wounded_defender);
+    REQUIRE(encounter.target_for_skill(defender_attacker, skill) == wounded_defender);
   }
 }
 
@@ -663,9 +626,9 @@ TEST_CASE("Cleanse skills target a friendly combatant with a removable debuff",
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
-  auto &reg = party_ctx.reg();
+  auto& reg = party_ctx.reg();
   const auto defenders = encounter.defenders().members();
   REQUIRE(defenders.size() >= 3);
   const entt::entity cleaner = defenders[0];
@@ -688,8 +651,7 @@ TEST_CASE("Cleanse skills target a friendly combatant with a removable debuff",
           .negative = true,
           .removable = true}));
 
-  REQUIRE(encounter.target_for_skill(cleaner, fl::skills::SkillId::Clearbell) ==
-          debuffed_friend);
+  REQUIRE(encounter.target_for_skill(cleaner, fl::skills::SkillId::Clearbell) == debuffed_friend);
 }
 
 TEST_CASE("SkillSequencer Mercyburst heals and clamps at max HP",
@@ -700,20 +662,19 @@ TEST_CASE("SkillSequencer Mercyburst heals and clamps at max HP",
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   const entt::entity attacker = encounter.attackers().members().front();
   const entt::entity target = encounter.attackers().members().back();
-  auto &reg = party_ctx.reg();
-  auto &stats = reg.get<fl::ecs::components::Stats>(target);
+  auto& reg = party_ctx.reg();
+  auto& stats = reg.get<fl::ecs::components::Stats>(target);
   stats.max_hp_ = 10;
   stats.hp_ = 8;
 
   seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
   bool finished = false;
-  fl::skills::SkillSequencer sequencer{
-      party_ctx, scheduler,
-      [&](entt::entity entity) { finished = entity == attacker; }};
+  fl::skills::SkillSequencer sequencer{party_ctx, scheduler,
+                                       [&](entt::entity entity) { finished = entity == attacker; }};
 
   sequencer.schedule(attacker, target, fl::skills::SkillId::Mercyburst);
   REQUIRE(reg.any_of<fl::ecs::components::CombatantDecals>(target));
@@ -740,20 +701,19 @@ TEST_CASE("SkillSequencer Mercyburst does not heal dead targets",
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   const entt::entity attacker = encounter.attackers().members().front();
   const entt::entity target = encounter.attackers().members().back();
-  auto &reg = party_ctx.reg();
-  auto &stats = reg.get<fl::ecs::components::Stats>(target);
+  auto& reg = party_ctx.reg();
+  auto& stats = reg.get<fl::ecs::components::Stats>(target);
   stats.max_hp_ = 10;
   stats.hp_ = 0;
 
   seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
   bool finished = false;
-  fl::skills::SkillSequencer sequencer{
-      party_ctx, scheduler,
-      [&](entt::entity entity) { finished = entity == attacker; }};
+  fl::skills::SkillSequencer sequencer{party_ctx, scheduler,
+                                       [&](entt::entity entity) { finished = entity == attacker; }};
 
   sequencer.schedule(attacker, target, fl::skills::SkillId::Mercyburst);
 
@@ -777,12 +737,12 @@ TEST_CASE("Flee emits combat events and grants no XP on successful flee",
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   const entt::entity attacker = encounter.attackers().members().front();
   const entt::entity target = encounter.defenders().members().front();
 
-  auto &reg = party_ctx.reg();
+  auto& reg = party_ctx.reg();
   const auto xp_before = reg.get<fl::ecs::components::TrackXP>(target).xp_;
 
   int flee_attempt_events = 0;
@@ -791,8 +751,7 @@ TEST_CASE("Flee emits combat events and grants no XP on successful flee",
 
   fl::events::ScopedCombatantListener flee_attempt_sub{
       party_ctx.party_data().encounter_data().combatant_bus(attacker),
-      std::in_place_type<fl::events::FleeAttempted>,
-      [&](const fl::events::FleeAttempted &ev) {
+      std::in_place_type<fl::events::FleeAttempted>, [&](const fl::events::FleeAttempted& ev) {
         ++flee_attempt_events;
         if (ev.success) {
           saw_success = true;
@@ -801,11 +760,10 @@ TEST_CASE("Flee emits combat events and grants no XP on successful flee",
   fl::events::ScopedCombatantListener fled_sub{
       party_ctx.party_data().encounter_data().combatant_bus(attacker),
       std::in_place_type<fl::events::CombatantFled>,
-      [&](const fl::events::CombatantFled &) { ++fled_events; }};
+      [&](const fl::events::CombatantFled&) { ++fled_events; }};
 
   seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
-  fl::skills::SkillSequencer sequencer{party_ctx, scheduler,
-                                       [](entt::entity) {}};
+  fl::skills::SkillSequencer sequencer{party_ctx, scheduler, [](entt::entity) {}};
 
   for (int attempt = 0; attempt < 12 && !saw_success; ++attempt) {
     sequencer.schedule(attacker, target, fl::skills::SkillId::Flee);
@@ -828,26 +786,25 @@ TEST_CASE("Observe active effect renders as underlay without cast decal",
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   const entt::entity observer = encounter.defenders().members().front();
   const entt::entity target = encounter.attackers().members().front();
-  auto &reg = party_ctx.reg();
+  auto& reg = party_ctx.reg();
 
   seerin::TimedScheduler<seerin::AtbOutEvent> scheduler;
   bool finished = false;
-  fl::skills::SkillSequencer sequencer{
-      party_ctx, scheduler, [&](entt::entity) { finished = true; }};
+  fl::skills::SkillSequencer sequencer{party_ctx, scheduler,
+                                       [&](entt::entity) { finished = true; }};
 
   sequencer.schedule(observer, target, fl::skills::SkillId::Observe);
 
   const auto underlays = fl::ecs::systems::combatant_status_visuals_for(
       reg, observer, fl::ecs::systems::CombatantVisualLayer::Underlay,
       fl::ecs::systems::CombatantVisualRegion::WholeCombatant);
-  REQUIRE(std::ranges::any_of(underlays, [](const auto &visual) {
+  REQUIRE(std::ranges::any_of(underlays, [](const auto& visual) {
     return visual.decal.has_value() &&
-           visual.decal->animation_kind ==
-               fl::widgets::effects::DecalAnimationKind::Observe;
+           visual.decal->animation_kind == fl::widgets::effects::DecalAnimationKind::Observe;
   }));
   REQUIRE_FALSE(reg.any_of<fl::ecs::components::CombatantDecals>(observer));
 
@@ -864,29 +821,31 @@ TEST_CASE("Encounter targeting spans enrolled home parties and excludes outsider
   fl::GrandCentral gc{1, 5, 5};
   auto account = gc.account_context(0);
   auto party = account.party_context(0);
-  auto &encounter = fl::primitives::EncounterBuilder{party}.thump_it_out();
+  auto& encounter = fl::primitives::EncounterBuilder{party}.thump_it_out();
   const auto actor = encounter.defenders().members().front();
-  auto &reg = party.reg();
+  auto& reg = party.reg();
   entt::entity wounded{entt::null};
   for (std::size_t i = 1; i < 5; ++i) {
     auto other = account.party_context(i);
-    for (const auto &member : other.party_data().members()) {
+    for (const auto& member : other.party_data().members()) {
       encounter.defenders().members().push_back(member.member_id());
       wounded = member.member_id();
     }
   }
   reg.get<fl::ecs::components::Stats>(wounded).hp_ = 1;
-  REQUIRE(fl::targeting::snapshot_targets(
-      encounter.possible_targets().FriendlyPossibleTargets(actor)).size() == 25);
+  REQUIRE(
+      fl::targeting::snapshot_targets(encounter.possible_targets().FriendlyPossibleTargets(actor))
+          .size() == 25);
   REQUIRE(encounter.target_for_skill(actor, fl::skills::SkillId::Mercyburst) == wounded);
   const auto outsider = reg.create();
   reg.emplace<fl::ecs::components::Stats>(outsider);
-  REQUIRE(encounter.target_for_skill(outsider, fl::skills::SkillId::ArmorPlate) == entt::entity{entt::null});
+  REQUIRE(encounter.target_for_skill(outsider, fl::skills::SkillId::ArmorPlate) ==
+          entt::entity{entt::null});
   REQUIRE(encounter.target_random_alive_opposition(outsider) == entt::entity{entt::null});
   reg.get<fl::ecs::components::Stats>(wounded).hp_ = 0;
   REQUIRE(encounter.target_for_skill(actor, fl::skills::SkillId::Mercyburst) != wounded);
-  REQUIRE(fl::targeting::snapshot_targets(
-      encounter.possible_targets().FriendlyDeadPossibleTargets(actor)) == std::vector{wounded});
+  REQUIRE(fl::targeting::snapshot_targets(encounter.possible_targets().FriendlyDeadPossibleTargets(
+              actor)) == std::vector{wounded});
 }
 
 TEST_CASE("Delayed healing rechecks encounter membership before applying",
@@ -894,12 +853,12 @@ TEST_CASE("Delayed healing rechecks encounter membership before applying",
   fl::GrandCentral gc{1, 1, 2};
   auto account = gc.account_context(0);
   auto ctx = account.party_context(0);
-  auto &encounter = fl::primitives::EncounterBuilder{ctx}.thump_it_out();
+  auto& encounter = fl::primitives::EncounterBuilder{ctx}.thump_it_out();
   auto actor = encounter.defenders().members().front();
   auto target = encounter.defenders().members().back();
-  auto &stats = ctx.reg().get<fl::ecs::components::Stats>(target);
+  auto& stats = ctx.reg().get<fl::ecs::components::Stats>(target);
   stats.hp_ = 1;
-  auto &scheduler = encounter.atb_engine().scheduler();
+  auto& scheduler = encounter.atb_engine().scheduler();
   bool finished = false;
   fl::skills::SkillSequencer sequencer{ctx, scheduler, [&](entt::entity) { finished = true; }};
   sequencer.schedule(actor, target, fl::skills::SkillId::Mercyburst);

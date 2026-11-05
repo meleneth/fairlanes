@@ -22,19 +22,18 @@ TEST_CASE("Tower command selects an unlocked floor and rejects a locked floor",
           "[tower][command]") {
   fl::GrandCentral game{1, 1, 1};
   auto ctx = game.account_context(0).party_context(0);
-  auto &party = ctx.party_data();
-  fl::widgets::UiCommandController commands{
-      game.accounts(), game.game_log(), game.world_clock()};
+  auto& party = ctx.party_data();
+  fl::widgets::UiCommandController commands{game.accounts(), game.game_log(), game.world_clock()};
   commands.handle("tower woodland 2");
   REQUIRE_FALSE(party.tower_route().has_value());
   commands.handle("tower woodland 1");
   REQUIRE(party.tower_route()->floor == 1);
   REQUIRE(party.highest_tower_floor_cleared("origin_woodland_tower") == 0);
   party.begin_tower_encounter();
-  auto &fight = fl::primitives::EncounterBuilder{
-      ctx, fl::primitives::EncounterMode::ChaosAttractor,
-      fl::primitives::EncounterBuilder::TowerFloor{
-          "origin_woodland_tower", 1}}.thump_it_out();
+  auto& fight = fl::primitives::EncounterBuilder{ctx, fl::primitives::EncounterMode::ChaosAttractor,
+                                                 fl::primitives::EncounterBuilder::TowerFloor{
+                                                     "origin_woodland_tower", 1}}
+                    .thump_it_out();
   for (auto enemy : fight.attackers().members())
     ctx.reg().get<fl::ecs::components::Stats>(enemy).hp_ = 0;
   party.leave_combat();
@@ -51,7 +50,7 @@ TEST_CASE("Tower wipe retries the selected floor after recovery and counts attem
           "[tower][retry][attempts]") {
   fl::GrandCentral game{1, 1, 1};
   auto ctx = game.account_context(0).party_context(0);
-  auto &party = ctx.party_data();
+  auto& party = ctx.party_data();
   REQUIRE(party.select_tower("origin_woodland_tower"));
 
   party.advance_beat();
@@ -59,7 +58,7 @@ TEST_CASE("Tower wipe retries the selected floor after recovery and counts attem
   REQUIRE(party.tower_route()->floor == 1);
   REQUIRE(party.tower_floor_attempts() == 1);
 
-  for (const auto &member : party.members())
+  for (const auto& member : party.members())
     ctx.reg().get<fl::ecs::components::Stats>(member.member_id()).hp_ = 0;
   party.party_bus().emit(fl::events::PartyEvent{fl::events::PartyWiped{}});
   REQUIRE(party.town_penalty_active());
@@ -77,22 +76,18 @@ TEST_CASE("Tower wipe retries the selected floor after recovery and counts attem
   REQUIRE(party.tower_floor_attempts() == 2);
 }
 
-TEST_CASE("Runtime tower maxima scale generated floor percentages",
-          "[tower][balance][runtime]") {
+TEST_CASE("Runtime tower maxima scale generated floor percentages", "[tower][balance][runtime]") {
   const fl::primitives::TowerBalance balance{
-      .maximum_monster_level = 40,
-      .maximum_monster_hp = 200,
-      .maximum_monster_attack = 80};
-  fl::GrandCentral game{1, 1, 1, true, true, std::nullopt, false, false,
-                        balance};
+      .maximum_monster_level = 40, .maximum_monster_hp = 200, .maximum_monster_attack = 80};
+  fl::GrandCentral game{1, 1, 1, true, true, std::nullopt, false, false, balance};
   auto ctx = game.account_context(0).party_context(0);
-  auto &fight = fl::primitives::EncounterBuilder{
-      ctx, fl::primitives::EncounterMode::ChaosAttractor,
-      fl::primitives::EncounterBuilder::TowerFloor{
-          "origin_woodland_tower", 6}}.thump_it_out();
+  auto& fight = fl::primitives::EncounterBuilder{ctx, fl::primitives::EncounterMode::ChaosAttractor,
+                                                 fl::primitives::EncounterBuilder::TowerFloor{
+                                                     "origin_woodland_tower", 6}}
+                    .thump_it_out();
   const auto enemy = fight.attackers().members().front();
-  const auto &stats = ctx.reg().get<fl::ecs::components::Stats>(enemy);
-  const auto &xp = ctx.reg().get<fl::ecs::components::TrackXP>(enemy);
+  const auto& stats = ctx.reg().get<fl::ecs::components::Stats>(enemy);
+  const auto& xp = ctx.reg().get<fl::ecs::components::TrackXP>(enemy);
   REQUIRE(stats.max_hp_ == 20);
   REQUIRE(stats.hp_ == 20);
   REQUIRE(stats.attack_ == 8);
@@ -111,70 +106,64 @@ TEST_CASE("The first physical progression floors resolve to authored lineups",
       std::vector{MonsterKind::BarkSmack},
       std::vector{MonsterKind::AntlerStag},
       std::vector{MonsterKind::BarkSmack, MonsterKind::BarkSmack},
-      std::vector{MonsterKind::FieldMouse, MonsterKind::BumpkinHare,
-                  MonsterKind::BarkSmack},
-      std::vector{MonsterKind::HoneyBadger, MonsterKind::FieldMouse,
-                  MonsterKind::FieldMouse, MonsterKind::FieldMouse,
-                  MonsterKind::FieldMouse}};
+      std::vector{MonsterKind::FieldMouse, MonsterKind::BumpkinHare, MonsterKind::BarkSmack},
+      std::vector{MonsterKind::HoneyBadger, MonsterKind::FieldMouse, MonsterKind::FieldMouse,
+                  MonsterKind::FieldMouse, MonsterKind::FieldMouse}};
   for (std::size_t index = 0; index < woodland.size(); ++index) {
-    const auto *floor = fl::primitives::generated_content::floor_lineup(
+    const auto* floor = fl::primitives::generated_content::floor_lineup(
         "origin_woodland_tower", static_cast<int>(index + 1));
     REQUIRE(floor != nullptr);
     REQUIRE(std::vector(floor->monsters.begin(),
-                        floor->monsters.begin() + static_cast<std::ptrdiff_t>(
-                                                      floor->monster_count)) ==
-            woodland[index]);
+                        floor->monsters.begin() +
+                            static_cast<std::ptrdiff_t>(floor->monster_count)) == woodland[index]);
   }
 
-  const std::array plains{
-      std::vector{MonsterKind::PrairieMeerkat},
-      std::vector{MonsterKind::PrairieMeerkat, MonsterKind::GrassWolf},
-      std::vector{MonsterKind::PrairieMeerkat, MonsterKind::BristleBoar}};
+  const std::array plains{std::vector{MonsterKind::PrairieMeerkat},
+                          std::vector{MonsterKind::PrairieMeerkat, MonsterKind::GrassWolf},
+                          std::vector{MonsterKind::PrairieMeerkat, MonsterKind::BristleBoar}};
   for (std::size_t index = 0; index < plains.size(); ++index) {
-    const auto *floor = fl::primitives::generated_content::floor_lineup(
+    const auto* floor = fl::primitives::generated_content::floor_lineup(
         "origin_plains_tower", static_cast<int>(index + 1));
     REQUIRE(floor != nullptr);
     REQUIRE(std::vector(floor->monsters.begin(),
-                        floor->monsters.begin() + static_cast<std::ptrdiff_t>(
-                                                      floor->monster_count)) ==
-            plains[index]);
+                        floor->monsters.begin() +
+                            static_cast<std::ptrdiff_t>(floor->monster_count)) == plains[index]);
   }
-  const auto *cover =
-      fl::primitives::generated_content::floor_lineup("origin_plains_tower", 3);
+  const auto* cover = fl::primitives::generated_content::floor_lineup("origin_plains_tower", 3);
   REQUIRE(cover->cover.enabled());
   REQUIRE(cover->cover.protected_index == 0);
   REQUIRE(cover->cover.protector_index == 1);
   REQUIRE(cover->cover.release_skill == fl::skills::SkillId::BumperRush);
 }
 
-TEST_CASE(
-    "Woodland floor nine unlocks Plains, whose first clear rewards the cape",
+TEST_CASE("Woodland floor nine unlocks Plains, whose first clear rewards the cape",
           "[tower][progression][reward]") {
   fl::GrandCentral game{1, 1, 5};
   auto ctx = game.account_context(0).party_context(0);
-  auto &party = ctx.party_data();
+  auto& party = ctx.party_data();
   party.replace_items({});
   REQUIRE(party.select_tower("origin_woodland_tower"));
   REQUIRE_FALSE(party.select_tower("origin_plains_tower"));
   int plains_unlock_events = 0;
-  fl::events::ScopedPartyListener unlock_sub{
-      party.party_bus(), std::in_place_type<fl::events::BiomeUnlocked>,
-      [&](const fl::events::BiomeUnlocked &event) {
-        REQUIRE(event.biome_id == "origin_plains_tower");
-        ++plains_unlock_events;
-      }};
+  fl::events::ScopedPartyListener unlock_sub{party.party_bus(),
+                                             std::in_place_type<fl::events::BiomeUnlocked>,
+                                             [&](const fl::events::BiomeUnlocked& event) {
+                                               REQUIRE(event.biome_id == "origin_plains_tower");
+                                               ++plains_unlock_events;
+                                             }};
 
   auto clear_current_floor = [&] {
     const auto route = party.tower_route();
     REQUIRE(route.has_value());
-    const auto *lineup = fl::primitives::generated_content::floor_lineup(
-        route->biome_id, route->floor);
+    const auto* lineup =
+        fl::primitives::generated_content::floor_lineup(route->biome_id, route->floor);
     REQUIRE(lineup != nullptr);
     party.begin_tower_encounter();
-    auto &fight = fl::primitives::EncounterBuilder{
-        ctx, fl::primitives::EncounterMode::ChaosAttractor,
-        fl::primitives::EncounterBuilder::TowerFloor{
-            std::string(route->biome_id), route->floor}}.thump_it_out();
+    auto& fight =
+        fl::primitives::EncounterBuilder{ctx, fl::primitives::EncounterMode::ChaosAttractor,
+                                         fl::primitives::EncounterBuilder::TowerFloor{
+                                             std::string(route->biome_id), route->floor}}
+            .thump_it_out();
     REQUIRE(fight.attackers().members().size() == lineup->monster_count);
     // Resolve the setup without waiting for combat; the victory and reward
     // event path is the same one used after production damage kills a lineup.
@@ -206,20 +195,19 @@ TEST_CASE(
   clear_current_floor();
   REQUIRE(party.tower_route()->floor == 2);
   REQUIRE(party.highest_tower_floor_cleared("origin_plains_tower") == 1);
-  const auto reward = std::find_if(
-      party.items().begin(), party.items().end(), [&](entt::entity item) {
-        const auto *gear = ctx.reg().try_get<fl::ecs::components::Equipment>(item);
+  const auto reward =
+      std::find_if(party.items().begin(), party.items().end(), [&](entt::entity item) {
+        const auto* gear = ctx.reg().try_get<fl::ecs::components::Equipment>(item);
         return gear && gear->unique_id() == "mossbound_cape";
       });
   REQUIRE(reward != party.items().end());
   const auto hero = party.members().front().member_id();
   party.party_bus().emit(fl::events::PartyEvent{
-      fl::events::EquipmentEquipRequested{
-          hero, fl::loot::EquipmentSlot::cape, *reward}});
+      fl::events::EquipmentEquipRequested{hero, fl::loot::EquipmentSlot::cape, *reward}});
   REQUIRE(fl::ecs::systems::effective_combat_stats(ctx.reg(), hero).armor >= 3);
   REQUIRE(party.select_tower("origin_woodland_tower"));
   REQUIRE(party.tower_route()->floor == 10);
-  const auto *floor_ten = fl::primitives::generated_content::floor_lineup(
+  const auto* floor_ten = fl::primitives::generated_content::floor_lineup(
       party.tower_route()->biome_id, party.tower_route()->floor);
   REQUIRE(floor_ten != nullptr);
   REQUIRE(floor_ten->monsters.front() == fl::monster::MonsterKind::HoneyBadger);
@@ -230,15 +218,15 @@ TEST_CASE("Seeded production beats can clear Woodland nine and take the Plains "
           "[tower][progression][combat]") {
   fl::GrandCentral game{1, 1, 5, false, false, 42};
   auto ctx = game.account_context(0).party_context(0);
-  auto &party = ctx.party_data();
+  auto& party = ctx.party_data();
   party.replace_items({});
-  for (auto &member : party.members()) {
+  for (auto& member : party.members()) {
     const auto hero = member.member_id();
-    auto &stats = ctx.reg().get<fl::ecs::components::Stats>(hero);
+    auto& stats = ctx.reg().get<fl::ecs::components::Stats>(hero);
     stats.hp_ = stats.max_hp_ = 20;
     stats.attack_ = 2;
     stats.armor_ = 0;
-    auto &party_member = ctx.reg().get<fl::ecs::components::PartyMember>(hero);
+    auto& party_member = ctx.reg().get<fl::ecs::components::PartyMember>(hero);
     party_member.closet().unequip_skill(fl::skills::SkillId::Observe);
     member.grimoire().learn(fl::skills::SkillId::Thump);
     REQUIRE(party_member.equip_known_skill(fl::skills::SkillId::Thump));
@@ -262,16 +250,15 @@ TEST_CASE("Seeded production beats can clear Woodland nine and take the Plains "
     ++beats;
   }
   REQUIRE(party.tower_route()->floor == 2);
-  const auto reward = std::find_if(
-      party.items().begin(), party.items().end(), [&](entt::entity item) {
-        const auto *gear = ctx.reg().try_get<fl::ecs::components::Equipment>(item);
+  const auto reward =
+      std::find_if(party.items().begin(), party.items().end(), [&](entt::entity item) {
+        const auto* gear = ctx.reg().try_get<fl::ecs::components::Equipment>(item);
         return gear && gear->unique_id() == "mossbound_cape";
       });
   REQUIRE(reward != party.items().end());
   const auto hero = party.members().front().member_id();
   party.party_bus().emit(fl::events::PartyEvent{
-      fl::events::EquipmentEquipRequested{
-          hero, fl::loot::EquipmentSlot::cape, *reward}});
+      fl::events::EquipmentEquipRequested{hero, fl::loot::EquipmentSlot::cape, *reward}});
   REQUIRE(fl::ecs::systems::effective_combat_stats(ctx.reg(), hero).armor >= 3);
   REQUIRE(party.select_tower("origin_woodland_tower"));
   REQUIRE(party.tower_route()->floor == 10);

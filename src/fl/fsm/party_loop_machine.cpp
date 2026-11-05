@@ -10,24 +10,20 @@
 namespace fl::fsm {
 
 struct PartyLoopMachine::Impl {
-  fl::context::PartyCtx *ctx{};
+  fl::context::PartyCtx* ctx{};
   boost::sml::sm<fl::fsm::PartyLoop> sm_;
   fl::events::ScopedPartyListener party_wiped_sub_;
   fl::events::ScopedPartyListener return_to_town_sub_;
   bool processing_beat_{false};
   bool party_wipe_pending_{false};
 
-  explicit Impl(fl::context::PartyCtx &c)
+  explicit Impl(fl::context::PartyCtx& c)
       : ctx(&c), sm_(c),
-        party_wiped_sub_(
-            c.bus(), std::in_place_type<fl::events::PartyWiped>,
-            [this](const fl::events::PartyWiped &) { on_party_wiped(); }),
+        party_wiped_sub_(c.bus(), std::in_place_type<fl::events::PartyWiped>,
+                         [this](const fl::events::PartyWiped&) { on_party_wiped(); }),
         return_to_town_sub_(
-            c.bus(),
-            std::in_place_type<fl::events::PartyReturnToTownRequested>,
-            [this](const fl::events::PartyReturnToTownRequested &) {
-              on_return_to_town();
-            }) {}
+            c.bus(), std::in_place_type<fl::events::PartyReturnToTownRequested>,
+            [this](const fl::events::PartyReturnToTownRequested&) { on_return_to_town(); }) {}
 
   void on_return_to_town() {
     if (ctx->party_data().in_raid()) return;
@@ -62,13 +58,12 @@ struct PartyLoopMachine::Impl {
   }
 };
 
-PartyLoopMachine::PartyLoopMachine(fl::context::PartyCtx &ctx)
+PartyLoopMachine::PartyLoopMachine(fl::context::PartyCtx& ctx)
     : impl_(std::make_unique<Impl>(ctx)) {}
 
 PartyLoopMachine::~PartyLoopMachine() = default;
-PartyLoopMachine::PartyLoopMachine(PartyLoopMachine &&) noexcept = default;
-PartyLoopMachine &
-PartyLoopMachine::operator=(PartyLoopMachine &&) noexcept = default;
+PartyLoopMachine::PartyLoopMachine(PartyLoopMachine&&) noexcept = default;
+PartyLoopMachine& PartyLoopMachine::operator=(PartyLoopMachine&&) noexcept = default;
 
 void PartyLoopMachine::beat_event() {
   //  impl_->ctx->log().append_markup(

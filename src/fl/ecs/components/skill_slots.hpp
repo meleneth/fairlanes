@@ -33,7 +33,7 @@ struct SkillSlots {
       return false;
     }
 
-    for (auto &known : slots) {
+    for (auto& known : slots) {
       if (!known.has_value()) {
         known = skill;
         return true;
@@ -44,7 +44,7 @@ struct SkillSlots {
   }
 
   bool unlearn(fl::skills::SkillKey skill) noexcept {
-    for (auto &known : slots) {
+    for (auto& known : slots) {
       if (known == skill) {
         known.reset();
         return true;

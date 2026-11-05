@@ -11,8 +11,7 @@
 #include "fl/primitives/member_data.hpp"
 #include "fl/primitives/party_data.hpp"
 
-TEST_CASE("AccountData creates a valid entity and log",
-          "[account][account_data]") {
+TEST_CASE("AccountData creates a valid entity and log", "[account][account_data]") {
   entt::registry reg;
   entt::entity ent = reg.create();
 
@@ -22,8 +21,7 @@ TEST_CASE("AccountData creates a valid entity and log",
   REQUIRE(reg.valid(acc.account_id()));
 }
 
-TEST_CASE("AccountData creates unique entity ids per instance",
-          "[account][account_data]") {
+TEST_CASE("AccountData creates unique entity ids per instance", "[account][account_data]") {
   entt::registry reg;
   entt::entity ent_a = reg.create();
   entt::entity ent_b = reg.create();
@@ -38,14 +36,13 @@ TEST_CASE("AccountData creates unique entity ids per instance",
   REQUIRE(reg.valid(b.account_id()));
 }
 
-TEST_CASE(
-    "PartyData starts a one minute town penalty when all members are dead",
-    "[party][town][penalty]") {
+TEST_CASE("PartyData starts a one minute town penalty when all members are dead",
+          "[party][town][penalty]") {
   fl::GrandCentral gc{1, 1, 2};
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
+  auto& party = party_ctx.party_data();
 
   fl::primitives::EncounterBuilder builder(party_ctx);
   (void)builder.thump_it_out();
@@ -53,11 +50,10 @@ TEST_CASE(
 
   bool saw_party_wiped = false;
   (void)party.party_bus().on<fl::events::PartyWiped>(
-      [&](const fl::events::PartyWiped &) { saw_party_wiped = true; });
+      [&](const fl::events::PartyWiped&) { saw_party_wiped = true; });
 
-  for (const auto &member : party.members()) {
-    auto &stats =
-        party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
+  for (const auto& member : party.members()) {
+    auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
     stats.hp_ = 0;
   }
 
@@ -65,8 +61,7 @@ TEST_CASE(
 
   REQUIRE(saw_party_wiped);
   REQUIRE_FALSE(party.in_combat());
-  REQUIRE(party.town_penalty_beats_remaining() ==
-          fl::primitives::PartyData::kTownPenaltyBeats);
+  REQUIRE(party.town_penalty_beats_remaining() == fl::primitives::PartyData::kTownPenaltyBeats);
   REQUIRE(party.town_penalty_active());
 
   for (int i = 0; i < fl::primitives::PartyData::kTownPenaltyBeats; ++i) {
@@ -76,17 +71,15 @@ TEST_CASE(
   REQUIRE_FALSE(party.town_penalty_active());
 }
 
-TEST_CASE("Returning to town revitalizes party members",
-          "[party][town][revitalize]") {
+TEST_CASE("Returning to town revitalizes party members", "[party][town][revitalize]") {
   fl::GrandCentral gc{1, 1, 2};
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
+  auto& party = party_ctx.party_data();
 
-  for (const auto &member : party.members()) {
-    auto &stats =
-        party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
+  for (const auto& member : party.members()) {
+    auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
     stats.hp_ = 0;
     stats.attack_ = 7;
     stats.armor_ = 4;
@@ -97,19 +90,15 @@ TEST_CASE("Returning to town revitalizes party members",
   bool saw_revitalize_request = false;
   int healed_members = 0;
   (void)party.party_bus().on<fl::events::PartyRevitalizeRequested>(
-      [&](const fl::events::PartyRevitalizeRequested &) {
-        saw_revitalize_request = true;
-      });
-  (void)party.party_bus().on<fl::events::PartyHealed>(
-      [&](const fl::events::PartyHealed &ev) {
-        if (ev.amount > 0) {
-          ++healed_members;
-        }
-      });
+      [&](const fl::events::PartyRevitalizeRequested&) { saw_revitalize_request = true; });
+  (void)party.party_bus().on<fl::events::PartyHealed>([&](const fl::events::PartyHealed& ev) {
+    if (ev.amount > 0) {
+      ++healed_members;
+    }
+  });
 
-  for (const auto &member : party.members()) {
-    const auto &stats =
-        party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
+  for (const auto& member : party.members()) {
+    const auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
     REQUIRE(stats.hp_ == 0);
     REQUIRE(stats.attack_ == 7);
     REQUIRE(stats.armor_ == 4);
@@ -122,9 +111,8 @@ TEST_CASE("Returning to town revitalizes party members",
   REQUIRE(saw_revitalize_request);
   REQUIRE(healed_members == static_cast<int>(party.members().size()));
 
-  for (const auto &member : party.members()) {
-    const auto &stats =
-        party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
+  for (const auto& member : party.members()) {
+    const auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
     REQUIRE(stats.hp_ > 0);
     REQUIRE(stats.hp_ == stats.max_hp_);
     REQUIRE(stats.attack_ == 7);
@@ -138,19 +126,17 @@ TEST_CASE("Party loop revitalizes members after a wipe town stay",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
+  auto& party = party_ctx.party_data();
 
   int healed_members = 0;
-  (void)party.party_bus().on<fl::events::PartyHealed>(
-      [&](const fl::events::PartyHealed &ev) {
-        if (ev.amount > 0) {
-          ++healed_members;
-        }
-      });
+  (void)party.party_bus().on<fl::events::PartyHealed>([&](const fl::events::PartyHealed& ev) {
+    if (ev.amount > 0) {
+      ++healed_members;
+    }
+  });
 
-  for (const auto &member : party.members()) {
-    auto &stats =
-        party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
+  for (const auto& member : party.members()) {
+    auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
     stats.hp_ = 0;
     stats.attack_ = 7;
     stats.armor_ = 4;
@@ -170,9 +156,8 @@ TEST_CASE("Party loop revitalizes members after a wipe town stay",
   REQUIRE_FALSE(party.town_penalty_active());
   REQUIRE(healed_members == static_cast<int>(party.members().size()));
 
-  for (const auto &member : party.members()) {
-    const auto &stats =
-        party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
+  for (const auto& member : party.members()) {
+    const auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id());
     REQUIRE(stats.hp_ == stats.max_hp_);
     REQUIRE(stats.attack_ == 7);
     REQUIRE(stats.armor_ == 4);

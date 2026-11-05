@@ -22,13 +22,13 @@ struct LogEvent {
 
 enum class LogKey { Message };
 
-using LogBus = eventpp::EventDispatcher<LogKey, void(const LogEvent &)>;
+using LogBus = eventpp::EventDispatcher<LogKey, void(const LogEvent&)>;
 
 class Logger {
-  LogBus &bus_;
+  LogBus& bus_;
 
 public:
-  explicit Logger(LogBus &bus) : bus_(bus) {}
+  explicit Logger(LogBus& bus) : bus_(bus) {}
 
   void log(LogLevel level, std::string_view msg) {
     LogEvent ev;
@@ -37,11 +37,21 @@ public:
     bus_.dispatch(LogKey::Message, ev);
   }
 
-  void trace(std::string_view msg) { log(LogLevel::trace, msg); }
-  void debug(std::string_view msg) { log(LogLevel::debug, msg); }
-  void info(std::string_view msg) { log(LogLevel::info, msg); }
-  void warn(std::string_view msg) { log(LogLevel::warn, msg); }
-  void error(std::string_view msg) { log(LogLevel::error, msg); }
+  void trace(std::string_view msg) {
+    log(LogLevel::trace, msg);
+  }
+  void debug(std::string_view msg) {
+    log(LogLevel::debug, msg);
+  }
+  void info(std::string_view msg) {
+    log(LogLevel::info, msg);
+  }
+  void warn(std::string_view msg) {
+    log(LogLevel::warn, msg);
+  }
+  void error(std::string_view msg) {
+    log(LogLevel::error, msg);
+  }
 };
 
 struct Logging {

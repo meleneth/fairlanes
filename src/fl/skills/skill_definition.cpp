@@ -13,11 +13,10 @@ namespace fl::skills {
 
 namespace {
 
-const SkillDefinition *find_definition(SkillKey skill) noexcept {
+const SkillDefinition* find_definition(SkillKey skill) noexcept {
   const auto all = all_definitions();
-  const auto it = std::find_if(all.begin(), all.end(), [skill](auto *entry) {
-    return entry->key.base == skill.base;
-  });
+  const auto it = std::find_if(all.begin(), all.end(),
+                               [skill](auto* entry) { return entry->key.base == skill.base; });
   return it == all.end() ? nullptr : *it;
 }
 
@@ -30,8 +29,8 @@ const SkillDefinition *find_definition(SkillKey skill) noexcept {
 
 } // namespace
 
-const SkillDefinition &definition(SkillKey skill) noexcept {
-  if (const auto *found = find_definition(skill)) {
+const SkillDefinition& definition(SkillKey skill) noexcept {
+  if (const auto* found = find_definition(skill)) {
     return *found;
   }
   abort_missing_definition(skill);
@@ -41,7 +40,7 @@ bool has_definition(SkillKey skill) noexcept {
   return find_definition(skill) != nullptr;
 }
 
-std::span<const SkillDefinition *const> all_definitions() noexcept {
+std::span<const SkillDefinition* const> all_definitions() noexcept {
   return generated_content::all_definitions();
 }
 
@@ -50,10 +49,10 @@ std::string_view name(SkillKey skill) noexcept {
 }
 
 std::string display_name(SkillKey skill) {
-  const auto *found = find_definition(skill);
+  const auto* found = find_definition(skill);
   auto display = found == nullptr
-                     ? "Unknown Skill #" + std::to_string(static_cast<
-                           std::underlying_type_t<SkillId>>(skill.base))
+                     ? "Unknown Skill #" +
+                           std::to_string(static_cast<std::underlying_type_t<SkillId>>(skill.base))
                      : std::string{found->display_name};
   if (skill.rank.value() != SkillRank::kMin) {
     display += " ";

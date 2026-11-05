@@ -12,7 +12,7 @@ TEST_CASE("PartyStatus keeps every noncombat state to three lines",
           "[widgets][party_status][layout]") {
   fl::GrandCentral gc{1, 1, 1};
   auto party_ctx = gc.account_context(0).party_context(0);
-  auto &party = party_ctx.party_data();
+  auto& party = party_ctx.party_data();
 
   fl::widgets::PartyStatus idle_status{party};
   auto idle = idle_status.Render();
@@ -24,13 +24,12 @@ TEST_CASE("PartyStatus keeps every noncombat state to three lines",
   REQUIRE(ftxui::Dimension::Fit(fixing).dimy == 3);
 }
 
-TEST_CASE("Dead PartyStatus keeps its label in a three-line frame",
-          "[widgets][party_status]") {
+TEST_CASE("Dead PartyStatus keeps its label in a three-line frame", "[widgets][party_status]") {
   fl::GrandCentral gc{1, 1, 1};
   auto party_ctx = gc.account_context(0).party_context(0);
-  auto &party = party_ctx.party_data();
+  auto& party = party_ctx.party_data();
 
-  for (const auto &member : party.members()) {
+  for (const auto& member : party.members()) {
     party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id()).hp_ = 0;
   }
 
@@ -40,8 +39,8 @@ TEST_CASE("Dead PartyStatus keeps its label in a three-line frame",
 
   REQUIRE(dimensions.dimy == 3);
 
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fit(element),
-                                      ftxui::Dimension::Fit(element));
+  auto screen =
+      ftxui::Screen::Create(ftxui::Dimension::Fit(element), ftxui::Dimension::Fit(element));
   ftxui::Render(screen, element);
   const std::string rendered = screen.ToString();
   const auto first_newline = rendered.find('\n');
@@ -55,14 +54,14 @@ TEST_CASE("PartyStatus shows the selected tower floor and attempt",
           "[widgets][party_status][tower]") {
   fl::GrandCentral gc{1, 1, 1};
   auto party_ctx = gc.account_context(0).party_context(0);
-  auto &party = party_ctx.party_data();
+  auto& party = party_ctx.party_data();
   REQUIRE(party.select_tower("origin_woodland_tower"));
   party.begin_tower_encounter();
 
   fl::widgets::PartyStatus status{party};
   auto element = status.Render();
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fit(element),
-                                      ftxui::Dimension::Fit(element));
+  auto screen =
+      ftxui::Screen::Create(ftxui::Dimension::Fit(element), ftxui::Dimension::Fit(element));
   ftxui::Render(screen, element);
   const auto rendered = screen.ToString();
   REQUIRE(rendered.find("Floor 1 try 1") != std::string::npos);

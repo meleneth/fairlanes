@@ -11,8 +11,7 @@ struct VisitorCountdown {
   std::uint64_t remaining_beats;
   bool paused;
 };
-ftxui::Element
-render_moon_calendar(const fl::primitives::WorldClock &world_clock,
-                     std::optional<VisitorCountdown> visitor = std::nullopt);
+ftxui::Element render_moon_calendar(const fl::primitives::WorldClock& world_clock,
+                                    std::optional<VisitorCountdown> visitor = std::nullopt);
 
 } // namespace fl::widgets

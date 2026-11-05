@@ -12,16 +12,22 @@
 
 namespace fl::widgets {
 
-ConsoleOverlay::ConsoleOverlay(FancyLog *console) : console_(console) {
+ConsoleOverlay::ConsoleOverlay(FancyLog* console) : console_(console) {
   input_ = ftxui::Input(&line_);
   Add(input_);
 }
 
-bool ConsoleOverlay::open() const { return open_; }
+bool ConsoleOverlay::open() const {
+  return open_;
+}
 
-bool ConsoleOverlay::should_show() const { return open_; }
+bool ConsoleOverlay::should_show() const {
+  return open_;
+}
 
-void ConsoleOverlay::toggle() { set_open(!open_); }
+void ConsoleOverlay::toggle() {
+  set_open(!open_);
+}
 
 void ConsoleOverlay::set_open(bool v) {
   open_ = v;
@@ -49,11 +55,12 @@ void ConsoleOverlay::tick() {
   rows_ += rows_ < target_rows_ ? 1 : -1;
 }
 
-void ConsoleOverlay::change_console(FancyLog *console) { console_ = console; }
+void ConsoleOverlay::change_console(FancyLog* console) {
+  console_ = console;
+}
 
 void ConsoleOverlay::set_on_command(CommandHandler handler) {
-  on_command_ =
-      handler ? std::move(handler) : CommandHandler{[](std::string_view) {}};
+  on_command_ = handler ? std::move(handler) : CommandHandler{[](std::string_view) {}};
 }
 
 void ConsoleOverlay::FocusInput() {
@@ -139,8 +146,8 @@ ftxui::Element ConsoleOverlay::Render() {
                  }) |
                  bg;
 
-  return window(text("Console") | chrome, content) | xflex_grow | clear_under |
-         chrome | bg | size(HEIGHT, EQUAL, std::max(0, rows_));
+  return window(text("Console") | chrome, content) | xflex_grow | clear_under | chrome | bg |
+         size(HEIGHT, EQUAL, std::max(0, rows_));
 }
 
 } // namespace fl::widgets

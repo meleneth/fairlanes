@@ -28,19 +28,17 @@
 
 namespace {
 
-void tick_party(fl::context::PartyCtx &party_ctx, int beats) {
+void tick_party(fl::context::PartyCtx& party_ctx, int beats) {
   for (int i = 0; i < beats; ++i) {
     party_ctx.bus().emit(fl::events::PartyEvent{fl::events::PartyTick{}});
   }
 }
 
-void learn_and_equip_observe(fl::context::PartyCtx &party_ctx,
-                             entt::entity member, int rank) {
-  auto &party_member =
-      party_ctx.reg().get<fl::ecs::components::PartyMember>(member);
-  const auto observe = fl::skills::SkillKey{
-      fl::skills::SkillId::Observe, fl::skills::SkillRank::require(rank)};
-  auto &grimoire = party_member.member_data().grimoire();
+void learn_and_equip_observe(fl::context::PartyCtx& party_ctx, entt::entity member, int rank) {
+  auto& party_member = party_ctx.reg().get<fl::ecs::components::PartyMember>(member);
+  const auto observe =
+      fl::skills::SkillKey{fl::skills::SkillId::Observe, fl::skills::SkillRank::require(rank)};
+  auto& grimoire = party_member.member_data().grimoire();
   if (!grimoire.knows(observe)) {
     REQUIRE(grimoire.learn(observe));
   }
@@ -49,8 +47,8 @@ void learn_and_equip_observe(fl::context::PartyCtx &party_ctx,
   }
 }
 
-entt::entity add_honey_badger(fl::context::PartyCtx &party_ctx,
-                              fl::primitives::EncounterData &encounter) {
+entt::entity add_honey_badger(fl::context::PartyCtx& party_ctx,
+                              fl::primitives::EncounterData& encounter) {
   auto build_ctx = party_ctx.build_context();
   auto honey_badger = fl::primitives::EntityBuilder(build_ctx)
                           .monster(fl::monster::MonsterKind::HoneyBadger)
@@ -58,15 +56,13 @@ entt::entity add_honey_badger(fl::context::PartyCtx &party_ctx,
   encounter.attackers().members().push_back(honey_badger);
   encounter.entities_to_cleanup().push_back(honey_badger);
   encounter.add_enemy_combatant_bus(honey_badger);
-  encounter.atb_in().emit(
-      seerin::AtbInEvent{seerin::AddCombatant{honey_badger}});
+  encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{honey_badger}});
   return honey_badger;
 }
 
-entt::entity find_dire_bleed_target(fl::context::PartyCtx &party_ctx) {
-  for (const auto &member : party_ctx.party_data().members()) {
-    if (party_ctx.reg().all_of<fl::ecs::components::DireBleed>(
-            member.member_id())) {
+entt::entity find_dire_bleed_target(fl::context::PartyCtx& party_ctx) {
+  for (const auto& member : party_ctx.party_data().members()) {
+    if (party_ctx.reg().all_of<fl::ecs::components::DireBleed>(member.member_id())) {
       return member.member_id();
     }
   }
@@ -74,10 +70,9 @@ entt::entity find_dire_bleed_target(fl::context::PartyCtx &party_ctx) {
   return entt::null;
 }
 
-entt::entity find_poison_target(fl::context::PartyCtx &party_ctx) {
-  for (const auto &member : party_ctx.party_data().members()) {
-    if (party_ctx.reg().all_of<fl::ecs::components::Poison>(
-            member.member_id())) {
+entt::entity find_poison_target(fl::context::PartyCtx& party_ctx) {
+  for (const auto& member : party_ctx.party_data().members()) {
+    if (party_ctx.reg().all_of<fl::ecs::components::Poison>(member.member_id())) {
       return member.member_id();
     }
   }
@@ -96,7 +91,7 @@ TEST_CASE("EncounterBuilder::thump_it_out returns the created EncounterData",
 
   fl::primitives::EncounterBuilder builder(party_ctx);
 
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   REQUIRE(&encounter == &party_ctx.party_data().encounter_data());
 }
@@ -110,7 +105,7 @@ TEST_CASE("EncounterBuilder::thump_it_out enrolls party members as defenders",
 
   fl::primitives::EncounterBuilder builder(party_ctx);
 
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   REQUIRE(encounter.defenders().members().size() == 3);
 }
@@ -119,18 +114,16 @@ TEST_CASE("Skill sequencing publishes casting state until the turn finishes",
           "[encounter][skills][casting][events]") {
   fl::GrandCentral gc{1, 1, 1};
   auto party_ctx = gc.account_context(0).party_context(0);
-  auto &encounter = fl::primitives::EncounterBuilder{party_ctx}.thump_it_out();
+  auto& encounter = fl::primitives::EncounterBuilder{party_ctx}.thump_it_out();
   const auto caster = encounter.defenders().members().front();
   const auto target = encounter.attackers().members().front();
   bool finished = false;
-  fl::skills::SkillSequencer sequencer{
-      encounter.context(), encounter.atb_engine().scheduler(),
-      [&finished](entt::entity) { finished = true; }};
+  fl::skills::SkillSequencer sequencer{encounter.context(), encounter.atb_engine().scheduler(),
+                                       [&finished](entt::entity) { finished = true; }};
 
   sequencer.schedule(caster, target, fl::skills::SkillId::Thump);
 
-  const auto *casting =
-      party_ctx.reg().try_get<fl::ecs::components::CastingSkill>(caster);
+  const auto* casting = party_ctx.reg().try_get<fl::ecs::components::CastingSkill>(caster);
   REQUIRE(casting != nullptr);
   REQUIRE(casting->skill == fl::skills::SkillId::Thump);
   REQUIRE_FALSE(finished);
@@ -140,13 +133,11 @@ TEST_CASE("Skill sequencing publishes casting state until the turn finishes",
   REQUIRE_FALSE(finished);
 
   tick_party(party_ctx, 1);
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::CastingSkill>(caster));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::CastingSkill>(caster));
   REQUIRE(finished);
 }
 
-TEST_CASE("EncounterBuilder::thump_it_out adds a full enemy party",
-          "[encounter][builder]") {
+TEST_CASE("EncounterBuilder::thump_it_out adds a full enemy party", "[encounter][builder]") {
   fl::GrandCentral gc{1, 1, 3};
 
   auto account_ctx = gc.account_context(0);
@@ -154,7 +145,7 @@ TEST_CASE("EncounterBuilder::thump_it_out adds a full enemy party",
 
   fl::primitives::EncounterBuilder builder(party_ctx);
 
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   REQUIRE(encounter.attackers().members().size() ==
           fl::primitives::EncounterBuilder::kEnemyPartySize);
@@ -166,15 +157,14 @@ TEST_CASE("EncounterBuilder::thump_it_out adds a full enemy party",
   }
 }
 
-TEST_CASE("TakeDamage emits PlayerDied when a party member dies",
-          "[encounter][events][death]") {
+TEST_CASE("TakeDamage emits PlayerDied when a party member dies", "[encounter][events][death]") {
   fl::GrandCentral gc{1, 1, 1};
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   const auto attacker = encounter.attackers().members().front();
   const auto defender = encounter.defenders().members().front();
@@ -183,17 +173,14 @@ TEST_CASE("TakeDamage emits PlayerDied when a party member dies",
   entt::entity seen_player = entt::null;
   entt::entity seen_killer = entt::null;
 
-  (void)party_ctx.party_data()
-      .encounter_data()
-      .combatant_bus(defender)
-      .on<fl::events::PlayerDied>([&](const fl::events::PlayerDied &ev) {
+  (void)party_ctx.party_data().encounter_data().combatant_bus(defender).on<fl::events::PlayerDied>(
+      [&](const fl::events::PlayerDied& ev) {
         saw_player_died = true;
         seen_player = ev.player;
         seen_killer = ev.killer;
       });
 
-  auto attack_ctx =
-      fl::context::AttackCtx::make_attack(party_ctx, attacker, defender);
+  auto attack_ctx = fl::context::AttackCtx::make_attack(party_ctx, attacker, defender);
   attack_ctx.damage().physical = 9999;
   fl::ecs::systems::TakeDamage::commit(attack_ctx);
 
@@ -210,7 +197,7 @@ TEST_CASE("TakeDamage requests loot when a player defender kills an enemy",
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   const auto attacker = encounter.defenders().members().front();
   const auto defender = encounter.attackers().members().front();
@@ -220,14 +207,13 @@ TEST_CASE("TakeDamage requests loot when a player defender kills an enemy",
   entt::entity seen_party = entt::null;
 
   (void)party_ctx.party_data().party_bus().on<fl::events::LootDropRequested>(
-      [&](const fl::events::LootDropRequested &ev) {
+      [&](const fl::events::LootDropRequested& ev) {
         saw_loot_drop = true;
         seen_source = ev.source;
         seen_party = ev.party;
       });
 
-  auto attack_ctx =
-      fl::context::AttackCtx::make_attack(party_ctx, attacker, defender);
+  auto attack_ctx = fl::context::AttackCtx::make_attack(party_ctx, attacker, defender);
   attack_ctx.damage().physical = 9999;
   fl::ecs::systems::TakeDamage::commit(attack_ctx);
 
@@ -244,7 +230,7 @@ TEST_CASE("TakeDamage emits PartyWiped when the final party member dies",
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   const auto attacker = encounter.attackers().members().front();
   const auto defender = encounter.defenders().members().front();
@@ -252,26 +238,24 @@ TEST_CASE("TakeDamage emits PartyWiped when the final party member dies",
   bool saw_party_wiped = false;
 
   (void)party_ctx.party_data().party_bus().on<fl::events::PartyWiped>(
-      [&](const fl::events::PartyWiped &) { saw_party_wiped = true; });
+      [&](const fl::events::PartyWiped&) { saw_party_wiped = true; });
 
-  auto attack_ctx =
-      fl::context::AttackCtx::make_attack(party_ctx, attacker, defender);
+  auto attack_ctx = fl::context::AttackCtx::make_attack(party_ctx, attacker, defender);
   attack_ctx.damage().physical = 9999;
   fl::ecs::systems::TakeDamage::commit(attack_ctx);
 
   REQUIRE(saw_party_wiped);
 }
 
-TEST_CASE(
-    "TakeDamage marks dead player state and clears pending encounter events",
-    "[encounter][events][death]") {
+TEST_CASE("TakeDamage marks dead player state and clears pending encounter events",
+          "[encounter][events][death]") {
   fl::GrandCentral gc{1, 1, 1};
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
 
   fl::primitives::EncounterBuilder builder(party_ctx);
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   const auto attacker = encounter.attackers().members().front();
   const auto defender = encounter.defenders().members().front();
@@ -281,34 +265,30 @@ TEST_CASE(
   }});
   REQUIRE(encounter.pending_scheduled_events() > 0);
 
-  auto attack_ctx =
-      fl::context::AttackCtx::make_attack(party_ctx, attacker, defender);
+  auto attack_ctx = fl::context::AttackCtx::make_attack(party_ctx, attacker, defender);
   attack_ctx.damage().physical = 9999;
   fl::ecs::systems::TakeDamage::commit(attack_ctx);
 
   REQUIRE(encounter.pending_scheduled_events() == 0);
-  const auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+  const auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
   REQUIRE(stats.hp_ == 0);
 }
 
-TEST_CASE(
-    "Monster skill choice reads monster SkillSlots instead of MonsterIdentity",
-    "[encounter][skills]") {
+TEST_CASE("Monster skill choice reads monster SkillSlots instead of MonsterIdentity",
+          "[encounter][skills]") {
   fl::GrandCentral gc{1, 1, 1};
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   auto honey_badger = add_honey_badger(party_ctx, encounter);
   party_ctx.reg().emplace_or_replace<fl::ecs::components::SkillSlots>(
-      honey_badger,
-      fl::ecs::components::SkillSlots::with_known(fl::skills::SkillId::Smack));
+      honey_badger, fl::ecs::components::SkillSlots::with_known(fl::skills::SkillId::Smack));
 
-  REQUIRE(party_ctx.reg()
-              .get<fl::ecs::components::MonsterIdentity>(honey_badger)
-              .kind == fl::monster::MonsterKind::HoneyBadger);
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::MonsterIdentity>(honey_badger).kind ==
+          fl::monster::MonsterKind::HoneyBadger);
   REQUIRE(encounter.choose_skill(honey_badger) == fl::skills::SkillId::Smack);
 }
 
@@ -318,13 +298,12 @@ TEST_CASE("Player skill choice reads equipped skills from the closet",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto member = party.members().front().member_id();
 
-  auto &party_member =
-      party_ctx.reg().get<fl::ecs::components::PartyMember>(member);
+  auto& party_member = party_ctx.reg().get<fl::ecs::components::PartyMember>(member);
   party_member.closet().skill_slots.fill(std::nullopt);
   REQUIRE(party_member.closet().equip_skill(fl::skills::SkillId::Thump));
 
@@ -337,39 +316,35 @@ TEST_CASE("Party wipes across different parties do not crash and leave combat",
 
   auto account_ctx = gc.account_context(0);
 
-  for (std::size_t i = 0; i < account_ctx.account_data().parties().size();
-       ++i) {
+  for (std::size_t i = 0; i < account_ctx.account_data().parties().size(); ++i) {
     auto party_ctx = account_ctx.party_context(i);
 
     fl::primitives::EncounterBuilder builder(party_ctx);
-    auto &encounter = builder.thump_it_out();
+    auto& encounter = builder.thump_it_out();
 
     const auto attacker = encounter.attackers().members().front();
     const auto defender = encounter.defenders().members().front();
 
-    auto attack_ctx =
-        fl::context::AttackCtx::make_attack(party_ctx, attacker, defender);
+    auto attack_ctx = fl::context::AttackCtx::make_attack(party_ctx, attacker, defender);
     attack_ctx.damage().physical = 9999;
     fl::ecs::systems::TakeDamage::commit(attack_ctx);
 
     REQUIRE_FALSE(party_ctx.party_data().in_combat());
 
-    const auto &stats =
-        party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+    const auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
     REQUIRE(stats.hp_ == 0);
     REQUIRE(party_ctx.party_data().town_penalty_active());
   }
 }
 
-TEST_CASE(
-    "Honey Badger Eviscerate applies Dire Bleed that ticks for 10 percent",
-    "[encounter][skills][bleed]") {
+TEST_CASE("Honey Badger Eviscerate applies Dire Bleed that ticks for 10 percent",
+          "[encounter][skills][bleed]") {
   fl::GrandCentral gc{1, 1, 1};
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -377,11 +352,10 @@ TEST_CASE(
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
   auto honey_badger = add_honey_badger(party_ctx, encounter);
-  REQUIRE(party_ctx.reg()
-              .get<fl::ecs::components::MonsterIdentity>(honey_badger)
-              .kind == fl::monster::MonsterKind::HoneyBadger);
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::MonsterIdentity>(honey_badger).kind ==
+          fl::monster::MonsterKind::HoneyBadger);
 
-  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+  auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
   stats.max_hp_ = 100;
   stats.hp_ = 100;
   stats.armor_ = 50;
@@ -393,9 +367,7 @@ TEST_CASE(
 
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::DireBleed>(defender));
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::StatusTint>(defender));
-  REQUIRE(party_ctx.reg()
-              .get<fl::ecs::components::DireBleed>(defender)
-              .damage_per_tick == 10);
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::DireBleed>(defender).damage_per_tick == 10);
 
   tick_party(party_ctx, 35);
   REQUIRE(stats.hp_ == 100);
@@ -410,8 +382,8 @@ TEST_CASE("Dire Bleed bypasses Armor on a one-HP target",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -419,13 +391,13 @@ TEST_CASE("Dire Bleed bypasses Armor on a one-HP target",
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
   const auto honey_badger = add_honey_badger(party_ctx, encounter);
-  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+  auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
   stats.max_hp_ = 10;
   stats.hp_ = 1;
   stats.armor_ = 50;
 
-  fl::skills::SkillSequencer sequencer{
-      party_ctx, encounter.atb_engine().scheduler(), [](entt::entity) {}};
+  fl::skills::SkillSequencer sequencer{party_ctx, encounter.atb_engine().scheduler(),
+                                       [](entt::entity) {}};
   sequencer.schedule(honey_badger, defender, fl::skills::SkillId::Eviscerate);
   tick_party(party_ctx, 24);
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::DireBleed>(defender));
@@ -440,8 +412,8 @@ TEST_CASE("Dire Bleed releases the active combatant when the effect is applied",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -450,7 +422,7 @@ TEST_CASE("Dire Bleed releases the active combatant when the effect is applied",
 
   auto honey_badger = add_honey_badger(party_ctx, encounter);
 
-  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+  auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
   stats.max_hp_ = 100;
   stats.hp_ = 100;
 
@@ -461,8 +433,7 @@ TEST_CASE("Dire Bleed releases the active combatant when the effect is applied",
 
   tick_party(party_ctx, 23);
   REQUIRE(encounter.atb_engine().active_combatant() == honey_badger);
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::DireBleed>(defender));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::DireBleed>(defender));
 
   tick_party(party_ctx, 1);
   REQUIRE(encounter.atb_engine().active_combatant() == entt::entity{});
@@ -472,14 +443,13 @@ TEST_CASE("Dire Bleed releases the active combatant when the effect is applied",
   REQUIRE(stats.hp_ == 90);
 }
 
-TEST_CASE("Reapplied Dire Bleed refreshes its pending tick",
-          "[encounter][skills][bleed]") {
+TEST_CASE("Reapplied Dire Bleed refreshes its pending tick", "[encounter][skills][bleed]") {
   fl::GrandCentral gc{1, 1, 1};
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -488,12 +458,12 @@ TEST_CASE("Reapplied Dire Bleed refreshes its pending tick",
 
   auto honey_badger = add_honey_badger(party_ctx, encounter);
 
-  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+  auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
   stats.max_hp_ = 100;
   stats.hp_ = 100;
 
-  fl::skills::SkillSequencer sequencer{
-      party_ctx, encounter.atb_engine().scheduler(), [](entt::entity) {}};
+  fl::skills::SkillSequencer sequencer{party_ctx, encounter.atb_engine().scheduler(),
+                                       [](entt::entity) {}};
 
   sequencer.schedule(honey_badger, defender, fl::skills::SkillId::Eviscerate);
   tick_party(party_ctx, 24);
@@ -516,13 +486,12 @@ TEST_CASE("Dire Bleed is removed and pending target work is cleared on death",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
-  for (const auto &member : party.members()) {
+  for (const auto& member : party.members()) {
     encounter.defenders().members().push_back(member.member_id());
-    encounter.atb_in().emit(
-        seerin::AtbInEvent{seerin::AddCombatant{member.member_id()}});
+    encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{member.member_id()}});
   }
 
   auto honey_badger = add_honey_badger(party_ctx, encounter);
@@ -534,22 +503,17 @@ TEST_CASE("Dire Bleed is removed and pending target work is cleared on death",
   REQUIRE(party_ctx.reg().valid(defender));
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::DireBleed>(defender));
 
-  auto attack_ctx =
-      fl::context::AttackCtx::make_attack(party_ctx, honey_badger, defender);
+  auto attack_ctx = fl::context::AttackCtx::make_attack(party_ctx, honey_badger, defender);
   attack_ctx.damage().physical = 9999;
   fl::ecs::systems::TakeDamage::commit(attack_ctx);
 
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::DireBleed>(defender));
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::DireBleed>(defender));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
   REQUIRE(party_ctx.reg().get<fl::ecs::components::Stats>(defender).hp_ == 0);
 
   tick_party(party_ctx, 36);
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::DireBleed>(defender));
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::DireBleed>(defender));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
   REQUIRE(party_ctx.reg().get<fl::ecs::components::Stats>(defender).hp_ == 0);
 }
 
@@ -559,8 +523,8 @@ TEST_CASE("Dire Bleed is removed when the party leaves combat",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -577,10 +541,8 @@ TEST_CASE("Dire Bleed is removed when the party leaves combat",
 
   party.leave_combat();
 
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::DireBleed>(defender));
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::DireBleed>(defender));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
   REQUIRE_FALSE(party.in_combat());
 }
 
@@ -590,8 +552,8 @@ TEST_CASE("Dire Bleed clears safely if the source is gone before a tick",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -608,10 +570,8 @@ TEST_CASE("Dire Bleed clears safely if the source is gone before a tick",
   party_ctx.reg().destroy(honey_badger);
   tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(5));
 
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::DireBleed>(defender));
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::DireBleed>(defender));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
 }
 
 TEST_CASE("Poison applies flat damage every three seconds for its duration",
@@ -620,8 +580,8 @@ TEST_CASE("Poison applies flat damage every three seconds for its duration",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -632,61 +592,46 @@ TEST_CASE("Poison applies flat damage every three seconds for its duration",
   auto source = fl::primitives::EntityBuilder(build_ctx)
                     .monster(fl::monster::MonsterKind::HoneyBadger)
                     .build();
-  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+  auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
   stats.max_hp_ = 100;
   stats.hp_ = 100;
 
   party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
-      fl::events::CombatantEvent{
-          fl::events::PoisonApplied{source, defender, 1, 27}});
+      fl::events::CombatantEvent{fl::events::PoisonApplied{source, defender, 1, 27}});
 
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Poison>(defender));
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::StatusTint>(defender));
-  REQUIRE(party_ctx.reg()
-              .get<fl::ecs::components::StatusTint>(defender)
-              .hp_bar_color == fl::lospec500::color_at(22));
-  REQUIRE(party_ctx.reg()
-              .get<fl::ecs::components::Poison>(defender)
-              .damage_per_tick == 1);
-  REQUIRE(party_ctx.reg()
-              .get<fl::ecs::components::Poison>(defender)
-              .ticks_remaining == 9);
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::StatusTint>(defender).hp_bar_color ==
+          fl::lospec500::color_at(22));
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::Poison>(defender).damage_per_tick == 1);
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::Poison>(defender).ticks_remaining == 9);
 
   tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
-  REQUIRE(party_ctx.reg()
-              .get<fl::ecs::components::StatusTint>(defender)
-              .hp_bar_color == fl::lospec500::color_at(20));
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::StatusTint>(defender).hp_bar_color ==
+          fl::lospec500::color_at(20));
 
   tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
-  REQUIRE(party_ctx.reg()
-              .get<fl::ecs::components::StatusTint>(defender)
-              .hp_bar_color == fl::lospec500::color_at(22));
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::StatusTint>(defender).hp_bar_color ==
+          fl::lospec500::color_at(22));
 
   tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
   REQUIRE(stats.hp_ == 99);
-  REQUIRE(
-      party_ctx.reg().any_of<fl::ecs::components::CombatantDecals>(defender));
-  const auto &poison_tick_decals =
+  REQUIRE(party_ctx.reg().any_of<fl::ecs::components::CombatantDecals>(defender));
+  const auto& poison_tick_decals =
       party_ctx.reg().get<fl::ecs::components::CombatantDecals>(defender);
   REQUIRE(poison_tick_decals.effects.back().animation_kind ==
           fl::widgets::effects::DecalAnimationKind::HitpointNumber);
-  REQUIRE(poison_tick_decals.effects.back().config.color ==
-          fl::lospec500::color_at(22));
-  REQUIRE(party_ctx.reg()
-              .get<fl::ecs::components::Poison>(defender)
-              .ticks_remaining == 8);
+  REQUIRE(poison_tick_decals.effects.back().config.color == fl::lospec500::color_at(22));
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::Poison>(defender).ticks_remaining == 8);
 
   tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(5));
   REQUIRE(stats.hp_ == 98);
-  REQUIRE(party_ctx.reg()
-              .get<fl::ecs::components::Poison>(defender)
-              .ticks_remaining == 7);
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::Poison>(defender).ticks_remaining == 7);
 
   tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(19));
   REQUIRE(stats.hp_ == 91);
   REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Poison>(defender));
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
 }
 
 TEST_CASE("Poison releases the active combatant when the effect is applied",
@@ -695,8 +640,8 @@ TEST_CASE("Poison releases the active combatant when the effect is applied",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -705,10 +650,9 @@ TEST_CASE("Poison releases the active combatant when the effect is applied",
 
   auto source = add_honey_badger(party_ctx, encounter);
   party_ctx.reg().emplace_or_replace<fl::ecs::components::SkillSlots>(
-      source,
-      fl::ecs::components::SkillSlots::with_known(fl::skills::SkillId::Poison));
+      source, fl::ecs::components::SkillSlots::with_known(fl::skills::SkillId::Poison));
 
-  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+  auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
   stats.max_hp_ = 100;
   stats.hp_ = 100;
 
@@ -729,13 +673,12 @@ TEST_CASE("Poison releases the active combatant when the effect is applied",
   REQUIRE(stats.hp_ == 99);
 }
 
-TEST_CASE(
-    "Normal Poison and Cold Snap combat stays in the party log after a raid",
-    "[encounter][skills][logging][context][raid]") {
+TEST_CASE("Normal Poison and Cold Snap combat stays in the party log after a raid",
+          "[encounter][skills][logging][context][raid]") {
   fl::GrandCentral gc{1, 1, 2};
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &account = account_ctx.account_data();
+  auto& account = account_ctx.account_data();
 
   const std::array raid_enemies{fl::monster::MonsterKind::FieldMouse};
   REQUIRE(account.start_raid(account_ctx, raid_enemies));
@@ -746,7 +689,7 @@ TEST_CASE(
   REQUIRE_FALSE(account.in_raid());
 
   fl::primitives::EncounterBuilder builder{party_ctx};
-  auto &encounter = builder.thump_it_out();
+  auto& encounter = builder.thump_it_out();
 
   const auto attacker = encounter.attackers().members().front();
   const auto target = encounter.defenders().members().front();
@@ -755,8 +698,8 @@ TEST_CASE(
 
   const auto account_entries = account_ctx.log().size();
   auto party_entries = party_ctx.log().size();
-  fl::skills::SkillSequencer sequencer{
-      party_ctx, encounter.atb_engine().scheduler(), [](entt::entity) {}};
+  fl::skills::SkillSequencer sequencer{party_ctx, encounter.atb_engine().scheduler(),
+                                       [](entt::entity) {}};
 
   sequencer.schedule(attacker, target, fl::skills::SkillId::Poison);
   tick_party(party_ctx, 24);
@@ -776,8 +719,8 @@ TEST_CASE("Poison is applied by event and clears when combat ends",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -789,16 +732,14 @@ TEST_CASE("Poison is applied by event and clears when combat ends",
                     .monster(fl::monster::MonsterKind::HoneyBadger)
                     .build();
   party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
-      fl::events::CombatantEvent{
-          fl::events::PoisonApplied{source, defender, 1, 27}});
+      fl::events::CombatantEvent{fl::events::PoisonApplied{source, defender, 1, 27}});
 
   REQUIRE(find_poison_target(party_ctx) == defender);
 
   party.leave_combat();
 
   REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Poison>(defender));
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
 }
 
 TEST_CASE("Freeze applies a frozen background and expires after thirty seconds",
@@ -807,8 +748,8 @@ TEST_CASE("Freeze applies a frozen background and expires after thirty seconds",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -820,34 +761,27 @@ TEST_CASE("Freeze applies a frozen background and expires after thirty seconds",
                     .monster(fl::monster::MonsterKind::HoneyBadger)
                     .build();
   party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
-      fl::events::CombatantEvent{
-          fl::events::FreezeApplied{source, defender, 30}});
+      fl::events::CombatantEvent{fl::events::FreezeApplied{source, defender, 30}});
 
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
-  REQUIRE(party_ctx.reg()
-              .get<fl::ecs::components::Freeze>(defender)
-              .clear_after_beats ==
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::Freeze>(defender).clear_after_beats ==
           fl::primitives::WorldClock::beats_from_seconds(30));
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::StatusTint>(defender));
-  REQUIRE(party_ctx.reg()
-              .get<fl::ecs::components::StatusTint>(defender)
-              .background_color == fl::lospec500::color_at(28));
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::StatusTint>(defender).background_color ==
+          fl::lospec500::color_at(28));
 
   tick_party(party_ctx, fl::primitives::WorldClock::kBeatsPerSecond / 4);
-  REQUIRE(party_ctx.reg()
-              .get<fl::ecs::components::StatusTint>(defender)
-              .background_color == fl::lospec500::color_at(16));
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::StatusTint>(defender).background_color ==
+          fl::lospec500::color_at(16));
 
   tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(29));
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
-  REQUIRE(party_ctx.reg()
-              .get<fl::ecs::components::StatusTint>(defender)
-              .background_color == fl::lospec500::color_at(16));
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::StatusTint>(defender).background_color ==
+          fl::lospec500::color_at(16));
 
   tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
   REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
 }
 
 TEST_CASE("Cold Snap releases the active combatant when freeze is applied",
@@ -856,8 +790,8 @@ TEST_CASE("Cold Snap releases the active combatant when freeze is applied",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -866,8 +800,7 @@ TEST_CASE("Cold Snap releases the active combatant when freeze is applied",
 
   auto source = add_honey_badger(party_ctx, encounter);
   party_ctx.reg().emplace_or_replace<fl::ecs::components::SkillSlots>(
-      source, fl::ecs::components::SkillSlots::with_known(
-                  fl::skills::SkillId::ColdSnap));
+      source, fl::ecs::components::SkillSlots::with_known(fl::skills::SkillId::ColdSnap));
 
   encounter.atb_engine().active_combatant() = source;
   encounter.atb_out().emit(seerin::AtbOutEvent{seerin::BecameActive{
@@ -882,22 +815,18 @@ TEST_CASE("Cold Snap releases the active combatant when freeze is applied",
   REQUIRE(encounter.atb_engine().active_combatant() == entt::entity{});
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
 
-  const auto frozen_charge =
-      party_ctx.reg().get<fl::ecs::components::AtbCharge>(defender).charge;
+  const auto frozen_charge = party_ctx.reg().get<fl::ecs::components::AtbCharge>(defender).charge;
   tick_party(party_ctx, 2);
-  REQUIRE(
-      party_ctx.reg().get<fl::ecs::components::AtbCharge>(defender).charge ==
-      frozen_charge);
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::AtbCharge>(defender).charge == frozen_charge);
 }
 
-TEST_CASE("Freeze stops ATB accrual until it expires",
-          "[encounter][skills][freeze][atb]") {
+TEST_CASE("Freeze stops ATB accrual until it expires", "[encounter][skills][freeze][atb]") {
   fl::GrandCentral gc{1, 1, 1};
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -909,26 +838,20 @@ TEST_CASE("Freeze stops ATB accrual until it expires",
                     .monster(fl::monster::MonsterKind::HoneyBadger)
                     .build();
   party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
-      fl::events::CombatantEvent{
-          fl::events::FreezeApplied{source, defender, 30}});
+      fl::events::CombatantEvent{fl::events::FreezeApplied{source, defender, 30}});
 
   tick_party(party_ctx, 2);
-  REQUIRE(
-      party_ctx.reg().get<fl::ecs::components::AtbCharge>(defender).charge ==
-      0);
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::AtbCharge>(defender).charge == 0);
 
   tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(29));
   REQUIRE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));
-  REQUIRE(
-      party_ctx.reg().get<fl::ecs::components::AtbCharge>(defender).charge ==
-      0);
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::AtbCharge>(defender).charge == 0);
 
   tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
   REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));
 
   tick_party(party_ctx, 1);
-  REQUIRE(party_ctx.reg().get<fl::ecs::components::AtbCharge>(defender).charge >
-          0);
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::AtbCharge>(defender).charge > 0);
 }
 
 TEST_CASE("Second Freeze application shatters for half max HP",
@@ -937,8 +860,8 @@ TEST_CASE("Second Freeze application shatters for half max HP",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -946,24 +869,21 @@ TEST_CASE("Second Freeze application shatters for half max HP",
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
   auto source = add_honey_badger(party_ctx, encounter);
-  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+  auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
   stats.max_hp_ = 100;
   stats.hp_ = 100;
 
   party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
-      fl::events::CombatantEvent{
-          fl::events::FreezeApplied{source, defender, 30}});
+      fl::events::CombatantEvent{fl::events::FreezeApplied{source, defender, 30}});
   REQUIRE(stats.hp_ == 100);
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
 
   party_ctx.party_data().encounter_data().combatant_bus(defender).emit(
-      fl::events::CombatantEvent{
-          fl::events::FreezeApplied{source, defender, 30}});
+      fl::events::CombatantEvent{fl::events::FreezeApplied{source, defender, 30}});
 
   REQUIRE(stats.hp_ == 50);
   REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
 }
 
 TEST_CASE("A physical tagged skill hit breaks active Freeze",
@@ -972,8 +892,8 @@ TEST_CASE("A physical tagged skill hit breaks active Freeze",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -981,18 +901,16 @@ TEST_CASE("A physical tagged skill hit breaks active Freeze",
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
   const auto source = add_honey_badger(party_ctx, encounter);
-  encounter.combatant_bus(defender).emit(fl::events::CombatantEvent{
-      fl::events::FreezeApplied{source, defender, 30}});
+  encounter.combatant_bus(defender).emit(
+      fl::events::CombatantEvent{fl::events::FreezeApplied{source, defender, 30}});
 
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
 
-  encounter.combatant_bus(defender).emit(
-      fl::events::CombatantEvent{fl::events::SkillHitLanded{
-          source, defender, fl::skills::SkillId::Thump, 3}});
+  encounter.combatant_bus(defender).emit(fl::events::CombatantEvent{
+      fl::events::SkillHitLanded{source, defender, fl::skills::SkillId::Thump, 3}});
 
   REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
 }
 
 TEST_CASE("A non-physical skill hit does not break active Freeze",
@@ -1001,8 +919,8 @@ TEST_CASE("A non-physical skill hit does not break active Freeze",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -1010,14 +928,13 @@ TEST_CASE("A non-physical skill hit does not break active Freeze",
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
   const auto source = add_honey_badger(party_ctx, encounter);
-  encounter.combatant_bus(defender).emit(fl::events::CombatantEvent{
-      fl::events::FreezeApplied{source, defender, 30}});
+  encounter.combatant_bus(defender).emit(
+      fl::events::CombatantEvent{fl::events::FreezeApplied{source, defender, 30}});
 
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
 
-  encounter.combatant_bus(defender).emit(
-      fl::events::CombatantEvent{fl::events::SkillHitLanded{
-          source, defender, fl::skills::SkillId::FlameStrike, 3}});
+  encounter.combatant_bus(defender).emit(fl::events::CombatantEvent{
+      fl::events::SkillHitLanded{source, defender, fl::skills::SkillId::FlameStrike, 3}});
 
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::StatusTint>(defender));
@@ -1031,14 +948,13 @@ TEST_CASE("GrandCentral teardown clears lingering status listeners before party 
 
     auto account_ctx = gc.account_context(0);
     auto party_ctx = account_ctx.party_context(0);
-    auto &party = party_ctx.party_data();
-    auto &encounter = party.create_encounter();
+    auto& party = party_ctx.party_data();
+    auto& encounter = party.create_encounter();
 
     const auto defender = party.members().front().member_id();
     encounter.defenders().members().push_back(defender);
     encounter.add_party_combatant_bus(defender);
-    encounter.atb_in().emit(
-        seerin::AtbInEvent{seerin::AddCombatant{defender}});
+    encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
     auto honey_badger = add_honey_badger(party_ctx, encounter);
     encounter.atb_out().emit(seerin::AtbOutEvent{seerin::BecameActive{
@@ -1054,18 +970,17 @@ TEST_CASE("GrandCentral teardown clears lingering status listeners before party 
 
     auto account_ctx = gc.account_context(0);
     auto party_ctx = account_ctx.party_context(0);
-    auto &party = party_ctx.party_data();
-    auto &encounter = party.create_encounter();
+    auto& party = party_ctx.party_data();
+    auto& encounter = party.create_encounter();
 
     const auto defender = party.members().front().member_id();
     encounter.defenders().members().push_back(defender);
     encounter.add_party_combatant_bus(defender);
-    encounter.atb_in().emit(
-        seerin::AtbInEvent{seerin::AddCombatant{defender}});
+    encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
     auto source = add_honey_badger(party_ctx, encounter);
-    encounter.combatant_bus(defender).emit(fl::events::CombatantEvent{
-        fl::events::PoisonApplied{source, defender, 1, 9}});
+    encounter.combatant_bus(defender).emit(
+        fl::events::CombatantEvent{fl::events::PoisonApplied{source, defender, 1, 9}});
 
     REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Poison>(defender));
   }
@@ -1075,41 +990,37 @@ TEST_CASE("GrandCentral teardown clears lingering status listeners before party 
 
     auto account_ctx = gc.account_context(0);
     auto party_ctx = account_ctx.party_context(0);
-    auto &party = party_ctx.party_data();
-    auto &encounter = party.create_encounter();
+    auto& party = party_ctx.party_data();
+    auto& encounter = party.create_encounter();
 
     const auto defender = party.members().front().member_id();
     encounter.defenders().members().push_back(defender);
     encounter.add_party_combatant_bus(defender);
-    encounter.atb_in().emit(
-        seerin::AtbInEvent{seerin::AddCombatant{defender}});
+    encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
     auto source = add_honey_badger(party_ctx, encounter);
-    encounter.combatant_bus(defender).emit(fl::events::CombatantEvent{
-        fl::events::FreezeApplied{source, defender, 9}});
+    encounter.combatant_bus(defender).emit(
+        fl::events::CombatantEvent{fl::events::FreezeApplied{source, defender, 9}});
 
     REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
   }
 }
 
-TEST_CASE("Observe can teach an eligible party member",
-          "[encounter][skills][learning]") {
+TEST_CASE("Observe can teach an eligible party member", "[encounter][skills][learning]") {
   fl::GrandCentral gc{1, 1, 2};
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &members = party_ctx.party_data().members();
+  auto& members = party_ctx.party_data().members();
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
 
-  REQUIRE(fl::skills::learn_observed_skill_with_roll(
-      party_ctx, observer, user, fl::skills::SkillId::Thump, 1));
-  auto &observer_member =
-      party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
+  REQUIRE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user,
+                                                     fl::skills::SkillId::Thump, 1));
+  auto& observer_member = party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
   REQUIRE(members.back().grimoire().knows(fl::skills::SkillId::Thump));
-  REQUIRE(
-      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
+  REQUIRE(observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
 }
 
 TEST_CASE("Observe learns exact ranked skills without inferred lower ranks",
@@ -1118,55 +1029,48 @@ TEST_CASE("Observe learns exact ranked skills without inferred lower ranks",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &members = party_ctx.party_data().members();
+  auto& members = party_ctx.party_data().members();
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
-  auto &grimoire = members.back().grimoire();
+  auto& grimoire = members.back().grimoire();
   learn_and_equip_observe(party_ctx, observer, 8);
 
   const fl::skills::SkillKey thump_viii{fl::skills::SkillId::Thump,
                                         fl::skills::SkillRank::require(8)};
-  REQUIRE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user,
-                                                     thump_viii, 1));
+  REQUIRE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user, thump_viii, 1));
 
   REQUIRE(grimoire.knows(thump_viii));
-  REQUIRE_FALSE(grimoire.knows(fl::skills::SkillKey{
-      fl::skills::SkillId::Thump, fl::skills::SkillRank::require(1)}));
-  REQUIRE_FALSE(grimoire.knows(fl::skills::SkillKey{
-      fl::skills::SkillId::Thump, fl::skills::SkillRank::require(7)}));
+  REQUIRE_FALSE(grimoire.knows(
+      fl::skills::SkillKey{fl::skills::SkillId::Thump, fl::skills::SkillRank::require(1)}));
+  REQUIRE_FALSE(grimoire.knows(
+      fl::skills::SkillKey{fl::skills::SkillId::Thump, fl::skills::SkillRank::require(7)}));
 }
 
-TEST_CASE("Observe rank gates observed skill learning",
-          "[encounter][skills][learning][rank]") {
+TEST_CASE("Observe rank gates observed skill learning", "[encounter][skills][learning][rank]") {
   fl::GrandCentral gc{1, 1, 2};
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &members = party_ctx.party_data().members();
+  auto& members = party_ctx.party_data().members();
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
-  auto &grimoire = members.back().grimoire();
+  auto& grimoire = members.back().grimoire();
   learn_and_equip_observe(party_ctx, observer, 5);
 
   const fl::skills::SkillKey thump_iv{fl::skills::SkillId::Thump,
                                       fl::skills::SkillRank::require(4)};
-  const fl::skills::SkillKey thump_v{fl::skills::SkillId::Thump,
-                                     fl::skills::SkillRank::require(5)};
+  const fl::skills::SkillKey thump_v{fl::skills::SkillId::Thump, fl::skills::SkillRank::require(5)};
   const fl::skills::SkillKey thump_vi{fl::skills::SkillId::Thump,
                                       fl::skills::SkillRank::require(6)};
   const fl::skills::SkillKey thump_ix{fl::skills::SkillId::Thump,
                                       fl::skills::SkillRank::require(9)};
 
-  REQUIRE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user,
-                                                     thump_iv, 1));
-  REQUIRE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user,
-                                                     thump_v, 1));
-  REQUIRE_FALSE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer,
-                                                           user, thump_vi, 1));
-  REQUIRE_FALSE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer,
-                                                           user, thump_ix, 1));
+  REQUIRE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user, thump_iv, 1));
+  REQUIRE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user, thump_v, 1));
+  REQUIRE_FALSE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user, thump_vi, 1));
+  REQUIRE_FALSE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user, thump_ix, 1));
 
   REQUIRE(grimoire.knows(thump_iv));
   REQUIRE(grimoire.knows(thump_v));
@@ -1180,22 +1084,21 @@ TEST_CASE("Gated high-rank observation does not learn lower ranks",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &members = party_ctx.party_data().members();
+  auto& members = party_ctx.party_data().members();
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
-  auto &grimoire = members.back().grimoire();
+  auto& grimoire = members.back().grimoire();
 
   const fl::skills::SkillKey thump_vi{fl::skills::SkillId::Thump,
                                       fl::skills::SkillRank::require(6)};
-  REQUIRE_FALSE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer,
-                                                           user, thump_vi, 1));
+  REQUIRE_FALSE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user, thump_vi, 1));
 
   REQUIRE_FALSE(grimoire.knows(thump_vi));
-  REQUIRE_FALSE(grimoire.knows(fl::skills::SkillKey{
-      fl::skills::SkillId::Thump, fl::skills::SkillRank::require(1)}));
-  REQUIRE_FALSE(grimoire.knows(fl::skills::SkillKey{
-      fl::skills::SkillId::Thump, fl::skills::SkillRank::require(5)}));
+  REQUIRE_FALSE(grimoire.knows(
+      fl::skills::SkillKey{fl::skills::SkillId::Thump, fl::skills::SkillRank::require(1)}));
+  REQUIRE_FALSE(grimoire.knows(
+      fl::skills::SkillKey{fl::skills::SkillId::Thump, fl::skills::SkillRank::require(5)}));
 }
 
 TEST_CASE("No equipped Observe blocks observed skill learning",
@@ -1204,18 +1107,17 @@ TEST_CASE("No equipped Observe blocks observed skill learning",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &members = party_ctx.party_data().members();
+  auto& members = party_ctx.party_data().members();
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
-  auto &party_member =
-      party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
+  auto& party_member = party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
   party_member.closet().skill_slots.fill(std::nullopt);
 
   const auto thump_i = fl::skills::SkillKey{fl::skills::SkillId::Thump};
-  REQUIRE(fl::skills::learn_observed_skill_result_with_roll(party_ctx, observer,
-                                                            user, thump_i, 1) ==
-          fl::skills::LearnObservedSkillResult::NoObserveEquipped);
+  REQUIRE(
+      fl::skills::learn_observed_skill_result_with_roll(party_ctx, observer, user, thump_i, 1) ==
+      fl::skills::LearnObservedSkillResult::NoObserveEquipped);
   REQUIRE_FALSE(members.back().grimoire().knows(thump_i));
 }
 
@@ -1225,18 +1127,17 @@ TEST_CASE("Multiple equipped Observe ranks use the highest rank",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &members = party_ctx.party_data().members();
+  auto& members = party_ctx.party_data().members();
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
   learn_and_equip_observe(party_ctx, observer, 3);
   learn_and_equip_observe(party_ctx, observer, 5);
 
-  const fl::skills::SkillKey thump_v{fl::skills::SkillId::Thump,
-                                     fl::skills::SkillRank::require(5)};
-  REQUIRE(fl::skills::learn_observed_skill_result_with_roll(party_ctx, observer,
-                                                            user, thump_v, 1) ==
-          fl::skills::LearnObservedSkillResult::Learned);
+  const fl::skills::SkillKey thump_v{fl::skills::SkillId::Thump, fl::skills::SkillRank::require(5)};
+  REQUIRE(
+      fl::skills::learn_observed_skill_result_with_roll(party_ctx, observer, user, thump_v, 1) ==
+      fl::skills::LearnObservedSkillResult::Learned);
   REQUIRE(members.back().grimoire().knows(thump_v));
 }
 
@@ -1246,17 +1147,17 @@ TEST_CASE("Observe ranks progress one step at a time",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &members = party_ctx.party_data().members();
+  auto& members = party_ctx.party_data().members();
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
-  auto &grimoire = members.back().grimoire();
+  auto& grimoire = members.back().grimoire();
 
   const fl::skills::SkillKey observe_ii{fl::skills::SkillId::Observe,
                                         fl::skills::SkillRank::require(2)};
-  REQUIRE(fl::skills::learn_observed_skill_result_with_roll(
-              party_ctx, observer, user, observe_ii, 1) ==
-          fl::skills::LearnObservedSkillResult::Learned);
+  REQUIRE(
+      fl::skills::learn_observed_skill_result_with_roll(party_ctx, observer, user, observe_ii, 1) ==
+      fl::skills::LearnObservedSkillResult::Learned);
   REQUIRE(grimoire.knows(observe_ii));
 }
 
@@ -1266,16 +1167,16 @@ TEST_CASE("Observe progression blocks skipped ranks",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &members = party_ctx.party_data().members();
+  auto& members = party_ctx.party_data().members();
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
-  auto &grimoire = members.back().grimoire();
+  auto& grimoire = members.back().grimoire();
 
   const fl::skills::SkillKey observe_iii{fl::skills::SkillId::Observe,
                                          fl::skills::SkillRank::require(3)};
-  REQUIRE(fl::skills::learn_observed_skill_result_with_roll(
-              party_ctx, observer, user, observe_iii, 1) ==
+  REQUIRE(fl::skills::learn_observed_skill_result_with_roll(party_ctx, observer, user, observe_iii,
+                                                            1) ==
           fl::skills::LearnObservedSkillResult::ObserveProgressionSkip);
   REQUIRE_FALSE(grimoire.knows(observe_iii));
 }
@@ -1286,30 +1187,29 @@ TEST_CASE("Observe VIII cannot be learned directly from Observe V",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &members = party_ctx.party_data().members();
+  auto& members = party_ctx.party_data().members();
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
-  auto &grimoire = members.back().grimoire();
+  auto& grimoire = members.back().grimoire();
   learn_and_equip_observe(party_ctx, observer, 5);
 
   const fl::skills::SkillKey observe_viii{fl::skills::SkillId::Observe,
                                           fl::skills::SkillRank::require(8)};
-  REQUIRE(fl::skills::learn_observed_skill_result_with_roll(
-              party_ctx, observer, user, observe_viii, 1) ==
+  REQUIRE(fl::skills::learn_observed_skill_result_with_roll(party_ctx, observer, user, observe_viii,
+                                                            1) ==
           fl::skills::LearnObservedSkillResult::ObserveProgressionSkip);
   REQUIRE_FALSE(grimoire.knows(observe_viii));
 }
 
-TEST_CASE("Player equipped skills are capped at five slots",
-          "[encounter][skills][closet][rank]") {
+TEST_CASE("Player equipped skills are capped at five slots", "[encounter][skills][closet][rank]") {
   fl::GrandCentral gc{1, 1, 1};
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &member_data = party_ctx.party_data().members().front();
-  auto &party_member = party_ctx.reg().get<fl::ecs::components::PartyMember>(
-      member_data.member_id());
+  auto& member_data = party_ctx.party_data().members().front();
+  auto& party_member =
+      party_ctx.reg().get<fl::ecs::components::PartyMember>(member_data.member_id());
 
   const std::array learned{
       fl::skills::SkillKey{fl::skills::SkillId::Thump},
@@ -1338,19 +1238,17 @@ TEST_CASE("Player can equip distinct ranks of the same known skill",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
-  auto &member_data = party.members().front();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
+  auto& member_data = party.members().front();
   const auto member = member_data.member_id();
-  auto &party_member =
-      party_ctx.reg().get<fl::ecs::components::PartyMember>(member);
+  auto& party_member = party_ctx.reg().get<fl::ecs::components::PartyMember>(member);
 
   party_member.closet().skill_slots.fill(std::nullopt);
 
   const fl::skills::SkillKey thump_iii{fl::skills::SkillId::Thump,
                                        fl::skills::SkillRank::require(3)};
-  const fl::skills::SkillKey thump_v{fl::skills::SkillId::Thump,
-                                     fl::skills::SkillRank::require(5)};
+  const fl::skills::SkillKey thump_v{fl::skills::SkillId::Thump, fl::skills::SkillRank::require(5)};
 
   REQUIRE(member_data.grimoire().learn(thump_iii));
   REQUIRE(member_data.grimoire().learn(thump_v));
@@ -1364,24 +1262,21 @@ TEST_CASE("Player can equip distinct ranks of the same known skill",
   REQUIRE(chosen != fl::skills::SkillKey{fl::skills::SkillId::Thump});
 }
 
-TEST_CASE("Observe itself is not learned by observation",
-          "[encounter][skills][learning]") {
+TEST_CASE("Observe itself is not learned by observation", "[encounter][skills][learning]") {
   fl::GrandCentral gc{1, 1, 2};
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &members = party_ctx.party_data().members();
+  auto& members = party_ctx.party_data().members();
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
-  auto &observer_member =
-      party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
+  auto& observer_member = party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
   observer_member.closet().skill_slots.fill(std::nullopt);
 
-  REQUIRE_FALSE(fl::skills::learn_observed_skill_with_roll(
-      party_ctx, observer, user, fl::skills::SkillId::Observe, 1));
-  REQUIRE_FALSE(observer_member.closet().has_equipped_skill(
-      fl::skills::SkillId::Observe));
+  REQUIRE_FALSE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user,
+                                                           fl::skills::SkillId::Observe, 1));
+  REQUIRE_FALSE(observer_member.closet().has_equipped_skill(fl::skills::SkillId::Observe));
   REQUIRE(members.back().grimoire().knows(fl::skills::SkillId::Observe));
 }
 
@@ -1391,23 +1286,21 @@ TEST_CASE("Skills learned this combat are rolled back on party wipe",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &members = party.members();
+  auto& party = party_ctx.party_data();
+  auto& members = party.members();
 
   fl::primitives::EncounterBuilder builder(party_ctx);
   (void)builder.thump_it_out();
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
-  auto &observer_member =
-      party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
+  auto& observer_member = party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
 
-  REQUIRE(fl::skills::learn_observed_skill_with_roll(
-      party_ctx, observer, user, fl::skills::SkillId::Thump, 1));
-  REQUIRE(
-      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
+  REQUIRE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user,
+                                                     fl::skills::SkillId::Thump, 1));
+  REQUIRE(observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
 
-  for (const auto &member : members) {
+  for (const auto& member : members) {
     party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id()).hp_ = 0;
   }
 
@@ -1415,8 +1308,7 @@ TEST_CASE("Skills learned this combat are rolled back on party wipe",
 
   party.party_bus().emit(fl::events::PartyEvent{fl::events::PartyWiped{}});
 
-  REQUIRE_FALSE(
-      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
+  REQUIRE_FALSE(observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
   REQUIRE_FALSE(members.back().grimoire().knows(fl::skills::SkillId::Thump));
   REQUIRE(party.log().size() > log_size_before_wipe);
 }
@@ -1427,37 +1319,33 @@ TEST_CASE("Returning to town rolls back provisional skills and restores Observe"
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &members = party.members();
+  auto& party = party_ctx.party_data();
+  auto& members = party.members();
 
   fl::primitives::EncounterBuilder builder(party_ctx);
   (void)builder.thump_it_out();
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
-  auto &observer_member =
-      party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
+  auto& observer_member = party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
 
-  REQUIRE(fl::skills::learn_observed_skill_with_roll(
-      party_ctx, observer, user, fl::skills::SkillId::Thump, 1));
+  REQUIRE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user,
+                                                     fl::skills::SkillId::Thump, 1));
   REQUIRE(members.back().grimoire().learn(fl::skills::SkillId::Flee));
   REQUIRE(observer_member.equip_known_skill(fl::skills::SkillId::Flee));
   REQUIRE(party.drop_skill(observer, 0));
   REQUIRE_FALSE(observer_member.closet().skill_slots[0].has_value());
   int victory_count = 0;
-  auto victory_sub = party.party_bus().subscribe<fl::events::PartyVictory>(
-      [&](const auto &) { ++victory_count; });
+  auto victory_sub =
+      party.party_bus().subscribe<fl::events::PartyVictory>([&](const auto&) { ++victory_count; });
 
-  party.party_bus().emit(
-      fl::events::PartyEvent{fl::events::PartyReturnToTownRequested{}});
+  party.party_bus().emit(fl::events::PartyEvent{fl::events::PartyReturnToTownRequested{}});
 
   REQUIRE_FALSE(party.has_encounter());
   REQUIRE(victory_count == 0);
-  REQUIRE_FALSE(
-      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
+  REQUIRE_FALSE(observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
   REQUIRE_FALSE(members.back().grimoire().knows(fl::skills::SkillId::Thump));
-  REQUIRE(observer_member.closet().has_equipped_skill(
-      fl::skills::SkillId::Flee));
+  REQUIRE(observer_member.closet().has_equipped_skill(fl::skills::SkillId::Flee));
   REQUIRE(members.back().grimoire().knows(fl::skills::SkillId::Flee));
   REQUIRE(observer_member.closet().skill_slots[0] ==
           fl::skills::SkillKey{fl::skills::SkillId::Observe});
@@ -1470,26 +1358,23 @@ TEST_CASE("Skills learned this combat persist after successful combat exit",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &members = party.members();
+  auto& party = party_ctx.party_data();
+  auto& members = party.members();
 
   fl::primitives::EncounterBuilder builder(party_ctx);
   (void)builder.thump_it_out();
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
-  auto &observer_member =
-      party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
+  auto& observer_member = party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
 
-  REQUIRE(fl::skills::learn_observed_skill_with_roll(
-      party_ctx, observer, user, fl::skills::SkillId::Thump, 1));
-  REQUIRE(
-      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
+  REQUIRE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user,
+                                                     fl::skills::SkillId::Thump, 1));
+  REQUIRE(observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
 
   party.leave_combat();
 
-  REQUIRE(
-      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
+  REQUIRE(observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
   REQUIRE(members.back().grimoire().knows(fl::skills::SkillId::Thump));
 }
 
@@ -1499,50 +1384,45 @@ TEST_CASE("Later combat wipe does not remove skill learned in prior victory",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &members = party.members();
+  auto& party = party_ctx.party_data();
+  auto& members = party.members();
 
   fl::primitives::EncounterBuilder first_builder(party_ctx);
   (void)first_builder.thump_it_out();
 
   const auto user = members.front().member_id();
   const auto observer = members.back().member_id();
-  auto &observer_member =
-      party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
+  auto& observer_member = party_ctx.reg().get<fl::ecs::components::PartyMember>(observer);
 
-  REQUIRE(fl::skills::learn_observed_skill_with_roll(
-      party_ctx, observer, user, fl::skills::SkillId::Thump, 1));
-  REQUIRE(
-      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
+  REQUIRE(fl::skills::learn_observed_skill_with_roll(party_ctx, observer, user,
+                                                     fl::skills::SkillId::Thump, 1));
+  REQUIRE(observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
 
   party.leave_combat();
-  REQUIRE(
-      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
+  REQUIRE(observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
   REQUIRE(members.back().grimoire().knows(fl::skills::SkillId::Thump));
 
   fl::primitives::EncounterBuilder second_builder(party_ctx);
   (void)second_builder.thump_it_out();
 
-  for (const auto &member : members) {
+  for (const auto& member : members) {
     party_ctx.reg().get<fl::ecs::components::Stats>(member.member_id()).hp_ = 0;
   }
 
   party.party_bus().emit(fl::events::PartyEvent{fl::events::PartyWiped{}});
 
-  REQUIRE(
-      observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
+  REQUIRE(observer_member.closet().has_equipped_skill(fl::skills::SkillId::Thump));
   REQUIRE(members.back().grimoire().knows(fl::skills::SkillId::Thump));
 }
 
-TEST_CASE(
-    "Dire Bleed survives active-turn cleanup for the affected participant",
-    "[encounter][skills][bleed][lifetime]") {
+TEST_CASE("Dire Bleed survives active-turn cleanup for the affected participant",
+          "[encounter][skills][bleed][lifetime]") {
   fl::GrandCentral gc{1, 1, 1};
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -1550,12 +1430,12 @@ TEST_CASE(
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
   auto honey_badger = add_honey_badger(party_ctx, encounter);
-  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+  auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
   stats.max_hp_ = 100;
   stats.hp_ = 100;
 
-  fl::skills::SkillSequencer sequencer{
-      party_ctx, encounter.atb_engine().scheduler(), [](entt::entity) {}};
+  fl::skills::SkillSequencer sequencer{party_ctx, encounter.atb_engine().scheduler(),
+                                       [](entt::entity) {}};
   sequencer.schedule(honey_badger, defender, fl::skills::SkillId::Eviscerate);
   tick_party(party_ctx, 24);
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::DireBleed>(defender));
@@ -1574,8 +1454,8 @@ TEST_CASE("Poison survives active-turn cleanup for the affected participant",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -1583,12 +1463,12 @@ TEST_CASE("Poison survives active-turn cleanup for the affected participant",
   encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{defender}});
 
   auto source = add_honey_badger(party_ctx, encounter);
-  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
+  auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(defender);
   stats.max_hp_ = 100;
   stats.hp_ = 100;
 
-  encounter.combatant_bus(defender).emit(fl::events::CombatantEvent{
-      fl::events::PoisonApplied{source, defender, 1, 27}});
+  encounter.combatant_bus(defender).emit(
+      fl::events::CombatantEvent{fl::events::PoisonApplied{source, defender, 1, 27}});
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Poison>(defender));
 
   encounter.atb_engine().active_combatant() = defender;
@@ -1605,8 +1485,8 @@ TEST_CASE("Freeze survives active-turn cleanup for the affected participant",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
   const auto defender = party.members().front().member_id();
   encounter.defenders().members().push_back(defender);
@@ -1617,8 +1497,8 @@ TEST_CASE("Freeze survives active-turn cleanup for the affected participant",
   auto source = fl::primitives::EntityBuilder(build_ctx)
                     .monster(fl::monster::MonsterKind::HoneyBadger)
                     .build();
-  encounter.combatant_bus(defender).emit(fl::events::CombatantEvent{
-      fl::events::FreezeApplied{source, defender, 30}});
+  encounter.combatant_bus(defender).emit(
+      fl::events::CombatantEvent{fl::events::FreezeApplied{source, defender, 30}});
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Freeze>(defender));
 
   encounter.atb_engine().active_combatant() = defender;
@@ -1627,8 +1507,7 @@ TEST_CASE("Freeze survives active-turn cleanup for the affected participant",
 
   tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(30));
   REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(defender));
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::StatusTint>(defender));
 }
 
 TEST_CASE("Status effects clear on party wipe and scheduled work does not leak",
@@ -1637,14 +1516,13 @@ TEST_CASE("Status effects clear on party wipe and scheduled work does not leak",
 
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &encounter = party.create_encounter();
+  auto& party = party_ctx.party_data();
+  auto& encounter = party.create_encounter();
 
-  for (const auto &member : party.members()) {
+  for (const auto& member : party.members()) {
     encounter.defenders().members().push_back(member.member_id());
     encounter.add_party_combatant_bus(member.member_id());
-    encounter.atb_in().emit(
-        seerin::AtbInEvent{seerin::AddCombatant{member.member_id()}});
+    encounter.atb_in().emit(seerin::AtbInEvent{seerin::AddCombatant{member.member_id()}});
   }
 
   const auto bleed_target = party.members()[0].member_id();
@@ -1652,25 +1530,21 @@ TEST_CASE("Status effects clear on party wipe and scheduled work does not leak",
   const auto freeze_target = party.members()[2].member_id();
   auto source = add_honey_badger(party_ctx, encounter);
 
-  auto &bleed_stats =
-      party_ctx.reg().get<fl::ecs::components::Stats>(bleed_target);
-  auto &poison_stats =
-      party_ctx.reg().get<fl::ecs::components::Stats>(poison_target);
+  auto& bleed_stats = party_ctx.reg().get<fl::ecs::components::Stats>(bleed_target);
+  auto& poison_stats = party_ctx.reg().get<fl::ecs::components::Stats>(poison_target);
   bleed_stats.max_hp_ = 100;
   bleed_stats.hp_ = 100;
   poison_stats.max_hp_ = 100;
   poison_stats.hp_ = 100;
 
-  fl::skills::SkillSequencer sequencer{
-      party_ctx, encounter.atb_engine().scheduler(), [](entt::entity) {}};
+  fl::skills::SkillSequencer sequencer{party_ctx, encounter.atb_engine().scheduler(),
+                                       [](entt::entity) {}};
   sequencer.schedule(source, bleed_target, fl::skills::SkillId::Eviscerate);
   tick_party(party_ctx, 24);
   encounter.combatant_bus(poison_target)
-      .emit(fl::events::CombatantEvent{
-          fl::events::PoisonApplied{source, poison_target, 1, 27}});
+      .emit(fl::events::CombatantEvent{fl::events::PoisonApplied{source, poison_target, 1, 27}});
   encounter.combatant_bus(freeze_target)
-      .emit(fl::events::CombatantEvent{
-          fl::events::FreezeApplied{source, freeze_target, 30}});
+      .emit(fl::events::CombatantEvent{fl::events::FreezeApplied{source, freeze_target, 30}});
 
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::DireBleed>(bleed_target));
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::Poison>(poison_target));
@@ -1678,16 +1552,12 @@ TEST_CASE("Status effects clear on party wipe and scheduled work does not leak",
 
   party.party_bus().emit(fl::events::PartyEvent{fl::events::PartyWiped{}});
 
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::DireBleed>(bleed_target));
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::Poison>(poison_target));
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::Freeze>(freeze_target));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::DireBleed>(bleed_target));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Poison>(poison_target));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::Freeze>(freeze_target));
 
   tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(5));
   REQUIRE(bleed_stats.hp_ == 100);
   REQUIRE(poison_stats.hp_ == 100);
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::StatusTint>(freeze_target));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::StatusTint>(freeze_target));
 }

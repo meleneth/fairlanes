@@ -16,10 +16,9 @@ namespace fl::widgets {
 class PlayerDetailsPane : public ftxui::ComponentBase {
 public:
   using InventorySelected = std::function<void(entt::entity)>;
-  using SkillSelected =
-      std::function<void(std::optional<fl::skills::SkillKey>)>;
+  using SkillSelected = std::function<void(std::optional<fl::skills::SkillKey>)>;
 
-  PlayerDetailsPane(entt::registry &reg, fl::primitives::PartyData &party,
+  PlayerDetailsPane(entt::registry& reg, fl::primitives::PartyData& party,
                     InventorySelected on_inventory_selected = {},
                     SkillSelected on_skill_selected = {});
 
@@ -29,8 +28,8 @@ public:
   void set_focused(bool focused);
 
 private:
-  entt::registry &reg_;
-  fl::primitives::PartyData &party_;
+  entt::registry& reg_;
+  fl::primitives::PartyData& party_;
   InventorySelected on_inventory_selected_;
   SkillSelected on_skill_selected_;
   int cursor_{0};

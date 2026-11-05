@@ -13,7 +13,9 @@ public:
   explicit StoryStartPicker(std::function<void()> finish);
   bool OnEvent(ftxui::Event event) override;
   ftxui::Element Render() override;
-  StoryStartMode mode() const noexcept { return mode_; }
+  StoryStartMode mode() const noexcept {
+    return mode_;
+  }
 
 private:
   std::function<void()> finish_;

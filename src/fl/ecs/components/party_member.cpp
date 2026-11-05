@@ -10,9 +10,8 @@
 
 namespace fl::ecs::components {
 
-PartyMember::PartyMember(fl::context::EntityCtx context, std::string name,
-                         entt::entity party,
-                         fl::primitives::MemberData &member_data)
+PartyMember::PartyMember(fl::context::EntityCtx context, std::string name, entt::entity party,
+                         fl::primitives::MemberData& member_data)
     : party_(party), ctx_(std::move(context)), closet_(ctx_.reg().create()),
       member_data_(&member_data) {
   (void)name;

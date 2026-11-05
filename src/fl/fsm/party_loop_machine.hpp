@@ -11,14 +11,14 @@ namespace fl::fsm {
 
 class PartyLoopMachine {
 public:
-  explicit PartyLoopMachine(fl::context::PartyCtx &ctx);
+  explicit PartyLoopMachine(fl::context::PartyCtx& ctx);
   ~PartyLoopMachine();
 
-  PartyLoopMachine(PartyLoopMachine &&) noexcept;
-  PartyLoopMachine &operator=(PartyLoopMachine &&) noexcept;
+  PartyLoopMachine(PartyLoopMachine&&) noexcept;
+  PartyLoopMachine& operator=(PartyLoopMachine&&) noexcept;
 
-  PartyLoopMachine(const PartyLoopMachine &) = delete;
-  PartyLoopMachine &operator=(const PartyLoopMachine &) = delete;
+  PartyLoopMachine(const PartyLoopMachine&) = delete;
+  PartyLoopMachine& operator=(const PartyLoopMachine&) = delete;
 
   void beat_event();
   void dispatch_party_bus();

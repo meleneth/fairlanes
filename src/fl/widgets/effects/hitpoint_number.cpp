@@ -6,8 +6,8 @@
 
 namespace fl::widgets::effects {
 
-HitpointNumber::HitpointNumber(int width, int height, ftxui::Color color,
-                               int hitpoints, DecalConfig config)
+HitpointNumber::HitpointNumber(int width, int height, ftxui::Color color, int hitpoints,
+                               DecalConfig config)
     : width_(std::max(1, width)), height_(std::max(1, height)), color_(color),
       hitpoints_(std::max(0, hitpoints)), config_(config) {}
 
@@ -26,8 +26,7 @@ Frame HitpointNumber::render(float progress) const {
     y_float = eased * static_cast<float>(bottom);
   } else {
     const float bounce_t = (t - 0.62F) / 0.38F;
-    const float lift =
-        std::sin(bounce_t * 6.2831853F) * (1.0F - bounce_t) * 2.0F;
+    const float lift = std::sin(bounce_t * 6.2831853F) * (1.0F - bounce_t) * 2.0F;
     y_float = static_cast<float>(bottom) - std::max(0.0F, lift);
   }
 
@@ -41,7 +40,7 @@ Frame HitpointNumber::render(float progress) const {
       break;
     }
 
-    auto &cell = frame.at(x, y);
+    auto& cell = frame.at(x, y);
     cell.glyph = label[i];
     cell.fg = color_;
     cell.alpha = fade_in;
@@ -54,7 +53,9 @@ float HitpointNumber::duration_seconds() const {
   return config_.duration_seconds;
 }
 
-std::string_view HitpointNumber::name() const { return "HitpointNumber"; }
+std::string_view HitpointNumber::name() const {
+  return "HitpointNumber";
+}
 
 DecalAnimationKind HitpointNumber::kind() const {
   return DecalAnimationKind::HitpointNumber;

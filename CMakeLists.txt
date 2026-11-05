@@ -283,6 +283,7 @@ file(GLOB_RECURSE FAIRLANES_FORMAT_SOURCES CONFIGURE_DEPENDS
   ${CMAKE_SOURCE_DIR}/tests/*.cpp
   ${CMAKE_SOURCE_DIR}/tests/*.hpp
 )
+list(FILTER FAIRLANES_FORMAT_SOURCES EXCLUDE REGEX "[/\\\\]generated[/\\\\]")
 
 if(CLANG_FORMAT_EXECUTABLE)
   add_custom_target(clang-format

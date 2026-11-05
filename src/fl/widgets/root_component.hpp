@@ -26,19 +26,22 @@ class FancyLog;
 
 class RootComponent : public ftxui::ComponentBase {
 public:
-  RootComponent(fl::context::AccountCtx ctx,
-                std::deque<fl::primitives::AccountData> &accounts,
-                FancyLog &console_log, fl::primitives::WorldClock &world_clock,
-                const fl::primitives::DiscoveryJournal *discoveries = nullptr,
-                fl::events::AchievementBus *achievements = nullptr,
-                fl::primitives::ObjectiveSystem *objectives = nullptr);
+  RootComponent(fl::context::AccountCtx ctx, std::deque<fl::primitives::AccountData>& accounts,
+                FancyLog& console_log, fl::primitives::WorldClock& world_clock,
+                const fl::primitives::DiscoveryJournal* discoveries = nullptr,
+                fl::events::AchievementBus* achievements = nullptr,
+                fl::primitives::ObjectiveSystem* objectives = nullptr);
 
   bool OnEvent(ftxui::Event event) override;
   ftxui::Element Render() override;
   ftxui::Component ActiveChild() override;
 
-  bool quit_requested() const { return quit_requested_; }
-  bool sandbox_requested() const { return sandbox_requested_; }
+  bool quit_requested() const {
+    return quit_requested_;
+  }
+  bool sandbox_requested() const {
+    return sandbox_requested_;
+  }
   bool console_open() const;
   std::size_t console_history_size() const;
   std::string_view console_input_line() const;
@@ -59,8 +62,7 @@ public:
   void show_objectives();
   void show_village();
   void show_libram(std::optional<fl::skills::SkillId> skill = std::nullopt);
-  void
-  show_bestiary(std::optional<fl::monster::MonsterKind> monster = std::nullopt);
+  void show_bestiary(std::optional<fl::monster::MonsterKind> monster = std::nullopt);
 
 private:
   enum class ActiveScreen {
@@ -77,26 +79,25 @@ private:
   void replace_screen(ftxui::Component screen);
   void on_party_combat_started(entt::entity account);
   bool raid_screen_locked() const noexcept;
-  ConsoleOverlay *console_overlay();
+  ConsoleOverlay* console_overlay();
   fl::context::AccountCtx make_context(std::size_t account_index);
   void toggle_active_screen();
   void toggle_party_battle_screen();
   void return_from_story();
   bool village_available_from_current_screen() const noexcept;
   bool return_selected_party_to_town();
-  void refresh_selected_account(std::size_t account_index,
-                                std::size_t party_index);
+  void refresh_selected_account(std::size_t account_index, std::size_t party_index);
   void update_fps_counter();
   ftxui::Element render_help_hint() const;
   ftxui::Element render_keybind_help() const;
 
   fl::context::AccountCtx ctx_;
-  std::deque<fl::primitives::AccountData> *accounts_{nullptr};
-  FancyLog *console_log_{nullptr};
-  fl::primitives::WorldClock *world_clock_{nullptr};
+  std::deque<fl::primitives::AccountData>* accounts_{nullptr};
+  FancyLog* console_log_{nullptr};
+  fl::primitives::WorldClock* world_clock_{nullptr};
   UiCommandController commands_;
-  const fl::primitives::DiscoveryJournal *discoveries_;
-  fl::primitives::ObjectiveSystem *objectives_{nullptr};
+  const fl::primitives::DiscoveryJournal* discoveries_;
+  fl::primitives::ObjectiveSystem* objectives_{nullptr};
   std::optional<fl::monster::MonsterKind> return_monster_;
   ActiveScreen active_screen_kind_{ActiveScreen::account_battle};
   std::optional<ActiveScreen> story_return_screen_;

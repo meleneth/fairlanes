@@ -28,8 +28,7 @@ namespace fl::widgets::effects::detail {
   return fl::lospec500::color_at(index);
 }
 
-[[nodiscard]] inline ftxui::Color lerp_color(ftxui::Color a, ftxui::Color b,
-                                             float t) {
+[[nodiscard]] inline ftxui::Color lerp_color(ftxui::Color a, ftxui::Color b, float t) {
   return clamp01(t) < 0.5F ? a : b;
 }
 
@@ -37,14 +36,13 @@ namespace fl::widgets::effects::detail {
   return x >= 0 && y >= 0 && x < width && y < height;
 }
 
-inline void apply_cell(Frame &frame, int x, int y, char glyph,
-                       std::optional<ftxui::Color> fg,
+inline void apply_cell(Frame& frame, int x, int y, char glyph, std::optional<ftxui::Color> fg,
                        std::optional<ftxui::Color> bg, float alpha) {
   if (!in_bounds(x, y, frame.width, frame.height)) {
     return;
   }
 
-  auto &cell = frame.at(x, y);
+  auto& cell = frame.at(x, y);
   cell.alpha = std::max(cell.alpha, clamp01(alpha));
   if (glyph != ' ') {
     cell.glyph = glyph;
@@ -57,8 +55,8 @@ inline void apply_cell(Frame &frame, int x, int y, char glyph,
   }
 }
 
-inline void apply_bg_glow(Frame &frame, int cx, int cy, int radius,
-                          ftxui::Color color, float alpha) {
+inline void apply_bg_glow(Frame& frame, int cx, int cy, int radius, ftxui::Color color,
+                          float alpha) {
   for (int y = cy - radius; y <= cy + radius; ++y) {
     for (int x = cx - radius; x <= cx + radius; ++x) {
       if (!in_bounds(x, y, frame.width, frame.height)) {
@@ -70,8 +68,7 @@ inline void apply_bg_glow(Frame &frame, int cx, int cy, int radius,
       if (dist > static_cast<float>(radius)) {
         continue;
       }
-      const float fade =
-          1.0F - dist / std::max(1.0F, static_cast<float>(radius));
+      const float fade = 1.0F - dist / std::max(1.0F, static_cast<float>(radius));
       apply_cell(frame, x, y, ' ', std::nullopt, color, alpha * fade);
     }
   }
@@ -81,8 +78,7 @@ inline void apply_bg_glow(Frame &frame, int cx, int cy, int radius,
   if (width <= 0 || height <= 0) {
     return {};
   }
-  return {width, height,
-          std::vector<RenderCell>(static_cast<std::size_t>(width * height))};
+  return {width, height, std::vector<RenderCell>(static_cast<std::size_t>(width * height))};
 }
 
 } // namespace fl::widgets::effects::detail

@@ -16,29 +16,24 @@
 
 namespace {
 
-std::optional<std::string> line_containing(const std::string &rendered,
-                                           std::string_view needle) {
+std::optional<std::string> line_containing(const std::string& rendered, std::string_view needle) {
   std::size_t start = 0;
   while (start <= rendered.size()) {
     const auto end = rendered.find('\n', start);
-    const auto line = rendered.substr(
-        start, end == std::string::npos ? std::string::npos : end - start);
-    if (line.find(needle) != std::string::npos)
-      return line;
-    if (end == std::string::npos)
-      break;
+    const auto line =
+        rendered.substr(start, end == std::string::npos ? std::string::npos : end - start);
+    if (line.find(needle) != std::string::npos) return line;
+    if (end == std::string::npos) break;
     start = end + 1;
   }
   return std::nullopt;
 }
 
-std::string render_party_view(fl::widgets::PartyView &view) {
-  fl::widgets::force_battle_render_target(
-      fl::widgets::BattleLayoutProfile::Wide);
+std::string render_party_view(fl::widgets::PartyView& view) {
+  fl::widgets::force_battle_render_target(fl::widgets::BattleLayoutProfile::Wide);
   auto element = view.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 180) |
                  ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 48);
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(180),
-                                      ftxui::Dimension::Fixed(48));
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(180), ftxui::Dimension::Fixed(48));
   ftxui::Render(screen, element);
   fl::widgets::clear_forced_battle_render_target();
   return screen.ToString();
@@ -50,12 +45,10 @@ TEST_CASE("Party inventory shares only the bottom row with player details",
           "[widgets][party][layout]") {
   fl::GrandCentral gc{1, 1, 5};
   fl::widgets::PartyView view{gc.account_context(0), 0};
-  fl::widgets::force_battle_render_target(
-      fl::widgets::BattleLayoutProfile::Wide);
+  fl::widgets::force_battle_render_target(fl::widgets::BattleLayoutProfile::Wide);
   auto element = view.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 180) |
                  ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 48);
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(180),
-                                      ftxui::Dimension::Fixed(48));
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(180), ftxui::Dimension::Fixed(48));
   ftxui::Render(screen, element);
   fl::widgets::clear_forced_battle_render_target();
 
@@ -86,10 +79,9 @@ TEST_CASE("Party player skill selection replaces inventory with skill details",
           "[widgets][party][player][skills]") {
   fl::GrandCentral gc{1, 1, 1};
   auto account_ctx = gc.account_context(0);
-  auto &party = account_ctx.account_data().party(0);
+  auto& party = account_ctx.account_data().party(0);
   const auto member = party.members().front().member_id();
-  auto &closet =
-      account_ctx.reg().get<fl::ecs::components::PartyMember>(member).closet();
+  auto& closet = account_ctx.reg().get<fl::ecs::components::PartyMember>(member).closet();
   closet.skill_slots[1] = fl::skills::SkillId::Thump;
   fl::widgets::PartyView view{account_ctx, 0};
 
@@ -113,8 +105,8 @@ TEST_CASE("Party player inventory equips filtered gear through party events",
           "[widgets][party][player][equipment]") {
   fl::GrandCentral gc{1, 1, 1};
   auto account_ctx = gc.account_context(0);
-  auto &party = account_ctx.account_data().party(0);
-  auto &reg = account_ctx.reg();
+  auto& party = account_ctx.account_data().party(0);
+  auto& reg = account_ctx.reg();
   party.replace_items({});
 
   const auto chest =
@@ -137,7 +129,7 @@ TEST_CASE("Party player inventory equips filtered gear through party events",
   party.add_item(helm);
 
   const auto member = party.members().front().member_id();
-  auto &closet = reg.get<fl::ecs::components::PartyMember>(member).closet();
+  auto& closet = reg.get<fl::ecs::components::PartyMember>(member).closet();
   fl::widgets::PartyView view{account_ctx, 0};
 
   REQUIRE(view.OnEvent(ftxui::Event::Tab));
@@ -157,8 +149,6 @@ TEST_CASE("Party player inventory equips filtered gear through party events",
 
   REQUIRE(view.OnEvent(ftxui::Event::Return));
   REQUIRE(closet.chest == chest);
-  REQUIRE(std::find(party.items().begin(), party.items().end(), chest) ==
-          party.items().end());
-  REQUIRE(std::find(party.items().begin(), party.items().end(), helm) !=
-          party.items().end());
+  REQUIRE(std::find(party.items().begin(), party.items().end(), chest) == party.items().end());
+  REQUIRE(std::find(party.items().begin(), party.items().end(), helm) != party.items().end());
 }

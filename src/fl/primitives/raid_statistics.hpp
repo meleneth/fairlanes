@@ -16,12 +16,15 @@ struct RaidRecords {
 // Account-owned through unique_ptr: subscriptions capture a stable address.
 class RaidStatistics {
 public:
-  RaidStatistics(fl::events::RaidBus &bus, entt::entity account, bool enabled = true);
-  const RaidRecords &records() const { return records_; }
+  RaidStatistics(fl::events::RaidBus& bus, entt::entity account, bool enabled = true);
+  const RaidRecords& records() const {
+    return records_;
+  }
+
 private:
-  void started(const fl::events::RaidStarted &event);
-  void resolved(const fl::events::RaidResolved &event);
-  fl::events::RaidBus &bus_;
+  void started(const fl::events::RaidStarted& event);
+  void resolved(const fl::events::RaidResolved& event);
+  fl::events::RaidBus& bus_;
   entt::entity account_;
   RaidRecords records_;
   std::uint64_t last_started_{0}, last_resolved_{0}, last_awarded_{0};

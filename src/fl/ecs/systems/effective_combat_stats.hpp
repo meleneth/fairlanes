@@ -20,17 +20,15 @@ struct EffectiveCombatStats {
   fl::primitives::Resistances resistances;
 };
 
-inline EffectiveCombatStats effective_combat_stats(entt::registry &reg,
-                                                   entt::entity actor) {
-  const auto &base = reg.get<fl::ecs::components::Stats>(actor);
-  EffectiveCombatStats result{base.attack_, base.armor_, base.max_hp_,
-                              base.resistances_};
-  const auto *member = reg.try_get<fl::ecs::components::PartyMember>(actor);
+inline EffectiveCombatStats effective_combat_stats(entt::registry& reg, entt::entity actor) {
+  const auto& base = reg.get<fl::ecs::components::Stats>(actor);
+  EffectiveCombatStats result{base.attack_, base.armor_, base.max_hp_, base.resistances_};
+  const auto* member = reg.try_get<fl::ecs::components::PartyMember>(actor);
   if (!member) return result;
   for (const auto slot : fl::loot::kEquipmentSlots) {
     const auto item = member->closet().equipped_item(slot);
     if (!reg.valid(item)) continue;
-    const auto *gear = reg.try_get<fl::ecs::components::Equipment>(item);
+    const auto* gear = reg.try_get<fl::ecs::components::Equipment>(item);
     if (!gear) continue;
     result.attack += gear->attack();
     result.armor += gear->armor();

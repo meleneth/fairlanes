@@ -1,8 +1,8 @@
 // global_loot_table.cpp
 #include "global_loot_table.hpp"
+#include "fl/generated/gear_content.hpp"
 #include "item_kind.hpp"
 #include "special_item.hpp"
-#include "fl/generated/gear_content.hpp"
 #include "tier.hpp"
 #include "upgrade_table.hpp"
 
@@ -15,33 +15,20 @@ using fl::loot::EquipmentSlot;
 
 static std::string slot_name(EquipmentSlot slot) {
   switch (slot) {
-  case EquipmentSlot::chest:
-    return "Chestpiece";
-  case EquipmentSlot::helm:
-    return "Helm";
-  case EquipmentSlot::pants:
-    return "Pants";
-  case EquipmentSlot::belt:
-    return "Belt";
-  case EquipmentSlot::boots:
-    return "Boots";
-  case EquipmentSlot::gloves:
-    return "Gloves";
-  case EquipmentSlot::sleeves:
-    return "Sleeves";
-  case EquipmentSlot::cape:
-    return "Cape";
-  case EquipmentSlot::necklace:
-    return "Necklace";
+  case EquipmentSlot::chest: return "Chestpiece";
+  case EquipmentSlot::helm: return "Helm";
+  case EquipmentSlot::pants: return "Pants";
+  case EquipmentSlot::belt: return "Belt";
+  case EquipmentSlot::boots: return "Boots";
+  case EquipmentSlot::gloves: return "Gloves";
+  case EquipmentSlot::sleeves: return "Sleeves";
+  case EquipmentSlot::cape: return "Cape";
+  case EquipmentSlot::necklace: return "Necklace";
   case EquipmentSlot::ring_1:
-  case EquipmentSlot::ring_2:
-    return "Ring";
-  case EquipmentSlot::mainhand:
-    return "Mainhand";
-  case EquipmentSlot::offhand:
-    return "Offhand";
-  case EquipmentSlot::knife:
-    return "Knife";
+  case EquipmentSlot::ring_2: return "Ring";
+  case EquipmentSlot::mainhand: return "Mainhand";
+  case EquipmentSlot::offhand: return "Offhand";
+  case EquipmentSlot::knife: return "Knife";
   }
 
   return "Equipment";
@@ -49,40 +36,28 @@ static std::string slot_name(EquipmentSlot slot) {
 
 static std::string kind_name(ArmorKind kind) {
   switch (kind) {
-  case ArmorKind::cloth:
-    return "Cloth";
-  case ArmorKind::leather:
-    return "Leather";
-  case ArmorKind::plate:
-    return "Plate";
-  case ArmorKind::none:
-    return "";
+  case ArmorKind::cloth: return "Cloth";
+  case ArmorKind::leather: return "Leather";
+  case ArmorKind::plate: return "Plate";
+  case ArmorKind::none: return "";
   }
   return "";
 }
 
 static std::string tier_prefix(Tier tier) {
   switch (tier) {
-  case Tier::worn:
-    return "Worn";
-  case Tier::plain:
-    return "Plain";
-  case Tier::sturdy:
-    return "Sturdy";
-  case Tier::fine:
-    return "Fine";
-  case Tier::excellent:
-    return "Excellent";
-  case Tier::masterwork:
-    return "Masterwork";
-  case Tier::mythic:
-    return "Mythic";
+  case Tier::worn: return "Worn";
+  case Tier::plain: return "Plain";
+  case Tier::sturdy: return "Sturdy";
+  case Tier::fine: return "Fine";
+  case Tier::excellent: return "Excellent";
+  case Tier::masterwork: return "Masterwork";
+  case Tier::mythic: return "Mythic";
   }
   return "Odd";
 }
 
-std::string LootTable::generated_name(EquipmentSlot slot, ArmorKind kind,
-                                      Tier tier) {
+std::string LootTable::generated_name(EquipmentSlot slot, ArmorKind kind, Tier tier) {
   if (kind == ArmorKind::none) {
     return tier_prefix(tier) + " " + slot_name(slot);
   }

@@ -15,16 +15,13 @@ class FancyLog;
 class UiCommandController {
 public:
   using ShowAccountView = std::function<void(std::size_t account_index)>;
-  using ShowPartyView =
-      std::function<void(std::size_t account_index, std::size_t party_index)>;
+  using ShowPartyView = std::function<void(std::size_t account_index, std::size_t party_index)>;
   using ShowEffectGallery = std::function<void()>;
-  using AccountSelected = std::function<void(
-      std::size_t account_index, std::size_t party_index)>;
+  using AccountSelected = std::function<void(std::size_t account_index, std::size_t party_index)>;
   using SpawnVisitor = std::function<bool(std::size_t account_index)>;
 
-  explicit UiCommandController(
-      std::deque<fl::primitives::AccountData> &accounts, FancyLog &output_log,
-      fl::primitives::WorldClock &world_clock);
+  explicit UiCommandController(std::deque<fl::primitives::AccountData>& accounts,
+                               FancyLog& output_log, fl::primitives::WorldClock& world_clock);
 
   void set_show_account_view(ShowAccountView callback);
   void set_show_party_view(ShowPartyView callback);
@@ -58,9 +55,9 @@ private:
   void select_party(std::size_t party_index);
   void write(std::string_view line);
 
-  std::deque<fl::primitives::AccountData> *accounts_{nullptr};
-  FancyLog *output_log_{nullptr};
-  fl::primitives::WorldClock *world_clock_{nullptr};
+  std::deque<fl::primitives::AccountData>* accounts_{nullptr};
+  FancyLog* output_log_{nullptr};
+  fl::primitives::WorldClock* world_clock_{nullptr};
   std::size_t account_index_{0};
   std::size_t party_index_{0};
 

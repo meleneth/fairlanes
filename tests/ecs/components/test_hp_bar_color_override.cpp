@@ -8,9 +8,8 @@
 
 namespace fl::ecs::components {
 
-TEST_CASE(
-    "HPBarColorOverride shim: safe_add_hp_bar_color ignores invalid entity",
-    "[ecs][components][hp_bar_color_override]") {
+TEST_CASE("HPBarColorOverride shim: safe_add_hp_bar_color ignores invalid entity",
+          "[ecs][components][hp_bar_color_override]") {
   entt::registry reg;
 
   safe_add_hp_bar_color(reg, entt::null, ftxui::Color::Red);
@@ -42,9 +41,8 @@ TEST_CASE("HPBarColorOverride shim: resolver emits final HP bar color",
   REQUIRE(reg.get<HPBarColorOverride>(entity).color == ftxui::Color::Red);
 }
 
-TEST_CASE(
-    "HPBarColorOverride shim: safe_clear_hp_bar_color removes status tint",
-    "[ecs][components][hp_bar_color_override]") {
+TEST_CASE("HPBarColorOverride shim: safe_clear_hp_bar_color removes status tint",
+          "[ecs][components][hp_bar_color_override]") {
   entt::registry reg;
   const auto entity = reg.create();
 

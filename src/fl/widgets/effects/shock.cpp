@@ -58,53 +58,44 @@ Shock::Shock(int width, int height, DecalConfig config) {
   std::uniform_real_distribution<float> jitter(-1.2f, 1.2f);
   std::uniform_real_distribution<float> window(0.0f, 0.7f);
   std::uniform_real_distribution<float> duration(0.15f, 0.35f);
-  static constexpr std::array<char, 7> bolt_glyphs{'*',  '+', '.', '/',
-                                                   '\\', '|', '-'};
+  static constexpr std::array<char, 7> bolt_glyphs{'*', '+', '.', '/', '\\', '|', '-'};
 
   const int bolt_count = std::max(3, width / 18);
   for (int i = 0; i < bolt_count; ++i) {
     float x = static_cast<float>(start_x(rng));
-    const int top =
-        std::uniform_int_distribution<int>(0, std::max(0, height / 3))(rng);
-    const int len = std::uniform_int_distribution<int>(
-        std::max(3, height / 2), std::max(4, height - 1))(rng);
+    const int top = std::uniform_int_distribution<int>(0, std::max(0, height / 3))(rng);
+    const int len =
+        std::uniform_int_distribution<int>(std::max(3, height / 2), std::max(4, height - 1))(rng);
     const float t0 = window(rng);
     const float t1 = std::min(1.0f, t0 + duration(rng));
 
     for (int step = 0; step < len; ++step) {
       const int y = std::clamp(top + step, 0, std::max(0, height - 1));
       x += jitter(rng);
-      const int xi = std::clamp(static_cast<int>(std::round(x)), 0,
-                                std::max(0, width - 1));
-      const char glyph = bolt_glyphs[static_cast<std::size_t>(
-          std::uniform_int_distribution<int>(0, 6)(rng))];
+      const int xi = std::clamp(static_cast<int>(std::round(x)), 0, std::max(0, width - 1));
+      const char glyph =
+          bolt_glyphs[static_cast<std::size_t>(std::uniform_int_distribution<int>(0, 6)(rng))];
       impl->bolts.push_back({xi, y, t0, t1, glyph, true});
 
       if (step > 2 && std::uniform_int_distribution<int>(0, 9)(rng) < 3) {
-        const int bx =
-            std::clamp(xi + std::uniform_int_distribution<int>(-3, 3)(rng), 0,
-                       std::max(0, width - 1));
-        const int by =
-            std::clamp(y + std::uniform_int_distribution<int>(-2, 2)(rng), 0,
-                       std::max(0, height - 1));
+        const int bx = std::clamp(xi + std::uniform_int_distribution<int>(-3, 3)(rng), 0,
+                                  std::max(0, width - 1));
+        const int by = std::clamp(y + std::uniform_int_distribution<int>(-2, 2)(rng), 0,
+                                  std::max(0, height - 1));
         const float bt0 = std::min(1.0f, t0 + 0.05f * static_cast<float>(step));
-        impl->bolts.push_back(
-            {bx, by, bt0, std::min(1.0f, bt0 + 0.18f), '+', false});
+        impl->bolts.push_back({bx, by, bt0, std::min(1.0f, bt0 + 0.18f), '+', false});
       }
     }
   }
 
   const int spark_count = std::max(24, width * height / 10);
   for (int i = 0; i < spark_count; ++i) {
-    const int x =
-        std::uniform_int_distribution<int>(0, std::max(0, width - 1))(rng);
-    const int y =
-        std::uniform_int_distribution<int>(0, std::max(0, height - 1))(rng);
+    const int x = std::uniform_int_distribution<int>(0, std::max(0, width - 1))(rng);
+    const int y = std::uniform_int_distribution<int>(0, std::max(0, height - 1))(rng);
     const float t0 = std::uniform_real_distribution<float>(0.0f, 1.0f)(rng);
-    const float t1 = std::min(
-        1.0f, t0 + std::uniform_real_distribution<float>(0.03f, 0.14f)(rng));
-    const char glyph = bolt_glyphs[static_cast<std::size_t>(
-        std::uniform_int_distribution<int>(0, 2)(rng))];
+    const float t1 = std::min(1.0f, t0 + std::uniform_real_distribution<float>(0.03f, 0.14f)(rng));
+    const char glyph =
+        bolt_glyphs[static_cast<std::size_t>(std::uniform_int_distribution<int>(0, 2)(rng))];
     impl->sparks.push_back({x, y, t0, t1, glyph});
   }
 
@@ -126,7 +117,7 @@ Frame Shock::render(float progress) const {
   const auto hot_yellow = palette(8);
   const auto white_hot = palette(41);
 
-  for (const auto &p : impl_->bolts) {
+  for (const auto& p : impl_->bolts) {
     if (t < p.start || t > p.end) {
       continue;
     }
@@ -139,13 +130,12 @@ Frame Shock::render(float progress) const {
     apply_cell(frame, p.x, p.y, p.glyph, fg, electric_blue, 1.0f * life);
   }
 
-  for (const auto &s : impl_->sparks) {
+  for (const auto& s : impl_->sparks) {
     if (t < s.start || t > s.end) {
       continue;
     }
     const float life = 1.0f - (t - s.start) / std::max(0.001f, s.end - s.start);
-    apply_cell(frame, s.x, s.y, s.glyph, electric_blue, std::nullopt,
-               0.4f * life);
+    apply_cell(frame, s.x, s.y, s.glyph, electric_blue, std::nullopt, 0.4f * life);
   }
 
   return frame;
@@ -155,8 +145,12 @@ float Shock::duration_seconds() const {
   return impl_ ? impl_->config.duration_seconds : 1.0f;
 }
 
-std::string_view Shock::name() const { return "Shock"; }
+std::string_view Shock::name() const {
+  return "Shock";
+}
 
-DecalAnimationKind Shock::kind() const { return DecalAnimationKind::Shock; }
+DecalAnimationKind Shock::kind() const {
+  return DecalAnimationKind::Shock;
+}
 
 } // namespace fl::widgets::effects

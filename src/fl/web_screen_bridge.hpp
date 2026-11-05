@@ -6,15 +6,14 @@ namespace fl {
 
 class WebScreenRegistration {
 public:
-  explicit WebScreenRegistration(ftxui::ScreenInteractive &screen);
+  explicit WebScreenRegistration(ftxui::ScreenInteractive& screen);
   ~WebScreenRegistration();
 
-  WebScreenRegistration(const WebScreenRegistration &) = delete;
-  WebScreenRegistration &
-  operator=(const WebScreenRegistration &) = delete;
+  WebScreenRegistration(const WebScreenRegistration&) = delete;
+  WebScreenRegistration& operator=(const WebScreenRegistration&) = delete;
 
 private:
-  ftxui::ScreenInteractive *screen_{nullptr};
+  ftxui::ScreenInteractive* screen_{nullptr};
 };
 
 } // namespace fl

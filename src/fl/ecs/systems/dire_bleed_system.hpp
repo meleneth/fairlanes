@@ -12,17 +12,16 @@ class DireBleedSystem {
 public:
   using Scheduler = seerin::TimedScheduler<seerin::AtbOutEvent>;
 
-  static void apply(fl::context::EncounterCtx &party_ctx, Scheduler &scheduler,
-                    entt::entity source, entt::entity target);
+  static void apply(fl::context::EncounterCtx& party_ctx, Scheduler& scheduler, entt::entity source,
+                    entt::entity target);
 
-  static void bind_cleanup_and_schedule(fl::context::EncounterCtx &party_ctx,
-                                        Scheduler &scheduler,
+  static void bind_cleanup_and_schedule(fl::context::EncounterCtx& party_ctx, Scheduler& scheduler,
                                         entt::entity target);
 
-  static void schedule_tick(fl::context::EncounterCtx &party_ctx,
-                            Scheduler &scheduler, entt::entity target);
+  static void schedule_tick(fl::context::EncounterCtx& party_ctx, Scheduler& scheduler,
+                            entt::entity target);
 
-  static void clear(fl::context::EncounterCtx &party_ctx, entt::entity target);
+  static void clear(fl::context::EncounterCtx& party_ctx, entt::entity target);
 };
 
 } // namespace fl::ecs::systems

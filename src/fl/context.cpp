@@ -14,15 +14,15 @@
 
 namespace fl::context {
 
-fl::widgets::FancyLog &AccountCtx::log() const {
+fl::widgets::FancyLog& AccountCtx::log() const {
   // FL_ASSERT(log_);
   return account_data_->log();
 }
-EntityCtx::EntityCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
-                     fl::widgets::FancyLog &log, entt::entity self)
+EntityCtx::EntityCtx(entt::registry& reg, fl::primitives::RandomHub& rng,
+                     fl::widgets::FancyLog& log, entt::entity self)
     : reg_(&reg), rng_(&rng), log_(&log), self_(self) {}
 
-EntityCtx &EntityCtx::operator=(const EntityCtx &rhs) {
+EntityCtx& EntityCtx::operator=(const EntityCtx& rhs) {
   reg_ = rhs.reg_;
   rng_ = rhs.rng_;
   log_ = rhs.log_;
@@ -38,15 +38,15 @@ EntityCtx BuildCtx::entity_context(entt::entity ent) const {
   return EntityCtx{reg(), rng(), log(), ent};
 }
 
-entt::entity PartyCtx::self() const { return party_data().party_id(); }
+entt::entity PartyCtx::self() const {
+  return party_data().party_id();
+}
 
-PartyCtx::PartyCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
-                   fl::primitives::AccountData &acc,
-                   fl::primitives::PartyData &party)
+PartyCtx::PartyCtx(entt::registry& reg, fl::primitives::RandomHub& rng,
+                   fl::primitives::AccountData& acc, fl::primitives::PartyData& party)
     : reg_(&reg), rng_(&rng), account_data_(&acc), party_data_(&party),
-      log_(&party.log()), // assumes PartyData stores FancyLog* log_
-      bus_(&party.party_bus()) {
-} // assumes PartyData stores PartyBus party_bus_
+      log_(&party.log()),         // assumes PartyData stores FancyLog* log_
+      bus_(&party.party_bus()) {} // assumes PartyData stores PartyBus party_bus_
 
 EntityCtx PartyCtx::entity_context(entt::entity ent) const {
   return EntityCtx{reg(), rng(), log(), ent};
@@ -57,11 +57,10 @@ BuildCtx PartyCtx::build_context() const {
 }
 
 PartyCtx AccountCtx::party_context(std::size_t idx) const {
-  return PartyCtx{reg(), rng(), account_data(),
-                  account_data().parties().at(idx)};
+  return PartyCtx{reg(), rng(), account_data(), account_data().parties().at(idx)};
 }
 
-PartyCtx AccountCtx::party_context(fl::primitives::PartyData &data) const {
+PartyCtx AccountCtx::party_context(fl::primitives::PartyData& data) const {
   return PartyCtx{reg(), rng(), account_data(), data};
 }
 
@@ -69,37 +68,35 @@ EntityCtx AccountCtx::entity_context(entt::entity ent) const {
   return EntityCtx{reg(), rng(), log(), ent};
 }
 
-entt::entity AccountCtx::self() const { return account_data_->account_id(); }
+entt::entity AccountCtx::self() const {
+  return account_data_->account_id();
+}
 
-AttackCtx::AttackCtx(entt::registry &reg, fl::primitives::RandomHub &rng,
-                     fl::widgets::FancyLog &log, entt::entity attacker,
-                     entt::entity defender)
-    : reg_(&reg), rng_(&rng), log_(&log), attacker_(attacker),
-      defender_(defender) {}
+AttackCtx::AttackCtx(entt::registry& reg, fl::primitives::RandomHub& rng,
+                     fl::widgets::FancyLog& log, entt::entity attacker, entt::entity defender)
+    : reg_(&reg), rng_(&rng), log_(&log), attacker_(attacker), defender_(defender) {}
 
 EntityCtx AttackCtx::entity_context(entt::entity e) const {
   return EntityCtx{reg(), rng(), log(), e};
 }
 
-AttackCtx AttackCtx::make_attack(PartyCtx &ctx, entt::entity attacker,
-                                 entt::entity defender) {
+AttackCtx AttackCtx::make_attack(PartyCtx& ctx, entt::entity attacker, entt::entity defender) {
   return AttackCtx{ctx.reg(), ctx.rng(), ctx.log(), attacker, defender};
 }
 
 PartyCtx EntityCtx::expect_party_ctx() const {
-  auto *is_party = reg().try_get<fl::ecs::components::IsParty>(self_);
+  auto* is_party = reg().try_get<fl::ecs::components::IsParty>(self_);
 
   assert(is_party && "EntityCtx::expect_party_ctx called on non-party entity");
 
   return is_party->party_data().loop_ctx();
 }
 
-EncounterCtx &PartyCtx::encounter_context() const {
+EncounterCtx& PartyCtx::encounter_context() const {
   return party_data().encounter_data().context();
 }
 
-AttackCtx AttackCtx::make_attack(EncounterCtx &ctx, entt::entity attacker,
-                                  entt::entity defender) {
+AttackCtx AttackCtx::make_attack(EncounterCtx& ctx, entt::entity attacker, entt::entity defender) {
   return AttackCtx{ctx.reg(), ctx.rng(), ctx.log(), attacker, defender};
 }
 

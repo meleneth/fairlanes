@@ -16,32 +16,22 @@
 
 namespace fl::widgets::effects {
 
-std::shared_ptr<const DecalAnimation>
-make_decal_animation(DecalAnimationKind kind, int width, int height,
-                     DecalConfig config) {
+std::shared_ptr<const DecalAnimation> make_decal_animation(DecalAnimationKind kind, int width,
+                                                           int height, DecalConfig config) {
   switch (kind) {
   case DecalAnimationKind::FlameWave:
     return std::make_shared<FlameWaveAnimation>(width, height, config);
-  case DecalAnimationKind::Shock:
-    return std::make_shared<Shock>(width, height, config);
-  case DecalAnimationKind::RocksFall:
-    return std::make_shared<RocksFall>(width, height, config);
-  case DecalAnimationKind::PoisonCloud:
-    return std::make_shared<PoisonCloud>(width, height, config);
-  case DecalAnimationKind::HolyNova:
-    return std::make_shared<HolyNova>(width, height, config);
-  case DecalAnimationKind::BloodBloom:
-    return std::make_shared<BloodBloom>(width, height, config);
-  case DecalAnimationKind::FrostCrack:
-    return std::make_shared<FrostCrack>(width, height, config);
-  case DecalAnimationKind::VoidRipple:
-    return std::make_shared<VoidRipple>(width, height, config);
-  case DecalAnimationKind::Starfire:
-    return std::make_shared<Starfire>(width, height, config);
+  case DecalAnimationKind::Shock: return std::make_shared<Shock>(width, height, config);
+  case DecalAnimationKind::RocksFall: return std::make_shared<RocksFall>(width, height, config);
+  case DecalAnimationKind::PoisonCloud: return std::make_shared<PoisonCloud>(width, height, config);
+  case DecalAnimationKind::HolyNova: return std::make_shared<HolyNova>(width, height, config);
+  case DecalAnimationKind::BloodBloom: return std::make_shared<BloodBloom>(width, height, config);
+  case DecalAnimationKind::FrostCrack: return std::make_shared<FrostCrack>(width, height, config);
+  case DecalAnimationKind::VoidRipple: return std::make_shared<VoidRipple>(width, height, config);
+  case DecalAnimationKind::Starfire: return std::make_shared<Starfire>(width, height, config);
   case DecalAnimationKind::HitpointNumber:
     return std::make_shared<HitpointNumber>(
-        width, height, config.color.value_or(ftxui::Color::White),
-        config.hitpoints, config);
+        width, height, config.color.value_or(ftxui::Color::White), config.hitpoints, config);
   case DecalAnimationKind::Impact:
   case DecalAnimationKind::Slash:
   case DecalAnimationKind::Bite:

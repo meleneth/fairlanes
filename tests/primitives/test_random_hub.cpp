@@ -12,14 +12,14 @@ namespace {
 
 class ScopedEnvVar {
 public:
-  explicit ScopedEnvVar(const char *name) : name_(name) {
-    if (const char *value = std::getenv(name_)) {
+  explicit ScopedEnvVar(const char* name) : name_(name) {
+    if (const char* value = std::getenv(name_)) {
       previous_ = std::string(value);
     }
   }
 
-  ScopedEnvVar(const ScopedEnvVar &) = delete;
-  ScopedEnvVar &operator=(const ScopedEnvVar &) = delete;
+  ScopedEnvVar(const ScopedEnvVar&) = delete;
+  ScopedEnvVar& operator=(const ScopedEnvVar&) = delete;
 
   ~ScopedEnvVar() {
 #ifdef _WIN32
@@ -37,7 +37,7 @@ public:
 #endif
   }
 
-  void set(const char *value) {
+  void set(const char* value) {
 #ifdef _WIN32
     _putenv_s(name_, value);
 #else
@@ -54,7 +54,7 @@ public:
   }
 
 private:
-  const char *name_;
+  const char* name_;
   std::optional<std::string> previous_;
 };
 
@@ -63,8 +63,7 @@ private:
 TEST_CASE("RandomHub parses unsigned seed text", "[random][seed]") {
   REQUIRE(fl::primitives::parse_unsigned_seed("0") == 0ULL);
   REQUIRE(fl::primitives::parse_unsigned_seed("42") == 42ULL);
-  REQUIRE(fl::primitives::parse_unsigned_seed("18446744073709551615") ==
-          UINT64_MAX);
+  REQUIRE(fl::primitives::parse_unsigned_seed("18446744073709551615") == UINT64_MAX);
 
   CHECK_FALSE(fl::primitives::parse_unsigned_seed(""));
   CHECK_FALSE(fl::primitives::parse_unsigned_seed("banana"));
@@ -84,8 +83,7 @@ TEST_CASE("RandomHub uses FAIRLANES_RNG_SEED when present", "[random][seed]") {
   REQUIRE(hub.seed_source() == fl::primitives::RandomSeedSource::Environment);
 }
 
-TEST_CASE("RandomHub generated seed remains inspectable when env is unset",
-          "[random][seed]") {
+TEST_CASE("RandomHub generated seed remains inspectable when env is unset", "[random][seed]") {
   ScopedEnvVar env{"FAIRLANES_RNG_SEED"};
   env.unset();
 
@@ -95,8 +93,7 @@ TEST_CASE("RandomHub generated seed remains inspectable when env is unset",
   REQUIRE(hub.seed_source() == fl::primitives::RandomSeedSource::Generated);
 }
 
-TEST_CASE("RandomHub rejects invalid FAIRLANES_RNG_SEED in test builds",
-          "[random][seed]") {
+TEST_CASE("RandomHub rejects invalid FAIRLANES_RNG_SEED in test builds", "[random][seed]") {
   ScopedEnvVar env{"FAIRLANES_RNG_SEED"};
   env.set("banana");
 
@@ -108,8 +105,7 @@ TEST_CASE("RandomHub rejects invalid FAIRLANES_RNG_SEED in test builds",
 #endif
 }
 
-TEST_CASE("GrandCentral contexts expose the central RNG seed",
-          "[random][seed][context]") {
+TEST_CASE("GrandCentral contexts expose the central RNG seed", "[random][seed][context]") {
   ScopedEnvVar env{"FAIRLANES_RNG_SEED"};
   env.set("314159");
 
@@ -118,12 +114,10 @@ TEST_CASE("GrandCentral contexts expose the central RNG seed",
 
   REQUIRE(gc.rng().chosen_seed() == 314159ULL);
   REQUIRE(account_ctx.rng().chosen_seed() == gc.rng().chosen_seed());
-  REQUIRE(account_ctx.party_context(0).rng().chosen_seed() ==
-          gc.rng().chosen_seed());
+  REQUIRE(account_ctx.party_context(0).rng().chosen_seed() == gc.rng().chosen_seed());
 }
 
-TEST_CASE("RandomHub replays streams from the same explicit seed",
-          "[random][seed]") {
+TEST_CASE("RandomHub replays streams from the same explicit seed", "[random][seed]") {
   fl::primitives::RandomHub first{123456789ULL};
   fl::primitives::RandomHub second{123456789ULL};
   fl::primitives::RandomHub different{987654321ULL};

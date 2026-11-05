@@ -17,40 +17,31 @@ namespace {
 
 struct IntegratedRoot {
   ftxui::Component component;
-  fl::generated::ftxer::CompositionRoot *composition{nullptr};
-  fl::widgets::RootComponent *existing{nullptr};
+  fl::generated::ftxer::CompositionRoot* composition{nullptr};
+  fl::widgets::RootComponent* existing{nullptr};
 };
 
-IntegratedRoot make_root(fl::GrandCentral &game) {
+IntegratedRoot make_root(fl::GrandCentral& game) {
   auto existing = ftxui::Make<fl::widgets::RootComponent>(
-      game.account_context(0), game.accounts(), game.game_log(),
-      game.world_clock(), &game.discoveries(), &game.raid_milestones().bus(),
-      game.objectives());
-  auto *existing_ptr =
-      dynamic_cast<fl::widgets::RootComponent *>(existing.get());
-  auto adapter =
-      std::make_unique<fl::widgets::FtxerUiAdapter>(std::move(existing));
-  auto component = ftxui::Make<fl::generated::ftxer::CompositionRoot>(
-      std::move(adapter));
-  return {component,
-          dynamic_cast<fl::generated::ftxer::CompositionRoot *>(component.get()),
+      game.account_context(0), game.accounts(), game.game_log(), game.world_clock(),
+      &game.discoveries(), &game.raid_milestones().bus(), game.objectives());
+  auto* existing_ptr = dynamic_cast<fl::widgets::RootComponent*>(existing.get());
+  auto adapter = std::make_unique<fl::widgets::FtxerUiAdapter>(std::move(existing));
+  auto component = ftxui::Make<fl::generated::ftxer::CompositionRoot>(std::move(adapter));
+  return {component, dynamic_cast<fl::generated::ftxer::CompositionRoot*>(component.get()),
           existing_ptr};
 }
 
-std::string render(ftxui::Component component, int width = 120,
-                   int height = 40) {
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(width),
-                                      ftxui::Dimension::Fixed(height));
-  ftxui::Render(screen, component->Render() |
-                            ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width) |
+std::string render(ftxui::Component component, int width = 120, int height = 40) {
+  auto screen =
+      ftxui::Screen::Create(ftxui::Dimension::Fixed(width), ftxui::Dimension::Fixed(height));
+  ftxui::Render(screen, component->Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width) |
                             ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, height));
   return screen.ToString();
 }
 
-void type(fl::generated::ftxer::CompositionRoot &root,
-          const std::string &text) {
-  for (char value : text)
-    REQUIRE(root.OnEvent(ftxui::Event::Character(std::string(1, value))));
+void type(fl::generated::ftxer::CompositionRoot& root, const std::string& text) {
+  for (char value : text) REQUIRE(root.OnEvent(ftxui::Event::Character(std::string(1, value))));
 }
 
 } // namespace
@@ -76,15 +67,12 @@ TEST_CASE("FTXer root owns navigation and preserves the previous battle",
   auto root = make_root(game);
 
   REQUIRE(root.composition->OnEvent(ftxui::Event::Character("b")));
-  REQUIRE(root.composition->current_screen() ==
-          fl::generated::ftxer::ScreenId::Bestiary);
+  REQUIRE(root.composition->current_screen() == fl::generated::ftxer::ScreenId::Bestiary);
   REQUIRE(root.composition->history_size() == 1);
 
   REQUIRE(root.composition->OnEvent(ftxui::Event::Escape));
-  REQUIRE(root.composition->current_screen() ==
-          fl::generated::ftxer::ScreenId::PartyBattle);
-  REQUIRE(render(root.component).find("Stormbreak Company") !=
-          std::string::npos);
+  REQUIRE(root.composition->current_screen() == fl::generated::ftxer::ScreenId::PartyBattle);
+  REQUIRE(render(root.component).find("Stormbreak Company") != std::string::npos);
 }
 
 TEST_CASE("FTXer console stays above modals and uses the real command system",
@@ -102,8 +90,7 @@ TEST_CASE("FTXer console stays above modals and uses the real command system",
   REQUIRE(root.composition->OnEvent(ftxui::Event::Return));
   REQUIRE(root.existing->console_history_size() == 1);
   std::string expanded_console;
-  for (int frame = 0; frame < 24; ++frame)
-    expanded_console = render(root.component);
+  for (int frame = 0; frame < 24; ++frame) expanded_console = render(root.component);
   REQUIRE(expanded_console.find("commands: screen") != std::string::npos);
 
   REQUIRE(root.composition->OnEvent(ftxui::Event::ArrowUp));
@@ -135,15 +122,12 @@ TEST_CASE("FTXer root remains usable across terminal sizes and subscriptions",
           "[ftxer][integration][resize][events]") {
   fl::GrandCentral game{1, 1, 1};
   auto root = make_root(game);
-  auto &bus = game.accounts().front().parties().front().party_bus();
+  auto& bus = game.accounts().front().parties().front().party_bus();
 
   REQUIRE(root.composition->OnEvent(ftxui::Event::Character("b")));
-  bus.emit(fl::events::PartyEvent{
-      fl::events::BiomeUnlocked{"origin_plains_tower"}});
-  REQUIRE(render(root.component, 80, 24).find("BIOME UNLOCKED") !=
-          std::string::npos);
+  bus.emit(fl::events::PartyEvent{fl::events::BiomeUnlocked{"origin_plains_tower"}});
+  REQUIRE(render(root.component, 80, 24).find("BIOME UNLOCKED") != std::string::npos);
   REQUIRE_FALSE(render(root.component, 160, 48).empty());
   REQUIRE(root.composition->OnEvent(ftxui::Event::Escape));
-  REQUIRE(render(root.component, 80, 24).find("Stormbreak Company") !=
-          std::string::npos);
+  REQUIRE(render(root.component, 80, 24).find("Stormbreak Company") != std::string::npos);
 }

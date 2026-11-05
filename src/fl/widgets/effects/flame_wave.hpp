@@ -49,15 +49,17 @@ struct Frame {
   int height = 0;
   std::vector<RenderCell> cells;
 
-  [[nodiscard]] RenderCell &at(int x, int y);
-  [[nodiscard]] const RenderCell &at(int x, int y) const;
+  [[nodiscard]] RenderCell& at(int x, int y);
+  [[nodiscard]] const RenderCell& at(int x, int y) const;
 };
 
 class FlameWave {
 public:
   explicit FlameWave(FlameWaveConfig config = {});
 
-  [[nodiscard]] const FlameWaveConfig &config() const { return config_; }
+  [[nodiscard]] const FlameWaveConfig& config() const {
+    return config_;
+  }
   [[nodiscard]] Frame render(float progress, int width, int height) const;
 
 private:
@@ -68,8 +70,8 @@ private:
 
 // Decal helpers. Render a full rectangle as FTXUI Elements, or apply active
 // cells over an existing text buffer while preserving legibility.
-[[nodiscard]] ftxui::Element to_element(const Frame &frame);
-[[nodiscard]] ftxui::Element overlay_text(const std::vector<std::string> &lines,
-                                          const Frame &decal);
+[[nodiscard]] ftxui::Element to_element(const Frame& frame);
+[[nodiscard]] ftxui::Element overlay_text(const std::vector<std::string>& lines,
+                                          const Frame& decal);
 
 } // namespace fl::widgets::effects

@@ -16,7 +16,7 @@ public:
 
   ftxui::Component component() override;
   ftxui::Element render() override;
-  bool on_event(const ftxui::Event &event) override;
+  bool on_event(const ftxui::Event& event) override;
   fl::generated::ftxer::ScreenId current_screen() const override;
   bool show_screen(fl::generated::ftxer::ScreenId screen) override;
   bool invoke(fl::generated::ftxer::ExternalAction action) override;
@@ -28,8 +28,8 @@ public:
   bool sandbox_requested() const override;
 
 private:
-  RootComponent &root();
-  const RootComponent &root() const;
+  RootComponent& root();
+  const RootComponent& root() const;
 
   ftxui::Component root_;
 };

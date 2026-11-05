@@ -9,8 +9,7 @@
 
 namespace fl::loot {
 
-inline bool inventory_has_unique_item(entt::registry &reg,
-                                      std::span<const entt::entity> inventory,
+inline bool inventory_has_unique_item(entt::registry& reg, std::span<const entt::entity> inventory,
                                       std::string_view unique_id) {
   if (unique_id.empty()) {
     return false;
@@ -21,7 +20,7 @@ inline bool inventory_has_unique_item(entt::registry &reg,
       continue;
     }
 
-    const auto *equipment = reg.try_get<fl::ecs::components::Equipment>(item);
+    const auto* equipment = reg.try_get<fl::ecs::components::Equipment>(item);
     if (equipment != nullptr && equipment->unique_id() == unique_id) {
       return true;
     }

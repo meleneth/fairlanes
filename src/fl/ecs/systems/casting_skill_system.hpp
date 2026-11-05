@@ -8,11 +8,11 @@ namespace fl::ecs::systems {
 
 class CastingSkillSystem {
 public:
-  static fl::events::ScopedCombatantListener
-  bind_started_listener(entt::registry &reg, fl::events::CombatantBus &bus);
+  static fl::events::ScopedCombatantListener bind_started_listener(entt::registry& reg,
+                                                                   fl::events::CombatantBus& bus);
 
-  static fl::events::ScopedCombatantListener
-  bind_finished_listener(entt::registry &reg, fl::events::CombatantBus &bus);
+  static fl::events::ScopedCombatantListener bind_finished_listener(entt::registry& reg,
+                                                                    fl::events::CombatantBus& bus);
 };
 
 } // namespace fl::ecs::systems

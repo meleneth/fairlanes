@@ -16,15 +16,14 @@ std::string make_fill_bar(float value_01, int width) {
     return {};
   }
 
-  static constexpr const char *kHalfCell = "▌";
-  static constexpr const char *kFullCell = "█";
+  static constexpr const char* kHalfCell = "▌";
+  static constexpr const char* kFullCell = "█";
 
   const float fill = clamp_fill(value_01);
   const int total_half_cells = width * 2;
   const int filled_half_cells =
-      std::clamp(static_cast<int>(
-                     std::lround(fill * static_cast<float>(total_half_cells))),
-                 0, total_half_cells);
+      std::clamp(static_cast<int>(std::lround(fill * static_cast<float>(total_half_cells))), 0,
+                 total_half_cells);
 
   const int full_cells = filled_half_cells / 2;
   const bool has_half_cell = (filled_half_cells % 2) != 0;
@@ -48,10 +47,10 @@ std::string make_fill_bar(float value_01, int width) {
   return bar;
 }
 
-ftxui::Element labeled_fill_bar(std::string_view label, float value_01,
-                                int width, std::string_view suffix) {
-  const auto line = std::string(label) + ": [" +
-                    make_fill_bar(value_01, width) + "] " + std::string(suffix);
+ftxui::Element labeled_fill_bar(std::string_view label, float value_01, int width,
+                                std::string_view suffix) {
+  const auto line =
+      std::string(label) + ": [" + make_fill_bar(value_01, width) + "] " + std::string(suffix);
   return ftxui::hbox({
       ftxui::text(line),
       ftxui::filler(),

@@ -18,19 +18,23 @@ class ConsoleOverlay : public ftxui::ComponentBase {
 public:
   using CommandHandler = std::function<void(std::string_view)>;
 
-  explicit ConsoleOverlay(FancyLog *console);
+  explicit ConsoleOverlay(FancyLog* console);
 
   bool open() const;
   bool should_show() const;
-  std::size_t history_size() const { return history_.size(); }
-  const std::string &input_line() const { return line_; }
+  std::size_t history_size() const {
+    return history_.size();
+  }
+  const std::string& input_line() const {
+    return line_;
+  }
 
   void toggle();
   void set_open(bool v);
   void set_full_open();
 
   void tick();
-  void change_console(FancyLog *console);
+  void change_console(FancyLog* console);
   void set_on_command(CommandHandler handler);
 
   bool OnEvent(ftxui::Event event) override;
@@ -45,7 +49,7 @@ private:
   int rows_ = 0;
   int target_rows_ = 0;
 
-  FancyLog *console_ = nullptr;
+  FancyLog* console_ = nullptr;
 
   std::string line_;
   std::string history_draft_;

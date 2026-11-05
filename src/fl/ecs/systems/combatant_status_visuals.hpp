@@ -41,12 +41,11 @@ struct CombatantStatusVisual {
   bool preserves_existing_targeted_behavior{false};
 };
 
-[[nodiscard]] std::vector<CombatantStatusVisual>
-combatant_status_visuals(entt::registry &reg, entt::entity entity);
+[[nodiscard]] std::vector<CombatantStatusVisual> combatant_status_visuals(entt::registry& reg,
+                                                                          entt::entity entity);
 
 [[nodiscard]] std::vector<CombatantStatusVisual>
-combatant_status_visuals_for(entt::registry &reg, entt::entity entity,
-                             CombatantVisualLayer layer,
+combatant_status_visuals_for(entt::registry& reg, entt::entity entity, CombatantVisualLayer layer,
                              CombatantVisualRegion region);
 
 } // namespace fl::ecs::systems

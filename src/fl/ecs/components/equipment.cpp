@@ -5,34 +5,42 @@
 
 namespace fl::ecs::components {
 
-Equipment::Equipment(fl::loot::EquipmentSlot slot, std::string name,
-                     fl::loot::ArmorKind armor_kind, fl::loot::Tier tier,
-                     std::string unique_id,
-                     fl::primitives::Resistances resistances,
-                     int attack, int armor, int max_hp)
+Equipment::Equipment(fl::loot::EquipmentSlot slot, std::string name, fl::loot::ArmorKind armor_kind,
+                     fl::loot::Tier tier, std::string unique_id,
+                     fl::primitives::Resistances resistances, int attack, int armor, int max_hp)
     : slot_(slot), armor_kind_(armor_kind), tier_(tier), name_(std::move(name)),
-      unique_id_(std::move(unique_id)), resistances_(resistances),
-      attack_(attack), armor_(armor), max_hp_(max_hp) {}
+      unique_id_(std::move(unique_id)), resistances_(resistances), attack_(attack), armor_(armor),
+      max_hp_(max_hp) {}
 
-fl::loot::EquipmentSlot Equipment::slot() const noexcept { return slot_; }
+fl::loot::EquipmentSlot Equipment::slot() const noexcept {
+  return slot_;
+}
 
 fl::loot::ArmorKind Equipment::armor_kind() const noexcept {
   return armor_kind_;
 }
 
-fl::loot::Tier Equipment::tier() const noexcept { return tier_; }
+fl::loot::Tier Equipment::tier() const noexcept {
+  return tier_;
+}
 
 bool Equipment::is_armor() const noexcept {
   return armor_kind_ != fl::loot::ArmorKind::none;
 }
 
-std::string_view Equipment::name() const noexcept { return name_; }
+std::string_view Equipment::name() const noexcept {
+  return name_;
+}
 
-std::string_view Equipment::unique_id() const noexcept { return unique_id_; }
+std::string_view Equipment::unique_id() const noexcept {
+  return unique_id_;
+}
 
-bool Equipment::is_unique() const noexcept { return !unique_id_.empty(); }
+bool Equipment::is_unique() const noexcept {
+  return !unique_id_.empty();
+}
 
-const fl::primitives::Resistances &Equipment::resistances() const noexcept {
+const fl::primitives::Resistances& Equipment::resistances() const noexcept {
   return resistances_;
 }
 
@@ -40,20 +48,13 @@ std::size_t Equipment::palette_index() const noexcept {
   using fl::loot::Tier;
 
   switch (tier_) {
-  case Tier::worn:
-    return 32;
-  case Tier::plain:
-    return 24;
-  case Tier::sturdy:
-    return 23;
-  case Tier::fine:
-    return 29;
-  case Tier::excellent:
-    return 15;
-  case Tier::masterwork:
-    return 36;
-  case Tier::mythic:
-    return 37;
+  case Tier::worn: return 32;
+  case Tier::plain: return 24;
+  case Tier::sturdy: return 23;
+  case Tier::fine: return 29;
+  case Tier::excellent: return 15;
+  case Tier::masterwork: return 36;
+  case Tier::mythic: return 37;
   }
 
   return 32;
@@ -63,34 +64,20 @@ std::string_view to_string(fl::loot::EquipmentSlot slot) {
   using fl::loot::EquipmentSlot;
 
   switch (slot) {
-  case EquipmentSlot::chest:
-    return "chest";
-  case EquipmentSlot::helm:
-    return "helm";
-  case EquipmentSlot::pants:
-    return "pants";
-  case EquipmentSlot::belt:
-    return "belt";
-  case EquipmentSlot::boots:
-    return "boots";
-  case EquipmentSlot::gloves:
-    return "gloves";
-  case EquipmentSlot::sleeves:
-    return "sleeves";
-  case EquipmentSlot::cape:
-    return "cape";
-  case EquipmentSlot::necklace:
-    return "necklace";
-  case EquipmentSlot::ring_1:
-    return "ring_1";
-  case EquipmentSlot::ring_2:
-    return "ring_2";
-  case EquipmentSlot::mainhand:
-    return "mainhand";
-  case EquipmentSlot::offhand:
-    return "offhand";
-  case EquipmentSlot::knife:
-    return "knife";
+  case EquipmentSlot::chest: return "chest";
+  case EquipmentSlot::helm: return "helm";
+  case EquipmentSlot::pants: return "pants";
+  case EquipmentSlot::belt: return "belt";
+  case EquipmentSlot::boots: return "boots";
+  case EquipmentSlot::gloves: return "gloves";
+  case EquipmentSlot::sleeves: return "sleeves";
+  case EquipmentSlot::cape: return "cape";
+  case EquipmentSlot::necklace: return "necklace";
+  case EquipmentSlot::ring_1: return "ring_1";
+  case EquipmentSlot::ring_2: return "ring_2";
+  case EquipmentSlot::mainhand: return "mainhand";
+  case EquipmentSlot::offhand: return "offhand";
+  case EquipmentSlot::knife: return "knife";
   }
 
   return "unknown";

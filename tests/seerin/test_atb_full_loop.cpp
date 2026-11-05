@@ -10,9 +10,8 @@
 
 namespace {
 
-static void emit_beats(seerin::AtbInBus &in, int n) {
-  for (int i = 0; i < n; ++i)
-    in.emit(seerin::AtbInEvent{seerin::Beat{}});
+static void emit_beats(seerin::AtbInBus& in, int n) {
+  for (int i = 0; i < n; ++i) in.emit(seerin::AtbInEvent{seerin::Beat{}});
 }
 
 } // namespace
@@ -26,12 +25,12 @@ TEST_CASE("ATB: BecameReady enqueues; Beat pumps to BecameActive; FinishedTurn "
   int became_active = 0;
   std::vector<std::string> trace;
 
-  atb.out().on<seerin::BecameReady>([&](const seerin::BecameReady &e) {
+  atb.out().on<seerin::BecameReady>([&](const seerin::BecameReady& e) {
     ++became_ready;
     trace.push_back("ready:" + std::to_string((int)e.id));
   });
 
-  atb.out().on<seerin::BecameActive>([&](const seerin::BecameActive &e) {
+  atb.out().on<seerin::BecameActive>([&](const seerin::BecameActive& e) {
     ++became_active;
     trace.push_back("active:" + std::to_string((int)e.id));
   });
@@ -70,8 +69,7 @@ TEST_CASE("ATB: BecameReady enqueues; Beat pumps to BecameActive; FinishedTurn "
   REQUIRE(trace[3].rfind("active:", 0) == 0);
 }
 
-TEST_CASE("ATB: active combatant pauses charge accrual but not scheduler work",
-          "[atb][timing]") {
+TEST_CASE("ATB: active combatant pauses charge accrual but not scheduler work", "[atb][timing]") {
   entt::registry reg;
   seerin::AtbEngine atb{reg};
 
@@ -81,10 +79,9 @@ TEST_CASE("ATB: active combatant pauses charge accrual but not scheduler work",
   atb.in().emit(seerin::AtbInEvent{seerin::AddCombatant{waiting}});
 
   atb.active_combatant() = active;
-  atb.scheduler().schedule_smelly_in_beats(
-      2, "test: scheduler advances while active", [&] {
-        reg.get<fl::ecs::components::AtbCharge>(active).max_charge = 1234;
-      });
+  atb.scheduler().schedule_smelly_in_beats(2, "test: scheduler advances while active", [&] {
+    reg.get<fl::ecs::components::AtbCharge>(active).max_charge = 1234;
+  });
 
   emit_beats(atb.in(), 3);
 
@@ -103,19 +100,15 @@ TEST_CASE("ATB: unchargeable active combatant does not stall scheduler-only "
   auto waiting = reg.create();
   bool active_alive = true;
 
-  atb.set_can_charge_fn([&](entt::entity entity) {
-    return entity != active || active_alive;
-  });
+  atb.set_can_charge_fn([&](entt::entity entity) { return entity != active || active_alive; });
 
   atb.in().emit(seerin::AtbInEvent{seerin::AddCombatant{active}});
   atb.in().emit(seerin::AtbInEvent{seerin::AddCombatant{waiting}});
   atb.active_combatant() = active;
   atb.ready_queue().push_back(waiting);
 
-  atb.scheduler().schedule_smelly_in_beats(
-      2, "test: active becomes unable to charge", [&] {
-        active_alive = false;
-      });
+  atb.scheduler().schedule_smelly_in_beats(2, "test: active becomes unable to charge",
+                                           [&] { active_alive = false; });
 
   emit_beats(atb.in(), 2);
 
@@ -123,8 +116,7 @@ TEST_CASE("ATB: unchargeable active combatant does not stall scheduler-only "
   REQUIRE(atb.ready_queue().empty());
 }
 
-TEST_CASE(
-    "ATB: dead combatants reset charge and do not accumulate until alive") {
+TEST_CASE("ATB: dead combatants reset charge and do not accumulate until alive") {
   entt::registry reg;
   seerin::AtbEngine atb{reg};
 
@@ -133,8 +125,7 @@ TEST_CASE(
   int became_ready = 0;
 
   atb.set_can_charge_fn([&](entt::entity e) { return e == id && alive; });
-  atb.out().on<seerin::BecameReady>(
-      [&](const seerin::BecameReady &) { ++became_ready; });
+  atb.out().on<seerin::BecameReady>([&](const seerin::BecameReady&) { ++became_ready; });
 
   atb.in().emit(seerin::AtbInEvent{seerin::AddCombatant{id}});
 
@@ -200,8 +191,7 @@ TEST_CASE("ATB: frozen ready combatants leave and re-enter the ready queue",
   REQUIRE(atb.ready_queue().back() == id);
 }
 
-TEST_CASE("ATB: active-turn cleanup removes only callbacks owned by that turn",
-          "[atb][lifetime]") {
+TEST_CASE("ATB: active-turn cleanup removes only callbacks owned by that turn", "[atb][lifetime]") {
   entt::registry reg;
   seerin::AtbEngine atb{reg};
 
@@ -210,10 +200,10 @@ TEST_CASE("ATB: active-turn cleanup removes only callbacks owned by that turn",
   int active_callbacks = 0;
   int effect_callbacks = 0;
 
-  atb.scheduler().schedule_smelly_in_beats_for(
-      1, active_owner, "active-turn callback", [&] { ++active_callbacks; });
-  atb.scheduler().schedule_smelly_in_beats_for(
-      1, effect_owner, "effect callback", [&] { ++effect_callbacks; });
+  atb.scheduler().schedule_smelly_in_beats_for(1, active_owner, "active-turn callback",
+                                               [&] { ++active_callbacks; });
+  atb.scheduler().schedule_smelly_in_beats_for(1, effect_owner, "effect callback",
+                                               [&] { ++effect_callbacks; });
 
   atb.active_combatant() = active_owner;
   atb.clear_active_turn_for(active_owner);

@@ -5,7 +5,6 @@
 
 namespace fl::monster {
 
-void apply_monster_stats(fl::primitives::EntityBuilder &builder,
-                         MonsterKind kind);
+void apply_monster_stats(fl::primitives::EntityBuilder& builder, MonsterKind kind);
 
 } // namespace fl::monster

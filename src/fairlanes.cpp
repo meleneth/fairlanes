@@ -15,7 +15,7 @@
 #include "fl/widgets/fancy_log.hpp"
 #include "fl/widgets/story_start_picker.hpp"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   using fl::GrandCentral;
 
   CLI::App app{"fairlanes"};
@@ -31,18 +31,14 @@ int main(int argc, char **argv) {
                "Start normal gameplay without the Chaos Attract screen");
   app.add_flag("--story-autoplay", story_autoplay,
                "Follow the Ruby-authored opening story route automatically");
-  app.add_option("--replay", replay_path,
-                 "Open and verify a combat recording in the client view");
+  app.add_option("--replay", replay_path, "Open and verify a combat recording in the client view");
 
-  app.add_option(
-         "--overdrive", opts.overdrive,
-         "Beat-rate multiplier 1-" +
-             std::to_string(fl::primitives::WorldClock::kMaxBeatRateMultiplier))
-      ->check(
-          CLI::Range(1, fl::primitives::WorldClock::kMaxBeatRateMultiplier));
+  app.add_option("--overdrive", opts.overdrive,
+                 "Beat-rate multiplier 1-" +
+                     std::to_string(fl::primitives::WorldClock::kMaxBeatRateMultiplier))
+      ->check(CLI::Range(1, fl::primitives::WorldClock::kMaxBeatRateMultiplier));
 
-  app.add_option("--cutoff-seconds", opts.cutoff_seconds,
-                 "Stop after this many simulated seconds")
+  app.add_option("--cutoff-seconds", opts.cutoff_seconds, "Stop after this many simulated seconds")
       ->check(CLI::PositiveNumber);
   app.add_option("--tower-max-level", tower_balance.maximum_monster_level,
                  "Monster level represented by 100% tower scaling")
@@ -59,8 +55,7 @@ int main(int argc, char **argv) {
   try {
     if (!replay_path.empty()) {
       const auto expected = fl::regression::read_recording(replay_path);
-      fl::regression::Session replay{
-          fl::regression::options_from_recording(expected)};
+      fl::regression::Session replay{fl::regression::options_from_recording(expected)};
       if (auto divergence = replay.first_divergence(expected)) {
         throw std::runtime_error(*divergence);
       }
@@ -99,36 +94,32 @@ int main(int argc, char **argv) {
         std::cerr << "replay interrupted before terminal result\n";
         return 3;
       }
-      std::cout << "replay verified: outcome=" << replay.outcome()
-                << " beats=" << replay.beats() << " uwu=" << replay.uwu()
-                << " path=" << replay_path << '\n';
+      std::cout << "replay verified: outcome=" << replay.outcome() << " beats=" << replay.beats()
+                << " uwu=" << replay.uwu() << " path=" << replay_path << '\n';
       return 0;
     }
 
     if (!opts.no_ui && !skip_chaos_attract) {
       fl::ChaosAttractGrandCentral attract;
-      const auto attract_exit = attract.main_loop(
-          fl::ChaosAttractRunOptions{.cutoff_seconds = opts.cutoff_seconds});
+      const auto attract_exit =
+          attract.main_loop(fl::ChaosAttractRunOptions{.cutoff_seconds = opts.cutoff_seconds});
       if (attract_exit != fl::ChaosAttractExit::Begin) {
         return 0;
       }
       const auto story_mode = fl::widgets::choose_story_start_mode();
       if (story_mode == fl::widgets::StoryStartMode::Cancel) return 0;
-      story_autoplay =
-          story_mode == fl::widgets::StoryStartMode::Autoplay;
+      story_autoplay = story_mode == fl::widgets::StoryStartMode::Autoplay;
     }
 
-    GrandCentral gc{1, 1, 0, true, true, std::nullopt, true, story_autoplay,
-                    tower_balance};
+    GrandCentral gc{1, 1, 0, true, true, std::nullopt, true, story_autoplay, tower_balance};
     gc.innervate_event_system();
     gc.main_loop(opts);
     if (gc.sandbox_requested()) {
-      GrandCentral sandbox{8, 5, 5, true, true, std::nullopt, false, false,
-                           tower_balance};
+      GrandCentral sandbox{8, 5, 5, true, true, std::nullopt, false, false, tower_balance};
       sandbox.innervate_event_system();
       sandbox.main_loop(opts);
     }
-  } catch (const std::exception &ex) {
+  } catch (const std::exception& ex) {
     std::cerr << "fairlanes: " << ex.what() << '\n';
     return 1;
   } catch (...) {

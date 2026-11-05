@@ -28,19 +28,20 @@ template <class... Ts> class VariantBus<std::variant<Ts...>> {
 public:
   using Variant = std::variant<Ts...>;
 
-  template <class T> using List = eventpp::CallbackList<void(const T &)>;
+  template <class T> using List = eventpp::CallbackList<void(const T&)>;
 
   template <class T> class Subscription {
   public:
     using Handle = typename List<T>::Handle;
 
     Subscription() = default;
-    Subscription(VariantBus &bus, Handle handle)
-        : bus_(&bus), handle_(handle), connected_(true) {}
+    Subscription(VariantBus& bus, Handle handle) : bus_(&bus), handle_(handle), connected_(true) {}
 
-    Subscription(Subscription &&rhs) noexcept { *this = std::move(rhs); }
+    Subscription(Subscription&& rhs) noexcept {
+      *this = std::move(rhs);
+    }
 
-    Subscription &operator=(Subscription &&rhs) noexcept {
+    Subscription& operator=(Subscription&& rhs) noexcept {
       if (this == &rhs) {
         return *this;
       }
@@ -54,7 +55,9 @@ public:
       return *this;
     }
 
-    ~Subscription() { reset(); }
+    ~Subscription() {
+      reset();
+    }
 
     void reset() {
       if (connected_ && bus_ != nullptr) {
@@ -65,36 +68,35 @@ public:
       connected_ = false;
     }
 
-    Subscription(const Subscription &) = delete;
-    Subscription &operator=(const Subscription &) = delete;
+    Subscription(const Subscription&) = delete;
+    Subscription& operator=(const Subscription&) = delete;
 
   private:
-    VariantBus *bus_{nullptr};
+    VariantBus* bus_{nullptr};
     Handle handle_{};
     bool connected_{false};
   };
 
-  template <class T> List<T> &callbacks() {
-    static_assert((std::is_same_v<T, Ts> || ...),
-                  "T is not in this VariantBus' variant");
+  template <class T> List<T>& callbacks() {
+    static_assert((std::is_same_v<T, Ts> || ...), "T is not in this VariantBus' variant");
     return std::get<type_index_v<T, Ts...>>(lists_);
   }
 
-  template <class T, class F> auto on(F &&f) {
+  template <class T, class F> auto on(F&& f) {
     return callbacks<T>().append(std::forward<F>(f));
   }
 
-  template <class T, class F> Subscription<T> subscribe(F &&f) {
+  template <class T, class F> Subscription<T> subscribe(F&& f) {
     return Subscription<T>{*this, on<T>(std::forward<F>(f))};
   }
 
-  void emit(const Variant &v) {
+  void emit(const Variant& v) {
     if (v.valueless_by_exception()) {
       return;
     }
 
     std::visit(
-        [&](const auto &e) {
+        [&](const auto& e) {
           using T = std::decay_t<decltype(e)>;
           callbacks<T>()(e); // <- invoke callback list
         },

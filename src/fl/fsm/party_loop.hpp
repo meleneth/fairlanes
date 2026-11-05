@@ -13,70 +13,80 @@ struct ReturnToTownEvent {};
 struct PartyLoop {
   // Put all behavior in a ctx-only “ops” namespace/struct.
   struct Ops {
-    static void enter_idle(fl::context::PartyCtx &ctx);
-    static void enter_farming(fl::context::PartyCtx &ctx);
-    static void exit_farming(fl::context::PartyCtx &ctx);
-    static void enter_dead(fl::context::PartyCtx &ctx);
-    static void enter_fixing(fl::context::PartyCtx &ctx);
-    static void exit_fixing(fl::context::PartyCtx &ctx);
-    static void enter_gearing(fl::context::PartyCtx &ctx);
-    static void return_to_town(fl::context::PartyCtx &ctx);
-    static void fixing_tick(fl::context::PartyCtx &ctx);
+    static void enter_idle(fl::context::PartyCtx& ctx);
+    static void enter_farming(fl::context::PartyCtx& ctx);
+    static void exit_farming(fl::context::PartyCtx& ctx);
+    static void enter_dead(fl::context::PartyCtx& ctx);
+    static void enter_fixing(fl::context::PartyCtx& ctx);
+    static void exit_fixing(fl::context::PartyCtx& ctx);
+    static void enter_gearing(fl::context::PartyCtx& ctx);
+    static void return_to_town(fl::context::PartyCtx& ctx);
+    static void fixing_tick(fl::context::PartyCtx& ctx);
 
-    static void combat_tick(fl::context::PartyCtx &ctx);
-    static void next_event(fl::context::PartyCtx &ctx);
+    static void combat_tick(fl::context::PartyCtx& ctx);
+    static void next_event(fl::context::PartyCtx& ctx);
 
-    static bool in_combat(fl::context::PartyCtx &ctx);
-    static bool fixing_done(fl::context::PartyCtx &ctx);
+    static bool in_combat(fl::context::PartyCtx& ctx);
+    static bool fixing_done(fl::context::PartyCtx& ctx);
   };
 
   struct EnterIdle {
-    void operator()(fl::context::PartyCtx &ctx) const { Ops::enter_idle(ctx); }
+    void operator()(fl::context::PartyCtx& ctx) const {
+      Ops::enter_idle(ctx);
+    }
   };
   struct EnterFarming {
-    void operator()(fl::context::PartyCtx &ctx) const {
+    void operator()(fl::context::PartyCtx& ctx) const {
       Ops::enter_farming(ctx);
     }
   };
   struct ExitFarming {
-    void operator()(fl::context::PartyCtx &ctx) const {
+    void operator()(fl::context::PartyCtx& ctx) const {
       Ops::exit_farming(ctx);
     }
   };
   struct EnterDead {
-    void operator()(fl::context::PartyCtx &ctx) const { Ops::enter_dead(ctx); }
+    void operator()(fl::context::PartyCtx& ctx) const {
+      Ops::enter_dead(ctx);
+    }
   };
   struct EnterFixing {
-    void operator()(fl::context::PartyCtx &ctx) const {
+    void operator()(fl::context::PartyCtx& ctx) const {
       Ops::enter_fixing(ctx);
     }
   };
   struct ExitFixing {
-    void operator()(fl::context::PartyCtx &ctx) const { Ops::exit_fixing(ctx); }
+    void operator()(fl::context::PartyCtx& ctx) const {
+      Ops::exit_fixing(ctx);
+    }
   };
   struct EnterGearing {
-    void operator()(fl::context::PartyCtx &ctx) const {
+    void operator()(fl::context::PartyCtx& ctx) const {
       Ops::enter_gearing(ctx);
     }
   };
   struct ReturnToTown {
-    void operator()(fl::context::PartyCtx &ctx) const {
+    void operator()(fl::context::PartyCtx& ctx) const {
       Ops::return_to_town(ctx);
     }
   };
   struct CombatTick {
-    void operator()(fl::context::PartyCtx &ctx) const { Ops::combat_tick(ctx); }
+    void operator()(fl::context::PartyCtx& ctx) const {
+      Ops::combat_tick(ctx);
+    }
   };
   struct FixingTick {
-    void operator()(fl::context::PartyCtx &ctx) const { Ops::fixing_tick(ctx); }
+    void operator()(fl::context::PartyCtx& ctx) const {
+      Ops::fixing_tick(ctx);
+    }
   };
   struct InCombat {
-    bool operator()(fl::context::PartyCtx &ctx) const {
+    bool operator()(fl::context::PartyCtx& ctx) const {
       return Ops::in_combat(ctx);
     }
   };
   struct FixingDone {
-    bool operator()(fl::context::PartyCtx &ctx) const {
+    bool operator()(fl::context::PartyCtx& ctx) const {
       return Ops::fixing_done(ctx);
     }
   };
@@ -105,8 +115,7 @@ struct PartyLoop {
         state<Gearing> + event<PartyWipedEvent> = state<Dead>,
         state<Dead> + event<PartyWipedEvent> = state<Dead>,
         state<Idle> + event<ReturnToTownEvent> / ReturnToTown{},
-        state<Farming> + event<ReturnToTownEvent> / ReturnToTown{} =
-            state<CombatIdle>,
+        state<Farming> + event<ReturnToTownEvent> / ReturnToTown{} = state<CombatIdle>,
         state<CombatIdle> + event<ReturnToTownEvent> / ReturnToTown{},
         state<Dead> + event<ReturnToTownEvent> / ReturnToTown{},
         state<Fixing> + event<ReturnToTownEvent> / ReturnToTown{},
@@ -115,8 +124,7 @@ struct PartyLoop {
         state<Farming> + event<NextEvent> / ExitFarming{} = state<CombatIdle>,
         state<CombatIdle> + event<NextEvent> = state<Gearing>,
         state<Dead> + event<NextEvent> = state<Fixing>,
-        state<Fixing> + event<NextEvent>[FixingDone{}] / ExitFixing{} =
-            state<Gearing>,
+        state<Fixing> + event<NextEvent>[FixingDone{}] / ExitFixing{} = state<Gearing>,
         state<Fixing> + event<NextEvent> / FixingTick{} = state<Fixing>,
         state<Gearing> + event<NextEvent> = state<Idle>);
   }

@@ -20,22 +20,19 @@ namespace fl {
 ChaosAttractGrandCentral::ChaosAttractGrandCentral()
     : attract_game_(std::make_unique<GrandCentral>(8, 5, 5, false, false)) {
   attract_game_->innervate_event_system(false);
-  auto battle_surface = ftxui::Make<fl::widgets::AllAccountBattleScreen>(
-      attract_game_->reg(), attract_game_->accounts());
-  root_component_ =
-      ftxui::Make<fl::widgets::ChaosAttractRoot>(std::move(battle_surface));
+  auto battle_surface = ftxui::Make<fl::widgets::AllAccountBattleScreen>(attract_game_->reg(),
+                                                                         attract_game_->accounts());
+  root_component_ = ftxui::Make<fl::widgets::ChaosAttractRoot>(std::move(battle_surface));
 }
 
 ChaosAttractGrandCentral::~ChaosAttractGrandCentral() = default;
 
-ChaosAttractExit
-ChaosAttractGrandCentral::main_loop(ChaosAttractRunOptions opts) {
+ChaosAttractExit ChaosAttractGrandCentral::main_loop(ChaosAttractRunOptions opts) {
   ZoneScopedN("ChaosAttractGrandCentral::main_loop");
 
   using namespace ftxui;
 
-  auto *root =
-      dynamic_cast<fl::widgets::ChaosAttractRoot *>(root_component_.get());
+  auto* root = dynamic_cast<fl::widgets::ChaosAttractRoot*>(root_component_.get());
   auto result = ChaosAttractExit::Quit;
   std::atomic<bool> running{true};
 
@@ -50,8 +47,7 @@ ChaosAttractGrandCentral::main_loop(ChaosAttractRunOptions opts) {
     }
 
     const auto elapsed = std::chrono::steady_clock::now() - started_at;
-    return std::chrono::duration<double>(elapsed).count() >=
-           *opts.cutoff_seconds;
+    return std::chrono::duration<double>(elapsed).count() >= *opts.cutoff_seconds;
   };
 
   auto ui = Renderer(root_component_, [&] {
@@ -63,8 +59,7 @@ ChaosAttractGrandCentral::main_loop(ChaosAttractRunOptions opts) {
 
     std::scoped_lock lock(attract_game_->frame_mutex());
     attract_game_->resolve_visuals_for_render();
-    return fl::widgets::render_root_chrome(attract_game_->world_clock(),
-                                           root_component_->Render());
+    return fl::widgets::render_root_chrome(attract_game_->world_clock(), root_component_->Render());
   });
 
   ui = CatchEvent(ui, [&](Event event) {
@@ -106,10 +101,9 @@ ChaosAttractGrandCentral::main_loop(ChaosAttractRunOptions opts) {
         break;
       }
 
-      const auto frame_dt = std::chrono::duration_cast<clock::duration>(
-          std::chrono::duration<double>(
-              1.0 /
-              attract_game_->world_clock().effective_beats_per_wall_second()));
+      const auto frame_dt =
+          std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(
+              1.0 / attract_game_->world_clock().effective_beats_per_wall_second()));
 
       attract_game_->advance_beat();
 

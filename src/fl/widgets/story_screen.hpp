@@ -5,8 +5,12 @@
 
 #include <ftxui/component/component.hpp>
 
-namespace fl::primitives { class ObjectiveSystem; }
-namespace fl::primitives { struct PartyData; }
+namespace fl::primitives {
+class ObjectiveSystem;
+}
+namespace fl::primitives {
+struct PartyData;
+}
 
 namespace fl::widgets {
 
@@ -16,9 +20,9 @@ public:
   using EmitChoice = std::function<void(std::string_view)>;
   using Purchase = std::function<void()>;
   using SelectTower = std::function<bool(std::string_view, int)>;
-  StoryScreen(const fl::primitives::ObjectiveSystem &objectives,
-              const fl::primitives::PartyData &party, EmitChoice emit_choice,
-              Purchase purchase, SelectTower select_tower, Start start);
+  StoryScreen(const fl::primitives::ObjectiveSystem& objectives,
+              const fl::primitives::PartyData& party, EmitChoice emit_choice, Purchase purchase,
+              SelectTower select_tower, Start start);
   bool OnEvent(ftxui::Event event) override;
   ftxui::Element Render() override;
 
@@ -27,8 +31,8 @@ private:
   void open_dialogue(std::string_view id);
   std::size_t biome_count() const noexcept;
   std::string_view selected_biome_id() const noexcept;
-  const fl::primitives::ObjectiveSystem *objectives_;
-  const fl::primitives::PartyData *party_;
+  const fl::primitives::ObjectiveSystem* objectives_;
+  const fl::primitives::PartyData* party_;
   EmitChoice emit_choice_;
   Purchase purchase_;
   SelectTower select_tower_;

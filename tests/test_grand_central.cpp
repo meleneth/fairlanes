@@ -29,8 +29,7 @@ template <> struct StringMaker<entt::entity> {
 };
 } // namespace Catch
 
-TEST_CASE("GrandCentral basic structure is initialized",
-          "[grand_central][smoke]") {
+TEST_CASE("GrandCentral basic structure is initialized", "[grand_central][smoke]") {
   // 2 accounts, 3 parties per account
   fl::GrandCentral gc{2, 3, 1};
 
@@ -38,13 +37,13 @@ TEST_CASE("GrandCentral basic structure is initialized",
   // REQUIRE(gc.accounts_.size() == 2);
 
   for (std::size_t a = 0; a < gc.accounts().size(); ++a) {
-    auto &acc = gc.accounts()[a];
+    auto& acc = gc.accounts()[a];
 
     // And exactly 3 parties
     REQUIRE(acc.parties().size() == 3);
 
     for (std::size_t p = 0; p < acc.parties().size(); ++p) {
-      auto &party = acc.parties()[p];
+      auto& party = acc.parties()[p];
 
       // Each party should also have a valid entity
       // REQUIRE(party.party_id_ != entt::null);
@@ -52,8 +51,7 @@ TEST_CASE("GrandCentral basic structure is initialized",
   }
 }
 
-TEST_CASE("GrandCentral context helpers work",
-          "[grand_central][context][smoke]") {
+TEST_CASE("GrandCentral context helpers work", "[grand_central][context][smoke]") {
   fl::GrandCentral gc{1, 2, 1}; // 1 account, 2 parties
 
   // Account context
@@ -79,8 +77,7 @@ TEST_CASE("GrandCentral context helpers work",
   // accordingly. For now we just ensure the log reference is obtainable.
 }
 
-TEST_CASE("GrandCentral headless main loop honors cutoff",
-          "[grand_central][headless][smoke]") {
+TEST_CASE("GrandCentral headless main loop honors cutoff", "[grand_central][headless][smoke]") {
   fl::GrandCentral gc{8, 5, 5};
   gc.innervate_event_system();
 
@@ -91,19 +88,17 @@ TEST_CASE("GrandCentral headless main loop honors cutoff",
   });
 }
 
-TEST_CASE("GrandCentral creates each player with a gear closet",
-          "[grand_central][closet]") {
+TEST_CASE("GrandCentral creates each player with a gear closet", "[grand_central][closet]") {
   fl::GrandCentral gc{2, 3, 5};
-  auto &reg = gc.reg();
+  auto& reg = gc.reg();
 
-  for (auto &account : gc.accounts()) {
-    for (auto &party : account.parties()) {
-      for (auto &member_data : party.members()) {
+  for (auto& account : gc.accounts()) {
+    for (auto& party : account.parties()) {
+      for (auto& member_data : party.members()) {
         auto member = member_data.member_id();
         REQUIRE(reg.valid(member));
 
-        auto *party_member =
-            reg.try_get<fl::ecs::components::PartyMember>(member);
+        auto* party_member = reg.try_get<fl::ecs::components::PartyMember>(member);
         REQUIRE(party_member != nullptr);
 
         auto closet = party_member->closet_entity_id();
@@ -116,26 +111,21 @@ TEST_CASE("GrandCentral creates each player with a gear closet",
   }
 }
 
-TEST_CASE("GrandCentral starts each party with festival drops",
-          "[grand_central][festival][loot]") {
+TEST_CASE("GrandCentral starts each party with festival drops", "[grand_central][festival][loot]") {
   fl::GrandCentral gc{1, 2, 0};
 
-  for (auto &party : gc.accounts().front().parties()) {
-    REQUIRE(party.items().size() ==
-            fl::ecs::systems::SpecialFestivalEvent::kDropsPerParty);
+  for (auto& party : gc.accounts().front().parties()) {
+    REQUIRE(party.items().size() == fl::ecs::systems::SpecialFestivalEvent::kDropsPerParty);
     REQUIRE(party.log().size() == 2);
 
     bool has_weapon = false;
     bool has_jewelry = false;
     for (auto item : party.items()) {
-      const auto &equipment =
-          gc.reg().get<fl::ecs::components::Equipment>(item);
-      has_weapon = has_weapon ||
-                   equipment.slot() == fl::loot::EquipmentSlot::mainhand ||
+      const auto& equipment = gc.reg().get<fl::ecs::components::Equipment>(item);
+      has_weapon = has_weapon || equipment.slot() == fl::loot::EquipmentSlot::mainhand ||
                    equipment.slot() == fl::loot::EquipmentSlot::offhand ||
                    equipment.slot() == fl::loot::EquipmentSlot::knife;
-      has_jewelry = has_jewelry ||
-                    equipment.slot() == fl::loot::EquipmentSlot::necklace ||
+      has_jewelry = has_jewelry || equipment.slot() == fl::loot::EquipmentSlot::necklace ||
                     equipment.slot() == fl::loot::EquipmentSlot::ring_1 ||
                     equipment.slot() == fl::loot::EquipmentSlot::ring_2;
     }
@@ -145,12 +135,11 @@ TEST_CASE("GrandCentral starts each party with festival drops",
   }
 }
 
-TEST_CASE("FancyLog colors player name tags from worn armor kind",
-          "[fancylog][gear][names]") {
+TEST_CASE("FancyLog colors player name tags from worn armor kind", "[fancylog][gear][names]") {
   fl::GrandCentral gc{1, 1, 1};
   auto party_ctx = gc.account_context(0).party_context(0);
   auto member = party_ctx.party_data().members().front().member_id();
-  auto &party_member = gc.reg().get<fl::ecs::components::PartyMember>(member);
+  auto& party_member = gc.reg().get<fl::ecs::components::PartyMember>(member);
 
   auto item =
       fl::loot::EquipmentBuilder{

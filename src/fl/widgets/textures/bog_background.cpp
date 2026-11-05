@@ -16,8 +16,7 @@ namespace {
   using clock = std::chrono::steady_clock;
   using seconds = std::chrono::seconds;
 
-  const auto elapsed =
-      std::chrono::duration_cast<seconds>(clock::now().time_since_epoch());
+  const auto elapsed = std::chrono::duration_cast<seconds>(clock::now().time_since_epoch());
   return static_cast<int>((elapsed.count() / 4) % 4);
 }
 
@@ -33,8 +32,7 @@ std::uint32_t bog_hash(std::uint32_t x, std::uint32_t y, std::uint32_t seed) {
   return h;
 }
 
-ftxui::Element BogBackground(int width, int height, std::uint32_t seed,
-                             int bubble_frame) {
+ftxui::Element BogBackground(int width, int height, std::uint32_t seed, int bubble_frame) {
   using namespace ftxui;
 
   width = std::max(1, width);
@@ -49,8 +47,7 @@ ftxui::Element BogBackground(int width, int height, std::uint32_t seed,
     cells.reserve(static_cast<std::size_t>(width));
 
     for (int x = 0; x < width; ++x) {
-      const auto h = bog_hash(static_cast<std::uint32_t>(x),
-                              static_cast<std::uint32_t>(y), seed);
+      const auto h = bog_hash(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y), seed);
       const int r = static_cast<int>(h % 100);
       const int phase = static_cast<int>((h >> 8) & 3u);
 
@@ -93,20 +90,17 @@ ftxui::Element BogBackground(int width, int height, std::uint32_t seed,
     rows.push_back(hbox(std::move(cells)));
   }
 
-  return vbox(std::move(rows)) | size(WIDTH, EQUAL, width) |
-         size(HEIGHT, EQUAL, height);
+  return vbox(std::move(rows)) | size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height);
 }
 
-ftxui::Element BogPanel(ftxui::Element foreground, int width, int height,
-                        std::uint32_t seed) {
+ftxui::Element BogPanel(ftxui::Element foreground, int width, int height, std::uint32_t seed) {
   using namespace ftxui;
 
   return dbox({
              BogBackground(width, height, seed, current_bubble_frame()),
              std::move(foreground),
          }) |
-         size(WIDTH, EQUAL, std::max(1, width)) |
-         size(HEIGHT, EQUAL, std::max(1, height));
+         size(WIDTH, EQUAL, std::max(1, width)) | size(HEIGHT, EQUAL, std::max(1, height));
 }
 
 } // namespace fl::widgets::textures

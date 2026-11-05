@@ -12,10 +12,8 @@
 namespace fl::ecs::components {
 /// Closed-form XP curve: sum_{i=1}^{n} i * BASE_XP_VALUE
 int TrackXP::xp_for_level(int level_calc) {
-  if (level_calc <= 0)
-    return 0;
-  if (level_calc > 100)
-    return 0;
+  if (level_calc <= 0) return 0;
+  if (level_calc > 100) return 0;
   return BASE_XP_VALUE * (level_calc * (level_calc + 1)) / 2;
 }
 
@@ -28,15 +26,14 @@ void TrackXP::add_xp(entt::handle self, int amount) {
     ++level_;
     next_level_at = xp_for_level(level_ + 1);
     if (auto info = self.try_get<fl::ecs::components::Stats>()) {
-      ctx_.log().append_markup(fmt::format(
-          "[name]({}) Level up! level=[level]({}) in next=[xp]({}) XP",
-          info->name_, level_, next_level_at));
+      ctx_.log().append_markup(
+          fmt::format("[name]({}) Level up! level=[level]({}) in next=[xp]({}) XP", info->name_,
+                      level_, next_level_at));
     }
 
-    if (auto *member = self.try_get<fl::ecs::components::PartyMember>()) {
+    if (auto* member = self.try_get<fl::ecs::components::PartyMember>()) {
       member->member_data().bus().emit(fl::events::PartyEvent{
-          fl::events::PartyGainedLevel{.member = self.entity(),
-                                       .level = level_}});
+          fl::events::PartyGainedLevel{.member = self.entity(), .level = level_}});
     }
   }
 }

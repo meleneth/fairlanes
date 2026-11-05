@@ -15,9 +15,8 @@
 
 namespace {
 
-entt::entity make_item(entt::registry &reg, fl::loot::EquipmentSlot slot,
-                       fl::loot::ArmorKind kind, fl::loot::Tier tier,
-                       std::string name) {
+entt::entity make_item(entt::registry& reg, fl::loot::EquipmentSlot slot, fl::loot::ArmorKind kind,
+                       fl::loot::Tier tier, std::string name) {
   return fl::loot::EquipmentBuilder{
       .slot = slot,
       .armor_kind = kind,
@@ -27,13 +26,12 @@ entt::entity make_item(entt::registry &reg, fl::loot::EquipmentSlot slot,
       .create(reg);
 }
 
-bool inventory_contains(const fl::primitives::PartyData &party,
-                        entt::entity item) {
+bool inventory_contains(const fl::primitives::PartyData& party, entt::entity item) {
   auto items = party.items();
   return std::find(items.begin(), items.end(), item) != items.end();
 }
 
-int inventory_count(const fl::primitives::PartyData &party, entt::entity item) {
+int inventory_count(const fl::primitives::PartyData& party, entt::entity item) {
   auto items = party.items();
   return static_cast<int>(std::count(items.begin(), items.end(), item));
 }
@@ -45,31 +43,27 @@ TEST_CASE("PartyGearing equips the same armor kind already being worn",
   fl::GrandCentral gc{1, 1, 1};
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &reg = party_ctx.reg();
+  auto& party = party_ctx.party_data();
+  auto& reg = party_ctx.reg();
   party.replace_items({});
   const auto member_id = party.members().front().member_id();
-  auto &party_member = reg.get<fl::ecs::components::PartyMember>(member_id);
-  auto &closet = party_member.closet();
+  auto& party_member = reg.get<fl::ecs::components::PartyMember>(member_id);
+  auto& closet = party_member.closet();
 
-  closet.chest =
-      make_item(reg, fl::loot::EquipmentSlot::chest, fl::loot::ArmorKind::cloth,
-                fl::loot::Tier::plain, "Plain Cloth Chestpiece");
+  closet.chest = make_item(reg, fl::loot::EquipmentSlot::chest, fl::loot::ArmorKind::cloth,
+                           fl::loot::Tier::plain, "Plain Cloth Chestpiece");
 
-  auto leather_helm = make_item(reg, fl::loot::EquipmentSlot::helm,
-                                fl::loot::ArmorKind::leather,
+  auto leather_helm = make_item(reg, fl::loot::EquipmentSlot::helm, fl::loot::ArmorKind::leather,
                                 fl::loot::Tier::mythic, "Mythic Leather Helm");
-  auto cloth_helm =
-      make_item(reg, fl::loot::EquipmentSlot::helm, fl::loot::ArmorKind::cloth,
-                fl::loot::Tier::plain, "Plain Cloth Helm");
-  auto leather_mainhand = make_item(
-      reg, fl::loot::EquipmentSlot::mainhand, fl::loot::ArmorKind::leather,
-      fl::loot::Tier::mythic, "Mythic Leather Mainhand");
-  auto cloth_mainhand = make_item(reg, fl::loot::EquipmentSlot::mainhand,
-                                  fl::loot::ArmorKind::cloth,
-                                  fl::loot::Tier::fine, "Fine Cloth Mainhand");
-  auto necklace = make_item(reg, fl::loot::EquipmentSlot::necklace,
-                            fl::loot::ArmorKind::none,
+  auto cloth_helm = make_item(reg, fl::loot::EquipmentSlot::helm, fl::loot::ArmorKind::cloth,
+                              fl::loot::Tier::plain, "Plain Cloth Helm");
+  auto leather_mainhand =
+      make_item(reg, fl::loot::EquipmentSlot::mainhand, fl::loot::ArmorKind::leather,
+                fl::loot::Tier::mythic, "Mythic Leather Mainhand");
+  auto cloth_mainhand =
+      make_item(reg, fl::loot::EquipmentSlot::mainhand, fl::loot::ArmorKind::cloth,
+                fl::loot::Tier::fine, "Fine Cloth Mainhand");
+  auto necklace = make_item(reg, fl::loot::EquipmentSlot::necklace, fl::loot::ArmorKind::none,
                             fl::loot::Tier::excellent, "Excellent Necklace");
   party.add_item(leather_helm);
   party.add_item(cloth_helm);
@@ -96,19 +90,17 @@ TEST_CASE("PartyGearing removes equipped items from loose inventory",
   fl::GrandCentral gc{1, 1, 1};
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &reg = party_ctx.reg();
+  auto& party = party_ctx.party_data();
+  auto& reg = party_ctx.reg();
   party.replace_items({});
   const auto member_id = party.members().front().member_id();
-  auto &party_member = reg.get<fl::ecs::components::PartyMember>(member_id);
-  auto &closet = party_member.closet();
+  auto& party_member = reg.get<fl::ecs::components::PartyMember>(member_id);
+  auto& closet = party_member.closet();
 
-  closet.chest =
-      make_item(reg, fl::loot::EquipmentSlot::chest, fl::loot::ArmorKind::cloth,
-                fl::loot::Tier::plain, "Plain Cloth Chestpiece");
-  auto cloth_helm =
-      make_item(reg, fl::loot::EquipmentSlot::helm, fl::loot::ArmorKind::cloth,
-                fl::loot::Tier::plain, "Plain Cloth Helm");
+  closet.chest = make_item(reg, fl::loot::EquipmentSlot::chest, fl::loot::ArmorKind::cloth,
+                           fl::loot::Tier::plain, "Plain Cloth Chestpiece");
+  auto cloth_helm = make_item(reg, fl::loot::EquipmentSlot::helm, fl::loot::ArmorKind::cloth,
+                              fl::loot::Tier::plain, "Plain Cloth Helm");
 
   party.add_item(cloth_helm);
   party.add_item(cloth_helm);
@@ -119,31 +111,25 @@ TEST_CASE("PartyGearing removes equipped items from loose inventory",
   REQUIRE(inventory_count(party, cloth_helm) == 0);
 }
 
-TEST_CASE("PartyGearing upgrades only loose normal gear",
-          "[party][gearing][upgrade]") {
+TEST_CASE("PartyGearing upgrades only loose normal gear", "[party][gearing][upgrade]") {
   fl::GrandCentral gc{1, 1, 0};
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &party = party_ctx.party_data();
-  auto &reg = party_ctx.reg();
+  auto& party = party_ctx.party_data();
+  auto& reg = party_ctx.reg();
   party.replace_items({});
 
   for (int i = 0; i < 3; ++i) {
-    party.add_item(make_item(reg, fl::loot::EquipmentSlot::gloves,
-                             fl::loot::ArmorKind::leather,
+    party.add_item(make_item(reg, fl::loot::EquipmentSlot::gloves, fl::loot::ArmorKind::leather,
                              fl::loot::Tier::plain, "Plain Leather Gloves"));
-    party.add_item(make_item(reg, fl::loot::EquipmentSlot::cape,
-                             fl::loot::ArmorKind::cloth, fl::loot::Tier::fine,
-                             "Mouse-Nibbled Cape"));
-    party.add_item(make_item(reg, fl::loot::EquipmentSlot::belt,
-                             fl::loot::ArmorKind::plate, fl::loot::Tier::mythic,
-                             "Mythic Plate Belt"));
-    party.add_item(make_item(reg, fl::loot::EquipmentSlot::mainhand,
-                             fl::loot::ArmorKind::cloth, fl::loot::Tier::plain,
-                             "Plain Cloth Mainhand"));
-    party.add_item(make_item(reg, fl::loot::EquipmentSlot::ring_1,
-                             fl::loot::ArmorKind::none, fl::loot::Tier::plain,
-                             "Plain Ring"));
+    party.add_item(make_item(reg, fl::loot::EquipmentSlot::cape, fl::loot::ArmorKind::cloth,
+                             fl::loot::Tier::fine, "Mouse-Nibbled Cape"));
+    party.add_item(make_item(reg, fl::loot::EquipmentSlot::belt, fl::loot::ArmorKind::plate,
+                             fl::loot::Tier::mythic, "Mythic Plate Belt"));
+    party.add_item(make_item(reg, fl::loot::EquipmentSlot::mainhand, fl::loot::ArmorKind::cloth,
+                             fl::loot::Tier::plain, "Plain Cloth Mainhand"));
+    party.add_item(make_item(reg, fl::loot::EquipmentSlot::ring_1, fl::loot::ArmorKind::none,
+                             fl::loot::Tier::plain, "Plain Ring"));
   }
 
   const auto previous_log_size = party.log().size();
@@ -155,7 +141,7 @@ TEST_CASE("PartyGearing upgrades only loose normal gear",
   int sturdy_mainhands = 0;
   int sturdy_rings = 0;
   for (auto item : party.items()) {
-    const auto &equipment = reg.get<fl::ecs::components::Equipment>(item);
+    const auto& equipment = reg.get<fl::ecs::components::Equipment>(item);
     if (equipment.slot() == fl::loot::EquipmentSlot::gloves &&
         equipment.armor_kind() == fl::loot::ArmorKind::leather &&
         equipment.tier() == fl::loot::Tier::sturdy) {

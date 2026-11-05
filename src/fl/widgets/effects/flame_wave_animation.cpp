@@ -2,8 +2,7 @@
 
 namespace fl::widgets::effects {
 
-FlameWaveAnimation::FlameWaveAnimation(int width, int height,
-                                       DecalConfig config)
+FlameWaveAnimation::FlameWaveAnimation(int width, int height, DecalConfig config)
     : width_(width), height_(height) {
   FlameWaveConfig flame_config;
   flame_config.duration_seconds = config.duration_seconds;
@@ -21,7 +20,9 @@ float FlameWaveAnimation::duration_seconds() const {
   return flame_.config().duration_seconds;
 }
 
-std::string_view FlameWaveAnimation::name() const { return "FlameWave"; }
+std::string_view FlameWaveAnimation::name() const {
+  return "FlameWave";
+}
 
 DecalAnimationKind FlameWaveAnimation::kind() const {
   return DecalAnimationKind::FlameWave;

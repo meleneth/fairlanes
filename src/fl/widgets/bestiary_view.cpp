@@ -6,8 +6,7 @@
 
 namespace fl::widgets {
 
-BestiaryView::BestiaryView(const fl::primitives::DiscoveryJournal &journal,
-                           OpenSkill open,
+BestiaryView::BestiaryView(const fl::primitives::DiscoveryJournal& journal, OpenSkill open,
                            std::optional<fl::monster::MonsterKind> selected)
     : journal_(journal), open_(std::move(open)) {
   refresh();
@@ -31,13 +30,12 @@ BestiaryView::BestiaryView(const fl::primitives::DiscoveryJournal &journal,
 }
 
 void BestiaryView::refresh() {
-  const auto previous =
-      monsters_.empty()
-          ? std::nullopt
-          : std::optional{monsters_[static_cast<std::size_t>(selected_)]};
+  const auto previous = monsters_.empty()
+                            ? std::nullopt
+                            : std::optional{monsters_[static_cast<std::size_t>(selected_)]};
   monsters_.clear();
   names_.clear();
-  for (const auto &[kind, skills] : journal_.monsters()) {
+  for (const auto& [kind, skills] : journal_.monsters()) {
     (void)skills;
     monsters_.push_back(kind);
   }
@@ -50,8 +48,7 @@ void BestiaryView::refresh() {
     if (previous == kind) {
       selected_ = static_cast<int>(names_.size());
     }
-    names_.emplace_back(
-        fl::monster::generated_content::stats(kind).display_name);
+    names_.emplace_back(fl::monster::generated_content::stats(kind).display_name);
   }
   refresh_skills();
 }
@@ -59,21 +56,18 @@ void BestiaryView::refresh() {
 void BestiaryView::refresh_skills() {
   skills_ = monsters_.empty()
                 ? std::vector<std::optional<fl::skills::SkillId>>{}
-                : journal_.skill_slots(
-                      monsters_[static_cast<std::size_t>(selected_)]);
+                : journal_.skill_slots(monsters_[static_cast<std::size_t>(selected_)]);
   skill_names_.clear();
   for (const auto skill : skills_) {
-    skill_names_.push_back(skill ? fl::skills::display_name(*skill) + " >"
-                                 : "--");
+    skill_names_.push_back(skill ? fl::skills::display_name(*skill) + " >" : "--");
   }
-  selected_skill_ = std::clamp(
-      selected_skill_, 0, std::max(0, static_cast<int>(skills_.size()) - 1));
+  selected_skill_ =
+      std::clamp(selected_skill_, 0, std::max(0, static_cast<int>(skills_.size()) - 1));
 }
 
 void BestiaryView::open_skill() {
   refresh_skills();
-  if (!skills_.empty() && skills_[static_cast<std::size_t>(selected_skill_)] &&
-      open_) {
+  if (!skills_.empty() && skills_[static_cast<std::size_t>(selected_skill_)] && open_) {
     open_(monsters_[static_cast<std::size_t>(selected_)],
           *skills_[static_cast<std::size_t>(selected_skill_)]);
   }
@@ -85,20 +79,17 @@ ftxui::Element BestiaryView::Render() {
   if (monsters_.empty()) {
     return window(text("Bestiary"), paragraph("No monsters encountered yet."));
   }
-  const auto stats = fl::monster::generated_content::stats(
-      monsters_[static_cast<std::size_t>(selected_)]);
+  const auto stats =
+      fl::monster::generated_content::stats(monsters_[static_cast<std::size_t>(selected_)]);
   return window(
       text("Bestiary"),
-      vbox({hbox({monster_menu_->Render() | vscroll_indicator | yframe |
-                      size(WIDTH, LESS_THAN, 30),
+      vbox({hbox({monster_menu_->Render() | vscroll_indicator | yframe | size(WIDTH, LESS_THAN, 30),
                   separator(),
                   vbox({text(std::string{stats.display_name}) | bold,
-                        paragraph(std::string{stats.description}),
-                        separator(),
-                        text("Base HP " + std::to_string(stats.hp)),
-                        separator(), text("Witnessed skills"),
-                        skill_menu_->Render() | vscroll_indicator | yframe |
-                            flex}) |
+                        paragraph(std::string{stats.description}), separator(),
+                        text("Base HP " + std::to_string(stats.hp)), separator(),
+                        text("Witnessed skills"),
+                        skill_menu_->Render() | vscroll_indicator | yframe | flex}) |
                       flex}) |
                 flex,
             separator(),

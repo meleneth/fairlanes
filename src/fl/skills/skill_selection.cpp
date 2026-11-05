@@ -16,8 +16,8 @@
 namespace fl::skills {
 namespace {
 
-using EquippedSkills = std::array<std::optional<SkillKey>,
-                                  fl::ecs::components::Closet::kSkillSlotCount>;
+using EquippedSkills =
+    std::array<std::optional<SkillKey>, fl::ecs::components::Closet::kSkillSlotCount>;
 
 bool is_random_combat_skill(SkillKey skill) noexcept {
   for (const auto candidate : random_combat_skills()) {
@@ -28,14 +28,12 @@ bool is_random_combat_skill(SkillKey skill) noexcept {
   return false;
 }
 
-const EquippedSkills *equipped_skills_for(entt::registry &reg,
-                                          entt::entity actor) {
-  if (const auto *member =
-          reg.try_get<fl::ecs::components::PartyMember>(actor)) {
+const EquippedSkills* equipped_skills_for(entt::registry& reg, entt::entity actor) {
+  if (const auto* member = reg.try_get<fl::ecs::components::PartyMember>(actor)) {
     return &member->closet().skill_slots;
   }
 
-  if (const auto *slots = reg.try_get<fl::ecs::components::SkillSlots>(actor)) {
+  if (const auto* slots = reg.try_get<fl::ecs::components::SkillSlots>(actor)) {
     return &slots->slots;
   }
 
@@ -44,19 +42,15 @@ const EquippedSkills *equipped_skills_for(entt::registry &reg,
 
 } // namespace
 
-bool target_meets_skill_requirements(entt::registry &reg, entt::entity target,
-                                     SkillKey skill) {
-  const auto *stats = reg.try_get<fl::ecs::components::Stats>(target);
-  if (!stats || stats->hp_ <= 0)
-    return false;
+bool target_meets_skill_requirements(entt::registry& reg, entt::entity target, SkillKey skill) {
+  const auto* stats = reg.try_get<fl::ecs::components::Stats>(target);
+  if (!stats || stats->hp_ <= 0) return false;
   const auto status = definition(skill).consumes_status;
-  return !status ||
-         fl::ecs::systems::CombatStatusSystem::has_status(reg, target, *status);
+  return !status || fl::ecs::systems::CombatStatusSystem::has_status(reg, target, *status);
 }
 
-SkillKey choose_skill(entt::registry &reg, fl::primitives::RandomHub &rng,
-                      entt::entity actor) {
-  const auto *equipped_skills = equipped_skills_for(reg, actor);
+SkillKey choose_skill(entt::registry& reg, fl::primitives::RandomHub& rng, entt::entity actor) {
+  const auto* equipped_skills = equipped_skills_for(reg, actor);
   if (equipped_skills == nullptr) {
     return SkillKey{SkillId::Thump};
   }
@@ -64,8 +58,7 @@ SkillKey choose_skill(entt::registry &reg, fl::primitives::RandomHub &rng,
   std::vector<SkillKey> known_combat_skills;
   for (const auto equipped : *equipped_skills) {
     if (equipped.has_value() && is_random_combat_skill(*equipped) &&
-        fl::ecs::systems::CombatStatusSystem::can_use_skill(reg, actor,
-                                                            *equipped)) {
+        fl::ecs::systems::CombatStatusSystem::can_use_skill(reg, actor, *equipped)) {
       known_combat_skills.push_back(*equipped);
     }
   }
@@ -74,9 +67,8 @@ SkillKey choose_skill(entt::registry &reg, fl::primitives::RandomHub &rng,
     return SkillKey{SkillId::Observe};
   }
 
-  auto rs =
-      rng.stream("encounter/choose-skill",
-                 static_cast<std::underlying_type_t<entt::entity>>(actor));
+  auto rs = rng.stream("encounter/choose-skill",
+                       static_cast<std::underlying_type_t<entt::entity>>(actor));
   return known_combat_skills[static_cast<std::size_t>(
       rs.random_index(static_cast<int>(known_combat_skills.size())))];
 }

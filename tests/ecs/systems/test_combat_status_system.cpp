@@ -3,16 +3,16 @@
 #include "fl/context.hpp"
 #include "fl/ecs/components/atb_charge.hpp"
 #include "fl/ecs/components/combat_status.hpp"
-#include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/field_debuff.hpp"
-#include "fl/ecs/components/skill_slots.hpp"
+#include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/poison.hpp"
+#include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/systems/combat_status_system.hpp"
 #include "fl/ecs/systems/poison_system.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
-#include "fl/grand_central.hpp"
 #include "fl/generated/gear_content.hpp"
+#include "fl/grand_central.hpp"
 #include "fl/primitives/encounter_builder.hpp"
 #include "fl/primitives/world_clock.hpp"
 #include "fl/skills/skill.hpp"
@@ -27,7 +27,7 @@ using fl::ecs::components::FieldDebuffKind;
 using fl::ecs::components::FieldTeam;
 using fl::ecs::systems::CombatStatusSystem;
 
-void tick_party(fl::context::PartyCtx &party_ctx, int beats) {
+void tick_party(fl::context::PartyCtx& party_ctx, int beats) {
   for (int i = 0; i < beats; ++i) {
     party_ctx.bus().emit(fl::events::PartyEvent{fl::events::PartyTick{}});
   }
@@ -38,38 +38,40 @@ struct BuiltEncounter {
   fl::context::AccountCtx account_ctx{gc.account_context(0)};
   fl::context::PartyCtx party_ctx{account_ctx.party_context(0)};
   fl::primitives::EncounterBuilder builder{party_ctx};
-  fl::primitives::EncounterData &encounter{builder.thump_it_out()};
+  fl::primitives::EncounterData& encounter{builder.thump_it_out()};
 
-  entt::entity attacker() const { return encounter.attackers().members().front(); }
-  entt::entity defender() const { return encounter.defenders().members().front(); }
+  entt::entity attacker() const {
+    return encounter.attackers().members().front();
+  }
+  entt::entity defender() const {
+    return encounter.defenders().members().front();
+  }
 
-  CombatStatusSystem::Scheduler &scheduler() {
+  CombatStatusSystem::Scheduler& scheduler() {
     return encounter.atb_engine().scheduler();
   }
 };
 
-void set_hp(fl::context::PartyCtx &party_ctx, entt::entity entity, int hp,
-            int max_hp) {
-  auto &stats = party_ctx.reg().get<fl::ecs::components::Stats>(entity);
+void set_hp(fl::context::PartyCtx& party_ctx, entt::entity entity, int hp, int max_hp) {
+  auto& stats = party_ctx.reg().get<fl::ecs::components::Stats>(entity);
   stats.hp_ = hp;
   stats.max_hp_ = max_hp;
   stats.armor_ = 0;
 }
 
-int hp(fl::context::PartyCtx &party_ctx, entt::entity entity) {
+int hp(fl::context::PartyCtx& party_ctx, entt::entity entity) {
   return party_ctx.reg().get<fl::ecs::components::Stats>(entity).hp_;
 }
 
-int deal_physical(fl::context::PartyCtx &party_ctx, entt::entity attacker,
-                  entt::entity defender, int damage) {
-  auto attack_ctx = fl::context::AttackCtx::make_attack(party_ctx, attacker,
-                                                        defender);
+int deal_physical(fl::context::PartyCtx& party_ctx, entt::entity attacker, entt::entity defender,
+                  int damage) {
+  auto attack_ctx = fl::context::AttackCtx::make_attack(party_ctx, attacker, defender);
   attack_ctx.damage().physical = damage;
   attack_ctx.set_hit_kind(fl::primitives::HitKind::Direct);
   return fl::ecs::systems::TakeDamage::commit(attack_ctx);
 }
 
-void apply_brace(BuiltEncounter &h) {
+void apply_brace(BuiltEncounter& h) {
   REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
                                            {.kind = CombatStatusKind::Brace,
                                             .name = "Brace",
@@ -86,30 +88,29 @@ TEST_CASE("Shield reduces incoming damage through the shared damage path",
   BuiltEncounter h;
   set_hp(h.party_ctx, h.defender(), 100, 100);
 
-  REQUIRE(CombatStatusSystem::apply_status(
-      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Shield,
-                                   .name = "Test Shield",
-                                   .source = h.defender(),
-                                   .target = h.defender(),
-                                   .value = 50,
-                                   .negative = false}));
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Shield,
+                                            .name = "Test Shield",
+                                            .source = h.defender(),
+                                            .target = h.defender(),
+                                            .value = 50,
+                                            .negative = false}));
 
   REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 10);
   REQUIRE(hp(h.party_ctx, h.defender()) == 90);
 }
 
-TEST_CASE("Armor applies after percentage status mitigation",
-          "[combat-status][damage][armor]") {
+TEST_CASE("Armor applies after percentage status mitigation", "[combat-status][damage][armor]") {
   BuiltEncounter h;
   set_hp(h.party_ctx, h.defender(), 100, 100);
   h.party_ctx.reg().get<fl::ecs::components::Stats>(h.defender()).armor_ = 3;
-  REQUIRE(CombatStatusSystem::apply_status(
-      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Shield,
-                                   .name = "Test Shield",
-                                   .source = h.defender(),
-                                   .target = h.defender(),
-                                   .value = 50,
-                                   .negative = false}));
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Shield,
+                                            .name = "Test Shield",
+                                            .source = h.defender(),
+                                            .target = h.defender(),
+                                            .value = 50,
+                                            .negative = false}));
   REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 7);
 }
 
@@ -121,13 +122,12 @@ TEST_CASE("Brace reduces and spends on the next landed direct physical hit",
   apply_brace(h);
 
   REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 10);
-  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.defender(),
-                                               CombatStatusKind::Brace));
+  REQUIRE_FALSE(
+      CombatStatusSystem::has_status(h.party_ctx.reg(), h.defender(), CombatStatusKind::Brace));
   REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 17);
 }
 
-TEST_CASE("Misses and nonqualifying damage leave Brace armed",
-          "[combat-status][brace]") {
+TEST_CASE("Misses and nonqualifying damage leave Brace armed", "[combat-status][brace]") {
   BuiltEncounter h;
   set_hp(h.party_ctx, h.defender(), 100, 100);
   apply_brace(h);
@@ -139,34 +139,26 @@ TEST_CASE("Misses and nonqualifying damage leave Brace armed",
                                             .target = h.attacker(),
                                             .value = 100}));
   REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 0);
-  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.defender(),
-                                         CombatStatusKind::Brace));
-  REQUIRE(CombatStatusSystem::clear_status(h.party_ctx, h.attacker(),
-                                           CombatStatusKind::Blind));
+  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.defender(), CombatStatusKind::Brace));
+  REQUIRE(CombatStatusSystem::clear_status(h.party_ctx, h.attacker(), CombatStatusKind::Blind));
 
-  auto periodic = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(),
-                                                      h.defender());
+  auto periodic = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(), h.defender());
   periodic.damage().physical = 10;
   periodic.set_hit_kind(fl::primitives::HitKind::Periodic);
   REQUIRE(fl::ecs::systems::TakeDamage::commit(periodic) == 10);
-  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.defender(),
-                                         CombatStatusKind::Brace));
+  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.defender(), CombatStatusKind::Brace));
 
-  auto fire = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(),
-                                                  h.defender());
+  auto fire = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(), h.defender());
   fire.damage().fire = 10;
   fire.set_hit_kind(fl::primitives::HitKind::Direct);
   REQUIRE(fl::ecs::systems::TakeDamage::commit(fire) == 10);
-  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.defender(),
-                                         CombatStatusKind::Brace));
+  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), h.defender(), CombatStatusKind::Brace));
 }
 
-TEST_CASE("Flat Armor cannot erase landed positive damage",
-          "[combat-status][damage][regression]") {
+TEST_CASE("Flat Armor cannot erase landed positive damage", "[combat-status][damage][regression]") {
   BuiltEncounter h;
   set_hp(h.party_ctx, h.defender(), 1, 100);
-  auto &stats =
-      h.party_ctx.reg().get<fl::ecs::components::Stats>(h.defender());
+  auto& stats = h.party_ctx.reg().get<fl::ecs::components::Stats>(h.defender());
   stats.armor_ = 50;
 
   REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 1) == 1);
@@ -179,67 +171,57 @@ TEST_CASE("Armor clamps only the physical channel of a direct mixed hit",
   set_hp(h.party_ctx, h.defender(), 100, 100);
   h.party_ctx.reg().get<fl::ecs::components::Stats>(h.defender()).armor_ = 10;
 
-  auto hit = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(),
-                                                  h.defender());
+  auto hit = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(), h.defender());
   hit.set_hit_kind(fl::primitives::HitKind::Direct);
   hit.damage().physical = 5;
   hit.damage().fire = 7;
   REQUIRE(fl::ecs::systems::TakeDamage::commit(hit) == 7);
   REQUIRE(hp(h.party_ctx, h.defender()) == 93);
 
-  auto empty = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(),
-                                                    h.defender());
+  auto empty = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(), h.defender());
   empty.set_hit_kind(fl::primitives::HitKind::Direct);
   REQUIRE(fl::ecs::systems::TakeDamage::commit(empty) == 0);
   REQUIRE(hp(h.party_ctx, h.defender()) == 93);
 
-  auto scripted = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(),
-                                                       h.defender());
+  auto scripted = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(), h.defender());
   scripted.damage().physical = 5;
   REQUIRE(fl::ecs::systems::TakeDamage::commit(scripted) == 5);
 }
 
-TEST_CASE("Stats resistance mitigates mixed and periodic damage",
-          "[damage][resistance]") {
+TEST_CASE("Stats resistance mitigates mixed and periodic damage", "[damage][resistance]") {
   BuiltEncounter h;
   set_hp(h.party_ctx, h.defender(), 100, 100);
-  auto &stats = h.party_ctx.reg().get<fl::ecs::components::Stats>(h.defender());
+  auto& stats = h.party_ctx.reg().get<fl::ecs::components::Stats>(h.defender());
   stats.resistances_.physical = 50;
   stats.resistances_.fire = 25;
   stats.armor_ = 3;
 
-  auto hit = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(),
-                                                 h.defender());
+  auto hit = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(), h.defender());
   hit.set_hit_kind(fl::primitives::HitKind::Direct);
   hit.damage().physical = 20;
   hit.damage().fire = 20;
   REQUIRE(fl::ecs::systems::TakeDamage::commit(hit) == 22);
 
-  auto periodic = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(),
-                                                      h.defender());
+  auto periodic = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(), h.defender());
   periodic.set_hit_kind(fl::primitives::HitKind::Periodic);
   periodic.damage().physical = 20;
   REQUIRE(fl::ecs::systems::TakeDamage::commit(periodic) == 10);
 }
 
-TEST_CASE("Generated gear resistance applies only while equipped",
-          "[damage][resistance][gear]") {
+TEST_CASE("Generated gear resistance applies only while equipped", "[damage][resistance][gear]") {
   BuiltEncounter h;
   const auto wearer = h.defender();
   set_hp(h.party_ctx, wearer, 100, 100);
-  auto &reg = h.party_ctx.reg();
-  auto &closet = reg.get<fl::ecs::components::PartyMember>(wearer).closet();
-  const auto &definition = fl::loot::generated_content::definition(
+  auto& reg = h.party_ctx.reg();
+  auto& closet = reg.get<fl::ecs::components::PartyMember>(wearer).closet();
+  const auto& definition = fl::loot::generated_content::definition(
       fl::loot::generated_content::GearId::BootsOfDampAuthority);
   const auto boots = definition.item.create(reg);
-  REQUIRE(
-      reg.get<fl::ecs::components::Equipment>(boots).resistances().lightning ==
-      20);
+  REQUIRE(reg.get<fl::ecs::components::Equipment>(boots).resistances().lightning == 20);
   closet.equipped_item(fl::loot::EquipmentSlot::boots) = boots;
 
   auto strike = [&] {
-    auto hit =
-        fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(), wearer);
+    auto hit = fl::context::AttackCtx::make_attack(h.party_ctx, h.attacker(), wearer);
     hit.set_hit_kind(fl::primitives::HitKind::Direct);
     hit.damage().lightning = 10;
     return fl::ecs::systems::TakeDamage::commit(hit);
@@ -254,12 +236,12 @@ TEST_CASE("Blind can force attacks to miss through shared accuracy checks",
   BuiltEncounter h;
   set_hp(h.party_ctx, h.defender(), 100, 100);
 
-  REQUIRE(CombatStatusSystem::apply_status(
-      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Blind,
-                                   .name = "Test Blind",
-                                   .source = h.defender(),
-                                   .target = h.attacker(),
-                                   .value = 100}));
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Blind,
+                                            .name = "Test Blind",
+                                            .source = h.defender(),
+                                            .target = h.attacker(),
+                                            .value = 100}));
 
   REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 0);
   REQUIRE(hp(h.party_ctx, h.defender()) == 100);
@@ -270,18 +252,16 @@ TEST_CASE("Silence blocks spell-tagged skills but leaves other skills usable",
   BuiltEncounter h;
   const auto actor = h.attacker();
 
-  REQUIRE(CombatStatusSystem::apply_status(
-      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Silence,
-                                   .name = "Test Silence",
-                                   .source = h.defender(),
-                                   .target = actor}));
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Silence,
+                                            .name = "Test Silence",
+                                            .source = h.defender(),
+                                            .target = actor}));
 
   REQUIRE_FALSE(CombatStatusSystem::can_use_skill(
-      h.party_ctx.reg(), actor,
-      fl::skills::SkillKey{fl::skills::SkillId::FlameStrike}));
-  REQUIRE(CombatStatusSystem::can_use_skill(
-      h.party_ctx.reg(), actor,
-      fl::skills::SkillKey{fl::skills::SkillId::Thump}));
+      h.party_ctx.reg(), actor, fl::skills::SkillKey{fl::skills::SkillId::FlameStrike}));
+  REQUIRE(CombatStatusSystem::can_use_skill(h.party_ctx.reg(), actor,
+                                            fl::skills::SkillKey{fl::skills::SkillId::Thump}));
 
   h.party_ctx.reg().emplace_or_replace<fl::ecs::components::SkillSlots>(
       actor, fl::ecs::components::SkillSlots::with_known(
@@ -290,51 +270,45 @@ TEST_CASE("Silence blocks spell-tagged skills but leaves other skills usable",
           fl::skills::SkillKey{fl::skills::SkillId::Observe});
 }
 
-TEST_CASE("Slow and Haste expose shared turn tempo modifiers",
-          "[combat-status][tempo]") {
+TEST_CASE("Slow and Haste expose shared turn tempo modifiers", "[combat-status][tempo]") {
   BuiltEncounter h;
   const auto actor = h.defender();
 
-  REQUIRE(CombatStatusSystem::apply_status(
-      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Slow,
-                                   .name = "Test Slow",
-                                   .source = h.attacker(),
-                                   .target = actor,
-                                   .value = 20}));
-  REQUIRE(CombatStatusSystem::turn_tempo_modifier_percent(h.party_ctx.reg(),
-                                                          actor) == -20);
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Slow,
+                                            .name = "Test Slow",
+                                            .source = h.attacker(),
+                                            .target = actor,
+                                            .value = 20}));
+  REQUIRE(CombatStatusSystem::turn_tempo_modifier_percent(h.party_ctx.reg(), actor) == -20);
 
-  REQUIRE(CombatStatusSystem::apply_status(
-      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Haste,
-                                   .name = "Test Haste",
-                                   .source = actor,
-                                   .target = actor,
-                                   .value = 35,
-                                   .negative = false}));
-  REQUIRE(CombatStatusSystem::turn_tempo_modifier_percent(h.party_ctx.reg(),
-                                                          actor) == 15);
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Haste,
+                                            .name = "Test Haste",
+                                            .source = actor,
+                                            .target = actor,
+                                            .value = 35,
+                                            .negative = false}));
+  REQUIRE(CombatStatusSystem::turn_tempo_modifier_percent(h.party_ctx.reg(), actor) == 15);
 }
 
-TEST_CASE("Stun consumes one action through shared turn resolution",
-          "[combat-status][stun]") {
+TEST_CASE("Stun consumes one action through shared turn resolution", "[combat-status][stun]") {
   BuiltEncounter h;
   const auto actor = h.defender();
 
-  REQUIRE(CombatStatusSystem::apply_status(
-      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Stun,
-                                   .name = "Test Stun",
-                                   .source = h.attacker(),
-                                   .target = actor,
-                                   .stacks = 1}));
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Stun,
+                                            .name = "Test Stun",
+                                            .source = h.attacker(),
+                                            .target = actor,
+                                            .stacks = 1}));
 
   REQUIRE(CombatStatusSystem::consume_stun_turn(h.party_ctx, actor));
-  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), actor,
-                                               CombatStatusKind::Stun));
+  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), actor, CombatStatusKind::Stun));
   REQUIRE_FALSE(CombatStatusSystem::consume_stun_turn(h.party_ctx, actor));
 }
 
-TEST_CASE("Burn deals scheduled damage over time and then clears",
-          "[combat-status][burn]") {
+TEST_CASE("Burn deals scheduled damage over time and then clears", "[combat-status][burn]") {
   BuiltEncounter h;
   // Advance status time without giving random combatants unrelated turns.
   const auto target = h.defender();
@@ -349,18 +323,14 @@ TEST_CASE("Burn deals scheduled damage over time and then clears",
                                             .tick_count = 2}));
 
   h.scheduler().advance(
-      seerin::uWu{fl::primitives::WorldClock::beats_from_seconds(3) *
-                  seerin::UWU_PER_BEAT.v});
+      seerin::uWu{fl::primitives::WorldClock::beats_from_seconds(3) * seerin::UWU_PER_BEAT.v});
   REQUIRE(hp(h.party_ctx, target) == 97);
-  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), target,
-                                         CombatStatusKind::Burn));
+  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), target, CombatStatusKind::Burn));
 
   h.scheduler().advance(
-      seerin::uWu{fl::primitives::WorldClock::beats_from_seconds(3) *
-                  seerin::UWU_PER_BEAT.v});
+      seerin::uWu{fl::primitives::WorldClock::beats_from_seconds(3) * seerin::UWU_PER_BEAT.v});
   REQUIRE(hp(h.party_ctx, target) == 94);
-  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), target,
-                                               CombatStatusKind::Burn));
+  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), target, CombatStatusKind::Burn));
 }
 
 TEST_CASE("Drain damages and heals through shared damage and heal paths",
@@ -374,8 +344,7 @@ TEST_CASE("Drain damages and heals through shared damage and heal paths",
   auto damage = fl::primitives::Damage{};
   damage.physical = 12;
 
-  REQUIRE(CombatStatusSystem::drain(h.party_ctx, source, target, damage, 50,
-                                    "Test Drain") == 6);
+  REQUIRE(CombatStatusSystem::drain(h.party_ctx, source, target, damage, 50, "Test Drain") == 6);
   REQUIRE(hp(h.party_ctx, target) == 88);
   REQUIRE(hp(h.party_ctx, source) == 11);
 }
@@ -385,22 +354,19 @@ TEST_CASE("Cleanse removes removable negative combat statuses and old poison",
   BuiltEncounter h;
   const auto target = h.defender();
 
-  REQUIRE(CombatStatusSystem::apply_status(
-      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Blind,
-                                   .name = "Test Blind",
-                                   .source = h.attacker(),
-                                   .target = target,
-                                   .value = 20}));
-  fl::ecs::systems::PoisonSystem::apply(h.party_ctx, h.scheduler(), h.attacker(),
-                                        target, 2, 9);
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Blind,
+                                            .name = "Test Blind",
+                                            .source = h.attacker(),
+                                            .target = target,
+                                            .value = 20}));
+  fl::ecs::systems::PoisonSystem::apply(h.party_ctx, h.scheduler(), h.attacker(), target, 2, 9);
 
-  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), target,
-                                         CombatStatusKind::Blind));
+  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), target, CombatStatusKind::Blind));
   REQUIRE(h.party_ctx.reg().all_of<fl::ecs::components::Poison>(target));
 
   REQUIRE(CombatStatusSystem::cleanse(h.party_ctx, target, target) == 2);
-  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), target,
-                                               CombatStatusKind::Blind));
+  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), target, CombatStatusKind::Blind));
   REQUIRE_FALSE(h.party_ctx.reg().any_of<fl::ecs::components::Poison>(target));
 }
 
@@ -409,12 +375,11 @@ TEST_CASE("Field debuffs are encounter-scoped and feed shared damage modifiers",
   BuiltEncounter h;
   set_hp(h.party_ctx, h.defender(), 100, 100);
 
-  CombatStatusSystem::apply_field_debuff(
-      h.party_ctx, {.team = FieldTeam::Attackers,
-                    .kind = FieldDebuffKind::DamageDown,
-                    .name = "Test Field Drag",
-                    .source = h.defender(),
-                    .value = 50});
+  CombatStatusSystem::apply_field_debuff(h.party_ctx, {.team = FieldTeam::Attackers,
+                                                       .kind = FieldDebuffKind::DamageDown,
+                                                       .name = "Test Field Drag",
+                                                       .source = h.defender(),
+                                                       .value = 50});
 
   REQUIRE(CombatStatusSystem::has_field_debuff(h.party_ctx, FieldTeam::Attackers,
                                                FieldDebuffKind::DamageDown));
@@ -422,23 +387,22 @@ TEST_CASE("Field debuffs are encounter-scoped and feed shared damage modifiers",
   REQUIRE(hp(h.party_ctx, h.defender()) == 90);
 }
 
-TEST_CASE("Field AccuracyDown expires and stops forcing misses",
-          "[combat-status][field][expiry]") {
+TEST_CASE("Field AccuracyDown expires and stops forcing misses", "[combat-status][field][expiry]") {
   BuiltEncounter h;
   set_hp(h.party_ctx, h.defender(), 100, 100);
 
-  CombatStatusSystem::apply_field_debuff(
-      h.party_ctx, h.scheduler(), {.team = FieldTeam::Attackers,
-                                   .kind = FieldDebuffKind::AccuracyDown,
-                                   .name = "Brief Fog",
-                                   .source = h.defender(),
-                                   .value = 100,
-                                   .duration_seconds = 1});
+  CombatStatusSystem::apply_field_debuff(h.party_ctx, h.scheduler(),
+                                         {.team = FieldTeam::Attackers,
+                                          .kind = FieldDebuffKind::AccuracyDown,
+                                          .name = "Brief Fog",
+                                          .source = h.defender(),
+                                          .value = 100,
+                                          .duration_seconds = 1});
 
   REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 0);
   tick_party(h.party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
-  REQUIRE_FALSE(CombatStatusSystem::has_field_debuff(
-      h.party_ctx, FieldTeam::Attackers, FieldDebuffKind::AccuracyDown));
+  REQUIRE_FALSE(CombatStatusSystem::has_field_debuff(h.party_ctx, FieldTeam::Attackers,
+                                                     FieldDebuffKind::AccuracyDown));
   REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 20);
 }
 
@@ -447,18 +411,18 @@ TEST_CASE("Field DamageDown expires and stops reducing outgoing damage",
   BuiltEncounter h;
   set_hp(h.party_ctx, h.defender(), 100, 100);
 
-  CombatStatusSystem::apply_field_debuff(
-      h.party_ctx, h.scheduler(), {.team = FieldTeam::Attackers,
-                                   .kind = FieldDebuffKind::DamageDown,
-                                   .name = "Brief Drag",
-                                   .source = h.defender(),
-                                   .value = 50,
-                                   .duration_seconds = 1});
+  CombatStatusSystem::apply_field_debuff(h.party_ctx, h.scheduler(),
+                                         {.team = FieldTeam::Attackers,
+                                          .kind = FieldDebuffKind::DamageDown,
+                                          .name = "Brief Drag",
+                                          .source = h.defender(),
+                                          .value = 50,
+                                          .duration_seconds = 1});
 
   REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 10);
   tick_party(h.party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
-  REQUIRE_FALSE(CombatStatusSystem::has_field_debuff(
-      h.party_ctx, FieldTeam::Attackers, FieldDebuffKind::DamageDown));
+  REQUIRE_FALSE(CombatStatusSystem::has_field_debuff(h.party_ctx, FieldTeam::Attackers,
+                                                     FieldDebuffKind::DamageDown));
   REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 20);
 }
 
@@ -467,18 +431,18 @@ TEST_CASE("Field Vulnerable expires and stops increasing incoming damage",
   BuiltEncounter h;
   set_hp(h.party_ctx, h.defender(), 100, 100);
 
-  CombatStatusSystem::apply_field_debuff(
-      h.party_ctx, h.scheduler(), {.team = FieldTeam::Defenders,
-                                   .kind = FieldDebuffKind::Vulnerable,
-                                   .name = "Brief Opening",
-                                   .source = h.attacker(),
-                                   .value = 50,
-                                   .duration_seconds = 1});
+  CombatStatusSystem::apply_field_debuff(h.party_ctx, h.scheduler(),
+                                         {.team = FieldTeam::Defenders,
+                                          .kind = FieldDebuffKind::Vulnerable,
+                                          .name = "Brief Opening",
+                                          .source = h.attacker(),
+                                          .value = 50,
+                                          .duration_seconds = 1});
 
   REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 30);
   tick_party(h.party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
-  REQUIRE_FALSE(CombatStatusSystem::has_field_debuff(
-      h.party_ctx, FieldTeam::Defenders, FieldDebuffKind::Vulnerable));
+  REQUIRE_FALSE(CombatStatusSystem::has_field_debuff(h.party_ctx, FieldTeam::Defenders,
+                                                     FieldDebuffKind::Vulnerable));
   REQUIRE(deal_physical(h.party_ctx, h.attacker(), h.defender(), 20) == 20);
 }
 
@@ -486,69 +450,61 @@ TEST_CASE("Multiple field debuffs coexist and expire independently",
           "[combat-status][field][expiry]") {
   BuiltEncounter h;
 
-  CombatStatusSystem::apply_field_debuff(
-      h.party_ctx, h.scheduler(), {.team = FieldTeam::Attackers,
-                                   .kind = FieldDebuffKind::AccuracyDown,
-                                   .name = "Short Fog",
-                                   .source = h.defender(),
-                                   .value = 20,
-                                   .duration_seconds = 1});
-  CombatStatusSystem::apply_field_debuff(
-      h.party_ctx, h.scheduler(), {.team = FieldTeam::Attackers,
-                                   .kind = FieldDebuffKind::DamageDown,
-                                   .name = "Long Drag",
-                                   .source = h.defender(),
-                                   .value = 30,
-                                   .duration_seconds = 2});
+  CombatStatusSystem::apply_field_debuff(h.party_ctx, h.scheduler(),
+                                         {.team = FieldTeam::Attackers,
+                                          .kind = FieldDebuffKind::AccuracyDown,
+                                          .name = "Short Fog",
+                                          .source = h.defender(),
+                                          .value = 20,
+                                          .duration_seconds = 1});
+  CombatStatusSystem::apply_field_debuff(h.party_ctx, h.scheduler(),
+                                         {.team = FieldTeam::Attackers,
+                                          .kind = FieldDebuffKind::DamageDown,
+                                          .name = "Long Drag",
+                                          .source = h.defender(),
+                                          .value = 30,
+                                          .duration_seconds = 2});
 
   tick_party(h.party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
-  REQUIRE_FALSE(CombatStatusSystem::has_field_debuff(
-      h.party_ctx, FieldTeam::Attackers, FieldDebuffKind::AccuracyDown));
-  REQUIRE(CombatStatusSystem::field_debuff_value(
-              h.party_ctx, FieldTeam::Attackers,
-              FieldDebuffKind::DamageDown) == 30);
+  REQUIRE_FALSE(CombatStatusSystem::has_field_debuff(h.party_ctx, FieldTeam::Attackers,
+                                                     FieldDebuffKind::AccuracyDown));
+  REQUIRE(CombatStatusSystem::field_debuff_value(h.party_ctx, FieldTeam::Attackers,
+                                                 FieldDebuffKind::DamageDown) == 30);
 
   tick_party(h.party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
-  REQUIRE_FALSE(CombatStatusSystem::has_field_debuff(
-      h.party_ctx, FieldTeam::Attackers, FieldDebuffKind::DamageDown));
+  REQUIRE_FALSE(CombatStatusSystem::has_field_debuff(h.party_ctx, FieldTeam::Attackers,
+                                                     FieldDebuffKind::DamageDown));
 }
 
 TEST_CASE("Permanent field debuffs remain when no finite duration is set",
           "[combat-status][field][expiry]") {
   BuiltEncounter h;
 
-  CombatStatusSystem::apply_field_debuff(
-      h.party_ctx, h.scheduler(), {.team = FieldTeam::Attackers,
-                                   .kind = FieldDebuffKind::DamageDown,
-                                   .name = "Standing Drag",
-                                   .source = h.defender(),
-                                   .value = 25,
-                                   .duration_seconds = 0});
+  CombatStatusSystem::apply_field_debuff(h.party_ctx, h.scheduler(),
+                                         {.team = FieldTeam::Attackers,
+                                          .kind = FieldDebuffKind::DamageDown,
+                                          .name = "Standing Drag",
+                                          .source = h.defender(),
+                                          .value = 25,
+                                          .duration_seconds = 0});
 
   tick_party(h.party_ctx, fl::primitives::WorldClock::beats_from_seconds(5));
-  REQUIRE(CombatStatusSystem::field_debuff_value(
-              h.party_ctx, FieldTeam::Attackers,
-              FieldDebuffKind::DamageDown) == 25);
+  REQUIRE(CombatStatusSystem::field_debuff_value(h.party_ctx, FieldTeam::Attackers,
+                                                 FieldDebuffKind::DamageDown) == 25);
 }
 
 namespace {
 
-void add_actor_to_charge_model(fl::context::PartyCtx &party_ctx,
-                               entt::entity actor) {
-  auto &charge =
-      party_ctx.reg().get_or_emplace<fl::ecs::components::AtbCharge>(actor);
+void add_actor_to_charge_model(fl::context::PartyCtx& party_ctx, entt::entity actor) {
+  auto& charge = party_ctx.reg().get_or_emplace<fl::ecs::components::AtbCharge>(actor);
   const int rate_percent =
-      100 +
-      CombatStatusSystem::turn_tempo_modifier_percent(party_ctx.reg(), actor);
+      100 + CombatStatusSystem::turn_tempo_modifier_percent(party_ctx.reg(), actor);
   charge.charge_per_beat = std::max<int64_t>(
-      1, (seerin::AtbMachine::kChargePerBeat *
-          static_cast<int64_t>(rate_percent)) /
-             100);
+      1, (seerin::AtbMachine::kChargePerBeat * static_cast<int64_t>(rate_percent)) / 100);
 }
 
-int beats_until_active(fl::context::PartyCtx &party_ctx, entt::entity actor) {
-  const auto &charge =
-      party_ctx.reg().get<fl::ecs::components::AtbCharge>(actor);
+int beats_until_active(fl::context::PartyCtx& party_ctx, entt::entity actor) {
+  const auto& charge = party_ctx.reg().get<fl::ecs::components::AtbCharge>(actor);
   return static_cast<int>((charge.max_charge + charge.charge_per_beat - 1) /
                           charge.charge_per_beat);
 }
@@ -559,96 +515,85 @@ TEST_CASE("Slow reduces ATB charge rate through shared tempo modifiers",
           "[combat-status][tempo][atb]") {
   BuiltEncounter h;
   const auto actor = h.defender();
-  REQUIRE(CombatStatusSystem::apply_status(
-      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Slow,
-                                   .name = "Test Slow",
-                                   .source = h.attacker(),
-                                   .target = actor,
-                                   .value = 25}));
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Slow,
+                                            .name = "Test Slow",
+                                            .source = h.attacker(),
+                                            .target = actor,
+                                            .value = 25}));
 
   add_actor_to_charge_model(h.party_ctx, actor);
 
   REQUIRE(beats_until_active(h.party_ctx, actor) == 80);
-  REQUIRE(h.party_ctx.reg()
-              .get<fl::ecs::components::AtbCharge>(actor)
-              .charge_per_beat == 60);
+  REQUIRE(h.party_ctx.reg().get<fl::ecs::components::AtbCharge>(actor).charge_per_beat == 60);
 }
 
 TEST_CASE("Haste increases ATB charge rate through shared tempo modifiers",
           "[combat-status][tempo][atb]") {
   BuiltEncounter h;
   const auto actor = h.defender();
-  REQUIRE(CombatStatusSystem::apply_status(
-      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Haste,
-                                   .name = "Test Haste",
-                                   .source = h.attacker(),
-                                   .target = actor,
-                                   .value = 25,
-                                   .negative = false}));
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Haste,
+                                            .name = "Test Haste",
+                                            .source = h.attacker(),
+                                            .target = actor,
+                                            .value = 25,
+                                            .negative = false}));
 
   add_actor_to_charge_model(h.party_ctx, actor);
 
   REQUIRE(beats_until_active(h.party_ctx, actor) == 48);
-  REQUIRE(h.party_ctx.reg()
-              .get<fl::ecs::components::AtbCharge>(actor)
-              .charge_per_beat == 100);
+  REQUIRE(h.party_ctx.reg().get<fl::ecs::components::AtbCharge>(actor).charge_per_beat == 100);
 }
 
-TEST_CASE("Applied Slow affects ATB readiness timing",
-          "[combat-status][tempo][atb]") {
+TEST_CASE("Applied Slow affects ATB readiness timing", "[combat-status][tempo][atb]") {
   BuiltEncounter h;
   const auto actor = h.defender();
 
-  REQUIRE(CombatStatusSystem::apply_status(
-      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Slow,
-                                   .name = "Applied Slow",
-                                   .source = h.attacker(),
-                                   .target = actor,
-                                   .value = 25}));
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Slow,
+                                            .name = "Applied Slow",
+                                            .source = h.attacker(),
+                                            .target = actor,
+                                            .value = 25}));
   add_actor_to_charge_model(h.party_ctx, actor);
 
-  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), actor,
-                                         CombatStatusKind::Slow));
-  REQUIRE(CombatStatusSystem::turn_tempo_modifier_percent(h.party_ctx.reg(),
-                                                          actor) == -25);
+  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), actor, CombatStatusKind::Slow));
+  REQUIRE(CombatStatusSystem::turn_tempo_modifier_percent(h.party_ctx.reg(), actor) == -25);
   REQUIRE(beats_until_active(h.party_ctx, actor) == 80);
 }
 
-TEST_CASE("Applied Haste affects ATB readiness timing",
-          "[combat-status][tempo][atb]") {
+TEST_CASE("Applied Haste affects ATB readiness timing", "[combat-status][tempo][atb]") {
   BuiltEncounter h;
   const auto actor = h.defender();
 
-  REQUIRE(CombatStatusSystem::apply_status(
-      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Haste,
-                                   .name = "Applied Haste",
-                                   .source = h.attacker(),
-                                   .target = actor,
-                                   .value = 25,
-                                   .negative = false}));
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Haste,
+                                            .name = "Applied Haste",
+                                            .source = h.attacker(),
+                                            .target = actor,
+                                            .value = 25,
+                                            .negative = false}));
   add_actor_to_charge_model(h.party_ctx, actor);
 
-  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), actor,
-                                         CombatStatusKind::Haste));
+  REQUIRE(CombatStatusSystem::has_status(h.party_ctx.reg(), actor, CombatStatusKind::Haste));
   REQUIRE(beats_until_active(h.party_ctx, actor) == 48);
 }
 
-TEST_CASE("Cleanse removes Slow timing impact",
-          "[combat-status][tempo][atb][cleanse]") {
+TEST_CASE("Cleanse removes Slow timing impact", "[combat-status][tempo][atb][cleanse]") {
   BuiltEncounter h;
   const auto actor = h.defender();
-  REQUIRE(CombatStatusSystem::apply_status(
-      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Slow,
-                                   .name = "Test Slow",
-                                   .source = h.attacker(),
-                                   .target = actor,
-                                   .value = 25}));
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Slow,
+                                            .name = "Test Slow",
+                                            .source = h.attacker(),
+                                            .target = actor,
+                                            .value = 25}));
 
   REQUIRE(CombatStatusSystem::cleanse(h.party_ctx, h.attacker(), actor) == 1);
   add_actor_to_charge_model(h.party_ctx, actor);
 
-  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), actor,
-                                               CombatStatusKind::Slow));
+  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), actor, CombatStatusKind::Slow));
   REQUIRE(beats_until_active(h.party_ctx, actor) == 60);
 }
 
@@ -656,19 +601,18 @@ TEST_CASE("Expired Slow stops affecting future ATB charge timing",
           "[combat-status][tempo][atb][expiry]") {
   BuiltEncounter h;
   const auto actor = h.defender();
-  REQUIRE(CombatStatusSystem::apply_status(
-      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Slow,
-                                   .name = "Brief Slow",
-                                   .source = h.attacker(),
-                                   .target = actor,
-                                   .duration_seconds = 1,
-                                   .value = 25}));
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Slow,
+                                            .name = "Brief Slow",
+                                            .source = h.attacker(),
+                                            .target = actor,
+                                            .duration_seconds = 1,
+                                            .value = 25}));
 
   tick_party(h.party_ctx, fl::primitives::WorldClock::beats_from_seconds(1));
   add_actor_to_charge_model(h.party_ctx, actor);
 
-  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), actor,
-                                               CombatStatusKind::Slow));
+  REQUIRE_FALSE(CombatStatusSystem::has_status(h.party_ctx.reg(), actor, CombatStatusKind::Slow));
   REQUIRE(beats_until_active(h.party_ctx, actor) == 60);
 }
 
@@ -676,23 +620,22 @@ TEST_CASE("Slow and Haste combine deterministically by net tempo modifier",
           "[combat-status][tempo][atb]") {
   BuiltEncounter h;
   const auto actor = h.defender();
-  REQUIRE(CombatStatusSystem::apply_status(
-      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Slow,
-                                   .name = "Test Slow",
-                                   .source = h.attacker(),
-                                   .target = actor,
-                                   .value = 25}));
-  REQUIRE(CombatStatusSystem::apply_status(
-      h.party_ctx, h.scheduler(), {.kind = CombatStatusKind::Haste,
-                                   .name = "Test Haste",
-                                   .source = h.attacker(),
-                                   .target = actor,
-                                   .value = 25,
-                                   .negative = false}));
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Slow,
+                                            .name = "Test Slow",
+                                            .source = h.attacker(),
+                                            .target = actor,
+                                            .value = 25}));
+  REQUIRE(CombatStatusSystem::apply_status(h.party_ctx, h.scheduler(),
+                                           {.kind = CombatStatusKind::Haste,
+                                            .name = "Test Haste",
+                                            .source = h.attacker(),
+                                            .target = actor,
+                                            .value = 25,
+                                            .negative = false}));
 
   add_actor_to_charge_model(h.party_ctx, actor);
 
-  REQUIRE(CombatStatusSystem::turn_tempo_modifier_percent(h.party_ctx.reg(),
-                                                          actor) == 0);
+  REQUIRE(CombatStatusSystem::turn_tempo_modifier_percent(h.party_ctx.reg(), actor) == 0);
   REQUIRE(beats_until_active(h.party_ctx, actor) == 60);
 }

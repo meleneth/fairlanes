@@ -13,25 +13,22 @@
 
 namespace fl::widgets::effects {
 
+inline constexpr std::array<DecalAnimationKind, 23> kAvailableDecalAnimationKinds{
+    DecalAnimationKind::FlameWave,  DecalAnimationKind::Shock,
+    DecalAnimationKind::RocksFall,  DecalAnimationKind::PoisonCloud,
+    DecalAnimationKind::HolyNova,   DecalAnimationKind::BloodBloom,
+    DecalAnimationKind::FrostCrack, DecalAnimationKind::VoidRipple,
+    DecalAnimationKind::Starfire,   DecalAnimationKind::HitpointNumber,
+    DecalAnimationKind::Impact,     DecalAnimationKind::Slash,
+    DecalAnimationKind::Bite,       DecalAnimationKind::Projectile,
+    DecalAnimationKind::Sweep,      DecalAnimationKind::Burst,
+    DecalAnimationKind::Beam,       DecalAnimationKind::Heal,
+    DecalAnimationKind::Cleanse,    DecalAnimationKind::Glitch,
+    DecalAnimationKind::Aura,       DecalAnimationKind::Field,
+    DecalAnimationKind::Observe,
+};
 
-
-inline constexpr std::array<DecalAnimationKind, 23>
-    kAvailableDecalAnimationKinds{
-        DecalAnimationKind::FlameWave,  DecalAnimationKind::Shock,
-        DecalAnimationKind::RocksFall,  DecalAnimationKind::PoisonCloud,
-        DecalAnimationKind::HolyNova,   DecalAnimationKind::BloodBloom,
-        DecalAnimationKind::FrostCrack, DecalAnimationKind::VoidRipple,
-        DecalAnimationKind::Starfire,   DecalAnimationKind::HitpointNumber,
-        DecalAnimationKind::Impact,     DecalAnimationKind::Slash,
-        DecalAnimationKind::Bite,       DecalAnimationKind::Projectile,
-        DecalAnimationKind::Sweep,      DecalAnimationKind::Burst,
-        DecalAnimationKind::Beam,       DecalAnimationKind::Heal,
-        DecalAnimationKind::Cleanse,    DecalAnimationKind::Glitch,
-        DecalAnimationKind::Aura,       DecalAnimationKind::Field,
-        DecalAnimationKind::Observe,
-    };
-
-[[nodiscard]] constexpr const std::array<DecalAnimationKind, 23> &
+[[nodiscard]] constexpr const std::array<DecalAnimationKind, 23>&
 available_decal_animation_kinds() noexcept {
   return kAvailableDecalAnimationKinds;
 }
@@ -57,58 +54,33 @@ public:
 };
 
 [[nodiscard]] std::shared_ptr<const DecalAnimation>
-make_decal_animation(DecalAnimationKind kind, int width, int height,
-                     DecalConfig config = {});
+make_decal_animation(DecalAnimationKind kind, int width, int height, DecalConfig config = {});
 
-[[nodiscard]] constexpr std::string_view
-name(DecalAnimationKind kind) noexcept {
+[[nodiscard]] constexpr std::string_view name(DecalAnimationKind kind) noexcept {
   switch (kind) {
-  case DecalAnimationKind::FlameWave:
-    return "FlameWave";
-  case DecalAnimationKind::Shock:
-    return "Shock";
-  case DecalAnimationKind::RocksFall:
-    return "RocksFall";
-  case DecalAnimationKind::PoisonCloud:
-    return "PoisonCloud";
-  case DecalAnimationKind::HolyNova:
-    return "HolyNova";
-  case DecalAnimationKind::BloodBloom:
-    return "BloodBloom";
-  case DecalAnimationKind::FrostCrack:
-    return "FrostCrack";
-  case DecalAnimationKind::VoidRipple:
-    return "VoidRipple";
-  case DecalAnimationKind::Starfire:
-    return "Starfire";
-  case DecalAnimationKind::HitpointNumber:
-    return "HitpointNumber";
-  case DecalAnimationKind::Impact:
-    return "Impact";
-  case DecalAnimationKind::Slash:
-    return "Slash";
-  case DecalAnimationKind::Bite:
-    return "Bite";
-  case DecalAnimationKind::Projectile:
-    return "Projectile";
-  case DecalAnimationKind::Sweep:
-    return "Sweep";
-  case DecalAnimationKind::Burst:
-    return "Burst";
-  case DecalAnimationKind::Beam:
-    return "Beam";
-  case DecalAnimationKind::Heal:
-    return "Heal";
-  case DecalAnimationKind::Cleanse:
-    return "Cleanse";
-  case DecalAnimationKind::Glitch:
-    return "Glitch";
-  case DecalAnimationKind::Aura:
-    return "Aura";
-  case DecalAnimationKind::Field:
-    return "Field";
-  case DecalAnimationKind::Observe:
-    return "Observe";
+  case DecalAnimationKind::FlameWave: return "FlameWave";
+  case DecalAnimationKind::Shock: return "Shock";
+  case DecalAnimationKind::RocksFall: return "RocksFall";
+  case DecalAnimationKind::PoisonCloud: return "PoisonCloud";
+  case DecalAnimationKind::HolyNova: return "HolyNova";
+  case DecalAnimationKind::BloodBloom: return "BloodBloom";
+  case DecalAnimationKind::FrostCrack: return "FrostCrack";
+  case DecalAnimationKind::VoidRipple: return "VoidRipple";
+  case DecalAnimationKind::Starfire: return "Starfire";
+  case DecalAnimationKind::HitpointNumber: return "HitpointNumber";
+  case DecalAnimationKind::Impact: return "Impact";
+  case DecalAnimationKind::Slash: return "Slash";
+  case DecalAnimationKind::Bite: return "Bite";
+  case DecalAnimationKind::Projectile: return "Projectile";
+  case DecalAnimationKind::Sweep: return "Sweep";
+  case DecalAnimationKind::Burst: return "Burst";
+  case DecalAnimationKind::Beam: return "Beam";
+  case DecalAnimationKind::Heal: return "Heal";
+  case DecalAnimationKind::Cleanse: return "Cleanse";
+  case DecalAnimationKind::Glitch: return "Glitch";
+  case DecalAnimationKind::Aura: return "Aura";
+  case DecalAnimationKind::Field: return "Field";
+  case DecalAnimationKind::Observe: return "Observe";
   }
 
   return "Unknown";

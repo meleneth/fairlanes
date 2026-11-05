@@ -36,50 +36,75 @@ public:
   static constexpr int kTownPenaltyBeats =
       fl::primitives::WorldClock::beats_from_seconds(kTownPenaltySeconds);
 
-  explicit PartyData(entt::entity party_id,
-                     fl::context::AccountCtx &account_ctx, std::string name);
+  explicit PartyData(entt::entity party_id, fl::context::AccountCtx& account_ctx, std::string name);
   ~PartyData();
 
-  PartyData(PartyData &&) = delete;
-  PartyData &operator=(PartyData &&) = delete;
+  PartyData(PartyData&&) = delete;
+  PartyData& operator=(PartyData&&) = delete;
 
-  PartyData(const PartyData &) = delete;
-  PartyData &operator=(const PartyData &) = delete;
+  PartyData(const PartyData&) = delete;
+  PartyData& operator=(const PartyData&) = delete;
 
   // ---- accessors ----
-  entt::entity party_id() const noexcept { return party_id_; }
-  std::string_view name() const noexcept { return name_; }
-
-  fl::widgets::FancyLog &log() const { return *log_; }
-  bool has_log() const noexcept { return static_cast<bool>(log_); }
-
-  std::deque<fl::primitives::MemberData> &members() noexcept {
-    return members_;
+  entt::entity party_id() const noexcept {
+    return party_id_;
   }
-  const std::deque<fl::primitives::MemberData> &members() const noexcept {
-    return members_;
+  std::string_view name() const noexcept {
+    return name_;
   }
 
-  fl::primitives::EncounterData &encounter_data() { return raid_encounter_ ? *raid_encounter_ : *encounter_data_; }
-  const fl::primitives::EncounterData &encounter_data() const {
+  fl::widgets::FancyLog& log() const {
+    return *log_;
+  }
+  bool has_log() const noexcept {
+    return static_cast<bool>(log_);
+  }
+
+  std::deque<fl::primitives::MemberData>& members() noexcept {
+    return members_;
+  }
+  const std::deque<fl::primitives::MemberData>& members() const noexcept {
+    return members_;
+  }
+
+  fl::primitives::EncounterData& encounter_data() {
+    return raid_encounter_ ? *raid_encounter_ : *encounter_data_;
+  }
+  const fl::primitives::EncounterData& encounter_data() const {
     return raid_encounter_ ? *raid_encounter_ : *encounter_data_;
   }
 
-  fl::events::PartyBus &party_bus() noexcept { return party_bus_; }
-  const fl::events::PartyBus &party_bus() const noexcept { return party_bus_; }
+  fl::events::PartyBus& party_bus() noexcept {
+    return party_bus_;
+  }
+  const fl::events::PartyBus& party_bus() const noexcept {
+    return party_bus_;
+  }
 
-  fl::context::PartyCtx &loop_ctx() noexcept { return party_ctx_; }
-  const fl::context::PartyCtx &loop_ctx() const noexcept { return party_ctx_; }
+  fl::context::PartyCtx& loop_ctx() noexcept {
+    return party_ctx_;
+  }
+  const fl::context::PartyCtx& loop_ctx() const noexcept {
+    return party_ctx_;
+  }
 
-  fl::context::PartyCtx &party_ctx() noexcept { return party_ctx_; }
-  const fl::context::PartyCtx &party_ctx() const noexcept { return party_ctx_; }
+  fl::context::PartyCtx& party_ctx() noexcept {
+    return party_ctx_;
+  }
+  const fl::context::PartyCtx& party_ctx() const noexcept {
+    return party_ctx_;
+  }
 
-  fl::fsm::PartyLoopMachine &loop_machine() { return *party_loop_machine_; }
-  const fl::fsm::PartyLoopMachine &loop_machine() const {
+  fl::fsm::PartyLoopMachine& loop_machine() {
     return *party_loop_machine_;
   }
-  EncounterData &create_encounter();
-  bool has_encounter() const noexcept { return raid_encounter_ != nullptr || encounter_data_ != nullptr; }
+  const fl::fsm::PartyLoopMachine& loop_machine() const {
+    return *party_loop_machine_;
+  }
+  EncounterData& create_encounter();
+  bool has_encounter() const noexcept {
+    return raid_encounter_ != nullptr || encounter_data_ != nullptr;
+  }
   bool in_combat() const noexcept {
     return has_encounter() && !encounter_data().is_over();
   }
@@ -94,28 +119,43 @@ public:
     int floor;
   };
   std::optional<TowerRoute> tower_route() const noexcept;
-  bool select_tower(std::string_view biome_id,
-                    std::optional<int> floor = std::nullopt);
+  bool select_tower(std::string_view biome_id, std::optional<int> floor = std::nullopt);
   int latest_tower_floor(std::string_view biome_id) const noexcept;
   int highest_tower_floor_cleared(std::string_view biome_id) const noexcept;
   void begin_tower_encounter();
-  bool plains_unlocked() const noexcept { return plains_unlocked_; }
-  bool tower_choice_pending() const noexcept { return tower_choice_pending_; }
-  int tower_floor_attempts() const noexcept { return tower_floor_attempts_; }
+  bool plains_unlocked() const noexcept {
+    return plains_unlocked_;
+  }
+  bool tower_choice_pending() const noexcept {
+    return tower_choice_pending_;
+  }
+  int tower_floor_attempts() const noexcept {
+    return tower_floor_attempts_;
+  }
   // ---- behavior ----
   void advance_beat();
   entt::entity recruit_member(std::string name);
-  bool story_shop_pending() const noexcept { return story_shop_pending_; }
-  void begin_story_shop() noexcept { story_shop_pending_ = true; }
-  void finish_story_shop() noexcept { story_shop_pending_ = false; }
-  int darrin_marks() const noexcept { return darrin_marks_; }
-  void award_darrin_marks(int amount) noexcept { darrin_marks_ += amount; }
+  bool story_shop_pending() const noexcept {
+    return story_shop_pending_;
+  }
+  void begin_story_shop() noexcept {
+    story_shop_pending_ = true;
+  }
+  void finish_story_shop() noexcept {
+    story_shop_pending_ = false;
+  }
+  int darrin_marks() const noexcept {
+    return darrin_marks_;
+  }
+  void award_darrin_marks(int amount) noexcept {
+    darrin_marks_ += amount;
+  }
   bool spend_darrin_marks(int amount) noexcept {
     if (amount < 0 || darrin_marks_ < amount) return false;
     darrin_marks_ -= amount;
     return true;
   }
-  void hook_to_beat(seerin::BeatBus &gc_beat_bus);
+  void hook_to_beat(seerin::BeatBus& gc_beat_bus);
 
   bool needs_town();
   bool all_members_dead() const;
@@ -125,19 +165,24 @@ public:
   void return_to_town();
   // Call between combat ticks, before enrollment into the account raid.
   void summon_to_raid();
-  bool in_raid() const noexcept { return raid_encounter_ != nullptr; }
-  void join_raid(EncounterData &encounter);
+  bool in_raid() const noexcept {
+    return raid_encounter_ != nullptr;
+  }
+  void join_raid(EncounterData& encounter);
   void resolve_raid(bool victory);
-  void detach_raid() noexcept { raid_encounter_ = nullptr; }
-  void watch_skill_learned_this_combat(entt::entity member,
-                                       fl::skills::SkillKey skill);
+  void detach_raid() noexcept {
+    raid_encounter_ = nullptr;
+  }
+  void watch_skill_learned_this_combat(entt::entity member, fl::skills::SkillKey skill);
   bool drop_skill(entt::entity member, std::size_t slot_index);
 
   GrimoireDiscipline grimoire_discipline() const noexcept {
     return grimoire_discipline_;
   }
   void select_grimoire_discipline(GrimoireDiscipline discipline);
-  const FarmingPlan &farming_plan() const noexcept { return farming_plan_; }
+  const FarmingPlan& farming_plan() const noexcept {
+    return farming_plan_;
+  }
   ProgressionControlMode progression_control_mode() const noexcept {
     return progression_control_mode_;
   }
@@ -148,12 +193,15 @@ public:
     return previous_farm_focus_;
   }
   FarmingChoiceAdvice farming_choice_advice() const noexcept;
-  bool farm_focus_selected() const noexcept { return farm_focus_selected_; }
-  bool needs_farm_focus_choice() const noexcept {
-    return encounter_mode_ == EncounterMode::HeroesJourney &&
-           !farm_focus_selected_;
+  bool farm_focus_selected() const noexcept {
+    return farm_focus_selected_;
   }
-  EncounterMode encounter_mode() const noexcept { return encounter_mode_; }
+  bool needs_farm_focus_choice() const noexcept {
+    return encounter_mode_ == EncounterMode::HeroesJourney && !farm_focus_selected_;
+  }
+  EncounterMode encounter_mode() const noexcept {
+    return encounter_mode_;
+  }
   void set_encounter_mode(EncounterMode mode) noexcept {
     encounter_mode_ = mode;
   }
@@ -170,10 +218,12 @@ public:
 
   void tick_town_penalty();
 
-  void add_party_member(entt::entity member) { (void)member; }
+  void add_party_member(entt::entity member) {
+    (void)member;
+  }
 
-  template <class Fn> void for_each_member(Fn &&fn) const {
-    for (const auto &member : members_) {
+  template <class Fn> void for_each_member(Fn&& fn) const {
+    for (const auto& member : members_) {
       std::invoke(std::forward<Fn>(fn), member.member_id());
     }
   }
@@ -191,15 +241,13 @@ private:
   fl::context::PartyCtx party_ctx_;
   std::unique_ptr<fl::fsm::PartyLoopMachine> party_loop_machine_;
   std::unique_ptr<fl::primitives::EncounterData> encounter_data_{nullptr};
-  EncounterData *raid_encounter_{nullptr}; // borrowed from account RaidData
+  EncounterData* raid_encounter_{nullptr}; // borrowed from account RaidData
   std::deque<fl::primitives::MemberData> members_;
   seerin::AtbEngine atb_;
   std::vector<entt::entity> inventory_;
   GrimoireDiscipline grimoire_discipline_{GrimoireDiscipline::Brawn};
-  FarmingPlan farming_plan_{
-      make_farming_plan(GrimoireDiscipline::Brawn, FarmFocus::Brawn)};
-  ProgressionControlMode progression_control_mode_{
-      ProgressionControlMode::Manual};
+  FarmingPlan farming_plan_{make_farming_plan(GrimoireDiscipline::Brawn, FarmFocus::Brawn)};
+  ProgressionControlMode progression_control_mode_{ProgressionControlMode::Manual};
   std::optional<FarmFocus> previous_farm_focus_;
   bool farm_focus_selected_{false};
   EncounterMode encounter_mode_{EncounterMode::ChaosAttractor};
@@ -244,9 +292,7 @@ private:
   void clear_combat_visuals();
   void restore_observe_to_open_first_slots();
 
-  void
-  resolve_pending_learned_skill(std::list<PendingLearnedSkill>::iterator it,
-                                bool keep_skill);
+  void resolve_pending_learned_skill(std::list<PendingLearnedSkill>::iterator it, bool keep_skill);
 };
 
 } // namespace fl::primitives

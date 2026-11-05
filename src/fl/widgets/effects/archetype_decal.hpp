@@ -10,17 +10,14 @@ struct BeamSpan {
 };
 
 [[nodiscard]] int beam_visual_length(int width) noexcept;
-[[nodiscard]] BeamSpan beam_span_for_progress(int width,
-                                              float progress) noexcept;
+[[nodiscard]] BeamSpan beam_span_for_progress(int width, float progress) noexcept;
 [[nodiscard]] int projectile_embed_x(int width) noexcept;
-[[nodiscard]] int projectile_head_x_for_progress(int width,
-                                                 float progress) noexcept;
+[[nodiscard]] int projectile_head_x_for_progress(int width, float progress) noexcept;
 [[nodiscard]] bool projectile_is_holding(float progress) noexcept;
 
 class ArchetypeDecal final : public DecalAnimation {
 public:
-  ArchetypeDecal(DecalAnimationKind kind, int width, int height,
-                 DecalConfig config = {});
+  ArchetypeDecal(DecalAnimationKind kind, int width, int height, DecalConfig config = {});
 
   [[nodiscard]] Frame render(float progress) const override;
   [[nodiscard]] float duration_seconds() const override;

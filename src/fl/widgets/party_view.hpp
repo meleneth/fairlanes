@@ -27,8 +27,7 @@ public:
 private:
   enum class FocusPane { inventory, player_details, party_log };
 
-  ftxui::Element render_party(const PartyViewLayout &layout,
-                              const BattleRenderBudget &budget);
+  ftxui::Element render_party(const PartyViewLayout& layout, const BattleRenderBudget& budget);
   void set_focus(FocusPane focus);
 
   fl::context::AccountCtx ctx_;

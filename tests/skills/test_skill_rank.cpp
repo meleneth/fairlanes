@@ -19,8 +19,7 @@ TEST_CASE("SkillRank displays ranks as roman numerals", "[skills][rank]") {
   REQUIRE(fl::skills::roman(fl::skills::SkillRank::require(9)) == "IX");
 }
 
-TEST_CASE("SkillKey distinguishes different ranks of the same skill",
-          "[skills][rank]") {
+TEST_CASE("SkillKey distinguishes different ranks of the same skill", "[skills][rank]") {
   const fl::skills::SkillKey thump_i{fl::skills::SkillId::Thump};
   const fl::skills::SkillKey thump_ii{fl::skills::SkillId::Thump,
                                       fl::skills::SkillRank::require(2)};
@@ -31,14 +30,10 @@ TEST_CASE("SkillKey distinguishes different ranks of the same skill",
   REQUIRE(thump_i == fl::skills::SkillKey{fl::skills::SkillId::Thump});
 }
 
-TEST_CASE("Skill display names include non-default rank numerals",
-          "[skills][rank]") {
-  REQUIRE(fl::skills::display_name(
-              fl::skills::SkillKey{fl::skills::SkillId::Thump}) == "Thump");
+TEST_CASE("Skill display names include non-default rank numerals", "[skills][rank]") {
+  REQUIRE(fl::skills::display_name(fl::skills::SkillKey{fl::skills::SkillId::Thump}) == "Thump");
   REQUIRE(fl::skills::display_name(fl::skills::SkillKey{
-              fl::skills::SkillId::Thump, fl::skills::SkillRank::require(3)}) ==
-          "Thump III");
+              fl::skills::SkillId::Thump, fl::skills::SkillRank::require(3)}) == "Thump III");
   REQUIRE(fl::skills::display_name(fl::skills::SkillKey{
-              fl::skills::SkillId::Observe,
-              fl::skills::SkillRank::require(5)}) == "Observe V");
+              fl::skills::SkillId::Observe, fl::skills::SkillRank::require(5)}) == "Observe V");
 }

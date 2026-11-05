@@ -17,12 +17,11 @@ struct EquipmentBuilder {
   int armor{0};
   int max_hp{0};
 
-  entt::entity create(entt::registry &reg) const {
+  entt::entity create(entt::registry& reg) const {
     auto item = reg.create();
 
-    reg.emplace<fl::ecs::components::Equipment>(item, slot, name, armor_kind,
-                                                tier, unique_id, resistances,
-                                                attack, armor, max_hp);
+    reg.emplace<fl::ecs::components::Equipment>(item, slot, name, armor_kind, tier, unique_id,
+                                                resistances, attack, armor, max_hp);
 
     return item;
   }

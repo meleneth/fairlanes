@@ -53,8 +53,7 @@ HolyNova::HolyNova(int width, int height, DecalConfig config) {
   const int spark_count = std::max(30, width * height / 20);
   for (int i = 0; i < spark_count; ++i) {
     impl->sparks.push_back(
-        {angle(rng), radius(rng), start(rng),
-         glyphs[static_cast<std::size_t>(i % glyphs.size())]});
+        {angle(rng), radius(rng), start(rng), glyphs[static_cast<std::size_t>(i % glyphs.size())]});
   }
 
   impl_ = std::move(impl);
@@ -90,22 +89,19 @@ Frame HolyNova::render(float progress) const {
       }
       const float fade = 1.0f - 0.55f * t;
       const auto fg = lerp_color(gold, white, ring);
-      apply_cell(frame, x, y, ring > 0.7f ? '*' : '.', fg, warm_bg,
-                 ring * fade);
+      apply_cell(frame, x, y, ring > 0.7f ? '*' : '.', fg, warm_bg, ring * fade);
     }
   }
 
-  for (const auto &spark : impl_->sparks) {
+  for (const auto& spark : impl_->sparks) {
     if (t < spark.start) {
       continue;
     }
-    const float local =
-        (t - spark.start) / std::max(0.001f, 1.0f - spark.start);
+    const float local = (t - spark.start) / std::max(0.001f, 1.0f - spark.start);
     const float r = spark.radius * local;
     const int x = static_cast<int>(std::round(cx + std::cos(spark.angle) * r));
     const int y = static_cast<int>(std::round(cy + std::sin(spark.angle) * r));
-    apply_cell(frame, x, y, spark.glyph, white, std::nullopt,
-               0.9f * (1.0f - local));
+    apply_cell(frame, x, y, spark.glyph, white, std::nullopt, 0.9f * (1.0f - local));
   }
 
   return frame;
@@ -115,7 +111,9 @@ float HolyNova::duration_seconds() const {
   return impl_ ? impl_->config.duration_seconds : 1.0f;
 }
 
-std::string_view HolyNova::name() const { return "HolyNova"; }
+std::string_view HolyNova::name() const {
+  return "HolyNova";
+}
 
 DecalAnimationKind HolyNova::kind() const {
   return DecalAnimationKind::HolyNova;

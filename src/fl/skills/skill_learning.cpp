@@ -16,17 +16,17 @@ namespace fl::skills {
 namespace {
 
 struct ObserveLearningCtx {
-  fl::context::PartyCtx &party_ctx;
+  fl::context::PartyCtx& party_ctx;
   entt::entity observer{entt::null};
   entt::entity user{entt::null};
   SkillKey skill{SkillId::Observe};
   int roll{0};
-  fl::ecs::components::Stats *stats{};
-  fl::ecs::components::PartyMember *party_member{};
+  fl::ecs::components::Stats* stats{};
+  fl::ecs::components::PartyMember* party_member{};
 };
 
-std::optional<SkillRank> highest_equipped_observe_rank(
-    const fl::ecs::components::PartyMember &party_member) noexcept {
+std::optional<SkillRank>
+highest_equipped_observe_rank(const fl::ecs::components::PartyMember& party_member) noexcept {
   auto highest = std::optional<SkillRank>{};
   for (const auto equipped : party_member.closet().skill_slots) {
     if (!equipped.has_value() || equipped->base != SkillId::Observe) {
@@ -40,32 +40,28 @@ std::optional<SkillRank> highest_equipped_observe_rank(
   return highest;
 }
 
-bool knows_previous_observe_rank(const Grimoire &grimoire,
-                                 SkillRank rank) noexcept {
+bool knows_previous_observe_rank(const Grimoire& grimoire, SkillRank rank) noexcept {
   if (rank.value() == SkillRank::kMin) {
     return true;
   }
 
-  return grimoire.knows(
-      SkillKey{SkillId::Observe, SkillRank::require(rank.value() - 1)});
+  return grimoire.knows(SkillKey{SkillId::Observe, SkillRank::require(rank.value() - 1)});
 }
 
-bool observe_progression_would_skip(
-    const fl::ecs::components::PartyMember &party_member,
-    SkillKey skill) noexcept {
+bool observe_progression_would_skip(const fl::ecs::components::PartyMember& party_member,
+                                    SkillKey skill) noexcept {
   const auto equipped_rank = highest_equipped_observe_rank(party_member);
   if (!equipped_rank.has_value()) {
     return false;
   }
 
-  const auto &grimoire = party_member.member_data().grimoire();
+  const auto& grimoire = party_member.member_data().grimoire();
   return skill.rank.value() > equipped_rank->value() + 1 ||
          !knows_previous_observe_rank(grimoire, skill.rank);
 }
 
-bool observed_skill_exceeds_observe_rank(
-    const fl::ecs::components::PartyMember &party_member,
-    SkillKey skill) noexcept {
+bool observed_skill_exceeds_observe_rank(const fl::ecs::components::PartyMember& party_member,
+                                         SkillKey skill) noexcept {
   const auto equipped_rank = highest_equipped_observe_rank(party_member);
   return equipped_rank.has_value() && !(skill.rank <= *equipped_rank);
 }
@@ -75,15 +71,14 @@ bool roll_failed(SkillKey skill, int roll) noexcept {
   return chance <= 0 || roll > chance;
 }
 
-void append_blocked_learning_log(fl::context::PartyCtx &party_ctx,
-                                 const fl::ecs::components::Stats &stats,
-                                 SkillKey skill,
+void append_blocked_learning_log(fl::context::PartyCtx& party_ctx,
+                                 const fl::ecs::components::Stats& stats, SkillKey skill,
                                  LearnObservedSkillResult result) {
   switch (result) {
   case LearnObservedSkillResult::NoObserveEquipped:
-    party_ctx.log().append_markup(fmt::format(
-        "[player_name]({}) couldn't study [ability]({}): no Observe equipped.",
-        stats.name_, display_name(skill)));
+    party_ctx.log().append_markup(
+        fmt::format("[player_name]({}) couldn't study [ability]({}): no Observe equipped.",
+                    stats.name_, display_name(skill)));
     return;
   case LearnObservedSkillResult::InsufficientObserveRank:
     party_ctx.log().append_markup(
@@ -102,13 +97,11 @@ void append_blocked_learning_log(fl::context::PartyCtx &party_ctx,
   case LearnObservedSkillResult::MissingObserver:
   case LearnObservedSkillResult::ObserverDead:
   case LearnObservedSkillResult::AlreadyKnown:
-  case LearnObservedSkillResult::RollFailed:
-    return;
+  case LearnObservedSkillResult::RollFailed: return;
   }
 }
 
-LearnObservedSkillResult
-evaluate_observed_skill_learning(const ObserveLearningCtx &ctx) noexcept {
+LearnObservedSkillResult evaluate_observed_skill_learning(const ObserveLearningCtx& ctx) noexcept {
   if (ctx.observer == ctx.user) {
     return LearnObservedSkillResult::SameEntity;
   }
@@ -121,7 +114,7 @@ evaluate_observed_skill_learning(const ObserveLearningCtx &ctx) noexcept {
     return LearnObservedSkillResult::ObserverDead;
   }
 
-  const auto &grimoire = ctx.party_member->member_data().grimoire();
+  const auto& grimoire = ctx.party_member->member_data().grimoire();
   if (grimoire.knows(ctx.skill)) {
     return LearnObservedSkillResult::AlreadyKnown;
   }
@@ -150,9 +143,8 @@ evaluate_observed_skill_learning(const ObserveLearningCtx &ctx) noexcept {
   return LearnObservedSkillResult::Learned;
 }
 
-LearnObservedSkillResult
-apply_observed_skill_learning(ObserveLearningCtx &ctx) {
-  auto &grimoire = ctx.party_member->member_data().grimoire();
+LearnObservedSkillResult apply_observed_skill_learning(ObserveLearningCtx& ctx) {
+  auto& grimoire = ctx.party_member->member_data().grimoire();
   if (!grimoire.learn(ctx.skill)) {
     return LearnObservedSkillResult::AlreadyKnown;
   }
@@ -161,22 +153,20 @@ apply_observed_skill_learning(ObserveLearningCtx &ctx) {
     (void)ctx.party_member->equip_known_skill(ctx.skill);
   }
 
-  ctx.party_ctx.party_data().watch_skill_learned_this_combat(ctx.observer,
-                                                             ctx.skill);
+  ctx.party_ctx.party_data().watch_skill_learned_this_combat(ctx.observer, ctx.skill);
 
-  ctx.party_ctx.log().append_markup(
-      fmt::format("[player_name]({}) learned [ability]({})!", ctx.stats->name_,
-                  display_name(ctx.skill)));
+  ctx.party_ctx.log().append_markup(fmt::format("[player_name]({}) learned [ability]({})!",
+                                                ctx.stats->name_, display_name(ctx.skill)));
   return LearnObservedSkillResult::Learned;
 }
 
 } // namespace
 
-LearnObservedSkillResult
-learn_observed_skill_result_with_roll(fl::context::PartyCtx &party_ctx,
-                                      entt::entity observer, entt::entity user,
-                                      SkillKey skill, int roll) {
-  auto &reg = party_ctx.reg();
+LearnObservedSkillResult learn_observed_skill_result_with_roll(fl::context::PartyCtx& party_ctx,
+                                                               entt::entity observer,
+                                                               entt::entity user, SkillKey skill,
+                                                               int roll) {
+  auto& reg = party_ctx.reg();
   ObserveLearningCtx ctx{
       .party_ctx = party_ctx,
       .observer = observer,
@@ -198,37 +188,33 @@ learn_observed_skill_result_with_roll(fl::context::PartyCtx &party_ctx,
   return apply_observed_skill_learning(ctx);
 }
 
-bool learn_observed_skill_with_roll(fl::context::PartyCtx &party_ctx,
-                                    entt::entity observer, entt::entity user,
-                                    SkillKey skill, int roll) {
-  return learn_observed_skill_result_with_roll(party_ctx, observer, user, skill,
-                                               roll) ==
+bool learn_observed_skill_with_roll(fl::context::PartyCtx& party_ctx, entt::entity observer,
+                                    entt::entity user, SkillKey skill, int roll) {
+  return learn_observed_skill_result_with_roll(party_ctx, observer, user, skill, roll) ==
          LearnObservedSkillResult::Learned;
 }
 
-bool maybe_teach_observed_skill(fl::context::PartyCtx &party_ctx,
-                                entt::entity observer, entt::entity user,
-                                SkillKey skill) {
-  auto rs = party_ctx.rng().stream(
-      "encounter/learn-skill",
-      static_cast<std::underlying_type_t<entt::entity>>(observer));
+bool maybe_teach_observed_skill(fl::context::PartyCtx& party_ctx, entt::entity observer,
+                                entt::entity user, SkillKey skill) {
+  auto rs = party_ctx.rng().stream("encounter/learn-skill",
+                                   static_cast<std::underlying_type_t<entt::entity>>(observer));
   return learn_observed_skill_with_roll(party_ctx, observer, user, skill,
                                         rs.uniform_int<int>(1, 100));
 }
 
-void teach_party_from_observed_skill(fl::context::PartyCtx &party_ctx,
-                                     entt::entity user, SkillKey skill) {
-  for (const auto &member : party_ctx.party_data().members()) {
+void teach_party_from_observed_skill(fl::context::PartyCtx& party_ctx, entt::entity user,
+                                     SkillKey skill) {
+  for (const auto& member : party_ctx.party_data().members()) {
     maybe_teach_observed_skill(party_ctx, member.member_id(), user, skill);
   }
 }
 
-void teach_party_from_observed_skill(fl::context::EncounterCtx &ctx,
-                                     entt::entity user, SkillKey skill) {
+void teach_party_from_observed_skill(fl::context::EncounterCtx& ctx, entt::entity user,
+                                     SkillKey skill) {
   for (auto entity : ctx.encounter().defenders().members()) {
-    auto *member = ctx.reg().try_get<fl::ecs::components::PartyMember>(entity);
+    auto* member = ctx.reg().try_get<fl::ecs::components::PartyMember>(entity);
     if (!member) continue;
-    auto &party = member->party().party_data();
+    auto& party = member->party().party_data();
     maybe_teach_observed_skill(party.party_ctx(), entity, user, skill);
   }
 }

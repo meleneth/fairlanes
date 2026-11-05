@@ -1,7 +1,7 @@
 #pragma once
 
-#include <optional>
 #include <memory>
+#include <optional>
 
 #include <ftxui/component/component.hpp>
 
@@ -23,8 +23,7 @@ public:
   ChaosAttractGrandCentral();
   ~ChaosAttractGrandCentral();
 
-  [[nodiscard]] ChaosAttractExit
-  main_loop(ChaosAttractRunOptions opts = {});
+  [[nodiscard]] ChaosAttractExit main_loop(ChaosAttractRunOptions opts = {});
 
 private:
   std::unique_ptr<GrandCentral> attract_game_;

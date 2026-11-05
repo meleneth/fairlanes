@@ -24,14 +24,16 @@ struct PartyMember {
   fl::ecs::Entity party_;
   fl::context::EntityCtx ctx_;
   entt::entity closet_;
-  fl::primitives::MemberData *member_data_{};
+  fl::primitives::MemberData* member_data_{};
 
-  PartyMember(fl::context::EntityCtx ctx, std::string /*name*/,
-              entt::entity party, fl::primitives::MemberData &member_data);
+  PartyMember(fl::context::EntityCtx ctx, std::string /*name*/, entt::entity party,
+              fl::primitives::MemberData& member_data);
 
-  [[nodiscard]] Closet &closet() { return ctx_.reg().get<Closet>(closet_); }
+  [[nodiscard]] Closet& closet() {
+    return ctx_.reg().get<Closet>(closet_);
+  }
 
-  [[nodiscard]] const Closet &closet() const {
+  [[nodiscard]] const Closet& closet() const {
     return ctx_.reg().get<Closet>(closet_);
   }
 
@@ -39,17 +41,19 @@ struct PartyMember {
     return closet_;
   }
 
-  [[nodiscard]] IsParty &party() { return ctx_.reg().get<IsParty>(party_); }
-
-  [[nodiscard]] const IsParty &party() const {
+  [[nodiscard]] IsParty& party() {
     return ctx_.reg().get<IsParty>(party_);
   }
 
-  [[nodiscard]] fl::primitives::MemberData &member_data() {
+  [[nodiscard]] const IsParty& party() const {
+    return ctx_.reg().get<IsParty>(party_);
+  }
+
+  [[nodiscard]] fl::primitives::MemberData& member_data() {
     return *member_data_;
   }
 
-  [[nodiscard]] const fl::primitives::MemberData &member_data() const {
+  [[nodiscard]] const fl::primitives::MemberData& member_data() const {
     return *member_data_;
   }
 
@@ -58,8 +62,7 @@ struct PartyMember {
 };
 
 template <typename PM = PartyMember, typename Fn>
-inline void for_each_member(entt::registry &reg, entt::entity party_e,
-                            Fn &&fn) {
+inline void for_each_member(entt::registry& reg, entt::entity party_e, Fn&& fn) {
   auto view = reg.view<PM>();
   for (auto e : view) {
     if (view.get(e).party_ == party_e) {
@@ -69,13 +72,12 @@ inline void for_each_member(entt::registry &reg, entt::entity party_e,
 }
 
 template <typename PM = PartyMember, typename Fn>
-inline void for_each_member(entt::registry *reg, entt::entity party_e,
-                            Fn &&fn) {
+inline void for_each_member(entt::registry* reg, entt::entity party_e, Fn&& fn) {
   for_each_member<PM>(*reg, party_e, std::forward<Fn>(fn));
 }
 
 template <typename Ctx, typename PM = PartyMember, typename Fn>
-inline void for_each_member(Ctx &ctx, entt::entity party_e, Fn &&fn) {
+inline void for_each_member(Ctx& ctx, entt::entity party_e, Fn&& fn) {
   for_each_member<PM>(*ctx.reg(), party_e, std::forward<Fn>(fn));
 }
 

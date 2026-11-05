@@ -6,8 +6,7 @@
 
 namespace fl::widgets {
 
-PartyStatus::PartyStatus(fl::primitives::PartyData &party_data)
-    : party_data_(party_data) {}
+PartyStatus::PartyStatus(fl::primitives::PartyData& party_data) : party_data_(party_data) {}
 
 ftxui::Element PartyStatus::Render() {
   // Determine party status
@@ -15,8 +14,7 @@ ftxui::Element PartyStatus::Render() {
   ftxui::Color status_color;
   std::string detail_text;
   const bool has_encounter = party_data_.has_encounter();
-  const bool show_dead_status =
-      !has_encounter && party_data_.all_members_dead();
+  const bool show_dead_status = !has_encounter && party_data_.all_members_dead();
 
   if (has_encounter) {
     status_text = "FIGHTING";
@@ -37,13 +35,10 @@ ftxui::Element PartyStatus::Render() {
 
     constexpr int bar_width = 20;
     int filled = static_cast<int>(bar_width * percent);
-    if (filled < 0)
-      filled = 0;
-    if (filled > bar_width)
-      filled = bar_width;
+    if (filled < 0) filled = 0;
+    if (filled > bar_width) filled = bar_width;
     int empty = bar_width - filled;
-    if (empty < 0)
-      empty = 0;
+    if (empty < 0) empty = 0;
 
     std::string bar;
     bar.reserve(bar_width * 2);
@@ -73,10 +68,9 @@ ftxui::Element PartyStatus::Render() {
       detail_text = "Floor " + std::to_string(route->floor) + " try " +
                     std::to_string(party_data_.tower_floor_attempts());
     } else {
-      const auto &plan = party_data_.farming_plan();
-      detail_text =
-          "Farm: " + std::string{fl::primitives::display_name(plan.focus)} +
-          " / " + std::string{fl::primitives::display_name(plan.reward_class)};
+      const auto& plan = party_data_.farming_plan();
+      detail_text = "Farm: " + std::string{fl::primitives::display_name(plan.focus)} + " / " +
+                    std::string{fl::primitives::display_name(plan.reward_class)};
     }
   }
 

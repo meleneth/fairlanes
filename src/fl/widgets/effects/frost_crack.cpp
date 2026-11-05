@@ -60,12 +60,12 @@ FrostCrack::FrostCrack(int width, int height, DecalConfig config) {
   for (int b = 0; b < branch_count; ++b) {
     int x = start_x(rng);
     int y = start_y(rng);
-    const int steps = std::uniform_int_distribution<int>(
-        std::max(6, width / 3), std::max(8, width))(rng);
+    const int steps =
+        std::uniform_int_distribution<int>(std::max(6, width / 3), std::max(8, width))(rng);
     float t = step_t(rng) * 0.3f;
     for (int i = 0; i < steps; ++i) {
-      const char glyph = glyphs[static_cast<std::size_t>(
-          std::uniform_int_distribution<int>(0, 3)(rng))];
+      const char glyph =
+          glyphs[static_cast<std::size_t>(std::uniform_int_distribution<int>(0, 3)(rng))];
       impl->cracks.push_back({x, y, std::min(1.0f, t), glyph});
       x = std::clamp(x + step_dir(rng), 0, std::max(0, width - 1));
       y = std::clamp(y + step_dir(rng), 0, std::max(0, height - 1));
@@ -73,8 +73,7 @@ FrostCrack::FrostCrack(int width, int height, DecalConfig config) {
 
       if (std::uniform_int_distribution<int>(0, 10)(rng) < 3) {
         const int fx = std::clamp(x + step_dir(rng), 0, std::max(0, width - 1));
-        const int fy =
-            std::clamp(y + step_dir(rng), 0, std::max(0, height - 1));
+        const int fy = std::clamp(y + step_dir(rng), 0, std::max(0, height - 1));
         impl->frost.push_back({fx, fy, std::min(1.0f, t)});
       }
     }
@@ -97,23 +96,21 @@ Frame FrostCrack::render(float progress) const {
   const auto white = palette(41);
   const auto ice_bg = palette(25);
 
-  for (const auto &c : impl_->cracks) {
+  for (const auto& c : impl_->cracks) {
     if (t < c.appear) {
       continue;
     }
     const float local = (t - c.appear) / std::max(0.001f, 1.0f - c.appear);
     const float fade = local < 0.7f ? 1.0f : (1.0f - (local - 0.7f) / 0.3f);
-    apply_cell(frame, c.x, c.y, c.glyph, lerp_color(cyan, white, local), ice_bg,
-               fade);
+    apply_cell(frame, c.x, c.y, c.glyph, lerp_color(cyan, white, local), ice_bg, fade);
   }
 
-  for (const auto &f : impl_->frost) {
+  for (const auto& f : impl_->frost) {
     if (t < f.start) {
       continue;
     }
     const float local = (t - f.start) / std::max(0.001f, 1.0f - f.start);
-    apply_cell(frame, f.x, f.y, '.', white, std::nullopt,
-               0.45f * (1.0f - local));
+    apply_cell(frame, f.x, f.y, '.', white, std::nullopt, 0.45f * (1.0f - local));
   }
 
   return frame;
@@ -123,7 +120,9 @@ float FrostCrack::duration_seconds() const {
   return impl_ ? impl_->config.duration_seconds : 1.0f;
 }
 
-std::string_view FrostCrack::name() const { return "FrostCrack"; }
+std::string_view FrostCrack::name() const {
+  return "FrostCrack";
+}
 
 DecalAnimationKind FrostCrack::kind() const {
   return DecalAnimationKind::FrostCrack;

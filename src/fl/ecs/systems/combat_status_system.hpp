@@ -24,8 +24,7 @@ public:
   using Scheduler = seerin::TimedScheduler<seerin::AtbOutEvent>;
 
   struct ApplyStatusRequest {
-    fl::ecs::components::CombatStatusKind kind{
-        fl::ecs::components::CombatStatusKind::Blind};
+    fl::ecs::components::CombatStatusKind kind{fl::ecs::components::CombatStatusKind::Blind};
     std::string_view name{"Status"};
     entt::entity source{entt::null};
     entt::entity target{entt::null};
@@ -40,10 +39,8 @@ public:
   };
 
   struct FieldDebuffRequest {
-    fl::ecs::components::FieldTeam team{
-        fl::ecs::components::FieldTeam::Defenders};
-    fl::ecs::components::FieldDebuffKind kind{
-        fl::ecs::components::FieldDebuffKind::AccuracyDown};
+    fl::ecs::components::FieldTeam team{fl::ecs::components::FieldTeam::Defenders};
+    fl::ecs::components::FieldDebuffKind kind{fl::ecs::components::FieldDebuffKind::AccuracyDown};
     std::string_view name{"Field Debuff"};
     entt::entity source{entt::null};
     int value{0};
@@ -51,56 +48,46 @@ public:
     bool removable{true};
   };
 
-  static bool apply_status(fl::context::EncounterCtx &party_ctx,
-                           Scheduler &scheduler,
-                           const ApplyStatusRequest &request);
-  static bool clear_status(fl::context::EncounterCtx &party_ctx,
-                           entt::entity target,
+  static bool apply_status(fl::context::EncounterCtx& party_ctx, Scheduler& scheduler,
+                           const ApplyStatusRequest& request);
+  static bool clear_status(fl::context::EncounterCtx& party_ctx, entt::entity target,
                            fl::ecs::components::CombatStatusKind kind);
-  static int cleanse(fl::context::EncounterCtx &party_ctx, entt::entity source,
+  static int cleanse(fl::context::EncounterCtx& party_ctx, entt::entity source,
                      entt::entity target);
 
-  static bool has_status(entt::registry &reg, entt::entity target,
+  static bool has_status(entt::registry& reg, entt::entity target,
                          fl::ecs::components::CombatStatusKind kind);
-  static int status_value(entt::registry &reg, entt::entity target,
+  static int status_value(entt::registry& reg, entt::entity target,
                           fl::ecs::components::CombatStatusKind kind);
 
-  static bool can_use_skill(entt::registry &reg, entt::entity actor,
-                            fl::skills::SkillKey skill);
-  static bool consume_stun_turn(fl::context::EncounterCtx &party_ctx,
-                                entt::entity actor);
-  static bool attack_misses(fl::context::AttackCtx &ctx);
-  static void apply_damage_modifiers(fl::context::AttackCtx &ctx,
-                                     fl::primitives::Damage &damage);
+  static bool can_use_skill(entt::registry& reg, entt::entity actor, fl::skills::SkillKey skill);
+  static bool consume_stun_turn(fl::context::EncounterCtx& party_ctx, entt::entity actor);
+  static bool attack_misses(fl::context::AttackCtx& ctx);
+  static void apply_damage_modifiers(fl::context::AttackCtx& ctx, fl::primitives::Damage& damage);
 
-  static int heal(fl::context::EncounterCtx &party_ctx, entt::entity source,
-                  entt::entity target, int amount, std::string_view label);
-  static int drain(fl::context::EncounterCtx &party_ctx, entt::entity source,
-                   entt::entity target, fl::primitives::Damage damage,
-                   int heal_percent, std::string_view label);
+  static int heal(fl::context::EncounterCtx& party_ctx, entt::entity source, entt::entity target,
+                  int amount, std::string_view label);
+  static int drain(fl::context::EncounterCtx& party_ctx, entt::entity source, entt::entity target,
+                   fl::primitives::Damage damage, int heal_percent, std::string_view label);
 
-  static void apply_field_debuff(fl::context::EncounterCtx &party_ctx,
-                                 const FieldDebuffRequest &request);
-  static void apply_field_debuff(fl::context::EncounterCtx &party_ctx,
-                                 Scheduler &scheduler,
-                                 const FieldDebuffRequest &request);
-  static bool has_field_debuff(fl::context::EncounterCtx &party_ctx,
+  static void apply_field_debuff(fl::context::EncounterCtx& party_ctx,
+                                 const FieldDebuffRequest& request);
+  static void apply_field_debuff(fl::context::EncounterCtx& party_ctx, Scheduler& scheduler,
+                                 const FieldDebuffRequest& request);
+  static bool has_field_debuff(fl::context::EncounterCtx& party_ctx,
                                fl::ecs::components::FieldTeam team,
                                fl::ecs::components::FieldDebuffKind kind);
-  static int field_debuff_value(fl::context::EncounterCtx &party_ctx,
+  static int field_debuff_value(fl::context::EncounterCtx& party_ctx,
                                 fl::ecs::components::FieldTeam team,
                                 fl::ecs::components::FieldDebuffKind kind);
-  static int turn_tempo_modifier_percent(entt::registry &reg,
-                                         entt::entity actor);
+  static int turn_tempo_modifier_percent(entt::registry& reg, entt::entity actor);
 
 private:
-  static void clear_status_by_id(fl::context::EncounterCtx &party_ctx,
-                                 entt::entity target, int status_id);
-  static void schedule_burn_tick(fl::context::EncounterCtx &party_ctx,
-                                 Scheduler &scheduler, entt::entity target,
+  static void clear_status_by_id(fl::context::EncounterCtx& party_ctx, entt::entity target,
                                  int status_id);
-  static void clear_field_debuff_by_id(fl::context::EncounterCtx &party_ctx,
-                                       int field_id);
+  static void schedule_burn_tick(fl::context::EncounterCtx& party_ctx, Scheduler& scheduler,
+                                 entt::entity target, int status_id);
+  static void clear_field_debuff_by_id(fl::context::EncounterCtx& party_ctx, int field_id);
 };
 
 } // namespace fl::ecs::systems

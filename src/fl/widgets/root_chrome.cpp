@@ -25,8 +25,7 @@ ftxui::Element render_help_keys(std::string_view keys) {
   return ftxui::hbox(std::move(characters));
 }
 
-ftxui::Element render_help_line(std::string_view keys,
-                                std::string_view description) {
+ftxui::Element render_help_line(std::string_view keys, std::string_view description) {
   std::vector<ftxui::Element> parts;
   parts.push_back(render_help_keys(keys));
   while (!description.empty()) {
@@ -36,20 +35,17 @@ ftxui::Element render_help_line(std::string_view keys,
     if (slash == std::string_view::npos) {
       break;
     }
-    parts.push_back(ftxui::text("/") |
-                    ftxui::color(fl::lospec500::color_at(25)));
+    parts.push_back(ftxui::text("/") | ftxui::color(fl::lospec500::color_at(25)));
     description.remove_prefix(slash + 1);
   }
   return ftxui::hbox(std::move(parts));
 }
 
-ftxui::Element render_root_chrome(const fl::primitives::WorldClock &world_clock,
-                                  ftxui::Element content,
-                                  std::optional<VisitorCountdown> visitor) {
+ftxui::Element render_root_chrome(const fl::primitives::WorldClock& world_clock,
+                                  ftxui::Element content, std::optional<VisitorCountdown> visitor) {
   return ftxui::vbox({
       render_moon_calendar(world_clock, visitor),
-      ftxui::separator() |
-          fl::lospec500::on_not_black(fl::lospec500::color_at(32)),
+      ftxui::separator() | fl::lospec500::on_not_black(fl::lospec500::color_at(32)),
       std::move(content) | ftxui::flex,
   });
 }

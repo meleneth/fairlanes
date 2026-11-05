@@ -32,13 +32,11 @@ namespace {
 [[nodiscard]] char glyph_for_heat(float heat, float noise) {
   static constexpr std::string_view glyphs = " .,:;!*^#";
   const float warped = clamp01(heat * 0.88f + noise * 0.18f);
-  const auto index =
-      static_cast<std::size_t>(warped * static_cast<float>(glyphs.size() - 1));
+  const auto index = static_cast<std::size_t>(warped * static_cast<float>(glyphs.size() - 1));
   return glyphs[index];
 }
 
-[[nodiscard]] ftxui::Color foreground_for(float age01, float heat,
-                                          const FlameWaveConfig &cfg) {
+[[nodiscard]] ftxui::Color foreground_for(float age01, float heat, const FlameWaveConfig& cfg) {
   const auto blue = rgb(25, 30, 120);
   const auto violet = rgb(80, 36, 160);
   const auto red = rgb(225, 42, 24);
@@ -50,18 +48,16 @@ namespace {
     return lerp_color(blue, violet, age01 / std::max(cfg.blue_phase, 0.001f));
   }
   if (age01 < cfg.red_phase) {
-    const float phase = (age01 - cfg.blue_phase) /
-                        std::max(cfg.red_phase - cfg.blue_phase, 0.001f);
+    const float phase = (age01 - cfg.blue_phase) / std::max(cfg.red_phase - cfg.blue_phase, 0.001f);
     return lerp_color(violet, red, phase);
   }
   if (age01 < cfg.yellow_phase) {
-    const float phase = (age01 - cfg.red_phase) /
-                        std::max(cfg.yellow_phase - cfg.red_phase, 0.001f);
+    const float phase =
+        (age01 - cfg.red_phase) / std::max(cfg.yellow_phase - cfg.red_phase, 0.001f);
     return lerp_color(orange, yellow, std::max(phase, heat * 0.30f));
   }
   return lerp_color(yellow, ember,
-                    (age01 - cfg.yellow_phase) /
-                        std::max(1.0f - cfg.yellow_phase, 0.001f));
+                    (age01 - cfg.yellow_phase) / std::max(1.0f - cfg.yellow_phase, 0.001f));
 }
 
 [[nodiscard]] ftxui::Color background_for(float age01, float heat) {
@@ -78,14 +74,14 @@ namespace {
 
 } // namespace
 
-RenderCell &Frame::at(int x, int y) {
+RenderCell& Frame::at(int x, int y) {
   if (x < 0 || y < 0 || x >= width || y >= height) {
     throw std::out_of_range("Frame::at coordinate out of range");
   }
   return cells[static_cast<std::size_t>(y * width + x)];
 }
 
-const RenderCell &Frame::at(int x, int y) const {
+const RenderCell& Frame::at(int x, int y) const {
   if (x < 0 || y < 0 || x >= width || y >= height) {
     throw std::out_of_range("Frame::at coordinate out of range");
   }
@@ -97,8 +93,7 @@ FlameWave::FlameWave(FlameWaveConfig config) : config_(config) {}
 float FlameWave::noise01(int x, int y, int octave) const {
   std::uint32_t h = config_.seed;
   h ^= static_cast<std::uint32_t>(x + 0x9E3779B9u + (h << 6u) + (h >> 2u));
-  h ^= static_cast<std::uint32_t>((y + 37 * octave) + 0x85EBCA6Bu + (h << 6u) +
-                                  (h >> 2u));
+  h ^= static_cast<std::uint32_t>((y + 37 * octave) + 0x85EBCA6Bu + (h << 6u) + (h >> 2u));
   h ^= h >> 16u;
   h *= 0x7FEB352Du;
   h ^= h >> 15u;
@@ -113,16 +108,11 @@ Frame FlameWave::render(float progress, int width, int height) const {
   }
 
   const float t = clamp01(progress);
-  Frame frame{
-      width, height,
-      std::vector<RenderCell>(static_cast<std::size_t>(width * height))};
+  Frame frame{width, height, std::vector<RenderCell>(static_cast<std::size_t>(width * height))};
 
-  const float ignition_px =
-      std::max(1.0f, config_.ignition_width * static_cast<float>(width));
-  const float front_x =
-      t * (static_cast<float>(width) + ignition_px) - ignition_px;
-  const float max_flame_height =
-      std::max(1.0f, config_.flame_height * static_cast<float>(height));
+  const float ignition_px = std::max(1.0f, config_.ignition_width * static_cast<float>(width));
+  const float front_x = t * (static_cast<float>(width) + ignition_px) - ignition_px;
+  const float max_flame_height = std::max(1.0f, config_.flame_height * static_cast<float>(height));
 
   for (int y = 0; y < height; ++y) {
     const float from_bottom = static_cast<float>(height - 1 - y);
@@ -133,42 +123,35 @@ Frame FlameWave::render(float progress, int width, int height) const {
         continue;
       }
 
-      const float age01 = clamp01(
-          passed_by / std::max(1.0f, static_cast<float>(width) * 0.85f));
+      const float age01 = clamp01(passed_by / std::max(1.0f, static_cast<float>(width) * 0.85f));
       const float n0 = noise01(x, y, 0);
       const float n1 = noise01(x / 2, y / 2, 1);
       const float turbulence = (n0 - 0.5f) * config_.turbulence;
 
       const float front_lip =
-          1.0f -
-          smoothstep(-ignition_px * 0.25f, ignition_px, std::abs(passed_by));
+          1.0f - smoothstep(-ignition_px * 0.25f, ignition_px, std::abs(passed_by));
       const float age_decay = std::exp(-age01 * config_.cooling_rate);
-      const float local_height = max_flame_height *
-                                 (0.30f + 0.70f * age_decay) *
-                                 (0.72f + n1 * 0.56f + turbulence);
+      const float local_height =
+          max_flame_height * (0.30f + 0.70f * age_decay) * (0.72f + n1 * 0.56f + turbulence);
 
       if (from_bottom > local_height) {
         continue;
       }
 
-      const float vertical_heat =
-          1.0f - (from_bottom / std::max(local_height, 0.001f));
-      const float bottom_bias =
-          1.0f - smoothstep(0.0f, max_flame_height, from_bottom);
-      const float heat = clamp01(
-          (vertical_heat * 0.68f + bottom_bias * 0.36f + front_lip * 0.38f) *
-              age_decay +
-          (n0 - 0.45f) * config_.turbulence);
+      const float vertical_heat = 1.0f - (from_bottom / std::max(local_height, 0.001f));
+      const float bottom_bias = 1.0f - smoothstep(0.0f, max_flame_height, from_bottom);
+      const float heat =
+          clamp01((vertical_heat * 0.68f + bottom_bias * 0.36f + front_lip * 0.38f) * age_decay +
+                  (n0 - 0.45f) * config_.turbulence);
 
       if (heat < 0.08f) {
         continue;
       }
 
-      auto &cell = frame.at(x, y);
+      auto& cell = frame.at(x, y);
       cell.alpha = heat;
       cell.fg = foreground_for(age01, heat, config_);
-      cell.glyph =
-          config_.use_foreground_sparks ? glyph_for_heat(heat, n0) : ' ';
+      cell.glyph = config_.use_foreground_sparks ? glyph_for_heat(heat, n0) : ' ';
 
       if (config_.use_background_glow && heat > 0.16f) {
         cell.bg = background_for(age01, heat);
@@ -179,7 +162,7 @@ Frame FlameWave::render(float progress, int width, int height) const {
   return frame;
 }
 
-ftxui::Element to_element(const Frame &frame) {
+ftxui::Element to_element(const Frame& frame) {
   std::vector<ftxui::Element> rows;
   rows.reserve(static_cast<std::size_t>(frame.height));
 
@@ -188,7 +171,7 @@ ftxui::Element to_element(const Frame &frame) {
     cols.reserve(static_cast<std::size_t>(frame.width));
 
     for (int x = 0; x < frame.width; ++x) {
-      const auto &cell = frame.at(x, y);
+      const auto& cell = frame.at(x, y);
       auto elem = ftxui::text(std::string(1, cell.glyph));
       if (cell.fg) {
         elem = elem | ftxui::color(*cell.fg);
@@ -205,8 +188,7 @@ ftxui::Element to_element(const Frame &frame) {
   return ftxui::vbox(std::move(rows));
 }
 
-ftxui::Element overlay_text(const std::vector<std::string> &lines,
-                            const Frame &decal) {
+ftxui::Element overlay_text(const std::vector<std::string>& lines, const Frame& decal) {
   std::vector<ftxui::Element> rows;
   rows.reserve(static_cast<std::size_t>(decal.height));
 
@@ -221,7 +203,7 @@ ftxui::Element overlay_text(const std::vector<std::string> &lines,
         base = lines[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)];
       }
 
-      const auto &cell = decal.at(x, y);
+      const auto& cell = decal.at(x, y);
       const char glyph = cell.glyph == ' ' ? base : cell.glyph;
       auto elem = ftxui::text(std::string(1, glyph));
 

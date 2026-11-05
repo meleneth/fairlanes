@@ -27,12 +27,10 @@ namespace fl::widgets {
 namespace {
 
 std::string trim_copy(std::string_view value) {
-  while (!value.empty() &&
-         std::isspace(static_cast<unsigned char>(value.front()))) {
+  while (!value.empty() && std::isspace(static_cast<unsigned char>(value.front()))) {
     value.remove_prefix(1);
   }
-  while (!value.empty() &&
-         std::isspace(static_cast<unsigned char>(value.back()))) {
+  while (!value.empty() && std::isspace(static_cast<unsigned char>(value.back()))) {
     value.remove_suffix(1);
   }
   return std::string(value);
@@ -42,15 +40,13 @@ std::vector<std::string_view> split_words(std::string_view value) {
   std::vector<std::string_view> words;
 
   while (!value.empty()) {
-    while (!value.empty() &&
-           std::isspace(static_cast<unsigned char>(value.front()))) {
+    while (!value.empty() && std::isspace(static_cast<unsigned char>(value.front()))) {
       value.remove_prefix(1);
     }
 
-    const auto *start = value.data();
+    const auto* start = value.data();
     std::size_t length = 0;
-    while (length < value.size() &&
-           !std::isspace(static_cast<unsigned char>(value[length]))) {
+    while (length < value.size() && !std::isspace(static_cast<unsigned char>(value[length]))) {
       ++length;
     }
 
@@ -63,32 +59,31 @@ std::vector<std::string_view> split_words(std::string_view value) {
   return words;
 }
 
-bool parse_index(std::string_view value, std::size_t &out) {
-  const auto *first = value.data();
-  const auto *last = first + value.size();
+bool parse_index(std::string_view value, std::size_t& out) {
+  const auto* first = value.data();
+  const auto* last = first + value.size();
   auto [ptr, ec] = std::from_chars(first, last, out);
   return ec == std::errc{} && ptr == last;
 }
 
 std::string entity_label(entt::entity entity) {
-  return std::to_string(
-      static_cast<std::underlying_type_t<entt::entity>>(entity));
+  return std::to_string(static_cast<std::underlying_type_t<entt::entity>>(entity));
 }
 
-std::string entity_name(entt::registry &reg, entt::entity entity) {
+std::string entity_name(entt::registry& reg, entt::entity entity) {
   if (entity == entt::null) {
     return "<none>";
   }
 
   using fl::ecs::components::Stats;
-  if (auto *stats = reg.try_get<Stats>(entity)) {
+  if (auto* stats = reg.try_get<Stats>(entity)) {
     return stats->name_;
   }
 
   return "entity #" + entity_label(entity);
 }
 
-std::string debug_entity_label(entt::registry &reg, entt::entity entity) {
+std::string debug_entity_label(entt::registry& reg, entt::entity entity) {
   if (entity == entt::null) {
     return "<none>";
   }
@@ -96,13 +91,11 @@ std::string debug_entity_label(entt::registry &reg, entt::entity entity) {
   return entity_name(reg, entity) + " #" + entity_label(entity);
 }
 
-bool contains_entity(const std::vector<entt::entity> &entities,
-                     entt::entity entity) {
+bool contains_entity(const std::vector<entt::entity>& entities, entt::entity entity) {
   return std::find(entities.begin(), entities.end(), entity) != entities.end();
 }
 
-std::string join_strings(const std::vector<std::string> &parts,
-                         std::string_view separator) {
+std::string join_strings(const std::vector<std::string>& parts, std::string_view separator) {
   std::string out;
   for (std::size_t i = 0; i < parts.size(); ++i) {
     if (i > 0) {
@@ -115,14 +108,14 @@ std::string join_strings(const std::vector<std::string> &parts,
 
 std::string render_targets_help() {
   std::vector<std::string> names;
-  for (const auto &target : fl::widgets::supported_battle_render_targets()) {
+  for (const auto& target : fl::widgets::supported_battle_render_targets()) {
     names.emplace_back(target.name);
   }
   names.emplace_back("auto");
   return join_strings(names, "|");
 }
 
-std::string render_target_description(const BattleRenderTargetSpec &target) {
+std::string render_target_description(const BattleRenderTargetSpec& target) {
   return std::string(target.name) + " " + std::to_string(target.width) + "x" +
          std::to_string(target.height);
 }
@@ -134,14 +127,12 @@ std::string current_render_target_line() {
   }
 
   const auto budget = current_battle_render_budget();
-  return "render target auto (currently " +
-         std::string(profile_name(budget.profile)) + " " +
-         std::to_string(budget.requested_width) + "x" +
-         std::to_string(budget.requested_height) + ")";
+  return "render target auto (currently " + std::string(profile_name(budget.profile)) + " " +
+         std::to_string(budget.requested_width) + "x" + std::to_string(budget.requested_height) +
+         ")";
 }
 
-std::string ready_names(entt::registry &reg,
-                        const std::vector<entt::entity> &ready_queue) {
+std::string ready_names(entt::registry& reg, const std::vector<entt::entity>& ready_queue) {
   if (ready_queue.empty()) {
     return "<empty>";
   }
@@ -154,13 +145,12 @@ std::string ready_names(entt::registry &reg,
   return join_strings(names, ", ");
 }
 
-std::size_t alive_count(entt::registry &reg,
-                        const std::vector<entt::entity> &entities) {
+std::size_t alive_count(entt::registry& reg, const std::vector<entt::entity>& entities) {
   using fl::ecs::components::Stats;
 
   std::size_t count = 0;
   for (auto entity : entities) {
-    if (auto *stats = reg.try_get<Stats>(entity)) {
+    if (auto* stats = reg.try_get<Stats>(entity)) {
       if (stats->is_alive()) {
         ++count;
       }
@@ -169,25 +159,22 @@ std::size_t alive_count(entt::registry &reg,
   return count;
 }
 
-std::string combatant_debug_line(entt::registry &reg, std::string_view role,
-                                 entt::entity entity,
-                                 const std::vector<entt::entity> &ready_queue,
+std::string combatant_debug_line(entt::registry& reg, std::string_view role, entt::entity entity,
+                                 const std::vector<entt::entity>& ready_queue,
                                  entt::entity active) {
   namespace c = fl::ecs::components;
 
   auto line = "  " + std::string(role) + " " + debug_entity_label(reg, entity);
 
-  if (auto *stats = reg.try_get<c::Stats>(entity)) {
-    line += " hp=" + std::to_string(stats->hp_) + "/" +
-            std::to_string(stats->max_hp_);
+  if (auto* stats = reg.try_get<c::Stats>(entity)) {
+    line += " hp=" + std::to_string(stats->hp_) + "/" + std::to_string(stats->max_hp_);
     line += stats->is_alive() ? " alive" : " dead";
   } else {
     line += " hp=<missing-stats>";
   }
 
-  if (auto *charge = reg.try_get<c::AtbCharge>(entity)) {
-    line += " atb=" + std::to_string(charge->charge) + "/" +
-            std::to_string(charge->max_charge);
+  if (auto* charge = reg.try_get<c::AtbCharge>(entity)) {
+    line += " atb=" + std::to_string(charge->charge) + "/" + std::to_string(charge->max_charge);
   } else {
     line += " atb=<missing>";
   }
@@ -199,28 +186,23 @@ std::string combatant_debug_line(entt::registry &reg, std::string_view role,
   if (contains_entity(ready_queue, entity)) {
     statuses.emplace_back("ready");
   }
-  if (auto *poison = reg.try_get<c::Poison>(entity)) {
-    const auto metadata =
-        fl::status::generated_content::metadata(fl::status::StatusId::Poison);
-    statuses.emplace_back(
-        std::string{metadata.debug_name} +
-        " dmg=" + std::to_string(poison->damage_per_tick) +
-        " ticks=" + std::to_string(poison->ticks_remaining) +
-        " source=" + entity_name(reg, poison->source));
+  if (auto* poison = reg.try_get<c::Poison>(entity)) {
+    const auto metadata = fl::status::generated_content::metadata(fl::status::StatusId::Poison);
+    statuses.emplace_back(std::string{metadata.debug_name} +
+                          " dmg=" + std::to_string(poison->damage_per_tick) +
+                          " ticks=" + std::to_string(poison->ticks_remaining) +
+                          " source=" + entity_name(reg, poison->source));
   }
-  if (auto *freeze = reg.try_get<c::Freeze>(entity)) {
-    const auto metadata =
-        fl::status::generated_content::metadata(fl::status::StatusId::Freeze);
-    statuses.emplace_back(std::string{metadata.debug_name} + " clear_after=" +
-                          std::to_string(freeze->clear_after_beats));
+  if (auto* freeze = reg.try_get<c::Freeze>(entity)) {
+    const auto metadata = fl::status::generated_content::metadata(fl::status::StatusId::Freeze);
+    statuses.emplace_back(std::string{metadata.debug_name} +
+                          " clear_after=" + std::to_string(freeze->clear_after_beats));
   }
-  if (auto *bleed = reg.try_get<c::DireBleed>(entity)) {
-    const auto metadata = fl::status::generated_content::metadata(
-        fl::status::StatusId::DireBleed);
-    statuses.emplace_back(
-        std::string{metadata.debug_name} +
-        " dmg=" + std::to_string(bleed->damage_per_tick) +
-        " source=" + entity_name(reg, bleed->source));
+  if (auto* bleed = reg.try_get<c::DireBleed>(entity)) {
+    const auto metadata = fl::status::generated_content::metadata(fl::status::StatusId::DireBleed);
+    statuses.emplace_back(std::string{metadata.debug_name} +
+                          " dmg=" + std::to_string(bleed->damage_per_tick) +
+                          " source=" + entity_name(reg, bleed->source));
   }
   if (reg.any_of<c::StatusTint>(entity)) {
     statuses.emplace_back("status-tint");
@@ -231,7 +213,7 @@ std::string combatant_debug_line(entt::registry &reg, std::string_view role,
   if (reg.any_of<c::ActiveGlow>(entity)) {
     statuses.emplace_back("active-glow");
   }
-  if (auto *decals = reg.try_get<c::CombatantDecals>(entity)) {
+  if (auto* decals = reg.try_get<c::CombatantDecals>(entity)) {
     statuses.emplace_back("decals=" + std::to_string(decals->effects.size()));
   }
 
@@ -242,11 +224,10 @@ std::string combatant_debug_line(entt::registry &reg, std::string_view role,
 
 } // namespace
 
-UiCommandController::UiCommandController(
-    std::deque<fl::primitives::AccountData> &accounts, FancyLog &output_log,
-    fl::primitives::WorldClock &world_clock)
-    : accounts_(&accounts), output_log_(&output_log),
-      world_clock_(&world_clock) {}
+UiCommandController::UiCommandController(std::deque<fl::primitives::AccountData>& accounts,
+                                         FancyLog& output_log,
+                                         fl::primitives::WorldClock& world_clock)
+    : accounts_(&accounts), output_log_(&output_log), world_clock_(&world_clock) {}
 
 void UiCommandController::set_show_account_view(ShowAccountView callback) {
   show_account_view_ = std::move(callback);
@@ -290,8 +271,10 @@ void UiCommandController::handle(std::string_view command) {
   const auto verb = words[0];
 
   if (verb == "sandbox") {
-    if (start_sandbox_) start_sandbox_();
-    else write("The full-roster sandbox is already active.");
+    if (start_sandbox_)
+      start_sandbox_();
+    else
+      write("The full-roster sandbox is already active.");
     return;
   }
 
@@ -308,13 +291,11 @@ void UiCommandController::handle(std::string_view command) {
     }
 
     if (words[1] == "libram") {
-      if (show_libram_)
-        show_libram_();
+      if (show_libram_) show_libram_();
       return;
     }
     if (words[1] == "bestiary" || words[1] == "beastiary") {
-      if (show_bestiary_)
-        show_bestiary_();
+      if (show_bestiary_) show_bestiary_();
       return;
     }
     if (words[1] == "account" || words[1] == "accounts") {
@@ -327,8 +308,8 @@ void UiCommandController::handle(std::string_view command) {
       return;
     }
 
-    if (words[1] == "effects" || words[1] == "effect" ||
-        words[1] == "gallery" || words[1] == "effect-gallery") {
+    if (words[1] == "effects" || words[1] == "effect" || words[1] == "gallery" ||
+        words[1] == "effect-gallery") {
       show_effect_gallery();
       return;
     }
@@ -359,8 +340,7 @@ void UiCommandController::handle(std::string_view command) {
   }
 
   if (verb == "debug" || verb == "dbg" || verb == "ready") {
-    if (verb == "ready" || words.size() < 2 || words[1] == "party" ||
-        words[1] == "ready") {
+    if (verb == "ready" || words.size() < 2 || words[1] == "party" || words[1] == "ready") {
       debug_party();
       return;
     }
@@ -386,12 +366,11 @@ void UiCommandController::handle(std::string_view command) {
       write("No selected party.");
       return;
     }
-    auto &party = accounts_->at(account_index_).parties().at(party_index_);
+    auto& party = accounts_->at(account_index_).parties().at(party_index_);
     if (words.size() == 1 || words[1] == "status") {
       if (const auto route = party.tower_route())
-        write("tower " + std::string(route->biome_id) + " floor " +
-              std::to_string(route->floor) + " (latest " +
-              std::to_string(party.latest_tower_floor(route->biome_id)) +
+        write("tower " + std::string(route->biome_id) + " floor " + std::to_string(route->floor) +
+              " (latest " + std::to_string(party.latest_tower_floor(route->biome_id)) +
               ", attempts " + std::to_string(party.tower_floor_attempts()) + ")");
       else
         write("tower route inactive");
@@ -400,8 +379,9 @@ void UiCommandController::handle(std::string_view command) {
         write("Choose tower plains for the detour or tower woodland for floor 10.");
       return;
     }
-    const auto biome = words[1] == "woodland" ? "origin_woodland_tower" :
-                       words[1] == "plains" ? "origin_plains_tower" : "";
+    const auto biome = words[1] == "woodland" ? "origin_woodland_tower"
+                       : words[1] == "plains" ? "origin_plains_tower"
+                                              : "";
     std::optional<int> floor;
     if (words.size() > 3) {
       write("usage: tower <woodland|plains> [unlocked floor]");
@@ -409,8 +389,8 @@ void UiCommandController::handle(std::string_view command) {
     }
     if (words.size() == 3) {
       int requested = 0;
-      const auto [end, error] = std::from_chars(
-          words[2].data(), words[2].data() + words[2].size(), requested);
+      const auto [end, error] =
+          std::from_chars(words[2].data(), words[2].data() + words[2].size(), requested);
       if (error != std::errc{} || end != words[2].data() + words[2].size()) {
         write("floor must be a number between 1 and the latest unlocked floor");
         return;
@@ -453,11 +433,9 @@ void UiCommandController::handle(std::string_view command) {
 
   if (verb == "overdrive" || verb == "speed") {
     if (words.size() < 2) {
-      write("overdrive is x" +
-            std::to_string(world_clock_->beat_rate_multiplier()));
+      write("overdrive is x" + std::to_string(world_clock_->beat_rate_multiplier()));
       write("usage: overdrive <1-" +
-            std::to_string(fl::primitives::WorldClock::kMaxBeatRateMultiplier) +
-            ">");
+            std::to_string(fl::primitives::WorldClock::kMaxBeatRateMultiplier) + ">");
       return;
     }
 
@@ -520,8 +498,7 @@ void UiCommandController::adjust_overdrive(int delta) {
   world_clock_->set_beat_rate_multiplier(current + delta);
   const auto actual = world_clock_->beat_rate_multiplier();
   write("overdrive set to x" + std::to_string(actual) + " (" +
-        std::to_string(world_clock_->effective_beats_per_wall_second()) +
-        " beats/sec)");
+        std::to_string(world_clock_->effective_beats_per_wall_second()) + " beats/sec)");
 }
 
 void UiCommandController::select_account_relative(int delta) {
@@ -545,7 +522,7 @@ void UiCommandController::select_party_relative(int delta) {
     return;
   }
 
-  auto &parties = accounts_->at(account_index_).parties();
+  auto& parties = accounts_->at(account_index_).parties();
   if (parties.empty()) {
     write("No parties.");
     return;
@@ -626,9 +603,9 @@ void UiCommandController::show_help(std::string_view topic) {
   if (topic == "render" || topic == "terminal" || topic == "termsize") {
     write("render <target>: force the battle UI to an explicit render target");
     write("render auto: use the real terminal size again");
-    for (const auto &target : supported_battle_render_targets()) {
-      write("render " + std::string(target.name) + ": " +
-            std::to_string(target.width) + "x" + std::to_string(target.height));
+    for (const auto& target : supported_battle_render_targets()) {
+      write("render " + std::string(target.name) + ": " + std::to_string(target.width) + "x" +
+            std::to_string(target.height));
     }
     return;
   }
@@ -671,9 +648,9 @@ void UiCommandController::list_accounts() {
   }
 
   for (std::size_t i = 0; i < accounts_->size(); ++i) {
-    auto &account = accounts_->at(i);
-    write((i == account_index_ ? "* " : "  ") + std::to_string(i) +
-          ": account #" + entity_label(account.account_id()) +
+    auto& account = accounts_->at(i);
+    write((i == account_index_ ? "* " : "  ") + std::to_string(i) + ": account #" +
+          entity_label(account.account_id()) +
           " parties=" + std::to_string(account.parties().size()));
   }
 }
@@ -684,16 +661,16 @@ void UiCommandController::list_parties() {
     return;
   }
 
-  auto &parties = accounts_->at(account_index_).parties();
+  auto& parties = accounts_->at(account_index_).parties();
   if (parties.empty()) {
     write("No parties.");
     return;
   }
 
   for (std::size_t i = 0; i < parties.size(); ++i) {
-    auto &party = parties[i];
-    write((i == party_index_ ? "* " : "  ") + std::to_string(i) + ": " +
-          std::string(party.name()) + " #" + entity_label(party.party_id()) +
+    auto& party = parties[i];
+    write((i == party_index_ ? "* " : "  ") + std::to_string(i) + ": " + std::string(party.name()) +
+          " #" + entity_label(party.party_id()) +
           " members=" + std::to_string(party.members().size()) +
           " items=" + std::to_string(party.items().size()));
   }
@@ -705,44 +682,41 @@ void UiCommandController::debug_party() {
     return;
   }
 
-  auto &account = accounts_->at(account_index_);
-  auto &parties = account.parties();
+  auto& account = accounts_->at(account_index_);
+  auto& parties = account.parties();
   if (party_index_ >= parties.size()) {
     write("No selected party.");
     return;
   }
 
-  auto &party = parties[party_index_];
-  auto &reg = party.party_ctx().reg();
+  auto& party = parties[party_index_];
+  auto& reg = party.party_ctx().reg();
 
-  write("debug party account=" + std::to_string(account_index_) + " party=" +
-        std::to_string(party_index_) + " name=" + std::string(party.name()) +
+  write("debug party account=" + std::to_string(account_index_) +
+        " party=" + std::to_string(party_index_) + " name=" + std::string(party.name()) +
         " entity=#" + entity_label(party.party_id()));
 
   if (!party.has_encounter()) {
     write("encounter=<none> members=" + std::to_string(party.members().size()));
-    for (auto &member : party.members()) {
-      write(combatant_debug_line(reg, "member", member.member_id(), {},
-                                 entt::null));
+    for (auto& member : party.members()) {
+      write(combatant_debug_line(reg, "member", member.member_id(), {}, entt::null));
     }
     return;
   }
 
-  auto &encounter = party.encounter_data();
-  auto &atb = encounter.atb_engine();
-  const auto &ready = atb.ready_queue();
+  auto& encounter = party.encounter_data();
+  auto& atb = encounter.atb_engine();
+  const auto& ready = atb.ready_queue();
   const auto active = atb.active_combatant();
 
-  write("encounter=in-combat visual_time=" +
-        std::to_string(encounter.visual_time().v) + " pending_events=" +
-        std::to_string(encounter.pending_scheduled_events()));
+  write("encounter=in-combat visual_time=" + std::to_string(encounter.visual_time().v) +
+        " pending_events=" + std::to_string(encounter.pending_scheduled_events()));
 
   write("atb_active=" + debug_entity_label(reg, active));
-  write("atb_ready size=" + std::to_string(ready.size()) + ": " +
-        ready_names(reg, ready));
+  write("atb_ready size=" + std::to_string(ready.size()) + ": " + ready_names(reg, ready));
 
-  const auto &attackers = encounter.attackers().members();
-  const auto &defenders = encounter.defenders().members();
+  const auto& attackers = encounter.attackers().members();
+  const auto& defenders = encounter.defenders().members();
   write("attackers total=" + std::to_string(attackers.size()) +
         " alive=" + std::to_string(alive_count(reg, attackers)));
   for (auto entity : attackers) {
@@ -768,13 +742,11 @@ void UiCommandController::spawn_visitor() {
   }
 
   if (spawn_visitor_(account_index_)) {
-    write("Summoned a new Visitor for account " +
-          std::to_string(account_index_) + ".");
+    write("Summoned a new Visitor for account " + std::to_string(account_index_) + ".");
     return;
   }
 
-  write("Could not summon a Visitor for account " +
-        std::to_string(account_index_) + ".");
+  write("Could not summon a Visitor for account " + std::to_string(account_index_) + ".");
 }
 
 void UiCommandController::set_overdrive(std::string_view multiplier) {
@@ -787,8 +759,7 @@ void UiCommandController::set_overdrive(std::string_view multiplier) {
   world_clock_->set_beat_rate_multiplier(static_cast<int>(value));
   const auto actual = world_clock_->beat_rate_multiplier();
   write("overdrive set to x" + std::to_string(actual) + " (" +
-        std::to_string(world_clock_->effective_beats_per_wall_second()) +
-        " beats/sec)");
+        std::to_string(world_clock_->effective_beats_per_wall_second()) + " beats/sec)");
 }
 
 void UiCommandController::select_account(std::size_t account_index) {
@@ -811,7 +782,7 @@ void UiCommandController::select_party(std::size_t party_index) {
     return;
   }
 
-  auto &parties = accounts_->at(account_index_).parties();
+  auto& parties = accounts_->at(account_index_).parties();
   if (party_index >= parties.size()) {
     write("no party at index " + std::to_string(party_index));
     return;

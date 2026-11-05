@@ -15,8 +15,8 @@
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/poison.hpp"
 #include "fl/ecs/components/stats.hpp"
-#include "fl/ecs/systems/combat_status_system.hpp"
 #include "fl/ecs/systems/casting_skill_system.hpp"
+#include "fl/ecs/systems/combat_status_system.hpp"
 #include "fl/ecs/systems/freeze_system.hpp"
 #include "fl/ecs/systems/poison_system.hpp"
 #include "fl/generated/monster_content.hpp"
@@ -32,14 +32,14 @@
 namespace fl::primitives {
 namespace {
 
-bool has_cleansable_debuff(entt::registry &reg, entt::entity target) {
+bool has_cleansable_debuff(entt::registry& reg, entt::entity target) {
   using fl::ecs::components::CombatStatuses;
   using fl::ecs::components::DireBleed;
   using fl::ecs::components::Freeze;
   using fl::ecs::components::Poison;
 
-  if (auto *statuses = reg.try_get<CombatStatuses>(target)) {
-    const auto has_removable_negative = [](const auto &effect) {
+  if (auto* statuses = reg.try_get<CombatStatuses>(target)) {
+    const auto has_removable_negative = [](const auto& effect) {
       return effect.negative && effect.removable;
     };
     if (std::ranges::any_of(statuses->effects, has_removable_negative)) {
@@ -50,14 +50,12 @@ bool has_cleansable_debuff(entt::registry &reg, entt::entity target) {
   return reg.any_of<Poison, Freeze, DireBleed>(target);
 }
 
-entt::entity random_target(fl::targeting::TargetRange candidates,
-                           fl::primitives::RandomHub &rng) {
+entt::entity random_target(fl::targeting::TargetRange candidates, fl::primitives::RandomHub& rng) {
   auto random = rng.stream("encounter/team");
   auto selected = entt::entity{entt::null};
   int seen = 0;
   for (const auto candidate : candidates) {
-    if (random.random_index(++seen) == 0)
-      selected = candidate;
+    if (random.random_index(++seen) == 0) selected = candidate;
   }
   return selected;
 }
@@ -66,12 +64,11 @@ entt::entity random_target(fl::targeting::TargetRange candidates,
 
 void EncounterData::innervate_event_system() {
   ZoneScopedN("EncounterData::innervate_event_system");
-  wire_.atb_active_ = atb_out().subscribe<seerin::BecameActive>(
-      [this](const seerin::BecameActive &ev) {
+  wire_.atb_active_ =
+      atb_out().subscribe<seerin::BecameActive>([this](const seerin::BecameActive& ev) {
         ZoneScopedN("EncounterData::BecameActive");
         const entt::entity attacker = ev.id;
-        if (fl::ecs::systems::CombatStatusSystem::consume_stun_turn(context_,
-                                                                    attacker)) {
+        if (fl::ecs::systems::CombatStatusSystem::consume_stun_turn(context_, attacker)) {
           atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{attacker}});
           return;
         }
@@ -81,9 +78,7 @@ void EncounterData::innervate_event_system() {
 
         if (target == entt::null) {
           context_.log().append_markup(fmt::format(
-              "{} did nothing.", context_.reg()
-                                     .get<fl::ecs::components::Stats>(attacker)
-                                     .name_));
+              "{} did nothing.", context_.reg().get<fl::ecs::components::Stats>(attacker).name_));
 
           atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{attacker}});
           return;
@@ -97,43 +92,33 @@ void EncounterData::innervate_event_system() {
               atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{entity}});
             }};
         sequencer.schedule(attacker, target, decision->skill);
-        TracyPlot("Encounter.PendingEvents",
-                  static_cast<double>(rt_.atb_.scheduler().pending()));
+        TracyPlot("Encounter.PendingEvents", static_cast<double>(rt_.atb_.scheduler().pending()));
       });
 }
 
 fl::skills::SkillKey EncounterData::choose_skill(entt::entity attacker) {
   ZoneScopedN("EncounterData::choose_skill");
-  return fl::skills::choose_skill(context_.reg(), context_.rng(),
-                                  attacker);
+  return fl::skills::choose_skill(context_.reg(), context_.rng(), attacker);
 }
 
-std::optional<fl::monster::SkillDecision>
-EncounterData::choose_action(entt::entity actor) {
-  if (const auto *monster =
-          context_.reg().try_get<fl::ecs::components::MonsterIdentity>(
-              actor)) {
-    const auto rules =
-        fl::monster::generated_content::decision_rules(monster->kind);
+std::optional<fl::monster::SkillDecision> EncounterData::choose_action(entt::entity actor) {
+  if (const auto* monster = context_.reg().try_get<fl::ecs::components::MonsterIdentity>(actor)) {
+    const auto rules = fl::monster::generated_content::decision_rules(monster->kind);
     if (!rules.empty()) {
       std::vector<fl::monster::DecisionRule> available_rules;
       available_rules.reserve(rules.size());
-      for (const auto &rule : rules) {
+      for (const auto& rule : rules) {
         const bool already_used =
-            std::ranges::find(used_skills_, std::pair{actor, rule.skill}) !=
-            used_skills_.end();
-        if (!rule.once_per_encounter || !already_used)
-          available_rules.push_back(rule);
+            std::ranges::find(used_skills_, std::pair{actor, rule.skill}) != used_skills_.end();
+        if (!rule.once_per_encounter || !already_used) available_rules.push_back(rule);
       }
       auto allies = possible_targets().FriendlyPossibleTargets(actor);
       auto enemies = possible_targets().EnemyPossibleTargets(actor);
-      auto random = context_.rng().stream("encounter/monster-rule",
-                                             entt::to_integral(actor));
-      auto decision = fl::monster::evaluate_rules(
-          context_.reg(), actor, allies, enemies, available_rules,
-          [&random] { return random.uniform_int<int>(1, 100); });
-      if (decision)
-        used_skills_.emplace_back(actor, decision->skill.base);
+      auto random = context_.rng().stream("encounter/monster-rule", entt::to_integral(actor));
+      auto decision =
+          fl::monster::evaluate_rules(context_.reg(), actor, allies, enemies, available_rules,
+                                      [&random] { return random.uniform_int<int>(1, 100); });
+      if (decision) used_skills_.emplace_back(actor, decision->skill.base);
       return decision;
     }
   }
@@ -141,19 +126,16 @@ EncounterData::choose_action(entt::entity actor) {
   return fl::monster::SkillDecision{skill, target_for_skill(actor, skill)};
 }
 
-void EncounterData::configure_projectile_cover(
-    entt::entity protected_entity, entt::entity protector,
-    fl::skills::SkillId release_skill) {
-  projectile_cover_ =
-      ProjectileCover{protected_entity, protector, release_skill, true};
+void EncounterData::configure_projectile_cover(entt::entity protected_entity,
+                                               entt::entity protector,
+                                               fl::skills::SkillId release_skill) {
+  projectile_cover_ = ProjectileCover{protected_entity, protector, release_skill, true};
 }
 
-entt::entity EncounterData::resolve_skill_target(entt::entity attacker,
-                                                 entt::entity aimed_target,
+entt::entity EncounterData::resolve_skill_target(entt::entity attacker, entt::entity aimed_target,
                                                  fl::skills::SkillKey skill) {
   if (!projectile_cover_ || !projectile_cover_->active ||
-      aimed_target != projectile_cover_->protected_entity ||
-      !defenders().contains(attacker) ||
+      aimed_target != projectile_cover_->protected_entity || !defenders().contains(attacker) ||
       !fl::skills::has_tag(skill, fl::skills::SkillTag::Physical) ||
       !fl::skills::has_tag(skill, fl::skills::SkillTag::Projectile) ||
       fl::skills::has_tag(skill, fl::skills::SkillTag::Group) ||
@@ -162,43 +144,37 @@ entt::entity EncounterData::resolve_skill_target(entt::entity attacker,
   }
 
   const auto protector = projectile_cover_->protector;
-  const auto *stats =
-      context_.reg().try_get<fl::ecs::components::Stats>(protector);
+  const auto* stats = context_.reg().try_get<fl::ecs::components::Stats>(protector);
   if (stats == nullptr || !stats->is_alive()) {
     projectile_cover_->active = false;
     return aimed_target;
   }
 
-  context_.log().append_markup(fmt::format(
-      "{} [warn](covers) {}; [ability]({}) is redirected.",
-      context_.log().name_tag_for(entt::handle{context_.reg(), protector}),
-      context_.log().name_tag_for(entt::handle{context_.reg(), aimed_target}),
-      fl::skills::display_name(skill)));
+  context_.log().append_markup(
+      fmt::format("{} [warn](covers) {}; [ability]({}) is redirected.",
+                  context_.log().name_tag_for(entt::handle{context_.reg(), protector}),
+                  context_.log().name_tag_for(entt::handle{context_.reg(), aimed_target}),
+                  fl::skills::display_name(skill)));
   return protector;
 }
 
-void EncounterData::release_projectile_cover(entt::entity actor,
-                                             fl::skills::SkillKey skill) {
-  if (!projectile_cover_ || !projectile_cover_->active ||
-      actor != projectile_cover_->protector ||
+void EncounterData::release_projectile_cover(entt::entity actor, fl::skills::SkillKey skill) {
+  if (!projectile_cover_ || !projectile_cover_->active || actor != projectile_cover_->protector ||
       skill.base != projectile_cover_->release_skill) {
     return;
   }
   projectile_cover_->active = false;
-  context_.log().append_markup(fmt::format(
-      "{} charges out with [ability]({}); [warn](Cover opens).",
-      context_.log().name_tag_for(entt::handle{context_.reg(), actor}),
-      fl::skills::display_name(skill)));
+  context_.log().append_markup(
+      fmt::format("{} charges out with [ability]({}); [warn](Cover opens).",
+                  context_.log().name_tag_for(entt::handle{context_.reg(), actor}),
+                  fl::skills::display_name(skill)));
 }
 
-entt::entity
-EncounterData::target_random_alive_opposition(entt::entity actor) const {
-  return random_target(possible_targets().EnemyPossibleTargets(actor),
-                       context_.rng());
+entt::entity EncounterData::target_random_alive_opposition(entt::entity actor) const {
+  return random_target(possible_targets().EnemyPossibleTargets(actor), context_.rng());
 }
 
-entt::entity EncounterData::target_for_skill(entt::entity actor,
-                                             fl::skills::SkillKey skill) const {
+entt::entity EncounterData::target_for_skill(entt::entity actor, fl::skills::SkillKey skill) const {
   ZoneScopedN("EncounterData::target_for_skill");
   auto candidates = possible_targets();
   if (!context_.reg().valid(actor) ||
@@ -206,14 +182,12 @@ entt::entity EncounterData::target_for_skill(entt::entity actor,
     return entt::null;
   if (fl::skills::has_tag(skill, fl::skills::SkillTag::Self)) {
     for (auto candidate : candidates.FriendlyPossibleTargets(actor))
-      if (candidate == actor)
-        return actor;
+      if (candidate == actor) return actor;
     return entt::null;
   }
   if (fl::skills::definition(skill).consumes_status) {
     for (auto candidate : candidates.EnemyPossibleTargets(actor)) {
-      if (fl::skills::target_meets_skill_requirements(context_.reg(),
-                                                      candidate, skill))
+      if (fl::skills::target_meets_skill_requirements(context_.reg(), candidate, skill))
         return candidate;
     }
     return entt::null;
@@ -222,8 +196,7 @@ entt::entity EncounterData::target_for_skill(entt::entity actor,
     auto selected = entt::entity{entt::null};
     int lowest_hp = 0;
     for (auto candidate : candidates.FriendlyPossibleTargets(actor)) {
-      const auto hp =
-          context_.reg().get<fl::ecs::components::Stats>(candidate).hp_;
+      const auto hp = context_.reg().get<fl::ecs::components::Stats>(candidate).hp_;
       if (selected == entt::null || hp < lowest_hp) {
         selected = candidate;
         lowest_hp = hp;
@@ -231,32 +204,29 @@ entt::entity EncounterData::target_for_skill(entt::entity actor,
     }
     return selected;
   }
-  const bool cleanse =
-      fl::skills::has_tag(skill, fl::skills::SkillTag::Cleanse);
+  const bool cleanse = fl::skills::has_tag(skill, fl::skills::SkillTag::Cleanse);
   if (cleanse) {
-    auto eligible = candidates.FriendlyPossibleTargets(actor) |
-                    std::views::filter([this](entt::entity target) {
-                      return has_cleansable_debuff(context_.reg(), target);
-                    });
-    for (auto candidate : eligible)
-      return candidate;
+    auto eligible =
+        candidates.FriendlyPossibleTargets(actor) | std::views::filter([this](entt::entity target) {
+          return has_cleansable_debuff(context_.reg(), target);
+        });
+    for (auto candidate : eligible) return candidate;
   }
-  const bool friendly =
-      cleanse || fl::skills::has_tag(skill, fl::skills::SkillTag::Heal) ||
-      fl::skills::has_tag(skill, fl::skills::SkillTag::Ally) ||
-      fl::skills::has_tag(skill, fl::skills::SkillTag::AllAllies) ||
-      fl::skills::has_tag(skill, fl::skills::SkillTag::Buff);
+  const bool friendly = cleanse || fl::skills::has_tag(skill, fl::skills::SkillTag::Heal) ||
+                        fl::skills::has_tag(skill, fl::skills::SkillTag::Ally) ||
+                        fl::skills::has_tag(skill, fl::skills::SkillTag::AllAllies) ||
+                        fl::skills::has_tag(skill, fl::skills::SkillTag::Buff);
   return random_target(friendly ? candidates.FriendlyPossibleTargets(actor)
                                 : candidates.EnemyPossibleTargets(actor),
                        context_.rng());
 }
 
 void EncounterData::finalize() {
-  auto finish_casts = [this](const auto &team) {
+  auto finish_casts = [this](const auto& team) {
     for (const auto combatant : team.members()) {
       if (context_.reg().valid(combatant)) {
-        combatant_bus(combatant).emit(fl::events::CombatantEvent{
-            fl::events::SkillCastFinished{combatant}});
+        combatant_bus(combatant).emit(
+            fl::events::CombatantEvent{fl::events::SkillCastFinished{combatant}});
       }
     }
   };
@@ -273,50 +243,46 @@ void EncounterData::finalize() {
   wire_.wired_combatants_.clear();
 
   for (auto e_cleanup : life_.entities_to_cleanup_) {
-    if (context_.reg().valid(e_cleanup))
-      context_.reg().destroy(e_cleanup);
+    if (context_.reg().valid(e_cleanup)) context_.reg().destroy(e_cleanup);
   }
 }
 
-void EncounterData::clear_pending_events() { rt_.atb_.clear_pending_events(); }
+void EncounterData::clear_pending_events() {
+  rt_.atb_.clear_pending_events();
+}
 
 void EncounterData::clear_active_turn_for(entt::entity id) {
   ZoneScopedN("EncounterData::clear_active_turn_for");
   if (context_.reg().valid(id)) {
-    combatant_bus(id).emit(
-        fl::events::CombatantEvent{fl::events::SkillCastFinished{id}});
+    combatant_bus(id).emit(fl::events::CombatantEvent{fl::events::SkillCastFinished{id}});
   }
   rt_.atb_.clear_active_turn_for(id);
 }
 
-fl::events::CombatantBus &
-EncounterData::add_enemy_combatant_bus(entt::entity enemy) {
-  if (auto *bus = enemy_combatant_bus(enemy)) {
+fl::events::CombatantBus& EncounterData::add_enemy_combatant_bus(entt::entity enemy) {
+  if (auto* bus = enemy_combatant_bus(enemy)) {
     bind_combatant_bus(enemy, *bus);
     return *bus;
   }
 
-  rt_.enemy_combatant_buses_.push_back(
-      EnemyCombatantBus{.enemy = enemy, .bus = {}});
-  auto &bus = rt_.enemy_combatant_buses_.back().bus;
+  rt_.enemy_combatant_buses_.push_back(EnemyCombatantBus{.enemy = enemy, .bus = {}});
+  auto& bus = rt_.enemy_combatant_buses_.back().bus;
   bind_combatant_bus(enemy, bus);
   return bus;
 }
 
-fl::events::CombatantBus &
-EncounterData::add_party_combatant_bus(entt::entity member) {
-  auto &bus = combatant_bus(member);
+fl::events::CombatantBus& EncounterData::add_party_combatant_bus(entt::entity member) {
+  auto& bus = combatant_bus(member);
   bind_combatant_bus(member, bus);
   return bus;
 }
 
-fl::events::CombatantBus &EncounterData::combatant_bus(entt::entity combatant) {
-  if (auto *bus = enemy_combatant_bus(combatant)) {
+fl::events::CombatantBus& EncounterData::combatant_bus(entt::entity combatant) {
+  if (auto* bus = enemy_combatant_bus(combatant)) {
     return *bus;
   }
 
-  auto *member =
-      context_.reg().try_get<fl::ecs::components::PartyMember>(combatant);
+  auto* member = context_.reg().try_get<fl::ecs::components::PartyMember>(combatant);
   if (member == nullptr) {
     fl::fail("combatant bus requested for an entity not enrolled as an enemy "
              "or party member");
@@ -324,14 +290,12 @@ fl::events::CombatantBus &EncounterData::combatant_bus(entt::entity combatant) {
   return member->member_data().combatant_bus();
 }
 
-const fl::events::CombatantBus &
-EncounterData::combatant_bus(entt::entity combatant) const {
-  if (auto *bus = enemy_combatant_bus(combatant)) {
+const fl::events::CombatantBus& EncounterData::combatant_bus(entt::entity combatant) const {
+  if (auto* bus = enemy_combatant_bus(combatant)) {
     return *bus;
   }
 
-  auto *member =
-      context_.reg().try_get<fl::ecs::components::PartyMember>(combatant);
+  auto* member = context_.reg().try_get<fl::ecs::components::PartyMember>(combatant);
   if (member == nullptr) {
     fl::fail("combatant bus requested for an entity not enrolled as an enemy "
              "or party member");
@@ -339,36 +303,32 @@ EncounterData::combatant_bus(entt::entity combatant) const {
   return member->member_data().combatant_bus();
 }
 
-fl::events::CombatantBus *
-EncounterData::enemy_combatant_bus(entt::entity enemy) {
-  auto it = std::find_if(
-      rt_.enemy_combatant_buses_.begin(), rt_.enemy_combatant_buses_.end(),
-      [enemy](const EnemyCombatantBus &slot) { return slot.enemy == enemy; });
+fl::events::CombatantBus* EncounterData::enemy_combatant_bus(entt::entity enemy) {
+  auto it = std::find_if(rt_.enemy_combatant_buses_.begin(), rt_.enemy_combatant_buses_.end(),
+                         [enemy](const EnemyCombatantBus& slot) { return slot.enemy == enemy; });
   if (it == rt_.enemy_combatant_buses_.end()) {
     return nullptr;
   }
   return &it->bus;
 }
 
-const fl::events::CombatantBus *
-EncounterData::enemy_combatant_bus(entt::entity enemy) const {
-  auto it = std::find_if(
-      rt_.enemy_combatant_buses_.begin(), rt_.enemy_combatant_buses_.end(),
-      [enemy](const EnemyCombatantBus &slot) { return slot.enemy == enemy; });
+const fl::events::CombatantBus* EncounterData::enemy_combatant_bus(entt::entity enemy) const {
+  auto it = std::find_if(rt_.enemy_combatant_buses_.begin(), rt_.enemy_combatant_buses_.end(),
+                         [enemy](const EnemyCombatantBus& slot) { return slot.enemy == enemy; });
   if (it == rt_.enemy_combatant_buses_.end()) {
     return nullptr;
   }
   return &it->bus;
 }
 
-void EncounterData::bind_combatant_bus(
-    entt::entity combatant, fl::events::CombatantBus &combatant_bus) {
-  if (std::find(wire_.wired_combatants_.begin(), wire_.wired_combatants_.end(),
-                combatant) != wire_.wired_combatants_.end()) {
+void EncounterData::bind_combatant_bus(entt::entity combatant,
+                                       fl::events::CombatantBus& combatant_bus) {
+  if (std::find(wire_.wired_combatants_.begin(), wire_.wired_combatants_.end(), combatant) !=
+      wire_.wired_combatants_.end()) {
     return;
   }
 
-  auto &wiring = wire_.combatant_wiring_.emplace_back();
+  auto& wiring = wire_.combatant_wiring_.emplace_back();
   wiring.poison_apply_ = fl::ecs::systems::PoisonSystem::bind_apply_listener(
       context_, combatant_bus, rt_.atb_.scheduler());
 
@@ -376,21 +336,19 @@ void EncounterData::bind_combatant_bus(
       context_, combatant_bus, rt_.atb_.scheduler());
 
   wiring.cast_started_ =
-      fl::ecs::systems::CastingSkillSystem::bind_started_listener(
-          context_.reg(), combatant_bus);
+      fl::ecs::systems::CastingSkillSystem::bind_started_listener(context_.reg(), combatant_bus);
   wiring.cast_finished_ =
-      fl::ecs::systems::CastingSkillSystem::bind_finished_listener(
-          context_.reg(), combatant_bus);
+      fl::ecs::systems::CastingSkillSystem::bind_finished_listener(context_.reg(), combatant_bus);
 
   wiring.freeze_started_ = fl::events::ScopedCombatantListener{
       combatant_bus, std::in_place_type<fl::events::FreezeStarted>,
-      [this](const fl::events::FreezeStarted &ev) {
+      [this](const fl::events::FreezeStarted& ev) {
         atb_in().emit(seerin::AtbInEvent{seerin::Frozen{ev.target}});
       }};
 
   wiring.freeze_ended_ = fl::events::ScopedCombatantListener{
       combatant_bus, std::in_place_type<fl::events::FreezeEnded>,
-      [this](const fl::events::FreezeEnded &ev) {
+      [this](const fl::events::FreezeEnded& ev) {
         atb_in().emit(seerin::AtbInEvent{seerin::Thawed{ev.target}});
       }};
 
@@ -405,7 +363,7 @@ bool EncounterData::has_alive_enemies() const {
       continue;
     }
 
-    auto &enemy = context_.reg().get<Stats>(e);
+    auto& enemy = context_.reg().get<Stats>(e);
     if (enemy.is_alive()) {
       return true;
     }
@@ -414,32 +372,34 @@ bool EncounterData::has_alive_enemies() const {
   return false;
 }
 
-bool EncounterData::is_over() const { return !has_alive_enemies(); }
+bool EncounterData::is_over() const {
+  return !has_alive_enemies();
+}
 
-EncounterData::EncounterData(fl::context::PartyCtx *party_ctx)
-    : EncounterData(party_ctx->reg(), party_ctx->rng(), party_ctx->log(),
-                    party_ctx->bus(), party_ctx->self()) {}
+EncounterData::EncounterData(fl::context::PartyCtx* party_ctx)
+    : EncounterData(party_ctx->reg(), party_ctx->rng(), party_ctx->log(), party_ctx->bus(),
+                    party_ctx->self()) {}
 
-EncounterData::EncounterData(entt::registry &reg, RandomHub &rng,
-    fl::widgets::FancyLog &log, fl::events::PartyBus &bus, entt::entity owner,
-    bool subscribe_to_party_ticks)
+EncounterData::EncounterData(entt::registry& reg, RandomHub& rng, fl::widgets::FancyLog& log,
+                             fl::events::PartyBus& bus, entt::entity owner,
+                             bool subscribe_to_party_ticks)
     : context_(reg, rng, log, bus, owner, *this) {
   rt_.atb_.bind_registry(context_.reg());
 
   rt_.atb_.set_can_charge_fn([this](entt::entity entity) {
-    auto *stats = context_.reg().try_get<fl::ecs::components::Stats>(entity);
+    auto* stats = context_.reg().try_get<fl::ecs::components::Stats>(entity);
     return stats && stats->is_alive();
   });
 
   rt_.atb_.set_charge_rate_percent_fn([this](entt::entity entity) {
-    return 100 +
-           fl::ecs::systems::CombatStatusSystem::turn_tempo_modifier_percent(
-               context_.reg(), entity);
+    return 100 + fl::ecs::systems::CombatStatusSystem::turn_tempo_modifier_percent(context_.reg(),
+                                                                                   entity);
   });
 
-  if (subscribe_to_party_ticks) wire_.party_beat_ = fl::events::ScopedPartyListener{
-      context_.bus(), std::in_place_type<fl::events::PartyTick>,
-      [this](const fl::events::PartyTick &) { atb_in().emit(seerin::Beat{}); }};
+  if (subscribe_to_party_ticks)
+    wire_.party_beat_ = fl::events::ScopedPartyListener{
+        context_.bus(), std::in_place_type<fl::events::PartyTick>,
+        [this](const fl::events::PartyTick&) { atb_in().emit(seerin::Beat{}); }};
 }
 
 } // namespace fl::primitives

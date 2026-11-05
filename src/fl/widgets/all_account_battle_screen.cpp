@@ -37,7 +37,7 @@ std::string shorten(std::string value, std::size_t max_width) {
   return value;
 }
 
-ftxui::Decorator state_color(fl::primitives::PartyData &party) {
+ftxui::Decorator state_color(fl::primitives::PartyData& party) {
   if (party.has_encounter()) {
     return ftxui::color(fl::lospec500::color_at(20)) | ftxui::bold;
   }
@@ -50,7 +50,7 @@ ftxui::Decorator state_color(fl::primitives::PartyData &party) {
   return ftxui::color(fl::lospec500::color_at(14));
 }
 
-std::string state_label(fl::primitives::PartyData &party) {
+std::string state_label(fl::primitives::PartyData& party) {
   if (party.has_encounter()) {
     return "FIGHT";
   }
@@ -65,9 +65,8 @@ std::string state_label(fl::primitives::PartyData &party) {
 
 } // namespace
 
-AllAccountBattleScreen::AllAccountBattleScreen(
-    entt::registry &registry,
-    std::deque<fl::primitives::AccountData> &accounts)
+AllAccountBattleScreen::AllAccountBattleScreen(entt::registry& registry,
+                                               std::deque<fl::primitives::AccountData>& accounts)
     : registry_(&registry), accounts_(&accounts) {}
 
 bool AllAccountBattleScreen::OnEvent(ftxui::Event event) {
@@ -77,8 +76,7 @@ bool AllAccountBattleScreen::OnEvent(ftxui::Event event) {
     return true;
   }
 
-  if (event == ftxui::Event::ArrowDown ||
-      event == ftxui::Event::Character("j") ||
+  if (event == ftxui::Event::ArrowDown || event == ftxui::Event::Character("j") ||
       event == ftxui::Event::Character("]")) {
     select_relative(1);
     return true;
@@ -106,8 +104,7 @@ ftxui::Element AllAccountBattleScreen::Render() {
              render_selected_party_detail(width, detail_height),
          }) |
          size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height) |
-         bgcolor(fl::lospec500::color_at(0)) |
-         color(fl::lospec500::color_at(32));
+         bgcolor(fl::lospec500::color_at(0)) | color(fl::lospec500::color_at(32));
 }
 
 void AllAccountBattleScreen::select_relative(int delta) {
@@ -119,9 +116,7 @@ void AllAccountBattleScreen::select_relative(int delta) {
   }
 
   const auto current = selected_flat_index();
-  const auto next =
-      (current + total + static_cast<std::size_t>(delta < 0 ? total - 1 : 1)) %
-      total;
+  const auto next = (current + total + static_cast<std::size_t>(delta < 0 ? total - 1 : 1)) % total;
   select_flat_index(next);
 }
 
@@ -131,7 +126,7 @@ std::size_t AllAccountBattleScreen::total_party_count() const noexcept {
   }
 
   std::size_t total = 0;
-  for (const auto &account : *accounts_) {
+  for (const auto& account : *accounts_) {
     total += account.parties().size();
   }
   return total;
@@ -143,12 +138,10 @@ std::size_t AllAccountBattleScreen::selected_flat_index() const noexcept {
   }
 
   std::size_t flat = 0;
-  for (std::size_t account_index = 0; account_index < accounts_->size();
-       ++account_index) {
-    const auto &parties = accounts_->at(account_index).parties();
+  for (std::size_t account_index = 0; account_index < accounts_->size(); ++account_index) {
+    const auto& parties = accounts_->at(account_index).parties();
     if (account_index == selected_account_index_) {
-      return flat + std::min(selected_party_index_,
-                             parties.empty() ? 0 : parties.size() - 1);
+      return flat + std::min(selected_party_index_, parties.empty() ? 0 : parties.size() - 1);
     }
     flat += parties.size();
   }
@@ -163,8 +156,7 @@ void AllAccountBattleScreen::select_flat_index(std::size_t flat_index) noexcept 
     return;
   }
 
-  for (std::size_t account_index = 0; account_index < accounts_->size();
-       ++account_index) {
+  for (std::size_t account_index = 0; account_index < accounts_->size(); ++account_index) {
     const auto party_count = accounts_->at(account_index).parties().size();
     if (flat_index < party_count) {
       selected_account_index_ = account_index;
@@ -178,8 +170,7 @@ void AllAccountBattleScreen::select_flat_index(std::size_t flat_index) noexcept 
   selected_party_index_ = 0;
 }
 
-ftxui::Element AllAccountBattleScreen::render_party_overview(int width,
-                                                             int height) {
+ftxui::Element AllAccountBattleScreen::render_party_overview(int width, int height) {
   using namespace ftxui;
 
   constexpr int row_height = 2;
@@ -190,16 +181,14 @@ ftxui::Element AllAccountBattleScreen::render_party_overview(int width,
   if (accounts_ == nullptr || registry_ == nullptr || accounts_->empty()) {
     rows.push_back(text("Chaos Attract: no simulation."));
   } else {
-    for (std::size_t account_index = 0; account_index < accounts_->size();
-         ++account_index) {
-      auto &account = accounts_->at(account_index);
-      auto &parties = account.parties();
-      for (std::size_t party_index = 0; party_index < parties.size();
-           ++party_index) {
-        const bool selected = account_index == selected_account_index_ &&
-                              party_index == selected_party_index_;
-        rows.push_back(render_party_row(account_index, party_index,
-                                        parties[party_index], width, selected));
+    for (std::size_t account_index = 0; account_index < accounts_->size(); ++account_index) {
+      auto& account = accounts_->at(account_index);
+      auto& parties = account.parties();
+      for (std::size_t party_index = 0; party_index < parties.size(); ++party_index) {
+        const bool selected =
+            account_index == selected_account_index_ && party_index == selected_party_index_;
+        rows.push_back(
+            render_party_row(account_index, party_index, parties[party_index], width, selected));
       }
     }
   }
@@ -223,34 +212,30 @@ ftxui::Element AllAccountBattleScreen::render_party_overview(int width,
   visible.reserve(static_cast<std::size_t>(visible_rows));
   for (std::size_t i = 0; i < static_cast<std::size_t>(visible_rows); ++i) {
     const auto row_index = start + i;
-    visible.push_back(row_index < rows.size()
-                          ? rows[row_index]
-                          : filler() | size(HEIGHT, EQUAL, row_height));
+    visible.push_back(row_index < rows.size() ? rows[row_index]
+                                              : filler() | size(HEIGHT, EQUAL, row_height));
   }
 
-  return window(text("Chaos Attract: all accounts") | bold,
-                vbox(std::move(visible))) |
+  return window(text("Chaos Attract: all accounts") | bold, vbox(std::move(visible))) |
          size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height);
 }
 
-ftxui::Element AllAccountBattleScreen::render_selected_party_log(int width,
-                                                                 int height) {
+ftxui::Element AllAccountBattleScreen::render_selected_party_log(int width, int height) {
   using namespace ftxui;
 
-  if (accounts_ == nullptr || accounts_->empty() ||
-      selected_account_index_ >= accounts_->size()) {
+  if (accounts_ == nullptr || accounts_->empty() || selected_account_index_ >= accounts_->size()) {
     return window(text("Battle log") | bold, text("No selected party.")) |
            size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height);
   }
 
-  auto &parties = accounts_->at(selected_account_index_).parties();
+  auto& parties = accounts_->at(selected_account_index_).parties();
   if (parties.empty()) {
-    return window(text("Battle log") | bold, text("No parties.")) |
-           size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height);
+    return window(text("Battle log") | bold, text("No parties.")) | size(WIDTH, EQUAL, width) |
+           size(HEIGHT, EQUAL, height);
   }
 
   selected_party_index_ = std::min(selected_party_index_, parties.size() - 1);
-  auto &party = parties[selected_party_index_];
+  auto& party = parties[selected_party_index_];
   party.log().set_focused(false);
 
   return window(text(std::string{party.name()} + " log") | bold,
@@ -258,9 +243,10 @@ ftxui::Element AllAccountBattleScreen::render_selected_party_log(int width,
          size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height);
 }
 
-ftxui::Element AllAccountBattleScreen::render_party_row(
-    std::size_t account_index, std::size_t party_index,
-    fl::primitives::PartyData &party, int width, bool selected) const {
+ftxui::Element AllAccountBattleScreen::render_party_row(std::size_t account_index,
+                                                        std::size_t party_index,
+                                                        fl::primitives::PartyData& party, int width,
+                                                        bool selected) const {
   using namespace ftxui;
 
   const int marker_width = 2;
@@ -271,32 +257,29 @@ ftxui::Element AllAccountBattleScreen::render_party_row(
   int enemies_width = std::max(8, roster_space / 2);
   int heroes_width = std::max(8, roster_space - enemies_width);
 
-  auto label = "A" + std::to_string(account_index + 1) + " P" +
-               std::to_string(party_index + 1) + " " +
-               std::string{party.name()};
+  auto label = "A" + std::to_string(account_index + 1) + " P" + std::to_string(party_index + 1) +
+               " " + std::string{party.name()};
 
   Element enemies = text("");
   Element heroes = text("");
   if (party.has_encounter()) {
-    auto &encounter = party.encounter_data();
+    auto& encounter = party.encounter_data();
     enemies = render_roster(encounter.attackers().members(), enemies_width);
     heroes = render_roster(encounter.defenders().members(), heroes_width);
   } else {
     enemies_width = std::min(enemies_width, 12);
     heroes_width = std::max(8, roster_space - enemies_width);
-    enemies =
-        text(shorten("field / town", static_cast<std::size_t>(enemies_width))) |
-        color(fl::lospec500::color_at(24));
+    enemies = text(shorten("field / town", static_cast<std::size_t>(enemies_width))) |
+              color(fl::lospec500::color_at(24));
     heroes = render_member_roster(party.members(), heroes_width);
   }
 
   auto header = hbox({
-      text(selected ? "* " : "  ") | color(fl::lospec500::color_at(8)) |
-          bold | size(WIDTH, EQUAL, marker_width),
+      text(selected ? "* " : "  ") | color(fl::lospec500::color_at(8)) | bold |
+          size(WIDTH, EQUAL, marker_width),
       text(shorten(label, static_cast<std::size_t>(left_width))) |
           color(fl::lospec500::color_at(15)) | size(WIDTH, EQUAL, left_width),
-      text(state_label(party)) | state_color(party) |
-          size(WIDTH, EQUAL, state_width),
+      text(state_label(party)) | state_color(party) | size(WIDTH, EQUAL, state_width),
       filler(),
   });
 
@@ -319,77 +302,70 @@ ftxui::Element AllAccountBattleScreen::render_party_row(
   return row | size(HEIGHT, EQUAL, 2) | clear_under;
 }
 
-ftxui::Element AllAccountBattleScreen::render_selected_party_detail(int width,
-                                                                    int height) {
+ftxui::Element AllAccountBattleScreen::render_selected_party_detail(int width, int height) {
   using namespace ftxui;
 
-  if (accounts_ == nullptr || accounts_->empty() ||
-      selected_account_index_ >= accounts_->size()) {
+  if (accounts_ == nullptr || accounts_->empty() || selected_account_index_ >= accounts_->size()) {
     return window(text("Selected battle") | bold, text("No selected party.")) |
            size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height);
   }
 
-  auto &account = accounts_->at(selected_account_index_);
-  auto &parties = account.parties();
+  auto& account = accounts_->at(selected_account_index_);
+  auto& parties = account.parties();
   if (parties.empty()) {
-    return window(text("Selected battle") | bold, text("No parties.")) |
-           size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height);
+    return window(text("Selected battle") | bold, text("No parties.")) | size(WIDTH, EQUAL, width) |
+           size(HEIGHT, EQUAL, height);
   }
 
   selected_party_index_ = std::min(selected_party_index_, parties.size() - 1);
-  auto &party = parties[selected_party_index_];
+  auto& party = parties[selected_party_index_];
 
-  return render_selected_party_battle(party, width, height) |
-         size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height);
+  return render_selected_party_battle(party, width, height) | size(WIDTH, EQUAL, width) |
+         size(HEIGHT, EQUAL, height);
 }
 
-ftxui::Element AllAccountBattleScreen::render_selected_party_battle(
-    fl::primitives::PartyData &party, int width, int height) const {
+ftxui::Element
+AllAccountBattleScreen::render_selected_party_battle(fl::primitives::PartyData& party, int width,
+                                                     int height) const {
   using namespace ftxui;
 
   const int inner_height = std::max(1, height - 2);
   const int separator_height = 1;
   const int row_height = std::max(1, (inner_height - separator_height) / 2);
-  const int remainder =
-      std::max(0, inner_height - separator_height - (row_height * 2));
+  const int remainder = std::max(0, inner_height - separator_height - (row_height * 2));
 
   std::vector<entt::entity> attackers;
   std::vector<entt::entity> defenders;
   entt::entity active = entt::null;
   if (party.has_encounter()) {
-    auto &encounter = party.encounter_data();
+    auto& encounter = party.encounter_data();
     attackers = encounter.attackers().members();
     defenders = encounter.defenders().members();
     active = encounter.atb_engine().active_combatant();
   } else {
-    for (const auto &member : party.members()) {
+    for (const auto& member : party.members()) {
       defenders.push_back(member.member_id());
     }
   }
 
-  auto enemy_row =
-      attackers.empty()
-          ? (text("field / town") | center |
-             color(fl::lospec500::color_at(24)) | size(WIDTH, EQUAL, width) |
-             size(HEIGHT, EQUAL, row_height))
-          : render_combatant_row(attackers, width, row_height, active);
+  auto enemy_row = attackers.empty()
+                       ? (text("field / town") | center | color(fl::lospec500::color_at(24)) |
+                          size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, row_height))
+                       : render_combatant_row(attackers, width, row_height, active);
 
-  return window(
-             text("Selected battle") | bold,
-             vbox({
-                 enemy_row,
-                 separator() |
-                     fl::lospec500::on_not_black(fl::lospec500::color_at(32)) |
-                     size(HEIGHT, EQUAL, separator_height),
-                 render_combatant_row(defenders, width, row_height + remainder,
-                                      active),
-             })) |
+  return window(text("Selected battle") | bold,
+                vbox({
+                    enemy_row,
+                    separator() | fl::lospec500::on_not_black(fl::lospec500::color_at(32)) |
+                        size(HEIGHT, EQUAL, separator_height),
+                    render_combatant_row(defenders, width, row_height + remainder, active),
+                })) |
          size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height);
 }
 
-ftxui::Element AllAccountBattleScreen::render_combatant_row(
-    std::span<const entt::entity> entities, int width, int height,
-    entt::entity active) const {
+ftxui::Element AllAccountBattleScreen::render_combatant_row(std::span<const entt::entity> entities,
+                                                            int width, int height,
+                                                            entt::entity active) const {
   using namespace ftxui;
 
   constexpr int kColumns = 5;
@@ -404,8 +380,7 @@ ftxui::Element AllAccountBattleScreen::render_combatant_row(
     if (i < static_cast<int>(entities.size()) && registry_ != nullptr &&
         registry_->valid(entities[static_cast<std::size_t>(i)])) {
       const auto entity = entities[static_cast<std::size_t>(i)];
-      content = Combatant{*registry_, entity, true, entity == active}
-                    .Render() |
+      content = Combatant{*registry_, entity, true, entity == active}.Render() |
                 bgcolor(fl::lospec500::color_at(0)) | clear_under;
     }
 
@@ -414,16 +389,14 @@ ftxui::Element AllAccountBattleScreen::render_combatant_row(
   }
 
   if (remainder > 0) {
-    cells.push_back(filler() | size(WIDTH, EQUAL, remainder) |
-                    size(HEIGHT, EQUAL, height));
+    cells.push_back(filler() | size(WIDTH, EQUAL, remainder) | size(HEIGHT, EQUAL, height));
   }
 
-  return hbox(std::move(cells)) | size(WIDTH, EQUAL, width) |
-         size(HEIGHT, EQUAL, height);
+  return hbox(std::move(cells)) | size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height);
 }
 
-ftxui::Element AllAccountBattleScreen::render_roster(
-    std::span<const entt::entity> entities, int width, bool show_levels) const {
+ftxui::Element AllAccountBattleScreen::render_roster(std::span<const entt::entity> entities,
+                                                     int width, bool show_levels) const {
   using namespace ftxui;
 
   std::size_t fixed_chip_width = entities.empty() ? 0 : entities.size() - 1;
@@ -433,24 +406,22 @@ ftxui::Element AllAccountBattleScreen::render_roster(
       continue;
     }
 
-    const auto *stats = registry_->try_get<fl::ecs::components::Stats>(entity);
+    const auto* stats = registry_->try_get<fl::ecs::components::Stats>(entity);
     if (stats == nullptr) {
       fixed_chip_width += 1;
       continue;
     }
 
-    fixed_chip_width +=
-        2 + std::to_string(std::max(0, stats->hp_)).size();
+    fixed_chip_width += 2 + std::to_string(std::max(0, stats->hp_)).size();
   }
 
   const auto available_width = static_cast<std::size_t>(std::max(1, width));
   const auto max_name_width =
       entities.empty()
           ? std::size_t{1}
-          : std::max<std::size_t>(
-                1, available_width > fixed_chip_width
-                       ? (available_width - fixed_chip_width) / entities.size()
-                       : 1);
+          : std::max<std::size_t>(1, available_width > fixed_chip_width
+                                         ? (available_width - fixed_chip_width) / entities.size()
+                                         : 1);
 
   std::string out;
   for (auto entity : entities) {
@@ -465,34 +436,34 @@ ftxui::Element AllAccountBattleScreen::render_roster(
     out = "-";
   }
 
-  return text(shorten(out, static_cast<std::size_t>(width))) |
-         color(fl::lospec500::color_at(32));
+  return text(shorten(out, static_cast<std::size_t>(width))) | color(fl::lospec500::color_at(32));
 }
 
-ftxui::Element AllAccountBattleScreen::render_member_roster(
-    const std::deque<fl::primitives::MemberData> &members, int width) const {
+ftxui::Element
+AllAccountBattleScreen::render_member_roster(const std::deque<fl::primitives::MemberData>& members,
+                                             int width) const {
   std::vector<entt::entity> entities;
   entities.reserve(members.size());
-  for (const auto &member : members) {
+  for (const auto& member : members) {
     entities.push_back(member.member_id());
   }
   return render_roster(entities, width);
 }
 
-std::string AllAccountBattleScreen::entity_level_chip(
-    entt::entity entity, std::size_t max_name_width) const {
+std::string AllAccountBattleScreen::entity_level_chip(entt::entity entity,
+                                                      std::size_t max_name_width) const {
   namespace c = fl::ecs::components;
 
   if (entity == entt::null || registry_ == nullptr) {
     return "-";
   }
 
-  const auto *stats = registry_->try_get<c::Stats>(entity);
+  const auto* stats = registry_->try_get<c::Stats>(entity);
   if (stats == nullptr) {
     return "?";
   }
 
-  const auto *xp = registry_->try_get<c::TrackXP>(entity);
+  const auto* xp = registry_->try_get<c::TrackXP>(entity);
   const int level = xp == nullptr ? 1 : std::max(1, xp->level_);
 
   std::string name = stats->name_;
@@ -500,15 +471,15 @@ std::string AllAccountBattleScreen::entity_level_chip(
   return name + "(L" + std::to_string(level) + ")";
 }
 
-std::string AllAccountBattleScreen::entity_chip(
-    entt::entity entity, std::size_t max_name_width) const {
+std::string AllAccountBattleScreen::entity_chip(entt::entity entity,
+                                                std::size_t max_name_width) const {
   namespace c = fl::ecs::components;
 
   if (entity == entt::null || registry_ == nullptr) {
     return "-";
   }
 
-  const auto *stats = registry_->try_get<c::Stats>(entity);
+  const auto* stats = registry_->try_get<c::Stats>(entity);
   if (stats == nullptr) {
     return "?";
   }

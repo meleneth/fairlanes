@@ -35,22 +35,21 @@ struct SkillDecision {
   entt::entity target{entt::null};
 };
 
-bool has_rule_status(entt::registry &reg, entt::entity entity,
-                     RuleStatus status);
+bool has_rule_status(entt::registry& reg, entt::entity entity, RuleStatus status);
 
-std::optional<SkillDecision> evaluate_rules(
-    entt::registry &reg, entt::entity actor, fl::targeting::TargetRange allies,
-    fl::targeting::TargetRange enemies, std::span<const DecisionRule> rules,
-    const std::function<int()> &roll_percent);
+std::optional<SkillDecision> evaluate_rules(entt::registry& reg, entt::entity actor,
+                                            fl::targeting::TargetRange allies,
+                                            fl::targeting::TargetRange enemies,
+                                            std::span<const DecisionRule> rules,
+                                            const std::function<int()>& roll_percent);
 
 // The first passing rule wins. Conditions are ANDed on the same candidate.
 // Roll once per eligible rule, never once per target. Empty/no match means
 // wait.
-std::optional<SkillDecision>
-evaluate_rules(entt::registry &reg, entt::entity actor,
-               std::span<const entt::entity> allies,
-               std::span<const entt::entity> enemies,
-               std::span<const DecisionRule> rules,
-               const std::function<int()> &roll_percent);
+std::optional<SkillDecision> evaluate_rules(entt::registry& reg, entt::entity actor,
+                                            std::span<const entt::entity> allies,
+                                            std::span<const entt::entity> enemies,
+                                            std::span<const DecisionRule> rules,
+                                            const std::function<int()>& roll_percent);
 
 } // namespace fl::monster

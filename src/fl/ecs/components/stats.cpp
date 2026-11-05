@@ -4,4 +4,6 @@ using fl::ecs::components::Stats;
 
 Stats::Stats(std::string name) : name_(name) {}
 
-bool Stats::is_alive() const { return hp_ > 0; }
+bool Stats::is_alive() const {
+  return hp_ > 0;
+}

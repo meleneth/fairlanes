@@ -57,8 +57,7 @@ struct BattleRenderBudget {
 
 std::string_view profile_name(BattleLayoutProfile profile);
 std::span<const BattleRenderTargetSpec> supported_battle_render_targets();
-std::optional<BattleLayoutProfile>
-battle_render_profile_from_name(std::string_view name);
+std::optional<BattleLayoutProfile> battle_render_profile_from_name(std::string_view name);
 BattleRenderTargetSpec battle_render_target_spec(BattleLayoutProfile profile);
 void force_battle_render_target(BattleLayoutProfile profile);
 void clear_forced_battle_render_target();

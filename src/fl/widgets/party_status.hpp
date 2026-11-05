@@ -10,11 +10,11 @@ namespace fl::widgets {
 
 class PartyStatus : public ftxui::ComponentBase {
 public:
-  PartyStatus(fl::primitives::PartyData &party_data);
+  PartyStatus(fl::primitives::PartyData& party_data);
   ftxui::Element Render() override;
 
 private:
-  fl::primitives::PartyData &party_data_;
+  fl::primitives::PartyData& party_data_;
 };
 
 } // namespace fl::widgets

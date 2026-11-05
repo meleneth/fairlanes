@@ -19,31 +19,43 @@ namespace fl::primitives {
 
 struct EncounterData {
 public:
-  explicit EncounterData(fl::context::PartyCtx *party_ctx);
-  EncounterData(entt::registry &reg, RandomHub &rng, fl::widgets::FancyLog &log,
-                fl::events::PartyBus &bus, entt::entity owner,
+  explicit EncounterData(fl::context::PartyCtx* party_ctx);
+  EncounterData(entt::registry& reg, RandomHub& rng, fl::widgets::FancyLog& log,
+                fl::events::PartyBus& bus, entt::entity owner,
                 bool subscribe_to_party_ticks = true);
-  fl::context::EncounterCtx &context() { return context_; }
-  const fl::context::EncounterCtx &context() const { return context_; }
+  fl::context::EncounterCtx& context() {
+    return context_;
+  }
+  const fl::context::EncounterCtx& context() const {
+    return context_;
+  }
 
-  EncounterData(EncounterData &&) = delete;
-  EncounterData &operator=(EncounterData &&) = delete;
+  EncounterData(EncounterData&&) = delete;
+  EncounterData& operator=(EncounterData&&) = delete;
 
-  EncounterData(const EncounterData &) = delete;
-  EncounterData &operator=(const EncounterData &) = delete;
+  EncounterData(const EncounterData&) = delete;
+  EncounterData& operator=(const EncounterData&) = delete;
 
   // ---- accessors ----
-  fl::primitives::Team &attackers() { return topo_.attackers_; }
-  const fl::primitives::Team &attackers() const { return topo_.attackers_; }
+  fl::primitives::Team& attackers() {
+    return topo_.attackers_;
+  }
+  const fl::primitives::Team& attackers() const {
+    return topo_.attackers_;
+  }
 
-  fl::primitives::Team &defenders() { return topo_.defenders_; }
-  const fl::primitives::Team &defenders() const { return topo_.defenders_; }
+  fl::primitives::Team& defenders() {
+    return topo_.defenders_;
+  }
+  const fl::primitives::Team& defenders() const {
+    return topo_.defenders_;
+  }
 
-  std::vector<entt::entity> &entities_to_cleanup() {
+  std::vector<entt::entity>& entities_to_cleanup() {
     return life_.entities_to_cleanup_;
   }
 
-  const std::vector<entt::entity> &entities_to_cleanup() const {
+  const std::vector<entt::entity>& entities_to_cleanup() const {
     return life_.entities_to_cleanup_;
   }
 
@@ -52,35 +64,51 @@ public:
     fl::events::CombatantBus bus;
   };
 
-  std::deque<EnemyCombatantBus> &enemy_combatant_buses() {
+  std::deque<EnemyCombatantBus>& enemy_combatant_buses() {
     return rt_.enemy_combatant_buses_;
   }
-  const std::deque<EnemyCombatantBus> &enemy_combatant_buses() const {
+  const std::deque<EnemyCombatantBus>& enemy_combatant_buses() const {
     return rt_.enemy_combatant_buses_;
   }
 
-  fl::events::CombatantBus &add_enemy_combatant_bus(entt::entity enemy);
-  fl::events::CombatantBus &add_party_combatant_bus(entt::entity member);
-  fl::events::CombatantBus &combatant_bus(entt::entity combatant);
-  const fl::events::CombatantBus &combatant_bus(entt::entity combatant) const;
-  fl::events::CombatantBus *enemy_combatant_bus(entt::entity enemy);
-  const fl::events::CombatantBus *enemy_combatant_bus(entt::entity enemy) const;
+  fl::events::CombatantBus& add_enemy_combatant_bus(entt::entity enemy);
+  fl::events::CombatantBus& add_party_combatant_bus(entt::entity member);
+  fl::events::CombatantBus& combatant_bus(entt::entity combatant);
+  const fl::events::CombatantBus& combatant_bus(entt::entity combatant) const;
+  fl::events::CombatantBus* enemy_combatant_bus(entt::entity enemy);
+  const fl::events::CombatantBus* enemy_combatant_bus(entt::entity enemy) const;
 
-  seerin::AtbEngine &atb_engine() noexcept { return rt_.atb_; }
-  const seerin::AtbEngine &atb_engine() const noexcept { return rt_.atb_; }
+  seerin::AtbEngine& atb_engine() noexcept {
+    return rt_.atb_;
+  }
+  const seerin::AtbEngine& atb_engine() const noexcept {
+    return rt_.atb_;
+  }
 
-  seerin::AtbInBus &atb_in() noexcept { return rt_.atb_.in(); }
-  const seerin::AtbInBus &atb_in() const noexcept { return rt_.atb_.in(); }
+  seerin::AtbInBus& atb_in() noexcept {
+    return rt_.atb_.in();
+  }
+  const seerin::AtbInBus& atb_in() const noexcept {
+    return rt_.atb_.in();
+  }
 
-  seerin::AtbOutBus &atb_out() noexcept { return rt_.atb_.out(); }
-  const seerin::AtbOutBus &atb_out() const noexcept { return rt_.atb_.out(); }
+  seerin::AtbOutBus& atb_out() noexcept {
+    return rt_.atb_.out();
+  }
+  const seerin::AtbOutBus& atb_out() const noexcept {
+    return rt_.atb_.out();
+  }
 
   // ---- behavior ----
   bool has_alive_enemies() const;
   bool is_over() const;
   void finalize();
-  bool is_raid() const noexcept { return raid_; }
-  void mark_as_raid() noexcept { raid_ = true; }
+  bool is_raid() const noexcept {
+    return raid_;
+  }
+  void mark_as_raid() noexcept {
+    raid_ = true;
+  }
   void clear_pending_events();
   void clear_active_turn_for(entt::entity id);
   void innervate_event_system();
@@ -88,16 +116,21 @@ public:
     return rt_.atb_.scheduler().pending();
   }
 
-  seerin::uWu visual_time() const { return rt_.atb_.scheduler().now(); }
-
-  bool owns_entity(entt::entity e) const {
-    return std::find(life_.entities_to_cleanup_.begin(),
-                     life_.entities_to_cleanup_.end(),
-                     e) != life_.entities_to_cleanup_.end();
+  seerin::uWu visual_time() const {
+    return rt_.atb_.scheduler().now();
   }
 
-  bool is_good_guy(entt::entity e) const { return !owns_entity(e); }
-  bool is_bad_guy(entt::entity e) const { return owns_entity(e); }
+  bool owns_entity(entt::entity e) const {
+    return std::find(life_.entities_to_cleanup_.begin(), life_.entities_to_cleanup_.end(), e) !=
+           life_.entities_to_cleanup_.end();
+  }
+
+  bool is_good_guy(entt::entity e) const {
+    return !owns_entity(e);
+  }
+  bool is_bad_guy(entt::entity e) const {
+    return owns_entity(e);
+  }
 
   fl::targeting::PossibleTargets possible_targets() const {
     return {context_.reg(), attackers().members(), defenders().members()};
@@ -105,17 +138,13 @@ public:
 
   entt::entity target_random_alive_opposition(entt::entity actor) const;
 
-  entt::entity target_for_skill(entt::entity attacker,
-                                fl::skills::SkillKey skill) const;
+  entt::entity target_for_skill(entt::entity attacker, fl::skills::SkillKey skill) const;
   fl::skills::SkillKey choose_skill(entt::entity attacker);
-  std::optional<fl::monster::SkillDecision>
-  choose_action(entt::entity attacker);
+  std::optional<fl::monster::SkillDecision> choose_action(entt::entity attacker);
 
-  void configure_projectile_cover(entt::entity protected_entity,
-                                  entt::entity protector,
+  void configure_projectile_cover(entt::entity protected_entity, entt::entity protector,
                                   fl::skills::SkillId release_skill);
-  entt::entity resolve_skill_target(entt::entity attacker,
-                                    entt::entity aimed_target,
+  entt::entity resolve_skill_target(entt::entity attacker, entt::entity aimed_target,
                                     fl::skills::SkillKey skill);
   void release_projectile_cover(entt::entity actor, fl::skills::SkillKey skill);
 
@@ -160,8 +189,7 @@ private:
   std::optional<ProjectileCover> projectile_cover_;
   std::vector<std::pair<entt::entity, fl::skills::SkillId>> used_skills_;
 
-  void bind_combatant_bus(entt::entity combatant,
-                          fl::events::CombatantBus &combatant_bus);
+  void bind_combatant_bus(entt::entity combatant, fl::events::CombatantBus& combatant_bus);
 
   fl::context::EncounterCtx context_;
   bool raid_{false};

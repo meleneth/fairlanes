@@ -24,8 +24,7 @@ struct TrackXP;
 struct Closet;
 } // namespace fl::ecs::components
 
-namespace fl::events {
-} // namespace fl::events
+namespace fl::events {} // namespace fl::events
 
 namespace fl::fsm {
 struct PartyLoop;

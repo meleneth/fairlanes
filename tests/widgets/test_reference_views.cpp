@@ -3,23 +3,21 @@
 #include <ftxui/screen/screen.hpp>
 
 #include "fl/ecs/components/monster_identity.hpp"
-#include "fl/grand_central.hpp"
 #include "fl/generated/monster_content.hpp"
+#include "fl/grand_central.hpp"
 #include "fl/widgets/bestiary_view.hpp"
 #include "fl/widgets/libram_view.hpp"
 #include "fl/widgets/root_component.hpp"
 
 namespace {
-std::string render(ftxui::ComponentBase &view) {
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(100),
-                                      ftxui::Dimension::Fixed(24));
+std::string render(ftxui::ComponentBase& view) {
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(100), ftxui::Dimension::Fixed(24));
   ftxui::Render(screen, view.Render());
   return screen.ToString();
 }
 } // namespace
 
-TEST_CASE("Libram hides unwitnessed names and descriptions",
-          "[discovery][widgets]") {
+TEST_CASE("Libram hides unwitnessed names and descriptions", "[discovery][widgets]") {
   fl::primitives::DiscoveryJournal journal;
   fl::widgets::LibramView view{journal};
   REQUIRE(render(view).find("No skills witnessed") != std::string::npos);
@@ -30,14 +28,12 @@ TEST_CASE("Libram hides unwitnessed names and descriptions",
   REQUIRE(text.find("Eviscerate") == std::string::npos);
 }
 
-TEST_CASE("Bestiary links only observed monster skills",
-          "[discovery][widgets]") {
+TEST_CASE("Bestiary links only observed monster skills", "[discovery][widgets]") {
   using fl::monster::MonsterKind;
   using fl::skills::SkillId;
   fl::primitives::DiscoveryJournal journal;
   journal.encounter(MonsterKind::ScaredyCat);
-  journal.witness(
-      SkillId::Flee); // Known globally, still hidden for this monster.
+  journal.witness(SkillId::Flee); // Known globally, still hidden for this monster.
   journal.witness(SkillId::Thump, MonsterKind::ScaredyCat);
   std::optional<SkillId> opened;
   fl::widgets::BestiaryView view{journal, [&](auto kind, auto skill) {
@@ -56,20 +52,17 @@ TEST_CASE("Bestiary links only observed monster skills",
   REQUIRE(opened == SkillId::Thump);
 }
 
-TEST_CASE("Shell follows bestiary links and returns to the monster",
-          "[discovery][widgets]") {
+TEST_CASE("Shell follows bestiary links and returns to the monster", "[discovery][widgets]") {
   fl::GrandCentral game{1, 1, 1};
-  auto &bus = game.accounts()[0].party(0).party_bus();
-  bus.emit(fl::events::PartyEvent{
-      fl::events::MonsterEncountered{fl::monster::MonsterKind::ScaredyCat}});
+  auto& bus = game.accounts()[0].party(0).party_bus();
+  bus.emit(
+      fl::events::PartyEvent{fl::events::MonsterEncountered{fl::monster::MonsterKind::ScaredyCat}});
   const auto cat = game.reg().create();
-  game.reg().emplace<fl::ecs::components::MonsterIdentity>(
-      cat, fl::monster::MonsterKind::ScaredyCat);
-  bus.emit(fl::events::PartyEvent{
-      fl::events::SkillWitnessed{cat, fl::skills::SkillId::Thump}});
-  fl::widgets::RootComponent root{game.account_context(0), game.accounts(),
-                                  game.game_log(), game.world_clock(),
-                                  &game.discoveries()};
+  game.reg().emplace<fl::ecs::components::MonsterIdentity>(cat,
+                                                           fl::monster::MonsterKind::ScaredyCat);
+  bus.emit(fl::events::PartyEvent{fl::events::SkillWitnessed{cat, fl::skills::SkillId::Thump}});
+  fl::widgets::RootComponent root{game.account_context(0), game.accounts(), game.game_log(),
+                                  game.world_clock(), &game.discoveries()};
   root.OnEvent(ftxui::Event::Character("b"));
   REQUIRE(render(root).find("Bestiary") != std::string::npos);
   root.OnEvent(ftxui::Event::Tab);
@@ -84,10 +77,9 @@ TEST_CASE("Shell follows bestiary links and returns to the monster",
 TEST_CASE("Gameplay quit requires an explicit selection and defaults to cancel",
           "[widgets][root][quit]") {
   fl::GrandCentral game{1, 1, 1};
-  fl::widgets::RootComponent root{game.account_context(0), game.accounts(),
-                                  game.game_log(), game.world_clock(),
-                                  &game.discoveries()};
-  for (const auto &key : {ftxui::Event::Escape, ftxui::Event::Character("q")}) {
+  fl::widgets::RootComponent root{game.account_context(0), game.accounts(), game.game_log(),
+                                  game.world_clock(), &game.discoveries()};
+  for (const auto& key : {ftxui::Event::Escape, ftxui::Event::Character("q")}) {
     REQUIRE(root.OnEvent(key));
     REQUIRE(render(root).find("Quit Fairlanes?") != std::string::npos);
     REQUIRE(render(root).find("Progress is not saved") != std::string::npos);
@@ -116,11 +108,10 @@ TEST_CASE("Gameplay quit requires an explicit selection and defaults to cancel",
 TEST_CASE("Back leaves reference screens and overlays without requesting quit",
           "[discovery][widgets][root][quit]") {
   fl::GrandCentral game{1, 1, 1};
-  fl::widgets::RootComponent root{game.account_context(0), game.accounts(),
-                                  game.game_log(), game.world_clock(),
-                                  &game.discoveries()};
-  for (const auto &key : {ftxui::Event::Escape, ftxui::Event::Character("q")}) {
-    for (const auto &open : {"l", "b"}) {
+  fl::widgets::RootComponent root{game.account_context(0), game.accounts(), game.game_log(),
+                                  game.world_clock(), &game.discoveries()};
+  for (const auto& key : {ftxui::Event::Escape, ftxui::Event::Character("q")}) {
+    for (const auto& open : {"l", "b"}) {
       root.OnEvent(ftxui::Event::Character(open));
       REQUIRE(root.OnEvent(key));
       REQUIRE_FALSE(root.quit_requested());
@@ -128,7 +119,7 @@ TEST_CASE("Back leaves reference screens and overlays without requesting quit",
       REQUIRE(render(root).find("Esc: back") == std::string::npos);
     }
   }
-  for (const auto &open : {"h", "`"}) {
+  for (const auto& open : {"h", "`"}) {
     root.OnEvent(ftxui::Event::Character(open));
     REQUIRE(root.OnEvent(ftxui::Event::Escape));
     REQUIRE_FALSE(root.quit_requested());

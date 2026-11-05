@@ -21,17 +21,15 @@
 
 namespace fl::widgets {
 
-AccountBattleView::AccountBattleView(fl::context::AccountCtx ctx)
-    : ctx_(std::move(ctx)) {}
+AccountBattleView::AccountBattleView(fl::context::AccountCtx ctx) : ctx_(std::move(ctx)) {}
 
 bool AccountBattleView::OnEvent(ftxui::Event event) {
-  auto *check_is_account =
-      ctx_.reg().try_get<fl::ecs::components::IsAccount>(ctx_.self());
+  auto* check_is_account = ctx_.reg().try_get<fl::ecs::components::IsAccount>(ctx_.self());
   if (!check_is_account) {
     return false;
   }
 
-  auto &account = check_is_account->account_data();
+  auto& account = check_is_account->account_data();
   const int log_count = static_cast<int>(account.parties().size()) + 1;
   focused_log_ = std::clamp(focused_log_, 0, std::max(0, log_count - 1));
   const auto visible_party_count = account.parties().size();
@@ -64,10 +62,9 @@ bool AccountBattleView::OnEvent(ftxui::Event event) {
   }();
 
   if (farm_choice_index != static_cast<std::size_t>(-1)) {
-    auto &party = account.parties()[farm_choice_index];
+    auto& party = account.parties()[farm_choice_index];
     if (!farming_choice_ || farming_choice_party_index_ != farm_choice_index) {
-      farming_choice_ =
-          ftxui::Make<FarmingChoiceView>(party, party.grimoire_discipline());
+      farming_choice_ = ftxui::Make<FarmingChoiceView>(party, party.grimoire_discipline());
       farming_choice_party_index_ = farm_choice_index;
       Add(farming_choice_);
     }
@@ -80,113 +77,86 @@ bool AccountBattleView::OnEvent(ftxui::Event event) {
     return account.log().OnEvent(event);
   }
 
-  return account.parties()[static_cast<std::size_t>(focused_log_ - 1)]
-      .log()
-      .OnEvent(event);
+  return account.parties()[static_cast<std::size_t>(focused_log_ - 1)].log().OnEvent(event);
 }
 
 ftxui::Element AccountBattleView::Render() {
   std::vector<ftxui::Element> rows;
-  auto *check_is_account =
-      ctx_.reg().try_get<fl::ecs::components::IsAccount>(ctx_.self());
+  auto* check_is_account = ctx_.reg().try_get<fl::ecs::components::IsAccount>(ctx_.self());
   if (!check_is_account) {
-    return ftxui::window(
-               ftxui::text("AccountBattleView: ctx_.self() is not an account"),
-               ftxui::text("Missing IsAccount on ctx_.self()")) |
-           ftxui::bgcolor(fl::lospec500::color_at(0)) |
-           ftxui::color(fl::lospec500::color_at(32));
+    return ftxui::window(ftxui::text("AccountBattleView: ctx_.self() is not an account"),
+                         ftxui::text("Missing IsAccount on ctx_.self()")) |
+           ftxui::bgcolor(fl::lospec500::color_at(0)) | ftxui::color(fl::lospec500::color_at(32));
   }
 
-  auto &is_account =
-      ctx_.reg().get<fl::ecs::components::IsAccount>(ctx_.self());
-  auto &parties = is_account.account_data().parties();
-  focused_log_ = std::clamp(focused_log_, 0,
-                            std::max(0, static_cast<int>(parties.size())));
+  auto& is_account = ctx_.reg().get<fl::ecs::components::IsAccount>(ctx_.self());
+  auto& parties = is_account.account_data().parties();
+  focused_log_ = std::clamp(focused_log_, 0, std::max(0, static_cast<int>(parties.size())));
   constexpr std::size_t column_count = 5;
   constexpr int base_combatant_row_height = 3;
   constexpr int root_chrome_height = 3;
   const auto budget = current_battle_render_budget();
-  const int available_height =
-      std::max(1, budget.requested_height - root_chrome_height);
-  const int roster_height =
-      static_cast<int>(parties.size()) * 2 * base_combatant_row_height;
+  const int available_height = std::max(1, budget.requested_height - root_chrome_height);
+  const int roster_height = static_cast<int>(parties.size()) * 2 * base_combatant_row_height;
   const bool show_atb = roster_height * 3 < available_height * 2;
-  const int combatant_row_height =
-      base_combatant_row_height + (show_atb ? 1 : 0);
-  const int account_width =
-      std::max(static_cast<int>(column_count), budget.requested_width);
-  const int base_column_width =
-      account_width / static_cast<int>(column_count);
+  const int combatant_row_height = base_combatant_row_height + (show_atb ? 1 : 0);
+  const int account_width = std::max(static_cast<int>(column_count), budget.requested_width);
+  const int base_column_width = account_width / static_cast<int>(column_count);
   const int extra_columns = account_width % static_cast<int>(column_count);
   auto column_width = [&](std::size_t column) {
-    return base_column_width +
-           (column < static_cast<std::size_t>(extra_columns) ? 1 : 0);
+    return base_column_width + (column < static_cast<std::size_t>(extra_columns) ? 1 : 0);
   };
 
-  auto render_entity_row_5 = [&](const std::vector<entt::entity> &ents) {
+  auto render_entity_row_5 = [&](const std::vector<entt::entity>& ents) {
     std::vector<ftxui::Element> row;
     row.reserve(column_count);
 
-    for (std::size_t i = 0;
-         i < ents.size() && row.size() < column_count; ++i) {
+    for (std::size_t i = 0; i < ents.size() && row.size() < column_count; ++i) {
       fl::widgets::Combatant combatant{ctx_.reg(), ents[i], show_atb};
       row.push_back(combatant.Render() |
-                    ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
-                                column_width(row.size())) |
-                    ftxui::size(ftxui::HEIGHT, ftxui::EQUAL,
-                                combatant_row_height));
+                    ftxui::size(ftxui::WIDTH, ftxui::EQUAL, column_width(row.size())) |
+                    ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, combatant_row_height));
     }
 
     while (row.size() < column_count) {
       row.push_back(ftxui::filler() |
-                    ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
-                                column_width(row.size())) |
-                    ftxui::size(ftxui::HEIGHT, ftxui::EQUAL,
-                                combatant_row_height));
+                    ftxui::size(ftxui::WIDTH, ftxui::EQUAL, column_width(row.size())) |
+                    ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, combatant_row_height));
     }
 
-    return ftxui::hbox(std::move(row)) |
-           ftxui::size(ftxui::WIDTH, ftxui::EQUAL, account_width) |
+    return ftxui::hbox(std::move(row)) | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, account_width) |
            ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, combatant_row_height);
   };
 
-  auto render_memberdata_row_5 =
-      [&](const std::deque<fl::primitives::MemberData> &members) {
-        std::vector<ftxui::Element> row;
-        row.reserve(column_count);
+  auto render_memberdata_row_5 = [&](const std::deque<fl::primitives::MemberData>& members) {
+    std::vector<ftxui::Element> row;
+    row.reserve(column_count);
 
-        std::size_t n = 0;
-        for (const auto &m : members) {
-          if (n++ >= column_count)
-            break;
+    std::size_t n = 0;
+    for (const auto& m : members) {
+      if (n++ >= column_count) break;
 
-          fl::widgets::Combatant combatant{ctx_.reg(), m.member_id(), show_atb};
-          row.push_back(combatant.Render() |
-                        ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
-                                    column_width(row.size())) |
-                        ftxui::size(ftxui::HEIGHT, ftxui::EQUAL,
-                                    combatant_row_height));
-        }
+      fl::widgets::Combatant combatant{ctx_.reg(), m.member_id(), show_atb};
+      row.push_back(combatant.Render() |
+                    ftxui::size(ftxui::WIDTH, ftxui::EQUAL, column_width(row.size())) |
+                    ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, combatant_row_height));
+    }
 
-        while (row.size() < column_count) {
-          row.push_back(ftxui::filler() |
-                        ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
-                                    column_width(row.size())) |
-                        ftxui::size(ftxui::HEIGHT, ftxui::EQUAL,
-                                    combatant_row_height));
-        }
+    while (row.size() < column_count) {
+      row.push_back(ftxui::filler() |
+                    ftxui::size(ftxui::WIDTH, ftxui::EQUAL, column_width(row.size())) |
+                    ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, combatant_row_height));
+    }
 
-        return ftxui::hbox(std::move(row)) |
-               ftxui::size(ftxui::WIDTH, ftxui::EQUAL, account_width) |
-               ftxui::size(ftxui::HEIGHT, ftxui::EQUAL,
-                           combatant_row_height);
-      };
+    return ftxui::hbox(std::move(row)) | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, account_width) |
+           ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, combatant_row_height);
+  };
 
   for (std::size_t i = 0; i < parties.size(); ++i) {
-    auto &party = parties[i];
+    auto& party = parties[i];
 
     if (party.has_encounter()) {
-      auto &enc = party.encounter_data();
+      auto& enc = party.encounter_data();
 
       // Render BOTH sides from EncounterData (2 rows).
       rows.push_back(render_entity_row_5(enc.attackers().members()));
@@ -195,22 +165,18 @@ ftxui::Element AccountBattleView::Render() {
       // No encounter: party status row + still render players.
       fl::widgets::PartyStatus party_status{party};
       std::vector<ftxui::Element> status_row;
-      status_row.push_back(
-          party_status.Render() |
-          ftxui::size(ftxui::WIDTH, ftxui::EQUAL, column_width(0)) |
-          ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, combatant_row_height));
+      status_row.push_back(party_status.Render() |
+                           ftxui::size(ftxui::WIDTH, ftxui::EQUAL, column_width(0)) |
+                           ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, combatant_row_height));
       while (status_row.size() < column_count) {
         status_row.push_back(
             ftxui::filler() |
-            ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
-                        column_width(status_row.size())) |
-            ftxui::size(ftxui::HEIGHT, ftxui::EQUAL,
-                        combatant_row_height));
+            ftxui::size(ftxui::WIDTH, ftxui::EQUAL, column_width(status_row.size())) |
+            ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, combatant_row_height));
       }
       rows.push_back(ftxui::hbox(std::move(status_row)) |
                      ftxui::size(ftxui::WIDTH, ftxui::EQUAL, account_width) |
-                     ftxui::size(ftxui::HEIGHT, ftxui::EQUAL,
-                                 combatant_row_height));
+                     ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, combatant_row_height));
       rows.push_back(render_memberdata_row_5(party.members()));
     }
   }
@@ -221,41 +187,32 @@ ftxui::Element AccountBattleView::Render() {
 
   std::vector<ftxui::Element> log_panes;
   const std::size_t log_pane_count = parties.size() + 1;
-  const int base_log_width =
-      account_width / static_cast<int>(log_pane_count);
-  const int extra_log_columns =
-      account_width % static_cast<int>(log_pane_count);
+  const int base_log_width = account_width / static_cast<int>(log_pane_count);
+  const int extra_log_columns = account_width % static_cast<int>(log_pane_count);
   auto log_width = [&](std::size_t pane) {
-    return base_log_width +
-           (pane < static_cast<std::size_t>(extra_log_columns) ? 1 : 0);
+    return base_log_width + (pane < static_cast<std::size_t>(extra_log_columns) ? 1 : 0);
   };
   log_panes.reserve(log_pane_count);
 
   is_account.account_data().log().set_focused(focused_log_ == 0);
-  log_panes.push_back(
-      is_account.account_data().log().Render() | ftxui::frame |
-      ftxui::vscroll_indicator | ftxui::yflex |
-      ftxui::size(ftxui::WIDTH, ftxui::EQUAL, log_width(0)));
+  log_panes.push_back(is_account.account_data().log().Render() | ftxui::frame |
+                      ftxui::vscroll_indicator | ftxui::yflex |
+                      ftxui::size(ftxui::WIDTH, ftxui::EQUAL, log_width(0)));
 
   for (std::size_t i = 0; i < parties.size(); ++i) {
-    auto &party = parties[i];
+    auto& party = parties[i];
     party.log().set_focused(focused_log_ == static_cast<int>(i + 1));
-    log_panes.push_back(
-        party.log().Render() | ftxui::frame | ftxui::vscroll_indicator |
-        ftxui::yflex |
-        ftxui::size(ftxui::WIDTH, ftxui::EQUAL, log_width(i + 1)));
+    log_panes.push_back(party.log().Render() | ftxui::frame | ftxui::vscroll_indicator |
+                        ftxui::yflex | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, log_width(i + 1)));
   }
 
   if (!log_panes.empty()) {
-    rows.push_back(
-        ftxui::hbox(std::move(log_panes)) |
-        ftxui::size(ftxui::WIDTH, ftxui::EQUAL, account_width) | ftxui::yflex);
+    rows.push_back(ftxui::hbox(std::move(log_panes)) |
+                   ftxui::size(ftxui::WIDTH, ftxui::EQUAL, account_width) | ftxui::yflex);
   }
 
-  return ftxui::vbox(std::move(rows)) |
-         ftxui::size(ftxui::WIDTH, ftxui::EQUAL, account_width) |
-         ftxui::bgcolor(fl::lospec500::color_at(0)) |
-         ftxui::color(fl::lospec500::color_at(32));
+  return ftxui::vbox(std::move(rows)) | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, account_width) |
+         ftxui::bgcolor(fl::lospec500::color_at(0)) | ftxui::color(fl::lospec500::color_at(32));
 }
 
 } // namespace fl::widgets

@@ -17,41 +17,34 @@ class SkillSequencer {
 public:
   using Scheduler = seerin::TimedScheduler<seerin::AtbOutEvent>;
   using FinishTurnFn = std::function<void(entt::entity)>;
-  SkillSequencer(fl::context::EncounterCtx &party_ctx, Scheduler &scheduler,
+  SkillSequencer(fl::context::EncounterCtx& party_ctx, Scheduler& scheduler,
                  FinishTurnFn finish_turn);
 
   void schedule(entt::entity attacker, entt::entity target, SkillKey skill);
 
 private:
-  void schedule_thump_like(entt::entity attacker, entt::entity target,
-                           SkillKey skill);
+  void schedule_thump_like(entt::entity attacker, entt::entity target, SkillKey skill);
   void schedule_eviscerate(entt::entity attacker, entt::entity target);
   void schedule_poison(entt::entity attacker, entt::entity target);
   void schedule_cold_snap(entt::entity attacker, entt::entity target);
   void schedule_flame_strike(entt::entity attacker, entt::entity target);
-  void schedule_decal_strike(entt::entity attacker, entt::entity target,
-                             SkillKey skill);
+  void schedule_decal_strike(entt::entity attacker, entt::entity target, SkillKey skill);
   void schedule_mercyburst(entt::entity attacker, entt::entity target);
-  void schedule_single_heal(entt::entity attacker, entt::entity target,
-                            SkillKey skill, int heal_amount);
-  void schedule_group_heal(entt::entity attacker, SkillKey skill,
-                           int heal_amount);
+  void schedule_single_heal(entt::entity attacker, entt::entity target, SkillKey skill,
+                            int heal_amount);
+  void schedule_group_heal(entt::entity attacker, SkillKey skill, int heal_amount);
   void schedule_flame_wave(entt::entity attacker);
   void schedule_group_damage(entt::entity attacker, SkillKey skill);
-  void schedule_wired_status_effect(entt::entity attacker, entt::entity target,
-                                    SkillKey skill);
-  void schedule_placeholder_effect(entt::entity attacker, entt::entity target,
-                                   SkillKey skill);
+  void schedule_wired_status_effect(entt::entity attacker, entt::entity target, SkillKey skill);
+  void schedule_placeholder_effect(entt::entity attacker, entt::entity target, SkillKey skill);
   void schedule_flee(entt::entity attacker, SkillKey skill);
   void schedule_observe(entt::entity attacker);
-  void schedule_status_detonation(entt::entity attacker, entt::entity target,
-                                  SkillKey skill);
-  void schedule_reek_fade(entt::entity entity, std::string_view label,
-                          int start_beat, int end_beat, ftxui::Color from,
-                          ftxui::Color to);
+  void schedule_status_detonation(entt::entity attacker, entt::entity target, SkillKey skill);
+  void schedule_reek_fade(entt::entity entity, std::string_view label, int start_beat, int end_beat,
+                          ftxui::Color from, ftxui::Color to);
 
-  fl::context::EncounterCtx &party_ctx_;
-  Scheduler &scheduler_;
+  fl::context::EncounterCtx& party_ctx_;
+  Scheduler& scheduler_;
   FinishTurnFn finish_turn_;
 };
 

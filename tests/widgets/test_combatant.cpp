@@ -28,14 +28,13 @@ TEST_CASE("Combatant renders ATB from ECS AtbCharge", "[widgets][combatant]") {
   auto party_ctx = account_ctx.party_context(0);
   auto entity = party_ctx.party_data().members().front().member_id();
 
-  party_ctx.reg().emplace_or_replace<fl::ecs::components::AtbCharge>(entity,
-                                                                     160, 4800);
+  party_ctx.reg().emplace_or_replace<fl::ecs::components::AtbCharge>(entity, 160, 4800);
 
   fl::widgets::Combatant combatant{party_ctx.reg(), entity, true};
   auto element = combatant.Render();
 
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fit(element),
-                                      ftxui::Dimension::Fit(element));
+  auto screen =
+      ftxui::Screen::Create(ftxui::Dimension::Fit(element), ftxui::Dimension::Fit(element));
   ftxui::Render(screen, element);
 
   const std::string rendered = screen.ToString();
@@ -49,13 +48,12 @@ TEST_CASE("Combatant level digits do not change fitted widget width",
   fl::GrandCentral gc{1, 1, 1};
   auto party_ctx = gc.account_context(0).party_context(0);
   const auto entity = party_ctx.party_data().members().front().member_id();
-  auto &xp = party_ctx.reg().get<fl::ecs::components::TrackXP>(entity);
+  auto& xp = party_ctx.reg().get<fl::ecs::components::TrackXP>(entity);
 
   xp.level_ = 9;
   fl::widgets::Combatant single_digit{party_ctx.reg(), entity, true};
   auto single_digit_element = single_digit.Render();
-  const auto single_digit_width =
-      ftxui::Dimension::Fit(single_digit_element).dimx;
+  const auto single_digit_width = ftxui::Dimension::Fit(single_digit_element).dimx;
 
   xp.level_ = 1234;
   fl::widgets::Combatant four_digits{party_ctx.reg(), entity, true};
@@ -73,17 +71,14 @@ TEST_CASE("Combatant renders skill slots when allocated at least nine lines",
   auto party_ctx = account_ctx.party_context(0);
   auto entity = party_ctx.party_data().members().front().member_id();
 
-  auto &party_member =
-      party_ctx.reg().get<fl::ecs::components::PartyMember>(entity);
+  auto& party_member = party_ctx.reg().get<fl::ecs::components::PartyMember>(entity);
   party_member.closet().skill_slots[1] = fl::skills::SkillId::Thump;
 
   fl::widgets::Combatant combatant{party_ctx.reg(), entity, true};
-  auto element = combatant.Render() |
-                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 48) |
+  auto element = combatant.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 48) |
                  ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 9);
 
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(48),
-                                      ftxui::Dimension::Fixed(9));
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(48), ftxui::Dimension::Fixed(9));
   ftxui::Render(screen, element);
 
   const std::string rendered = screen.ToString();
@@ -96,25 +91,22 @@ TEST_CASE("Combatant highlights the skill currently being cast",
           "[widgets][combatant][skills][casting]") {
   fl::GrandCentral gc{1, 1, 1};
   auto party_ctx = gc.account_context(0).party_context(0);
-  auto &encounter = fl::primitives::EncounterBuilder{party_ctx}.thump_it_out();
+  auto& encounter = fl::primitives::EncounterBuilder{party_ctx}.thump_it_out();
   const auto entity = encounter.defenders().members().front();
-  auto &party_member =
-      party_ctx.reg().get<fl::ecs::components::PartyMember>(entity);
+  auto& party_member = party_ctx.reg().get<fl::ecs::components::PartyMember>(entity);
   party_member.closet().skill_slots[1] = fl::skills::SkillId::Thump;
 
-  encounter.combatant_bus(entity).emit(fl::events::CombatantEvent{
-      fl::events::SkillCastStarted{entity, fl::skills::SkillId::Thump}});
+  encounter.combatant_bus(entity).emit(
+      fl::events::CombatantEvent{fl::events::SkillCastStarted{entity, fl::skills::SkillId::Thump}});
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::CastingSkill>(entity));
 
   fl::widgets::Combatant combatant{party_ctx.reg(), entity, true};
-  auto element = combatant.Render() |
-                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 48) |
+  auto element = combatant.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 48) |
                  ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 9);
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(48),
-                                      ftxui::Dimension::Fixed(9));
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(48), ftxui::Dimension::Fixed(9));
   ftxui::Render(screen, element);
 
-  const auto &highlighted = screen.PixelAt(2, 4);
+  const auto& highlighted = screen.PixelAt(2, 4);
   REQUIRE(highlighted.character == "T");
   REQUIRE(highlighted.background_color == fl::lospec500::color_at(14));
   REQUIRE(highlighted.foreground_color == fl::lospec500::color_at(0));
@@ -122,8 +114,7 @@ TEST_CASE("Combatant highlights the skill currently being cast",
 
   encounter.combatant_bus(entity).emit(
       fl::events::CombatantEvent{fl::events::SkillCastFinished{entity}});
-  REQUIRE_FALSE(
-      party_ctx.reg().any_of<fl::ecs::components::CastingSkill>(entity));
+  REQUIRE_FALSE(party_ctx.reg().any_of<fl::ecs::components::CastingSkill>(entity));
 }
 
 TEST_CASE("Combatant renders unknown skill slots without aborting",
@@ -134,18 +125,15 @@ TEST_CASE("Combatant renders unknown skill slots without aborting",
   auto party_ctx = account_ctx.party_context(0);
   auto entity = party_ctx.party_data().members().front().member_id();
 
-  auto &party_member =
-      party_ctx.reg().get<fl::ecs::components::PartyMember>(entity);
+  auto& party_member = party_ctx.reg().get<fl::ecs::components::PartyMember>(entity);
   party_member.closet().skill_slots[1] =
       fl::skills::SkillKey{static_cast<fl::skills::SkillId>(999)};
 
   fl::widgets::Combatant combatant{party_ctx.reg(), entity, true};
-  auto element = combatant.Render() |
-                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 48) |
+  auto element = combatant.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 48) |
                  ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 9);
 
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(48),
-                                      ftxui::Dimension::Fixed(9));
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(48), ftxui::Dimension::Fixed(9));
   ftxui::Render(screen, element);
 
   const std::string rendered = screen.ToString();
@@ -160,20 +148,18 @@ TEST_CASE("Combatant renders debuff labels when allocated enough room",
   auto party_ctx = account_ctx.party_context(0);
   auto entity = party_ctx.party_data().members().front().member_id();
 
-  party_ctx.reg().emplace_or_replace<fl::ecs::components::Poison>(
-      entity, fl::ecs::components::Poison{});
+  party_ctx.reg().emplace_or_replace<fl::ecs::components::Poison>(entity,
+                                                                  fl::ecs::components::Poison{});
   party_ctx.reg().emplace_or_replace<fl::ecs::components::DireBleed>(
       entity, fl::ecs::components::DireBleed{});
-  party_ctx.reg().emplace_or_replace<fl::ecs::components::Freeze>(
-      entity, fl::ecs::components::Freeze{});
+  party_ctx.reg().emplace_or_replace<fl::ecs::components::Freeze>(entity,
+                                                                  fl::ecs::components::Freeze{});
 
   fl::widgets::Combatant combatant{party_ctx.reg(), entity, true};
-  auto element = combatant.Render() |
-                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 56) |
+  auto element = combatant.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 56) |
                  ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 9);
 
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(56),
-                                      ftxui::Dimension::Fixed(9));
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(56), ftxui::Dimension::Fixed(9));
   ftxui::Render(screen, element);
 
   const std::string rendered = screen.ToString();
@@ -196,14 +182,13 @@ TEST_CASE("Combatant flame decal does not change fitted widget dimensions",
   auto baseline_height = ftxui::Dimension::Fit(baseline_element).dimy;
 
   party_ctx.reg().emplace_or_replace<fl::ecs::components::CombatantDecals>(
-      entity,
-      fl::ecs::components::CombatantDecals{fl::ecs::components::DecalEffect{
-          seerin::uWu{1000},
-          fl::ecs::components::DecalEffect::Clock::now(),
-          std::chrono::milliseconds{1000},
-          fl::widgets::effects::DecalAnimationKind::FlameWave,
-          {},
-          2}});
+      entity, fl::ecs::components::CombatantDecals{fl::ecs::components::DecalEffect{
+                  seerin::uWu{1000},
+                  fl::ecs::components::DecalEffect::Clock::now(),
+                  std::chrono::milliseconds{1000},
+                  fl::widgets::effects::DecalAnimationKind::FlameWave,
+                  {},
+                  2}});
 
   fl::widgets::Combatant with_flame{party_ctx.reg(), entity, true};
   auto flame_element = with_flame.Render();
@@ -229,14 +214,11 @@ TEST_CASE("Combatant non-flame decals do not change fitted widget dimensions",
       entity,
       fl::ecs::components::CombatantDecals{fl::ecs::components::DecalEffect{
           seerin::uWu{1000}, fl::ecs::components::DecalEffect::Clock::now(),
-          std::chrono::milliseconds{1000},
-          fl::widgets::effects::DecalAnimationKind::Shock}});
+          std::chrono::milliseconds{1000}, fl::widgets::effects::DecalAnimationKind::Shock}});
 
-  const auto &decal =
-      party_ctx.reg().get<fl::ecs::components::CombatantDecals>(entity);
+  const auto& decal = party_ctx.reg().get<fl::ecs::components::CombatantDecals>(entity);
   REQUIRE(decal.effects.size() == 1);
-  REQUIRE(decal.effects.front().animation_kind ==
-          fl::widgets::effects::DecalAnimationKind::Shock);
+  REQUIRE(decal.effects.front().animation_kind == fl::widgets::effects::DecalAnimationKind::Shock);
 
   fl::widgets::Combatant with_decal{party_ctx.reg(), entity, true};
   auto decal_element = with_decal.Render();
@@ -260,35 +242,28 @@ TEST_CASE("Combatant underlay decal renders behind combatant text",
 
   fl::widgets::effects::DecalConfig config;
   config.seed = 0x57A2F17Eu;
-  party_ctx.reg()
-      .emplace_or_replace<fl::ecs::components::CombatantUnderlayDecals>(
-          entity,
-          fl::ecs::components::CombatantUnderlayDecals{
-              fl::ecs::components::DecalEffect{
-                  seerin::uWu{0},
-                  fl::ecs::components::DecalEffect::Clock::now(),
+  party_ctx.reg().emplace_or_replace<fl::ecs::components::CombatantUnderlayDecals>(
+      entity, fl::ecs::components::CombatantUnderlayDecals{fl::ecs::components::DecalEffect{
+                  seerin::uWu{0}, fl::ecs::components::DecalEffect::Clock::now(),
                   std::chrono::milliseconds{2000},
                   fl::widgets::effects::DecalAnimationKind::Starfire, config}});
 
   fl::widgets::Combatant with_underlay{party_ctx.reg(), entity, true};
-  auto element = with_underlay.Render() |
-                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 48) |
+  auto element = with_underlay.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 48) |
                  ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 9);
 
   auto measured_underlay = with_underlay.Render();
   REQUIRE(ftxui::Dimension::Fit(measured_underlay).dimx == baseline_width);
   REQUIRE(ftxui::Dimension::Fit(measured_underlay).dimy == baseline_height);
 
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(48),
-                                      ftxui::Dimension::Fixed(9));
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(48), ftxui::Dimension::Fixed(9));
   ftxui::Render(screen, element);
 
   const std::string rendered = screen.ToString();
   REQUIRE(rendered.find("Observe") != std::string::npos);
   bool saw_starfire_glyph = false;
   for (const char glyph : std::string{".,:;!*^#@"}) {
-    saw_starfire_glyph =
-        saw_starfire_glyph || rendered.find(glyph) != std::string::npos;
+    saw_starfire_glyph = saw_starfire_glyph || rendered.find(glyph) != std::string::npos;
   }
   REQUIRE(saw_starfire_glyph);
 }
@@ -306,8 +281,7 @@ TEST_CASE("Combatant derived status underlays do not change fitted dimensions",
   auto baseline_width = ftxui::Dimension::Fit(baseline_element).dimx;
   auto baseline_height = ftxui::Dimension::Fit(baseline_element).dimy;
 
-  auto &statuses =
-      party_ctx.reg().emplace<fl::ecs::components::CombatStatuses>(entity);
+  auto& statuses = party_ctx.reg().emplace<fl::ecs::components::CombatStatuses>(entity);
   fl::ecs::components::CombatStatusEffect shield;
   shield.id = statuses.next_id++;
   shield.kind = fl::ecs::components::CombatStatusKind::Shield;
@@ -346,8 +320,7 @@ TEST_CASE("Combatant can render multiple decals without changing dimensions",
       party_ctx.reg(), entity,
       fl::ecs::components::DecalEffect{
           seerin::uWu{1000}, fl::ecs::components::DecalEffect::Clock::now(),
-          std::chrono::milliseconds{1000},
-          fl::widgets::effects::DecalAnimationKind::Shock});
+          std::chrono::milliseconds{1000}, fl::widgets::effects::DecalAnimationKind::Shock});
 
   fl::widgets::effects::DecalConfig config;
   config.color = ftxui::Color::Red;
@@ -356,12 +329,10 @@ TEST_CASE("Combatant can render multiple decals without changing dimensions",
       party_ctx.reg(), entity,
       fl::ecs::components::DecalEffect{
           seerin::uWu{1000}, fl::ecs::components::DecalEffect::Clock::now(),
-          std::chrono::milliseconds{1000},
-          fl::widgets::effects::DecalAnimationKind::HitpointNumber, config, 2});
+          std::chrono::milliseconds{1000}, fl::widgets::effects::DecalAnimationKind::HitpointNumber,
+          config, 2});
 
-  REQUIRE(party_ctx.reg()
-              .get<fl::ecs::components::CombatantDecals>(entity)
-              .effects.size() == 2);
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::CombatantDecals>(entity).effects.size() == 2);
 
   fl::widgets::Combatant with_decals{party_ctx.reg(), entity, true};
   auto decal_element = with_decals.Render();

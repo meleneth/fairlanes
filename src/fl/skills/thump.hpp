@@ -16,8 +16,7 @@ public:
   Thump();
 
   // Apply one Thump from attacker->defender, returns damage dealt (int).
-  int thump(fl::context::AttackCtx &&ctx,
-            SkillKey skill = SkillKey{SkillId::Thump});
+  int thump(fl::context::AttackCtx&& ctx, SkillKey skill = SkillKey{SkillId::Thump});
 
   // Tunables
   double hit_rate = 0.90;
@@ -37,6 +36,5 @@ private:
   double skill_mult_;
   // double one_handed_mod_;
   double damage_;
-
 };
 } // namespace fl::skills

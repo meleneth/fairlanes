@@ -8,8 +8,8 @@ TEST_CASE("Party combat conversion borrows its encounter and preserves scoped au
   fl::GrandCentral gc{1, 1, 1};
   auto account = gc.account_context(0);
   auto party = account.party_context(0);
-  auto &encounter = fl::primitives::EncounterBuilder{party}.thump_it_out();
-  fl::context::EncounterCtx &ctx = party;
+  auto& encounter = fl::primitives::EncounterBuilder{party}.thump_it_out();
+  fl::context::EncounterCtx& ctx = party;
   REQUIRE(&ctx == &encounter.context());
   REQUIRE(&ctx.reg() == &party.reg());
   REQUIRE(&ctx.rng() == &party.rng());
@@ -26,7 +26,7 @@ TEST_CASE("An independently owned encounter has its own authority and tick sourc
   auto id = gc.reg().create();
   fl::events::PartyBus bus;
   fl::primitives::EncounterData encounter{gc.reg(), gc.rng(), account.log(), bus, id, false};
-  auto &ctx = encounter.context();
+  auto& ctx = encounter.context();
   REQUIRE(&ctx.encounter() == &encounter);
   REQUIRE(&ctx.log() == &account.log());
   REQUIRE(&ctx.bus() == &bus);

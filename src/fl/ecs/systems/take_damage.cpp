@@ -22,22 +22,20 @@
 #include <limits>
 
 namespace fl::ecs::systems {
-int TakeDamage::commit(fl::context::AttackCtx &ctx) {
+int TakeDamage::commit(fl::context::AttackCtx& ctx) {
   return commit(ctx, fl::lospec500::color_at(4));
 }
 
-int TakeDamage::commit(fl::context::AttackCtx &ctx,
-                       ftxui::Color damage_number_color) {
+int TakeDamage::commit(fl::context::AttackCtx& ctx, ftxui::Color damage_number_color) {
   using fl::ecs::components::Stats;
-  auto &defender_stats = ctx.reg().get<Stats>(ctx.defender());
+  auto& defender_stats = ctx.reg().get<Stats>(ctx.defender());
 
   if (fl::ecs::systems::CombatStatusSystem::attack_misses(ctx)) {
     return 0;
   }
 
-  const int incoming_total = ctx.damage().physical + ctx.damage().magical +
-                             ctx.damage().fire + ctx.damage().ice +
-                             ctx.damage().lightning;
+  const int incoming_total = ctx.damage().physical + ctx.damage().magical + ctx.damage().fire +
+                             ctx.damage().ice + ctx.damage().lightning;
   const auto effective = effective_combat_stats(ctx.reg(), ctx.defender());
   // Channel resistance applies first to every landed damage packet; status
   // modifiers then run, followed by flat Armor for direct physical hits.
@@ -45,17 +43,15 @@ int TakeDamage::commit(fl::context::AttackCtx &ctx,
   fl::ecs::systems::CombatStatusSystem::apply_damage_modifiers(ctx, adjusted);
   // Flat Armor follows percentage status modifiers and affects only the
   // physical channel of direct hits. Scripted and periodic packets bypass it.
-  if (ctx.hit_kind() == fl::primitives::HitKind::Direct &&
-      adjusted.physical > 0) {
-    adjusted.physical =
-        std::max(0, adjusted.physical - std::max(0, effective.armor));
+  if (ctx.hit_kind() == fl::primitives::HitKind::Direct && adjusted.physical > 0) {
+    adjusted.physical = std::max(0, adjusted.physical - std::max(0, effective.armor));
   }
-  int total = adjusted.physical + adjusted.magical + adjusted.fire +
-              adjusted.ice + adjusted.lightning;
+  int total =
+      adjusted.physical + adjusted.magical + adjusted.fire + adjusted.ice + adjusted.lightning;
   if (incoming_total > 0) {
     total = std::max(1, total);
   }
-  auto &attacker_stats = ctx.reg().get<Stats>(ctx.attacker());
+  auto& attacker_stats = ctx.reg().get<Stats>(ctx.attacker());
 
   auto was_alive = defender_stats.is_alive();
   defender_stats.hp_ = std::max(0, defender_stats.hp_ - total);
@@ -68,41 +64,34 @@ int TakeDamage::commit(fl::context::AttackCtx &ctx,
         ctx.reg(), ctx.defender(),
         fl::ecs::components::DecalEffect{
             seerin::uWu{std::numeric_limits<int64_t>::max()},
-            fl::ecs::components::DecalEffect::Clock::now(),
-            std::chrono::seconds{1},
-            fl::widgets::effects::DecalAnimationKind::HitpointNumber, config,
-            2});
+            fl::ecs::components::DecalEffect::Clock::now(), std::chrono::seconds{1},
+            fl::widgets::effects::DecalAnimationKind::HitpointNumber, config, 2});
   }
   if (!defender_stats.is_alive() && was_alive) {
-    auto party_member =
-        ctx.reg().try_get<fl::ecs::components::PartyMember>(ctx.attacker());
-    auto dead_party_member =
-        ctx.reg().try_get<fl::ecs::components::PartyMember>(ctx.defender());
+    auto party_member = ctx.reg().try_get<fl::ecs::components::PartyMember>(ctx.attacker());
+    auto dead_party_member = ctx.reg().try_get<fl::ecs::components::PartyMember>(ctx.defender());
 
-    ctx.log().append_markup(
-        fmt::format("[name]({}) [error](killed) [name]({})!",
-                    attacker_stats.name_, defender_stats.name_));
+    ctx.log().append_markup(fmt::format("[name]({}) [error](killed) [name]({})!",
+                                        attacker_stats.name_, defender_stats.name_));
 
     if (dead_party_member) {
-      auto &dead_party_data = dead_party_member->party().party_data();
+      auto& dead_party_data = dead_party_member->party().party_data();
       if (dead_party_data.has_encounter()) {
         dead_party_data.encounter_data().clear_active_turn_for(ctx.defender());
         dead_party_data.encounter_data()
             .combatant_bus(ctx.defender())
-            .emit(fl::events::CombatantEvent{
-                fl::events::PlayerDied{ctx.defender(), ctx.attacker()}});
+            .emit(
+                fl::events::CombatantEvent{fl::events::PlayerDied{ctx.defender(), ctx.attacker()}});
       }
 
       if (dead_party_data.all_members_dead()) {
-        dead_party_data.party_bus().emit(
-            fl::events::PartyEvent{fl::events::PartyWiped{}});
+        dead_party_data.party_bus().emit(fl::events::PartyEvent{fl::events::PartyWiped{}});
       }
     }
 
     if (party_member && !party_member->party().party_data().in_raid()) {
-      fl::systems::GrantXPToParty::commit(
-          ctx.entity_context(party_member->party_), 256);
-      auto &party_data = party_member->party().party_data();
+      fl::systems::GrantXPToParty::commit(ctx.entity_context(party_member->party_), 256);
+      auto& party_data = party_member->party().party_data();
       party_data.party_bus().emit(fl::events::PartyEvent{
           fl::events::LootDropRequested{ctx.defender(), party_member->party_}});
     }

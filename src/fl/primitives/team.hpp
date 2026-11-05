@@ -17,14 +17,26 @@ struct Team {
 public:
   Team() = default;
 
-  auto begin() { return members_.begin(); }
-  auto end() { return members_.end(); }
-  auto begin() const { return members_.begin(); }
-  auto end() const { return members_.end(); }
+  auto begin() {
+    return members_.begin();
+  }
+  auto end() {
+    return members_.end();
+  }
+  auto begin() const {
+    return members_.begin();
+  }
+  auto end() const {
+    return members_.end();
+  }
 
   // ---- accessors ----
-  std::vector<entt::entity> &members() noexcept { return members_; }
-  const std::vector<entt::entity> &members() const noexcept { return members_; }
+  std::vector<entt::entity>& members() noexcept {
+    return members_;
+  }
+  const std::vector<entt::entity>& members() const noexcept {
+    return members_;
+  }
 
   bool contains(entt::entity e) const {
     return std::find(members_.begin(), members_.end(), e) != members_.end();
@@ -33,11 +45,11 @@ public:
   // MA RK_CLASS_MOVEONLY(Team);
 
   template <fl::context::WorldCoreCtx Ctx, typename Fn>
-  void for_each_alive_member(Ctx &ctx, Fn &&fn) const {
+  void for_each_alive_member(Ctx& ctx, Fn&& fn) const {
     using fl::ecs::components::Stats;
 
     for (auto e : members_) {
-      if (auto *stats = ctx.reg().template try_get<Stats>(e)) {
+      if (auto* stats = ctx.reg().template try_get<Stats>(e)) {
         if (stats->is_alive()) {
           std::forward<Fn>(fn)(e);
         }
@@ -45,19 +57,17 @@ public:
     }
   }
 
-  template <fl::context::WorldCoreCtx Ctx, typename Fn>
-  void for_each_member(Ctx &, Fn &&fn) const {
+  template <fl::context::WorldCoreCtx Ctx, typename Fn> void for_each_member(Ctx&, Fn&& fn) const {
     for (auto e : members_) {
       std::forward<Fn>(fn)(e);
     }
   }
 
-  template <fl::context::WorldCoreCtx Ctx>
-  bool has_alive_members(Ctx &ctx) const {
+  template <fl::context::WorldCoreCtx Ctx> bool has_alive_members(Ctx& ctx) const {
     using fl::ecs::components::Stats;
 
     for (auto e : members_) {
-      if (auto *stats = ctx.reg().template try_get<Stats>(e)) {
+      if (auto* stats = ctx.reg().template try_get<Stats>(e)) {
         if (stats->hp_ > 0) {
           return true;
         }
@@ -66,15 +76,14 @@ public:
     return false;
   }
 
-  template <fl::context::WorldCoreCtx Ctx>
-  std::vector<entt::entity> alive_members(Ctx &ctx) const {
+  template <fl::context::WorldCoreCtx Ctx> std::vector<entt::entity> alive_members(Ctx& ctx) const {
     using fl::ecs::components::Stats;
 
     std::vector<entt::entity> out;
     out.reserve(members_.size());
 
     for (auto e : members_) {
-      if (auto *stats = ctx.reg().template try_get<Stats>(e)) {
+      if (auto* stats = ctx.reg().template try_get<Stats>(e)) {
         if (stats->hp_ > 0) {
           out.push_back(e);
         }
@@ -84,7 +93,7 @@ public:
   }
 
   template <fl::context::WorldCoreCtx Ctx>
-  std::optional<entt::entity> random_alive_member(Ctx &ctx) const {
+  std::optional<entt::entity> random_alive_member(Ctx& ctx) const {
     auto rs = ctx.rng().stream("encounter/team");
 
     std::optional<entt::entity> selected;
@@ -101,14 +110,14 @@ public:
   }
 
   template <fl::context::WorldCoreCtx Ctx>
-  std::optional<entt::entity> least_health_member(Ctx &ctx) const {
+  std::optional<entt::entity> least_health_member(Ctx& ctx) const {
     using fl::ecs::components::Stats;
 
     std::optional<entt::entity> selected;
     int selected_hp = 0;
 
     for (auto e : members_) {
-      auto *stats = ctx.reg().template try_get<Stats>(e);
+      auto* stats = ctx.reg().template try_get<Stats>(e);
       if (stats == nullptr) {
         continue;
       }

@@ -12,19 +12,16 @@ using fl::widgets::CombatantDetailLevel;
 using fl::widgets::PartyRenderingMode;
 using fl::widgets::select_battle_render_budget;
 
-int enabled_feature_count(const fl::widgets::BattleRenderBudget &budget) {
+int enabled_feature_count(const fl::widgets::BattleRenderBudget& budget) {
   return static_cast<int>(budget.show_full_combatants) +
-         static_cast<int>(budget.show_party_strips) +
-         static_cast<int>(budget.show_underlays) +
-         static_cast<int>(budget.show_field_ambience) +
-         static_cast<int>(budget.show_skill_decals) +
+         static_cast<int>(budget.show_party_strips) + static_cast<int>(budget.show_underlays) +
+         static_cast<int>(budget.show_field_ambience) + static_cast<int>(budget.show_skill_decals) +
          static_cast<int>(budget.show_full_status_labels);
 }
 
 } // namespace
 
-TEST_CASE("Battle render budget selects canonical target profiles",
-          "[widgets][battle-budget]") {
+TEST_CASE("Battle render budget selects canonical target profiles", "[widgets][battle-budget]") {
   struct Case {
     int width;
     int height;
@@ -42,9 +39,8 @@ TEST_CASE("Battle render budget selects canonical target profiles",
       Case{220, 60, BattleLayoutProfile::Showcase, "Showcase", 5, 20},
   };
 
-  for (const auto &target : cases) {
-    const auto budget =
-        select_battle_render_budget(target.width, target.height);
+  for (const auto& target : cases) {
+    const auto budget = select_battle_render_budget(target.width, target.height);
     CHECK(budget.profile == target.profile);
     CHECK(fl::widgets::profile_name(budget.profile) == target.name);
     CHECK(budget.requested_width == target.width);
@@ -54,35 +50,22 @@ TEST_CASE("Battle render budget selects canonical target profiles",
   }
 }
 
-TEST_CASE("Battle render budget has deterministic boundary behavior",
-          "[widgets][battle-budget]") {
-  CHECK(select_battle_render_budget(99, 30).profile ==
-        BattleLayoutProfile::Tiny);
-  CHECK(select_battle_render_budget(100, 29).profile ==
-        BattleLayoutProfile::Tiny);
-  CHECK(select_battle_render_budget(100, 30).profile ==
-        BattleLayoutProfile::Compact);
+TEST_CASE("Battle render budget has deterministic boundary behavior", "[widgets][battle-budget]") {
+  CHECK(select_battle_render_budget(99, 30).profile == BattleLayoutProfile::Tiny);
+  CHECK(select_battle_render_budget(100, 29).profile == BattleLayoutProfile::Tiny);
+  CHECK(select_battle_render_budget(100, 30).profile == BattleLayoutProfile::Compact);
 
-  CHECK(select_battle_render_budget(139, 40).profile ==
-        BattleLayoutProfile::Compact);
-  CHECK(select_battle_render_budget(140, 39).profile ==
-        BattleLayoutProfile::Compact);
-  CHECK(select_battle_render_budget(140, 40).profile ==
-        BattleLayoutProfile::Standard);
+  CHECK(select_battle_render_budget(139, 40).profile == BattleLayoutProfile::Compact);
+  CHECK(select_battle_render_budget(140, 39).profile == BattleLayoutProfile::Compact);
+  CHECK(select_battle_render_budget(140, 40).profile == BattleLayoutProfile::Standard);
 
-  CHECK(select_battle_render_budget(179, 50).profile ==
-        BattleLayoutProfile::Standard);
-  CHECK(select_battle_render_budget(180, 49).profile ==
-        BattleLayoutProfile::Standard);
-  CHECK(select_battle_render_budget(180, 50).profile ==
-        BattleLayoutProfile::Wide);
+  CHECK(select_battle_render_budget(179, 50).profile == BattleLayoutProfile::Standard);
+  CHECK(select_battle_render_budget(180, 49).profile == BattleLayoutProfile::Standard);
+  CHECK(select_battle_render_budget(180, 50).profile == BattleLayoutProfile::Wide);
 
-  CHECK(select_battle_render_budget(219, 60).profile ==
-        BattleLayoutProfile::Wide);
-  CHECK(select_battle_render_budget(220, 59).profile ==
-        BattleLayoutProfile::Wide);
-  CHECK(select_battle_render_budget(220, 60).profile ==
-        BattleLayoutProfile::Showcase);
+  CHECK(select_battle_render_budget(219, 60).profile == BattleLayoutProfile::Wide);
+  CHECK(select_battle_render_budget(220, 59).profile == BattleLayoutProfile::Wide);
+  CHECK(select_battle_render_budget(220, 60).profile == BattleLayoutProfile::Showcase);
 }
 
 TEST_CASE("Battle render budget exposes supported render targets by name",
@@ -95,28 +78,20 @@ TEST_CASE("Battle render budget exposes supported render targets by name",
   CHECK(targets[0].height == 24);
   CHECK(targets[0].name == "Tiny");
 
-  CHECK(fl::widgets::battle_render_profile_from_name("tiny") ==
-        BattleLayoutProfile::Tiny);
-  CHECK(fl::widgets::battle_render_profile_from_name("Compact") ==
-        BattleLayoutProfile::Compact);
-  CHECK(fl::widgets::battle_render_profile_from_name("standard") ==
-        BattleLayoutProfile::Standard);
-  CHECK(fl::widgets::battle_render_profile_from_name("wide") ==
-        BattleLayoutProfile::Wide);
-  CHECK(fl::widgets::battle_render_profile_from_name("showcase") ==
-        BattleLayoutProfile::Showcase);
-  CHECK(fl::widgets::battle_render_profile_from_name("show-case") ==
-        BattleLayoutProfile::Showcase);
+  CHECK(fl::widgets::battle_render_profile_from_name("tiny") == BattleLayoutProfile::Tiny);
+  CHECK(fl::widgets::battle_render_profile_from_name("Compact") == BattleLayoutProfile::Compact);
+  CHECK(fl::widgets::battle_render_profile_from_name("standard") == BattleLayoutProfile::Standard);
+  CHECK(fl::widgets::battle_render_profile_from_name("wide") == BattleLayoutProfile::Wide);
+  CHECK(fl::widgets::battle_render_profile_from_name("showcase") == BattleLayoutProfile::Showcase);
+  CHECK(fl::widgets::battle_render_profile_from_name("show-case") == BattleLayoutProfile::Showcase);
   CHECK_FALSE(fl::widgets::battle_render_profile_from_name("enormous"));
 }
 
-TEST_CASE("Battle render budget can force the current render target",
-          "[widgets][battle-budget]") {
+TEST_CASE("Battle render budget can force the current render target", "[widgets][battle-budget]") {
   fl::widgets::clear_forced_battle_render_target();
 
   fl::widgets::force_battle_render_target(BattleLayoutProfile::Standard);
-  REQUIRE(fl::widgets::forced_battle_render_target() ==
-          BattleLayoutProfile::Standard);
+  REQUIRE(fl::widgets::forced_battle_render_target() == BattleLayoutProfile::Standard);
 
   const auto forced = fl::widgets::current_battle_render_budget();
   CHECK(forced.profile == BattleLayoutProfile::Standard);
@@ -133,13 +108,10 @@ TEST_CASE("Battle render budget can force the current render target",
   CHECK_FALSE(fl::widgets::forced_battle_render_target());
 }
 
-TEST_CASE("Battle render budget feature flags enrich monotonically",
-          "[widgets][battle-budget]") {
+TEST_CASE("Battle render budget feature flags enrich monotonically", "[widgets][battle-budget]") {
   const std::array budgets{
-      select_battle_render_budget(80, 24),
-      select_battle_render_budget(100, 30),
-      select_battle_render_budget(140, 40),
-      select_battle_render_budget(180, 50),
+      select_battle_render_budget(80, 24),  select_battle_render_budget(100, 30),
+      select_battle_render_budget(140, 40), select_battle_render_budget(180, 50),
       select_battle_render_budget(220, 60),
   };
 
@@ -147,13 +119,11 @@ TEST_CASE("Battle render budget feature flags enrich monotonically",
     CHECK(budgets[i].visible_party_count >= budgets[i - 1].visible_party_count);
     CHECK(budgets[i].log_line_budget >= budgets[i - 1].log_line_budget);
     CHECK(budgets[i].status_label_budget >= budgets[i - 1].status_label_budget);
-    CHECK(enabled_feature_count(budgets[i]) >=
-          enabled_feature_count(budgets[i - 1]));
+    CHECK(enabled_feature_count(budgets[i]) >= enabled_feature_count(budgets[i - 1]));
   }
 }
 
-TEST_CASE("Battle render budget exposes expected target capabilities",
-          "[widgets][battle-budget]") {
+TEST_CASE("Battle render budget exposes expected target capabilities", "[widgets][battle-budget]") {
   const auto tiny = select_battle_render_budget(80, 24);
   CHECK(tiny.combatant_detail_level == CombatantDetailLevel::Minimal);
   CHECK(tiny.party_rendering_mode == PartyRenderingMode::ActiveBattle);

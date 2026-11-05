@@ -11,24 +11,40 @@ struct uWu final {
   constexpr explicit uWu(int64_t x) : v(x) {}
 
   // Arithmetic
-  friend constexpr uWu operator+(uWu a, uWu b) { return uWu{a.v + b.v}; }
-  friend constexpr uWu operator-(uWu a, uWu b) { return uWu{a.v - b.v}; }
-  friend constexpr uWu &operator+=(uWu &a, uWu b) {
+  friend constexpr uWu operator+(uWu a, uWu b) {
+    return uWu{a.v + b.v};
+  }
+  friend constexpr uWu operator-(uWu a, uWu b) {
+    return uWu{a.v - b.v};
+  }
+  friend constexpr uWu& operator+=(uWu& a, uWu b) {
     a.v += b.v;
     return a;
   }
-  friend constexpr uWu &operator-=(uWu &a, uWu b) {
+  friend constexpr uWu& operator-=(uWu& a, uWu b) {
     a.v -= b.v;
     return a;
   }
 
   // Comparisons
-  friend constexpr bool operator==(uWu a, uWu b) { return a.v == b.v; }
-  friend constexpr bool operator!=(uWu a, uWu b) { return a.v != b.v; }
-  friend constexpr bool operator<(uWu a, uWu b) { return a.v < b.v; }
-  friend constexpr bool operator<=(uWu a, uWu b) { return a.v <= b.v; }
-  friend constexpr bool operator>(uWu a, uWu b) { return a.v > b.v; }
-  friend constexpr bool operator>=(uWu a, uWu b) { return a.v >= b.v; }
+  friend constexpr bool operator==(uWu a, uWu b) {
+    return a.v == b.v;
+  }
+  friend constexpr bool operator!=(uWu a, uWu b) {
+    return a.v != b.v;
+  }
+  friend constexpr bool operator<(uWu a, uWu b) {
+    return a.v < b.v;
+  }
+  friend constexpr bool operator<=(uWu a, uWu b) {
+    return a.v <= b.v;
+  }
+  friend constexpr bool operator>(uWu a, uWu b) {
+    return a.v > b.v;
+  }
+  friend constexpr bool operator>=(uWu a, uWu b) {
+    return a.v >= b.v;
+  }
 };
 
 constexpr uWu UWU_PER_BEAT{80};

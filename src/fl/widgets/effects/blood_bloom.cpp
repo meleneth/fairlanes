@@ -55,9 +55,8 @@ BloodBloom::BloodBloom(int width, int height, DecalConfig config) {
   const int count = std::max(28, width * height / 18);
   for (int i = 0; i < count; ++i) {
     const float t0 = start(rng);
-    impl->droplets.push_back(
-        {angle(rng), dist(rng), t0, std::min(1.0f, t0 + span(rng)),
-         glyphs[static_cast<std::size_t>(i % glyphs.size())]});
+    impl->droplets.push_back({angle(rng), dist(rng), t0, std::min(1.0f, t0 + span(rng)),
+                              glyphs[static_cast<std::size_t>(i % glyphs.size())]});
   }
 
   impl_ = std::move(impl);
@@ -79,7 +78,7 @@ Frame BloodBloom::render(float progress) const {
   const auto dark = palette(1);
   const auto dried = palette(1);
 
-  for (const auto &d : impl_->droplets) {
+  for (const auto& d : impl_->droplets) {
     if (t < d.start || t > d.end) {
       continue;
     }
@@ -99,7 +98,9 @@ float BloodBloom::duration_seconds() const {
   return impl_ ? impl_->config.duration_seconds : 1.0f;
 }
 
-std::string_view BloodBloom::name() const { return "BloodBloom"; }
+std::string_view BloodBloom::name() const {
+  return "BloodBloom";
+}
 
 DecalAnimationKind BloodBloom::kind() const {
   return DecalAnimationKind::BloodBloom;

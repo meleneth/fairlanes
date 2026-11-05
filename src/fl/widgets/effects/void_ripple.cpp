@@ -50,10 +50,8 @@ VoidRipple::VoidRipple(int width, int height, DecalConfig config) {
   impl->config = config;
 
   std::mt19937 rng(config.seed ^ 0x01D5A99Fu);
-  std::uniform_real_distribution<float> cx(
-      0.0f, static_cast<float>(std::max(1, width - 1)));
-  std::uniform_real_distribution<float> cy(
-      0.0f, static_cast<float>(std::max(1, height - 1)));
+  std::uniform_real_distribution<float> cx(0.0f, static_cast<float>(std::max(1, width - 1)));
+  std::uniform_real_distribution<float> cy(0.0f, static_cast<float>(std::max(1, height - 1)));
   std::uniform_real_distribution<float> start(0.0f, 0.55f);
 
   const int center_count = std::max(1, std::min(3, width / 25 + 1));
@@ -64,11 +62,10 @@ VoidRipple::VoidRipple(int width, int height, DecalConfig config) {
   static constexpr std::array<char, 3> glyphs{'.', '*', '+'};
   const int stars = std::max(24, width * height / 12);
   for (int i = 0; i < stars; ++i) {
-    impl->stars.push_back(
-        {std::uniform_int_distribution<int>(0, std::max(0, width - 1))(rng),
-         std::uniform_int_distribution<int>(0, std::max(0, height - 1))(rng),
-         std::uniform_real_distribution<float>(0.0f, 1.0f)(rng),
-         glyphs[static_cast<std::size_t>(i % glyphs.size())]});
+    impl->stars.push_back({std::uniform_int_distribution<int>(0, std::max(0, width - 1))(rng),
+                           std::uniform_int_distribution<int>(0, std::max(0, height - 1))(rng),
+                           std::uniform_real_distribution<float>(0.0f, 1.0f)(rng),
+                           glyphs[static_cast<std::size_t>(i % glyphs.size())]});
   }
 
   impl_ = std::move(impl);
@@ -88,14 +85,13 @@ Frame VoidRipple::render(float progress) const {
   const auto violet = palette(31);
   const auto dark_void = palette(0);
 
-  for (const auto &center : impl_->centers) {
+  for (const auto& center : impl_->centers) {
     if (t < center.start) {
       continue;
     }
-    const float local =
-        (t - center.start) / std::max(0.001f, 1.0f - center.start);
-    const float max_r = std::sqrt(static_cast<float>(
-        impl_->width * impl_->width + impl_->height * impl_->height));
+    const float local = (t - center.start) / std::max(0.001f, 1.0f - center.start);
+    const float max_r =
+        std::sqrt(static_cast<float>(impl_->width * impl_->width + impl_->height * impl_->height));
     const float r = local * max_r * 0.6f;
     const float thickness = std::max(1.1f, 2.4f - local);
     for (int y = 0; y < impl_->height; ++y) {
@@ -107,20 +103,18 @@ Frame VoidRipple::render(float progress) const {
         if (ring <= 0.0f) {
           continue;
         }
-        apply_cell(frame, x, y, ring > 0.65f ? 'o' : '.',
-                   lerp_color(purple, violet, ring), dark_void,
-                   ring * (1.0f - local * 0.4f));
+        apply_cell(frame, x, y, ring > 0.65f ? 'o' : '.', lerp_color(purple, violet, ring),
+                   dark_void, ring * (1.0f - local * 0.4f));
       }
     }
   }
 
-  for (const auto &star : impl_->stars) {
+  for (const auto& star : impl_->stars) {
     if (t < star.start) {
       continue;
     }
     const float local = (t - star.start) / std::max(0.001f, 1.0f - star.start);
-    apply_cell(frame, star.x, star.y, star.glyph, violet, std::nullopt,
-               0.55f * (1.0f - local));
+    apply_cell(frame, star.x, star.y, star.glyph, violet, std::nullopt, 0.55f * (1.0f - local));
   }
 
   return frame;
@@ -130,7 +124,9 @@ float VoidRipple::duration_seconds() const {
   return impl_ ? impl_->config.duration_seconds : 1.0f;
 }
 
-std::string_view VoidRipple::name() const { return "VoidRipple"; }
+std::string_view VoidRipple::name() const {
+  return "VoidRipple";
+}
 
 DecalAnimationKind VoidRipple::kind() const {
   return DecalAnimationKind::VoidRipple;

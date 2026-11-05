@@ -30,35 +30,21 @@ struct SkillVisualSpec {
   std::optional<fl::widgets::effects::DecalAnimationKind> custom_decal{};
 };
 
-[[nodiscard]] constexpr std::string_view
-name(SkillVisualArchetype archetype) noexcept {
+[[nodiscard]] constexpr std::string_view name(SkillVisualArchetype archetype) noexcept {
   switch (archetype) {
-  case SkillVisualArchetype::Impact:
-    return "Impact";
-  case SkillVisualArchetype::Slash:
-    return "Slash";
-  case SkillVisualArchetype::Bite:
-    return "Bite";
-  case SkillVisualArchetype::Projectile:
-    return "Projectile";
-  case SkillVisualArchetype::Sweep:
-    return "Sweep";
-  case SkillVisualArchetype::Burst:
-    return "Burst";
-  case SkillVisualArchetype::Beam:
-    return "Beam";
-  case SkillVisualArchetype::Heal:
-    return "Heal";
-  case SkillVisualArchetype::Cleanse:
-    return "Cleanse";
-  case SkillVisualArchetype::Glitch:
-    return "Glitch";
-  case SkillVisualArchetype::Aura:
-    return "Aura";
-  case SkillVisualArchetype::Field:
-    return "Field";
-  case SkillVisualArchetype::Observe:
-    return "Observe";
+  case SkillVisualArchetype::Impact: return "Impact";
+  case SkillVisualArchetype::Slash: return "Slash";
+  case SkillVisualArchetype::Bite: return "Bite";
+  case SkillVisualArchetype::Projectile: return "Projectile";
+  case SkillVisualArchetype::Sweep: return "Sweep";
+  case SkillVisualArchetype::Burst: return "Burst";
+  case SkillVisualArchetype::Beam: return "Beam";
+  case SkillVisualArchetype::Heal: return "Heal";
+  case SkillVisualArchetype::Cleanse: return "Cleanse";
+  case SkillVisualArchetype::Glitch: return "Glitch";
+  case SkillVisualArchetype::Aura: return "Aura";
+  case SkillVisualArchetype::Field: return "Field";
+  case SkillVisualArchetype::Observe: return "Observe";
   }
 
   return "Unknown";
@@ -69,58 +55,40 @@ decal_animation_for(SkillVisualArchetype archetype) noexcept {
   using fl::widgets::effects::DecalAnimationKind;
 
   switch (archetype) {
-  case SkillVisualArchetype::Impact:
-    return DecalAnimationKind::Impact;
-  case SkillVisualArchetype::Slash:
-    return DecalAnimationKind::Slash;
-  case SkillVisualArchetype::Bite:
-    return DecalAnimationKind::Bite;
-  case SkillVisualArchetype::Projectile:
-    return DecalAnimationKind::Projectile;
-  case SkillVisualArchetype::Sweep:
-    return DecalAnimationKind::Sweep;
-  case SkillVisualArchetype::Burst:
-    return DecalAnimationKind::Burst;
-  case SkillVisualArchetype::Beam:
-    return DecalAnimationKind::Beam;
-  case SkillVisualArchetype::Heal:
-    return DecalAnimationKind::Heal;
-  case SkillVisualArchetype::Cleanse:
-    return DecalAnimationKind::Cleanse;
-  case SkillVisualArchetype::Glitch:
-    return DecalAnimationKind::Glitch;
-  case SkillVisualArchetype::Aura:
-    return DecalAnimationKind::Aura;
-  case SkillVisualArchetype::Field:
-    return DecalAnimationKind::Field;
-  case SkillVisualArchetype::Observe:
-    return DecalAnimationKind::Observe;
+  case SkillVisualArchetype::Impact: return DecalAnimationKind::Impact;
+  case SkillVisualArchetype::Slash: return DecalAnimationKind::Slash;
+  case SkillVisualArchetype::Bite: return DecalAnimationKind::Bite;
+  case SkillVisualArchetype::Projectile: return DecalAnimationKind::Projectile;
+  case SkillVisualArchetype::Sweep: return DecalAnimationKind::Sweep;
+  case SkillVisualArchetype::Burst: return DecalAnimationKind::Burst;
+  case SkillVisualArchetype::Beam: return DecalAnimationKind::Beam;
+  case SkillVisualArchetype::Heal: return DecalAnimationKind::Heal;
+  case SkillVisualArchetype::Cleanse: return DecalAnimationKind::Cleanse;
+  case SkillVisualArchetype::Glitch: return DecalAnimationKind::Glitch;
+  case SkillVisualArchetype::Aura: return DecalAnimationKind::Aura;
+  case SkillVisualArchetype::Field: return DecalAnimationKind::Field;
+  case SkillVisualArchetype::Observe: return DecalAnimationKind::Observe;
   }
 
   return std::nullopt;
 }
 
-[[nodiscard]] inline SkillVisualArchetype
-visual_archetype_for(SkillKey skill) noexcept {
+[[nodiscard]] inline SkillVisualArchetype visual_archetype_for(SkillKey skill) noexcept {
   switch (skill.base) {
   case SkillId::Eviscerate:
   case SkillId::RakeLine:
-  case SkillId::Claw:
-    return SkillVisualArchetype::Slash;
-  case SkillId::Bite:
-    return SkillVisualArchetype::Bite;
+  case SkillId::Claw: return SkillVisualArchetype::Slash;
+  case SkillId::Bite: return SkillVisualArchetype::Bite;
   case SkillId::PebbleSpit:
   case SkillId::SnapShot:
   case SkillId::BurstFire:
   case SkillId::SuppressingFire:
   case SkillId::GrenadeLob:
-  case SkillId::VenomNeedle:
-    return SkillVisualArchetype::Projectile;
+  case SkillId::VenomNeedle: return SkillVisualArchetype::Projectile;
   case SkillId::ThumpAround:
   case SkillId::SmackdownSweep:
   case SkillId::FrostFan:
-  case SkillId::LaserSweep:
-    return SkillVisualArchetype::Sweep;
+  case SkillId::LaserSweep: return SkillVisualArchetype::Sweep;
   case SkillId::Poison:
   case SkillId::RocksFall:
   case SkillId::VisitorFall:
@@ -131,28 +99,23 @@ visual_archetype_for(SkillKey skill) noexcept {
   case SkillId::IceSplitter:
   case SkillId::RotBloom:
   case SkillId::CaveIn:
-  case SkillId::Squish:
-    return SkillVisualArchetype::Burst;
+  case SkillId::Squish: return SkillVisualArchetype::Burst;
   case SkillId::LaserStitch:
   case SkillId::PlasmaArc:
-  case SkillId::Starblaze:
-    return SkillVisualArchetype::Beam;
+  case SkillId::Starblaze: return SkillVisualArchetype::Beam;
   case SkillId::Mercyburst:
   case SkillId::Mercywave:
   case SkillId::FieldDressing:
-  case SkillId::RebootPulse:
-    return SkillVisualArchetype::Heal;
+  case SkillId::RebootPulse: return SkillVisualArchetype::Heal;
   case SkillId::Clearbell:
-  case SkillId::ChecksumWard:
-    return SkillVisualArchetype::Cleanse;
+  case SkillId::ChecksumWard: return SkillVisualArchetype::Cleanse;
   case SkillId::Joltspasm:
   case SkillId::ForkedJolt:
   case SkillId::StaticField:
   case SkillId::PacketStorm:
   case SkillId::SignalJam:
   case SkillId::BlueScreen:
-  case SkillId::NullPointer:
-    return SkillVisualArchetype::Glitch;
+  case SkillId::NullPointer: return SkillVisualArchetype::Glitch;
   case SkillId::ShellGuard:
   case SkillId::Brace:
   case SkillId::ArmorPlate:
@@ -164,8 +127,7 @@ visual_archetype_for(SkillKey skill) noexcept {
   case SkillId::SignalFlare:
   case SkillId::ClockUp:
   case SkillId::Overcharge:
-  case SkillId::Burrow:
-    return SkillVisualArchetype::Aura;
+  case SkillId::Burrow: return SkillVisualArchetype::Aura;
   case SkillId::SmokeScreen:
   case SkillId::Whiteout:
   case SkillId::MiasmaCloud:
@@ -174,10 +136,8 @@ visual_archetype_for(SkillKey skill) noexcept {
   case SkillId::WeightOfTuesday:
   case SkillId::HushHex:
   case SkillId::GravitySigh:
-  case SkillId::EventHorizon:
-    return SkillVisualArchetype::Field;
-  case SkillId::Observe:
-    return SkillVisualArchetype::Observe;
+  case SkillId::EventHorizon: return SkillVisualArchetype::Field;
+  case SkillId::Observe: return SkillVisualArchetype::Observe;
   case SkillId::Flee:
   case SkillId::Thump:
   case SkillId::ColdSnap:
@@ -186,8 +146,7 @@ visual_archetype_for(SkillKey skill) noexcept {
   case SkillId::KindleWound:
   case SkillId::Cinderburst:
   case SkillId::RootLeech:
-  case SkillId::BumperRush:
-    return SkillVisualArchetype::Impact;
+  case SkillId::BumperRush: return SkillVisualArchetype::Impact;
   }
 
   return SkillVisualArchetype::Impact;
@@ -198,9 +157,8 @@ visual_archetype_for(SkillKey skill) noexcept {
     return {};
   }
 
-  const auto &skill_definition = definition(skill);
-  return SkillVisualSpec{visual_archetype_for(skill),
-                         skill_definition.decal_animation};
+  const auto& skill_definition = definition(skill);
+  return SkillVisualSpec{visual_archetype_for(skill), skill_definition.decal_animation};
 }
 
 [[nodiscard]] inline std::optional<fl::widgets::effects::DecalAnimationKind>

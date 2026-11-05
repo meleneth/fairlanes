@@ -17,7 +17,7 @@ using fl::context::EntityCtx;
 
 class GrantXPToParty {
 public:
-  static void commit(const fl::context::EntityCtx &ctx, int amount);
+  static void commit(const fl::context::EntityCtx& ctx, int amount);
 };
 
 } // namespace fl::systems

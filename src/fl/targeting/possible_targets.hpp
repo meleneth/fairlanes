@@ -16,26 +16,23 @@ namespace fl::targeting {
 // Recreate a range after changing eligibility; never capture it in deferred
 // work.
 struct EligibleTarget {
-  const entt::registry *registry;
+  const entt::registry* registry;
   bool alive;
 
   bool operator()(entt::entity entity) const {
-    if (!registry->valid(entity))
-      return false;
-    const auto *stats = registry->try_get<fl::ecs::components::Stats>(entity);
+    if (!registry->valid(entity)) return false;
+    const auto* stats = registry->try_get<fl::ecs::components::Stats>(entity);
     return stats && stats->is_alive() == alive;
   }
 };
 
-using TargetRange =
-    std::ranges::filter_view<std::span<const entt::entity>, EligibleTarget>;
+using TargetRange = std::ranges::filter_view<std::span<const entt::entity>, EligibleTarget>;
 
 // Side identity belongs to the encounter, independently of home-party
 // ownership.
 class PossibleTargets {
 public:
-  PossibleTargets(const entt::registry &registry,
-                  std::span<const entt::entity> attackers,
+  PossibleTargets(const entt::registry& registry, std::span<const entt::entity> attackers,
                   std::span<const entt::entity> defenders)
       : registry_(registry), attackers_(attackers), defenders_(defenders) {}
 
@@ -64,7 +61,7 @@ private:
     return TargetRange{members, EligibleTarget{&registry_, alive}};
   }
 
-  const entt::registry &registry_;
+  const entt::registry& registry_;
   std::span<const entt::entity> attackers_;
   std::span<const entt::entity> defenders_;
 };
@@ -73,10 +70,9 @@ private:
 // work. IDs still require revalidation when used; this does not extend entity
 // lifetime.
 template <std::ranges::input_range Range>
-std::vector<entt::entity> snapshot_targets(Range &&range) {
+std::vector<entt::entity> snapshot_targets(Range&& range) {
   std::vector<entt::entity> result;
-  for (const auto entity : range)
-    result.push_back(entity);
+  for (const auto entity : range) result.push_back(entity);
   return result;
 }
 

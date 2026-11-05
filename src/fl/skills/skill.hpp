@@ -24,8 +24,7 @@ public:
     return rank >= kMin && rank <= kMax;
   }
 
-  [[nodiscard]] static constexpr std::optional<SkillRank>
-  from_int(int rank) noexcept {
+  [[nodiscard]] static constexpr std::optional<SkillRank> from_int(int rank) noexcept {
     if (!is_valid(rank)) {
       return std::nullopt;
     }
@@ -39,31 +38,32 @@ public:
     return SkillRank{rank};
   }
 
-  [[nodiscard]] constexpr int value() const noexcept { return value_; }
+  [[nodiscard]] constexpr int value() const noexcept {
+    return value_;
+  }
 
   [[nodiscard]] constexpr bool valid() const noexcept {
     return is_valid(value_);
   }
 
-  [[nodiscard]] constexpr bool operator==(const SkillRank &rhs) const noexcept {
+  [[nodiscard]] constexpr bool operator==(const SkillRank& rhs) const noexcept {
     return value_ == rhs.value_;
   }
 
-  [[nodiscard]] constexpr bool operator!=(const SkillRank &rhs) const noexcept {
+  [[nodiscard]] constexpr bool operator!=(const SkillRank& rhs) const noexcept {
     return !(*this == rhs);
   }
 
-  [[nodiscard]] constexpr bool operator<(const SkillRank &rhs) const noexcept {
+  [[nodiscard]] constexpr bool operator<(const SkillRank& rhs) const noexcept {
     return value_ < rhs.value_;
   }
 
-  [[nodiscard]] constexpr bool operator<=(const SkillRank &rhs) const noexcept {
+  [[nodiscard]] constexpr bool operator<=(const SkillRank& rhs) const noexcept {
     return value_ <= rhs.value_;
   }
 
 private:
-  explicit constexpr SkillRank(int rank) noexcept
-      : value_{static_cast<std::uint8_t>(rank)} {}
+  explicit constexpr SkillRank(int rank) noexcept : value_{static_cast<std::uint8_t>(rank)} {}
 
   std::uint8_t value_{1};
 };
@@ -78,15 +78,14 @@ struct SkillKey {
   SkillId base;
   SkillRank rank;
 
-  constexpr SkillKey(SkillId base_skill,
-                     SkillRank skill_rank = SkillRank{}) noexcept
+  constexpr SkillKey(SkillId base_skill, SkillRank skill_rank = SkillRank{}) noexcept
       : base{base_skill}, rank{skill_rank} {}
 
-  [[nodiscard]] constexpr bool operator==(const SkillKey &rhs) const noexcept {
+  [[nodiscard]] constexpr bool operator==(const SkillKey& rhs) const noexcept {
     return base == rhs.base && rank == rhs.rank;
   }
 
-  [[nodiscard]] constexpr bool operator!=(const SkillKey &rhs) const noexcept {
+  [[nodiscard]] constexpr bool operator!=(const SkillKey& rhs) const noexcept {
     return !(*this == rhs);
   }
 };
@@ -95,8 +94,7 @@ struct SkillKeyHash {
   [[nodiscard]] std::size_t operator()(SkillKey skill) const noexcept {
     const auto base_hash = std::hash<int>{}(static_cast<int>(skill.base));
     const auto rank_hash = std::hash<int>{}(skill.rank.value());
-    return base_hash ^
-           (rank_hash + 0x9e3779b9U + (base_hash << 6U) + (base_hash >> 2U));
+    return base_hash ^ (rank_hash + 0x9e3779b9U + (base_hash << 6U) + (base_hash >> 2U));
   }
 };
 
@@ -211,7 +209,7 @@ enum class SkillExecutionKind {
 
 struct SkillDefinition;
 
-const SkillDefinition &definition(SkillKey skill) noexcept;
+const SkillDefinition& definition(SkillKey skill) noexcept;
 bool has_definition(SkillKey skill) noexcept;
 
 std::string_view name(SkillKey skill) noexcept;

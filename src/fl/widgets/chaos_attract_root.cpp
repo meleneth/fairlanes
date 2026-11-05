@@ -21,8 +21,7 @@ ChaosAttractRoot::ChaosAttractRoot(ftxui::Component battle_surface)
 
 bool ChaosAttractRoot::OnEvent(ftxui::Event event) {
   if (help_open_) {
-    if (event == ftxui::Event::Character("h") ||
-        event == ftxui::Event::Escape) {
+    if (event == ftxui::Event::Character("h") || event == ftxui::Event::Escape) {
       help_open_ = false;
       return true;
     }
@@ -50,8 +49,7 @@ bool ChaosAttractRoot::OnEvent(ftxui::Event event) {
 ftxui::Element ChaosAttractRoot::Render() {
   ++render_frames_;
 
-  ftxui::Element surface =
-      battle_surface_ ? battle_surface_->Render() : ftxui::filler();
+  ftxui::Element surface = battle_surface_ ? battle_surface_->Render() : ftxui::filler();
 
   return ftxui::dbox({
       std::move(surface),
@@ -67,8 +65,7 @@ ftxui::Element ChaosAttractRoot::Render() {
 ftxui::Color ChaosAttractRoot::prompt_color(std::uint64_t frame) const {
   static constexpr std::array<std::size_t, 4> pulse_colors{15, 14, 8, 14};
   constexpr std::uint64_t frames_per_step = 12;
-  const auto phase =
-      static_cast<std::size_t>((frame / frames_per_step) % pulse_colors.size());
+  const auto phase = static_cast<std::size_t>((frame / frames_per_step) % pulse_colors.size());
   return fl::lospec500::color_at(pulse_colors[phase]);
 }
 
@@ -77,8 +74,7 @@ ftxui::Element ChaosAttractRoot::render_begin_prompt() const {
 
   return hbox({
       filler(),
-      text("UP/DOWN SELECT  h HELP  ENTER TO BEGIN") | bold |
-          color(prompt_color(render_frames_)) |
+      text("UP/DOWN SELECT  h HELP  ENTER TO BEGIN") | bold | color(prompt_color(render_frames_)) |
           bgcolor(fl::lospec500::color_at(0)),
       filler(),
   });
@@ -102,8 +98,8 @@ ftxui::Element ChaosAttractRoot::render_help_panel() const {
       render_help_line("q / Esc", "   quit"),
   });
 
-  auto panel = window(text("Help") | accent, lines | bg) | chrome | bg |
-               clear_under | size(WIDTH, GREATER_THAN, 36);
+  auto panel = window(text("Help") | accent, lines | bg) | chrome | bg | clear_under |
+               size(WIDTH, GREATER_THAN, 36);
 
   return vbox({
       filler(),

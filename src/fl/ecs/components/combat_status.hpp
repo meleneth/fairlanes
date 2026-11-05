@@ -10,14 +10,12 @@
 
 namespace fl::ecs::components {
 
-
-
 struct CombatStatusEffect {
   CombatStatusEffect() = default;
-  CombatStatusEffect(CombatStatusEffect &&) noexcept = default;
-  CombatStatusEffect &operator=(CombatStatusEffect &&) noexcept = default;
-  CombatStatusEffect(const CombatStatusEffect &) = delete;
-  CombatStatusEffect &operator=(const CombatStatusEffect &) = delete;
+  CombatStatusEffect(CombatStatusEffect&&) noexcept = default;
+  CombatStatusEffect& operator=(CombatStatusEffect&&) noexcept = default;
+  CombatStatusEffect(const CombatStatusEffect&) = delete;
+  CombatStatusEffect& operator=(const CombatStatusEffect&) = delete;
 
   int id{0};
   CombatStatusKind kind{CombatStatusKind::Blind};
@@ -35,10 +33,10 @@ struct CombatStatusEffect {
 
 struct CombatStatuses {
   CombatStatuses() = default;
-  CombatStatuses(CombatStatuses &&) noexcept = default;
-  CombatStatuses &operator=(CombatStatuses &&) noexcept = default;
-  CombatStatuses(const CombatStatuses &) = delete;
-  CombatStatuses &operator=(const CombatStatuses &) = delete;
+  CombatStatuses(CombatStatuses&&) noexcept = default;
+  CombatStatuses& operator=(CombatStatuses&&) noexcept = default;
+  CombatStatuses(const CombatStatuses&) = delete;
+  CombatStatuses& operator=(const CombatStatuses&) = delete;
 
   int next_id{1};
   std::vector<CombatStatusEffect> effects;

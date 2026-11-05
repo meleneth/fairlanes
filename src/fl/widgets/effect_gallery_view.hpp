@@ -38,12 +38,10 @@ struct EffectGalleryState {
   void previous_background(std::size_t background_count) noexcept;
   bool set_combatant_count_from_digit(char digit) noexcept;
   [[nodiscard]] EffectGalleryLabels labels() const noexcept;
-  [[nodiscard]] EffectGalleryBackgroundLabels
-  background_labels() const noexcept;
+  [[nodiscard]] EffectGalleryBackgroundLabels background_labels() const noexcept;
 };
 
-[[nodiscard]] std::string_view
-current_effect_name(const EffectGalleryState &state) noexcept;
+[[nodiscard]] std::string_view current_effect_name(const EffectGalleryState& state) noexcept;
 
 class EffectGalleryView : public ftxui::ComponentBase {
 public:
@@ -52,7 +50,7 @@ public:
   bool OnEvent(ftxui::Event event) override;
   ftxui::Element Render() override;
 
-  [[nodiscard]] const EffectGalleryState &state() const noexcept;
+  [[nodiscard]] const EffectGalleryState& state() const noexcept;
 
 private:
   void ensure_sample_combatants();
@@ -65,8 +63,7 @@ private:
       0xEFFECA11E7ULL, fl::primitives::RandomSeedSource::Explicit}};
   FancyLog log_{FancyLog::Options{1, 8, true}};
   std::vector<entt::entity> samples_;
-  std::chrono::steady_clock::time_point animation_started_at_{
-      std::chrono::steady_clock::now()};
+  std::chrono::steady_clock::time_point animation_started_at_{std::chrono::steady_clock::now()};
 };
 
 } // namespace fl::widgets

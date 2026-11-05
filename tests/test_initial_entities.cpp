@@ -23,12 +23,12 @@ TEST_CASE("EntityBuilder + ComponentBuilder basics", "[entity][builder]") {
   fl::GrandCentral gc{1, 1, 1};
   auto account_ctx = gc.account_context(0);
   auto party_ctx = account_ctx.party_context(0);
-  auto &reg = gc.reg();
+  auto& reg = gc.reg();
 
   SECTION("Stats defaults are installed") {
     auto build_ctx = party_ctx.build_context();
     auto e = EntityBuilder{build_ctx}.with_default<Stats>().build();
-    const auto &s = reg.get<Stats>(e);
+    const auto& s = reg.get<Stats>(e);
     REQUIRE(s.hp_ == 10);
     REQUIRE(s.max_hp_ == 10);
     REQUIRE(s.attack_ == 0);
@@ -38,7 +38,7 @@ TEST_CASE("EntityBuilder + ComponentBuilder basics", "[entity][builder]") {
   SECTION("Stats JSON overrides apply on top of defaults") {
     auto build_ctx = party_ctx.build_context();
     auto e = EntityBuilder{build_ctx}.with_default<Stats>().build();
-    auto &s = reg.get<Stats>(e);
+    auto& s = reg.get<Stats>(e);
 
     json j = R"({ "hp": 25, "max_hp": 30, "attack": 3, "armor": 2,
                    "mp": 9, "max_mp": 12, "resistances": {"physical": 50} })"_json;
@@ -55,7 +55,7 @@ TEST_CASE("EntityBuilder + ComponentBuilder basics", "[entity][builder]") {
     using fl::ecs::components::Tags;
     auto build_ctx = party_ctx.build_context();
     auto e = EntityBuilder{build_ctx}.with_default<Tags>().build();
-    auto &t = reg.get<Tags>(e);
+    auto& t = reg.get<Tags>(e);
 
     json j = R"({ "values": ["dps", "glass"] })"_json;
     ComponentBuilder<Tags>::apply(t, j);
@@ -67,35 +67,30 @@ TEST_CASE("EntityBuilder + ComponentBuilder basics", "[entity][builder]") {
 
   SECTION("Preset/trait composition via a lambda") {
     auto build_ctx = party_ctx.build_context();
-    auto e = EntityBuilder{build_ctx}
-                 .with_default<Stats>()
-                 .with_default<Tags>()
-                 .build();
+    auto e = EntityBuilder{build_ctx}.with_default<Stats>().with_default<Tags>().build();
 
     // a "trait": GlassCannon
     auto glass_cannon = [&](entt::entity x) {
-      auto &s = reg.get<Stats>(x);
+      auto& s = reg.get<Stats>(x);
       s.hp_ = 1;
       s.attack_ = 50;
 
-      auto &t = reg.get<Tags>(x);
+      auto& t = reg.get<Tags>(x);
       t.values = {"glass", "dps"};
     };
 
     glass_cannon(e);
 
-    const auto &s = reg.get<Stats>(e);
-    const auto &t = reg.get<Tags>(e);
+    const auto& s = reg.get<Stats>(e);
+    const auto& t = reg.get<Tags>(e);
     REQUIRE(s.hp_ == 1);
     REQUIRE(s.attack_ == 50);
     REQUIRE(t.values.size() == 2);
   }
   SECTION("Monster/Field Mouse") {
     auto build_ctx = party_ctx.build_context();
-    auto e = EntityBuilder{build_ctx}
-                 .monster(fl::monster::MonsterKind::FieldMouse)
-                 .build();
-    const auto &stats = reg.get<Stats>(e);
+    auto e = EntityBuilder{build_ctx}.monster(fl::monster::MonsterKind::FieldMouse).build();
+    const auto& stats = reg.get<Stats>(e);
     REQUIRE(stats.hp_ == 5);
     REQUIRE(stats.name_ == "Field Mouse");
   }
@@ -103,17 +98,15 @@ TEST_CASE("EntityBuilder + ComponentBuilder basics", "[entity][builder]") {
   SECTION("Initial players know and equip Observe") {
     const auto member = party_ctx.party_data().members().front().member_id();
 
-    const auto &member_data = party_ctx.party_data().members().front();
+    const auto& member_data = party_ctx.party_data().members().front();
     REQUIRE(member_data.grimoire().knows(fl::skills::SkillId::Observe));
-    REQUIRE(member_data.grimoire().knows(fl::skills::SkillKey{
-        fl::skills::SkillId::Observe, fl::skills::SkillRank::require(1)}));
-    REQUIRE_FALSE(member_data.grimoire().knows(fl::skills::SkillKey{
-        fl::skills::SkillId::Observe, fl::skills::SkillRank::require(2)}));
+    REQUIRE(member_data.grimoire().knows(
+        fl::skills::SkillKey{fl::skills::SkillId::Observe, fl::skills::SkillRank::require(1)}));
+    REQUIRE_FALSE(member_data.grimoire().knows(
+        fl::skills::SkillKey{fl::skills::SkillId::Observe, fl::skills::SkillRank::require(2)}));
 
-    const auto &party_member =
-        reg.get<fl::ecs::components::PartyMember>(member);
-    REQUIRE(
-        party_member.closet().has_equipped_skill(fl::skills::SkillId::Observe));
+    const auto& party_member = reg.get<fl::ecs::components::PartyMember>(member);
+    REQUIRE(party_member.closet().has_equipped_skill(fl::skills::SkillId::Observe));
     REQUIRE(party_member.closet().has_open_skill_slot());
   }
 }

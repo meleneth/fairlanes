@@ -1,0 +1,4 @@
+# Generated C++ is owned by its generator and must never be rewritten by the
+# source formatting workflow.
+**/generated/**
+src/fl/generated/**

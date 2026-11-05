@@ -17,7 +17,9 @@ public:
   [[nodiscard]] bool begin_requested() const noexcept {
     return begin_requested_;
   }
-  [[nodiscard]] bool help_open() const noexcept { return help_open_; }
+  [[nodiscard]] bool help_open() const noexcept {
+    return help_open_;
+  }
 
   [[nodiscard]] ftxui::Color prompt_color(std::uint64_t frame) const;
 

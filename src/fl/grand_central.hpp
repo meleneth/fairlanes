@@ -17,10 +17,10 @@
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/discovery_journal.hpp"
 #include "fl/primitives/logging.hpp"
-#include "fl/primitives/random_hub.hpp"
 #include "fl/primitives/objective_system.hpp"
-#include "fl/primitives/world_clock.hpp"
+#include "fl/primitives/random_hub.hpp"
 #include "fl/primitives/tower_balance.hpp"
+#include "fl/primitives/world_clock.hpp"
 #include "sr/beat_bus.hpp"
 
 namespace fl {
@@ -35,20 +35,24 @@ struct GrandCentralRunOptions {
 
 class GrandCentral {
 public:
-  GrandCentral(uint8_t num_accounts, uint8_t num_parties_per_account,
-               uint8_t num_members_per_party, bool record_discoveries = true,
-               bool record_progress = true,
-               std::optional<std::uint64_t> gameplay_seed = std::nullopt,
-               bool story_mode = false, bool story_autoplay = false,
-               fl::primitives::TowerBalance tower_balance = {});
+  GrandCentral(uint8_t num_accounts, uint8_t num_parties_per_account, uint8_t num_members_per_party,
+               bool record_discoveries = true, bool record_progress = true,
+               std::optional<std::uint64_t> gameplay_seed = std::nullopt, bool story_mode = false,
+               bool story_autoplay = false, fl::primitives::TowerBalance tower_balance = {});
   ~GrandCentral();
 
-  fl::primitives::RaidMilestones &raid_milestones() { return raid_milestones_; }
-  fl::primitives::ObjectiveSystem *objectives() { return objectives_.get(); }
+  fl::primitives::RaidMilestones& raid_milestones() {
+    return raid_milestones_;
+  }
+  fl::primitives::ObjectiveSystem* objectives() {
+    return objectives_.get();
+  }
   bool sandbox_requested() const;
 
   // ---- accessors (refs only, no ownership leaks) ----
-  uint8_t num_accounts() const noexcept { return num_accounts_; }
+  uint8_t num_accounts() const noexcept {
+    return num_accounts_;
+  }
   uint8_t num_parties_per_account() const noexcept {
     return num_parties_per_account_;
   }
@@ -56,43 +60,65 @@ public:
     return num_members_per_party_;
   }
 
-  entt::registry &reg() noexcept { return reg_; }
-  const fl::primitives::DiscoveryJournal &discoveries() const noexcept {
+  entt::registry& reg() noexcept {
+    return reg_;
+  }
+  const fl::primitives::DiscoveryJournal& discoveries() const noexcept {
     return discoveries_;
   }
-  const entt::registry &reg() const noexcept { return reg_; }
+  const entt::registry& reg() const noexcept {
+    return reg_;
+  }
 
-  fl::primitives::RandomHub &rng() noexcept { return rng_; }
-  const fl::primitives::RandomHub &rng() const noexcept { return rng_; }
+  fl::primitives::RandomHub& rng() noexcept {
+    return rng_;
+  }
+  const fl::primitives::RandomHub& rng() const noexcept {
+    return rng_;
+  }
 
-  fl::primitives::LogBus &log_bus() noexcept { return log_bus_; }
-  fl::primitives::Logger &logger() noexcept { return logger_; }
-  fl::primitives::WorldClock &world_clock() noexcept { return world_clock_; }
-  const fl::primitives::WorldClock &world_clock() const noexcept {
+  fl::primitives::LogBus& log_bus() noexcept {
+    return log_bus_;
+  }
+  fl::primitives::Logger& logger() noexcept {
+    return logger_;
+  }
+  fl::primitives::WorldClock& world_clock() noexcept {
+    return world_clock_;
+  }
+  const fl::primitives::WorldClock& world_clock() const noexcept {
     return world_clock_;
   }
 
-  std::mutex &frame_mutex() noexcept { return frame_mutex_; }
-
-  std::deque<fl::primitives::AccountData> &accounts() noexcept {
-    return accounts_;
-  }
-  const std::deque<fl::primitives::AccountData> &accounts() const noexcept {
-    return accounts_;
+  std::mutex& frame_mutex() noexcept {
+    return frame_mutex_;
   }
 
-  fl::widgets::FancyLog &game_log() noexcept { return *game_log_; }
-  fl::primitives::FancyLogSink &fancy_log_sink() noexcept {
+  std::deque<fl::primitives::AccountData>& accounts() noexcept {
+    return accounts_;
+  }
+  const std::deque<fl::primitives::AccountData>& accounts() const noexcept {
+    return accounts_;
+  }
+
+  fl::widgets::FancyLog& game_log() noexcept {
+    return *game_log_;
+  }
+  fl::primitives::FancyLogSink& fancy_log_sink() noexcept {
     return *fancy_log_sink_;
   }
 
-  seerin::BeatBus &beat_bus() noexcept { return gc_beat_bus_; }
+  seerin::BeatBus& beat_bus() noexcept {
+    return gc_beat_bus_;
+  }
 
-  ftxui::Component &log_wall() noexcept { return log_wall_; }
+  ftxui::Component& log_wall() noexcept {
+    return log_wall_;
+  }
 
   // ---- behavior ----
   fl::context::AccountCtx account_context(std::size_t idx);
-  fl::context::AccountCtx account_context(fl::primitives::AccountData &account);
+  fl::context::AccountCtx account_context(fl::primitives::AccountData& account);
 
   ftxui::Component root_component();
   void innervate_event_system(bool enable_visitors = true);

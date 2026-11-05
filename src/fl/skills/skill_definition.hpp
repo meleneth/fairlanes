@@ -23,6 +23,6 @@ struct SkillDefinition {
   int effect_damage{0};
 };
 
-std::span<const SkillDefinition *const> all_definitions() noexcept;
+std::span<const SkillDefinition* const> all_definitions() noexcept;
 
 } // namespace fl::skills

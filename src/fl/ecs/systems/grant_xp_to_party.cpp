@@ -1,5 +1,5 @@
-#include <entt/entity/handle.hpp>
 #include "fmt/format.h"
+#include <entt/entity/handle.hpp>
 
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/track_xp.hpp"
@@ -10,14 +10,14 @@
 namespace fl::systems {
 using fl::context::EntityCtx;
 
-void GrantXPToParty::commit(const EntityCtx &ctx, int amount) {
+void GrantXPToParty::commit(const EntityCtx& ctx, int amount) {
   using namespace fl::ecs::components;
   ctx.log().append_markup(fmt::format("Party received [xp]({}) XP.", amount));
 
   auto view = ctx.reg().view<PartyMember, TrackXP>();
   for (auto entity : view) {
-    auto &member = view.get<PartyMember>(entity);
-    auto &track = view.get<TrackXP>(entity);
+    auto& member = view.get<PartyMember>(entity);
+    auto& track = view.get<TrackXP>(entity);
 
     if (member.party_ == ctx.self()) {
       entt::handle h{ctx.reg(), entity};

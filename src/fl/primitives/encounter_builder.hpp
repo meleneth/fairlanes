@@ -1,7 +1,7 @@
 #pragma once
 #include <entt/entity/registry.hpp>
-#include <span>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -22,16 +22,14 @@ struct EncounterBuilder {
   static std::span<const fl::monster::MonsterKind> common_woodland() noexcept;
   static std::span<const fl::monster::MonsterKind> rare_woodland() noexcept;
 
-  EncounterBuilder(fl::context::PartyCtx &ctx,
-                   EncounterMode mode = EncounterMode::ChaosAttractor,
+  EncounterBuilder(fl::context::PartyCtx& ctx, EncounterMode mode = EncounterMode::ChaosAttractor,
                    std::optional<TowerFloor> tower_floor = std::nullopt)
       : ctx_(ctx), mode_(mode), tower_floor_(std::move(tower_floor)) {};
 
-  [[nodiscard]] static std::vector<fl::monster::MonsterKind>
-  chaos_attractor_monster_pool();
+  [[nodiscard]] static std::vector<fl::monster::MonsterKind> chaos_attractor_monster_pool();
 
-  EncounterData &thump_it_out();
-  EncounterData &one_on_one(fl::monster::MonsterKind enemy);
+  EncounterData& thump_it_out();
+  EncounterData& one_on_one(fl::monster::MonsterKind enemy);
 
   void add_random_enemy();
 
@@ -39,7 +37,7 @@ struct EncounterBuilder {
 
 private:
   entt::entity add_enemy_kind(fl::monster::MonsterKind kind);
-  fl::context::PartyCtx &ctx_;
+  fl::context::PartyCtx& ctx_;
   EncounterMode mode_{EncounterMode::ChaosAttractor};
   std::optional<TowerFloor> tower_floor_;
 };

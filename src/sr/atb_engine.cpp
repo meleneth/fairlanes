@@ -21,25 +21,22 @@ AtbEngine::AtbEngine() {
   h_ready_wire_ = wire<BecameReady>(buses_.out, sys_);
 
   // ---- Internal subscriptions ----
-  h_add_sub_ = sys_.subscribe<AddCombatant>(
-      [this](const AddCombatant &e) { on_add(e); });
+  h_add_sub_ = sys_.subscribe<AddCombatant>([this](const AddCombatant& e) { on_add(e); });
 
-  h_beat_sub_ = sys_.subscribe<Beat>([this](const Beat &e) { on_beat(e); });
+  h_beat_sub_ = sys_.subscribe<Beat>([this](const Beat& e) { on_beat(e); });
 
-  h_fin_sub_ = sys_.subscribe<FinishedTurn>(
-      [this](const FinishedTurn &e) { on_finished_turn(e); });
+  h_fin_sub_ = sys_.subscribe<FinishedTurn>([this](const FinishedTurn& e) { on_finished_turn(e); });
 
-  h_frozen_sub_ =
-      sys_.subscribe<Frozen>([this](const Frozen &e) { on_frozen(e); });
+  h_frozen_sub_ = sys_.subscribe<Frozen>([this](const Frozen& e) { on_frozen(e); });
 
-  h_thawed_sub_ =
-      sys_.subscribe<Thawed>([this](const Thawed &e) { on_thawed(e); });
+  h_thawed_sub_ = sys_.subscribe<Thawed>([this](const Thawed& e) { on_thawed(e); });
 
-  h_ready_sub_ = sys_.subscribe<BecameReady>(
-      [this](const BecameReady &e) { on_became_ready(e); });
+  h_ready_sub_ = sys_.subscribe<BecameReady>([this](const BecameReady& e) { on_became_ready(e); });
 }
 
-AtbEngine::AtbEngine(entt::registry &reg) : AtbEngine() { bind_registry(reg); }
+AtbEngine::AtbEngine(entt::registry& reg) : AtbEngine() {
+  bind_registry(reg);
+}
 
 void AtbEngine::set_can_charge_fn(CanChargeFn fn) {
   if (fn) {
@@ -77,23 +74,21 @@ void AtbEngine::clear_active_turn_for(entt::entity id) {
   }
 
   // Remove scheduled events for this entity
-  scheduler_.remove_if([id](const TimedScheduler<AtbOutEvent>::TimedAction
-                                &action) {
+  scheduler_.remove_if([id](const TimedScheduler<AtbOutEvent>::TimedAction& action) {
     if (action.valueless_by_exception()) {
       return false;
     }
 
     return std::visit(
-        [id](auto &&ev) -> bool {
+        [id](auto&& ev) -> bool {
           using T = std::decay_t<decltype(ev)>;
-          if constexpr (std::is_same_v<
-                            T, TimedScheduler<AtbOutEvent>::EmitEvent>) {
+          if constexpr (std::is_same_v<T, TimedScheduler<AtbOutEvent>::EmitEvent>) {
             if (ev.ev.valueless_by_exception()) {
               return false;
             }
 
             return std::visit(
-                [id](auto &&out_ev) -> bool {
+                [id](auto&& out_ev) -> bool {
                   using OutT = std::decay_t<decltype(out_ev)>;
                   if constexpr (std::is_same_v<OutT, BecameReady>) {
                     return out_ev.id == id;
@@ -103,8 +98,7 @@ void AtbEngine::clear_active_turn_for(entt::entity id) {
                   return false;
                 },
                 ev.ev);
-          } else if constexpr (std::is_same_v<T, TimedScheduler<AtbOutEvent>::
-                                                     SmellyCallback>) {
+          } else if constexpr (std::is_same_v<T, TimedScheduler<AtbOutEvent>::SmellyCallback>) {
             return ev.owner == id;
           }
           return false;
@@ -113,7 +107,7 @@ void AtbEngine::clear_active_turn_for(entt::entity id) {
   });
 }
 
-void AtbEngine::on_add(const AddCombatant &e) {
+void AtbEngine::on_add(const AddCombatant& e) {
   ZoneScopedN("AtbEngine::on_add");
   if (reg_ == nullptr || !reg_->valid(e.id)) {
     return;
@@ -124,7 +118,7 @@ void AtbEngine::on_add(const AddCombatant &e) {
   TracyPlot("ATB.Combatants", static_cast<double>(combatants_.size()));
 }
 
-void AtbEngine::on_beat(const Beat &) {
+void AtbEngine::on_beat(const Beat&) {
   ZoneScopedN("AtbEngine::on_beat");
   TracyPlot("ATB.ReadyQueue", static_cast<double>(ready_queue_.size()));
   TracyPlot("ATB.Combatants", static_cast<double>(combatants_.size()));
@@ -147,7 +141,7 @@ void AtbEngine::on_beat(const Beat &) {
 
   // Tick all combatants that are allowed to charge.
   std::vector<entt::entity> remove_ids;
-  for (auto &[id, c] : combatants_) {
+  for (auto& [id, c] : combatants_) {
     if (!reg_->valid(id) || !reg_->all_of<fl::ecs::components::AtbCharge>(id)) {
       force_out_of_turn(id);
       remove_ids.push_back(id);
@@ -161,8 +155,7 @@ void AtbEngine::on_beat(const Beat &) {
       continue;
     }
 
-    reg_->get<fl::ecs::components::AtbCharge>(id).charge_per_beat =
-        charge_per_beat(id);
+    reg_->get<fl::ecs::components::AtbCharge>(id).charge_per_beat = charge_per_beat(id);
     c.sm.process_event(BeatTick{});
   }
 
@@ -175,7 +168,7 @@ void AtbEngine::on_beat(const Beat &) {
   pump_ready_queue();
 }
 
-void AtbEngine::on_finished_turn(const FinishedTurn &e) {
+void AtbEngine::on_finished_turn(const FinishedTurn& e) {
   ZoneScopedN("AtbEngine::on_finished_turn");
   if (active_combatant_ == e.id) {
     active_combatant_ = entt::entity{};
@@ -186,7 +179,7 @@ void AtbEngine::on_finished_turn(const FinishedTurn &e) {
   }
 }
 
-void AtbEngine::on_frozen(const Frozen &e) {
+void AtbEngine::on_frozen(const Frozen& e) {
   ZoneScopedN("AtbEngine::on_frozen");
   remove_ready(e.id);
 
@@ -200,7 +193,7 @@ void AtbEngine::on_frozen(const Frozen &e) {
   }
 }
 
-void AtbEngine::on_thawed(const Thawed &e) {
+void AtbEngine::on_thawed(const Thawed& e) {
   ZoneScopedN("AtbEngine::on_thawed");
   auto it = combatants_.find(e.id);
   if (it != combatants_.end()) {
@@ -208,7 +201,9 @@ void AtbEngine::on_thawed(const Thawed &e) {
   }
 }
 
-void AtbEngine::on_became_ready(const BecameReady &e) { enqueue_ready(e.id); }
+void AtbEngine::on_became_ready(const BecameReady& e) {
+  enqueue_ready(e.id);
+}
 
 void AtbEngine::enqueue_ready(entt::entity id) {
   remove_ready(id);
@@ -216,8 +211,7 @@ void AtbEngine::enqueue_ready(entt::entity id) {
 }
 
 void AtbEngine::remove_ready(entt::entity id) {
-  ready_queue_.erase(std::remove(ready_queue_.begin(), ready_queue_.end(), id),
-                     ready_queue_.end());
+  ready_queue_.erase(std::remove(ready_queue_.begin(), ready_queue_.end(), id), ready_queue_.end());
 }
 
 void AtbEngine::pump_ready_queue() {
@@ -241,15 +235,17 @@ void AtbEngine::pump_ready_queue() {
   }
 }
 
-bool AtbEngine::can_charge(entt::entity id) const { return can_charge_fn_(id); }
+bool AtbEngine::can_charge(entt::entity id) const {
+  return can_charge_fn_(id);
+}
 
 int AtbEngine::charge_rate_percent(entt::entity id) const {
   return std::clamp(charge_rate_percent_fn_(id), 1, 300);
 }
 
 int64_t AtbEngine::charge_per_beat(entt::entity id) const {
-  return std::max<int64_t>(1,
-      (AtbMachine::kChargePerBeat * static_cast<int64_t>(charge_rate_percent(id))) / 100);
+  return std::max<int64_t>(
+      1, (AtbMachine::kChargePerBeat * static_cast<int64_t>(charge_rate_percent(id))) / 100);
 }
 
 void AtbEngine::force_out_of_turn(entt::entity id) {

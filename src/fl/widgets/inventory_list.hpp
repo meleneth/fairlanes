@@ -16,7 +16,7 @@ namespace fl::widgets {
 
 class InventoryList : public ftxui::ComponentBase {
 public:
-  InventoryList(entt::registry &reg, fl::primitives::PartyData &party);
+  InventoryList(entt::registry& reg, fl::primitives::PartyData& party);
 
   bool OnEvent(ftxui::Event event) override;
   ftxui::Element Render() override;
@@ -27,12 +27,7 @@ public:
   void hide_skill_information() noexcept;
 
 private:
-  enum class Mode {
-    party_inventory,
-    equipment_slots,
-    filtered_items,
-    skill_information
-  };
+  enum class Mode { party_inventory, equipment_slots, filtered_items, skill_information };
 
   [[nodiscard]] std::vector<entt::entity> filtered_items() const;
   [[nodiscard]] fl::loot::EquipmentSlot selected_slot() const noexcept;
@@ -42,8 +37,8 @@ private:
   ftxui::Element render_filtered_items();
   ftxui::Element render_skill_information();
 
-  entt::registry &reg_;
-  fl::primitives::PartyData &party_;
+  entt::registry& reg_;
+  fl::primitives::PartyData& party_;
   Mode mode_{Mode::party_inventory};
   entt::entity selected_member_{entt::null};
   std::optional<fl::skills::SkillKey> selected_skill_;

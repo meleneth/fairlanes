@@ -47,17 +47,14 @@ public:
   static constexpr int kSplitLightDays = 63;
   static constexpr int kTwinDarkDays = 189;
 
-  [[nodiscard]] static MoonCalendarSnapshot
-  snapshot(const WorldClock &clock) noexcept;
+  [[nodiscard]] static MoonCalendarSnapshot snapshot(const WorldClock& clock) noexcept;
 
-  [[nodiscard]] static MoonPhase
-  phase_for_day(std::uint64_t day, int cycle_days,
-                int phase_offset_eighths = 0) noexcept;
+  [[nodiscard]] static MoonPhase phase_for_day(std::uint64_t day, int cycle_days,
+                                               int phase_offset_eighths = 0) noexcept;
   [[nodiscard]] static std::string_view phase_name(MoonPhase phase) noexcept;
 
 private:
-  [[nodiscard]] static std::uint64_t days_until(std::uint64_t day,
-                                                int cycle_days) noexcept;
+  [[nodiscard]] static std::uint64_t days_until(std::uint64_t day, int cycle_days) noexcept;
 };
 
 } // namespace fl::primitives

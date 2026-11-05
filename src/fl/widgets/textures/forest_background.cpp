@@ -10,8 +10,7 @@
 
 namespace fl::widgets::textures {
 
-std::uint32_t forest_hash(std::uint32_t x, std::uint32_t y,
-                          std::uint32_t seed) {
+std::uint32_t forest_hash(std::uint32_t x, std::uint32_t y, std::uint32_t seed) {
   std::uint32_t h = seed ^ (x * 0x9E3779B9u) ^ (y * 0x85EBCA6Bu);
   h ^= h >> 16;
   h *= 0x7FEB352Du;
@@ -35,8 +34,8 @@ ftxui::Element ForestBackground(int width, int height, std::uint32_t seed) {
     cells.reserve(static_cast<std::size_t>(width));
 
     for (int x = 0; x < width; ++x) {
-      const auto h = forest_hash(static_cast<std::uint32_t>(x),
-                                 static_cast<std::uint32_t>(y), seed);
+      const auto h =
+          forest_hash(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y), seed);
       const int r = static_cast<int>(h % 100);
 
       std::string glyph = " ";
@@ -66,20 +65,17 @@ ftxui::Element ForestBackground(int width, int height, std::uint32_t seed) {
     rows.push_back(hbox(std::move(cells)));
   }
 
-  return vbox(std::move(rows)) | size(WIDTH, EQUAL, width) |
-         size(HEIGHT, EQUAL, height);
+  return vbox(std::move(rows)) | size(WIDTH, EQUAL, width) | size(HEIGHT, EQUAL, height);
 }
 
-ftxui::Element ForestPanel(ftxui::Element foreground, int width, int height,
-                           std::uint32_t seed) {
+ftxui::Element ForestPanel(ftxui::Element foreground, int width, int height, std::uint32_t seed) {
   using namespace ftxui;
 
   return dbox({
              ForestBackground(width, height, seed),
              std::move(foreground),
          }) |
-         size(WIDTH, EQUAL, std::max(1, width)) |
-         size(HEIGHT, EQUAL, std::max(1, height));
+         size(WIDTH, EQUAL, std::max(1, width)) | size(HEIGHT, EQUAL, std::max(1, height));
 }
 
 } // namespace fl::widgets::textures

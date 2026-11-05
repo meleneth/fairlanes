@@ -16,11 +16,10 @@ struct Damage {
   int lightning{0};
 
   bool is_zero() const {
-    return physical == 0 && magical == 0 && fire == 0 && ice == 0 &&
-           lightning == 0;
+    return physical == 0 && magical == 0 && fire == 0 && ice == 0 && lightning == 0;
   }
 
-  Damage &operator+=(const Damage &rhs) {
+  Damage& operator+=(const Damage& rhs) {
     physical += rhs.physical;
     magical += rhs.magical;
     fire += rhs.fire;
@@ -38,7 +37,7 @@ struct Resistances {
   int ice{0};
   int lightning{0};
 
-  Resistances &operator+=(const Resistances &rhs) {
+  Resistances& operator+=(const Resistances& rhs) {
     physical += rhs.physical;
     magical += rhs.magical;
     fire += rhs.fire;
@@ -48,7 +47,7 @@ struct Resistances {
   }
 };
 
-inline Damage apply_resistance(Damage damage, const Resistances &resistance) {
+inline Damage apply_resistance(Damage damage, const Resistances& resistance) {
   const auto mitigate = [](int value, int percent) {
     return value * (100 - std::clamp(percent, 0, 100)) / 100;
   };

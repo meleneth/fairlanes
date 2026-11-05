@@ -18,8 +18,7 @@ TEST_CASE("world clock advances calendar days at the documented beat cadence") {
   REQUIRE(clock.beat_rate_multiplier() == 4);
   REQUIRE(clock.effective_beats_per_wall_second() == 48);
 
-  for (std::uint64_t i = 0;
-       i < fl::primitives::WorldClock::kBeatsPerCalendarDay; ++i) {
+  for (std::uint64_t i = 0; i < fl::primitives::WorldClock::kBeatsPerCalendarDay; ++i) {
     clock.advance_beat();
   }
 
@@ -42,8 +41,7 @@ TEST_CASE("moon calendar follows the lore cycle periods") {
   REQUIRE(snapshot.days_until_twin_dark == 0);
   REQUIRE(snapshot.days_until_visitor == 0);
 
-  for (std::uint64_t i = 0;
-       i < fl::primitives::WorldClock::kBeatsPerCalendarDay; ++i) {
+  for (std::uint64_t i = 0; i < fl::primitives::WorldClock::kBeatsPerCalendarDay; ++i) {
     clock.advance_beat();
   }
 
@@ -61,8 +59,7 @@ TEST_CASE("moon calendar follows the lore cycle periods") {
 TEST_CASE("moon calendar repeats major celestial events") {
   fl::primitives::WorldClock clock;
 
-  for (std::uint64_t i = 0;
-       i < fl::primitives::WorldClock::kBeatsPerCalendarDay * 189; ++i) {
+  for (std::uint64_t i = 0; i < fl::primitives::WorldClock::kBeatsPerCalendarDay * 189; ++i) {
     clock.advance_beat();
   }
 

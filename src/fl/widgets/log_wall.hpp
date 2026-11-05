@@ -12,7 +12,7 @@ namespace fl::widgets {
 
 class LogWall : public ftxui::ComponentBase {
 public:
-  LogWall(FancyLog &master, std::deque<fl::primitives::AccountData> &accounts)
+  LogWall(FancyLog& master, std::deque<fl::primitives::AccountData>& accounts)
       : master_(master), accounts_(&accounts) {}
   ftxui::Element Render() override {
     using namespace ftxui;
@@ -25,7 +25,7 @@ public:
              frame | flex;
     };
 
-    auto render_log_or_blank = [&](fl::widgets::FancyLog *log) -> Element {
+    auto render_log_or_blank = [&](fl::widgets::FancyLog* log) -> Element {
       if (log == nullptr) {
         return blank_panel_content();
       }
@@ -34,16 +34,15 @@ public:
       return log->Render() | frame | vscroll_indicator | flex;
     };
 
-    auto master_col = window(text(" Master "), master_.Render() | frame |
-                                                   vscroll_indicator | flex) |
-                      flex;
+    auto master_col =
+        window(text(" Master "), master_.Render() | frame | vscroll_indicator | flex) | flex;
 
     auto account_stack = [&](size_t ai) -> Element {
       if (ai >= accounts_->size()) {
         return window(text(" "), blank_panel_content()) | flex;
       }
 
-      auto &acct = (*accounts_)[ai];
+      auto& acct = (*accounts_)[ai];
 
       Elements stack;
 
@@ -54,7 +53,7 @@ public:
 
       // Party panes
       for (size_t pi = 0; pi < acct.parties().size(); ++pi) {
-        auto &party = acct.parties()[pi];
+        auto& party = acct.parties()[pi];
         stack.push_back(window(text(" Party " + std::to_string(pi + 1) + " "),
                                render_log_or_blank(&party.log())) |
                         flex);
@@ -69,9 +68,8 @@ public:
     // Keep your existing "pairs in a column" behavior.
     for (size_t ai = 0; ai < accounts_->size(); ai += 2) {
       Element top = account_stack(ai);
-      Element bot = (ai + 1 < accounts_->size())
-                        ? account_stack(ai + 1)
-                        : window(text(" "), blank_panel_content()) | flex;
+      Element bot = (ai + 1 < accounts_->size()) ? account_stack(ai + 1)
+                                                 : window(text(" "), blank_panel_content()) | flex;
       cols.push_back(vbox({top | flex, bot | flex}) | flex);
     }
 
@@ -79,8 +77,8 @@ public:
   }
 
 private:
-  FancyLog &master_;
-  std::deque<fl::primitives::AccountData> *accounts_;
+  FancyLog& master_;
+  std::deque<fl::primitives::AccountData>* accounts_;
 };
 
 } // namespace fl::widgets

@@ -10,8 +10,7 @@ namespace fl::skills {
 class Grimoire {
 public:
   [[nodiscard]] bool knows(SkillKey skill) const noexcept;
-  [[nodiscard]] bool knows(SkillId base,
-                           SkillRank rank = SkillRank{}) const noexcept {
+  [[nodiscard]] bool knows(SkillId base, SkillRank rank = SkillRank{}) const noexcept {
     return knows(SkillKey{base, rank});
   }
 

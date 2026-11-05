@@ -25,11 +25,11 @@ enum class EquipmentSlot {
 };
 
 inline constexpr std::array<EquipmentSlot, 14> kEquipmentSlots{
-    EquipmentSlot::mainhand, EquipmentSlot::offhand, EquipmentSlot::chest,
-    EquipmentSlot::helm,     EquipmentSlot::pants,   EquipmentSlot::boots,
-    EquipmentSlot::gloves,   EquipmentSlot::sleeves, EquipmentSlot::belt,
-    EquipmentSlot::cape,     EquipmentSlot::necklace,
-    EquipmentSlot::ring_1,   EquipmentSlot::ring_2,  EquipmentSlot::knife,
+    EquipmentSlot::mainhand, EquipmentSlot::offhand,  EquipmentSlot::chest,
+    EquipmentSlot::helm,     EquipmentSlot::pants,    EquipmentSlot::boots,
+    EquipmentSlot::gloves,   EquipmentSlot::sleeves,  EquipmentSlot::belt,
+    EquipmentSlot::cape,     EquipmentSlot::necklace, EquipmentSlot::ring_1,
+    EquipmentSlot::ring_2,   EquipmentSlot::knife,
 };
 
 }; // namespace fl::loot

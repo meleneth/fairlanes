@@ -51,8 +51,7 @@ RocksFall::RocksFall(int width, int height, DecalConfig config) {
 
   impl->columns.resize(static_cast<std::size_t>(std::max(0, width)));
   for (int x = 0; x < width; ++x) {
-    impl->columns[static_cast<std::size_t>(x)] = {delay(rng), speed(rng),
-                                                  extras(rng), phase(rng)};
+    impl->columns[static_cast<std::size_t>(x)] = {delay(rng), speed(rng), extras(rng), phase(rng)};
   }
 
   impl_ = std::move(impl);
@@ -73,18 +72,16 @@ Frame RocksFall::render(float progress) const {
   const auto bg = palette(1);
 
   for (int x = 0; x < impl_->width; ++x) {
-    const auto &col = impl_->columns[static_cast<std::size_t>(x)];
+    const auto& col = impl_->columns[static_cast<std::size_t>(x)];
     if (t < col.delay) {
       continue;
     }
     const float local = (t - col.delay) / std::max(0.001f, 1.0f - col.delay);
     const float head =
-        local * col.speed * static_cast<float>(impl_->height + 6) +
-        col.phase * 3.0f - 4.0f;
+        local * col.speed * static_cast<float>(impl_->height + 6) + col.phase * 3.0f - 4.0f;
     const int rocks = 1 + col.extra_rocks;
     for (int i = 0; i < rocks; ++i) {
-      const int y =
-          static_cast<int>(std::round(head - static_cast<float>(i * 3)));
+      const int y = static_cast<int>(std::round(head - static_cast<float>(i * 3)));
       if (!in_bounds(x, y, impl_->width, impl_->height)) {
         continue;
       }
@@ -103,7 +100,9 @@ float RocksFall::duration_seconds() const {
   return impl_ ? impl_->config.duration_seconds : 1.0f;
 }
 
-std::string_view RocksFall::name() const { return "RocksFall"; }
+std::string_view RocksFall::name() const {
+  return "RocksFall";
+}
 
 DecalAnimationKind RocksFall::kind() const {
   return DecalAnimationKind::RocksFall;

@@ -1,6 +1,6 @@
-#include <entt/entity/handle.hpp>
 #include <algorithm>
 #include <cmath>
+#include <entt/entity/handle.hpp>
 #include <random>
 
 #include "fmt/format.h"
@@ -29,8 +29,7 @@ int thump_rank_damage_bonus(SkillKey skill) noexcept {
 } // namespace
 
 template <typename T>
-std::string exprtk_error_report(const exprtk::parser<T> &parser,
-                                const std::string &expr_src) {
+std::string exprtk_error_report(const exprtk::parser<T>& parser, const std::string& expr_src) {
   using error_t = exprtk::parser_error::type;
 
   std::string report;
@@ -49,8 +48,8 @@ std::string exprtk_error_report(const exprtk::parser<T> &parser,
                           "  Position: {}\n"
                           "  Source  : {}\n"
                           "             {}\n",
-                          i, exprtk::parser_error::to_str(err.mode),
-                          err.diagnostic, pos, expr_src, caret);
+                          i, exprtk::parser_error::to_str(err.mode), err.diagnostic, pos, expr_src,
+                          caret);
   }
   return report;
 }
@@ -70,11 +69,10 @@ Thump::Thump() {
 
   expr_.register_symbol_table(sym_);
 
-  const std::string expr_src =
-      "var base := (wd_min + (wd_max - wd_min) * u_roll) * skill_mult;"
-      "var hit  := (u_hit  < hit_rate);"
-      "var crit := (u_crit < crit_rate);"
-      "damage := hit ? (base * (1 + crit)) : 0;";
+  const std::string expr_src = "var base := (wd_min + (wd_max - wd_min) * u_roll) * skill_mult;"
+                               "var hit  := (u_hit  < hit_rate);"
+                               "var crit := (u_crit < crit_rate);"
+                               "damage := hit ? (base * (1 + crit)) : 0;";
 
   if (!parser_.compile(expr_src, expr_)) {
     throw std::runtime_error("ExprTk compile failed for Thump\n" +
@@ -82,7 +80,7 @@ Thump::Thump() {
   }
 }
 
-int Thump::thump(fl::context::AttackCtx &&ctx, SkillKey skill) {
+int Thump::thump(fl::context::AttackCtx&& ctx, SkillKey skill) {
   // Weapon range (placeholder values; wire to your actual weapon data)
   wd_min_ = 1.0;
   wd_max_ = 5.0;
@@ -105,9 +103,8 @@ int Thump::thump(fl::context::AttackCtx &&ctx, SkillKey skill) {
   int dmg = static_cast<int>(std::floor(dealt + 0.5));
   dmg = std::max(0, dmg);
   if (skill.base == SkillId::Thump && dmg > 0) {
-    dmg = std::max(0, dmg +
-                          fl::ecs::systems::effective_combat_stats(
-                              ctx.reg(), ctx.attacker()).attack);
+    dmg = std::max(
+        0, dmg + fl::ecs::systems::effective_combat_stats(ctx.reg(), ctx.attacker()).attack);
   }
   ctx.damage().physical = dmg;
   ctx.set_hit_kind(fl::primitives::HitKind::Direct);

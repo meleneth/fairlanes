@@ -32,7 +32,7 @@ constexpr int kWebModifierShift = 1 << 0;
 constexpr int kWebActionKeyDown = 1;
 
 std::mutex g_web_screen_mutex;
-ftxui::ScreenInteractive *g_web_screen = nullptr;
+ftxui::ScreenInteractive* g_web_screen = nullptr;
 
 std::optional<ftxui::Event> web_key_to_ftxui_event(int key, int modifiers) {
   if (key >= 0x20 && key <= 0x7e) {
@@ -40,44 +40,30 @@ std::optional<ftxui::Event> web_key_to_ftxui_event(int key, int modifiers) {
   }
 
   switch (key) {
-  case kWebKeyEnter:
-    return ftxui::Event::Return;
-  case kWebKeyEscape:
-    return ftxui::Event::Escape;
-  case kWebKeyBackspace:
-    return ftxui::Event::Backspace;
+  case kWebKeyEnter: return ftxui::Event::Return;
+  case kWebKeyEscape: return ftxui::Event::Escape;
+  case kWebKeyBackspace: return ftxui::Event::Backspace;
   case kWebKeyTab:
     if ((modifiers & kWebModifierShift) != 0) {
       return ftxui::Event::TabReverse;
     }
     return ftxui::Event::Tab;
-  case kWebKeyArrowUp:
-    return ftxui::Event::ArrowUp;
-  case kWebKeyArrowDown:
-    return ftxui::Event::ArrowDown;
-  case kWebKeyArrowLeft:
-    return ftxui::Event::ArrowLeft;
-  case kWebKeyArrowRight:
-    return ftxui::Event::ArrowRight;
-  case kWebKeyPageUp:
-    return ftxui::Event::PageUp;
-  case kWebKeyPageDown:
-    return ftxui::Event::PageDown;
-  case kWebKeyHome:
-    return ftxui::Event::Home;
-  case kWebKeyEnd:
-    return ftxui::Event::End;
-  default:
-    return std::nullopt;
+  case kWebKeyArrowUp: return ftxui::Event::ArrowUp;
+  case kWebKeyArrowDown: return ftxui::Event::ArrowDown;
+  case kWebKeyArrowLeft: return ftxui::Event::ArrowLeft;
+  case kWebKeyArrowRight: return ftxui::Event::ArrowRight;
+  case kWebKeyPageUp: return ftxui::Event::PageUp;
+  case kWebKeyPageDown: return ftxui::Event::PageDown;
+  case kWebKeyHome: return ftxui::Event::Home;
+  case kWebKeyEnd: return ftxui::Event::End;
+  default: return std::nullopt;
   }
 }
 
 } // namespace
 #endif
 
-WebScreenRegistration::WebScreenRegistration(
-    ftxui::ScreenInteractive &screen)
-    : screen_(&screen) {
+WebScreenRegistration::WebScreenRegistration(ftxui::ScreenInteractive& screen) : screen_(&screen) {
 #ifdef __EMSCRIPTEN__
   std::scoped_lock lock(g_web_screen_mutex);
   g_web_screen = screen_;
@@ -94,8 +80,7 @@ WebScreenRegistration::~WebScreenRegistration() {
 }
 
 #ifdef __EMSCRIPTEN__
-extern "C" EMSCRIPTEN_KEEPALIVE void
-fairlanes_web_key_event(int key, int modifiers, int action) {
+extern "C" EMSCRIPTEN_KEEPALIVE void fairlanes_web_key_event(int key, int modifiers, int action) {
   if (action != kWebActionKeyDown) {
     return;
   }
@@ -105,7 +90,7 @@ fairlanes_web_key_event(int key, int modifiers, int action) {
     return;
   }
 
-  ftxui::ScreenInteractive *screen = nullptr;
+  ftxui::ScreenInteractive* screen = nullptr;
   {
     std::scoped_lock lock(g_web_screen_mutex);
     screen = g_web_screen;

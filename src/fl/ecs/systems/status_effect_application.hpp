@@ -11,16 +11,15 @@
 namespace fl::ecs::systems {
 
 template <typename Status, typename ClearExisting, typename Configure>
-Status &
-replace_status_effect(fl::context::EncounterCtx &party_ctx, entt::entity target,
-                      ClearExisting &&clear_existing, Configure &&configure) {
-  auto &reg = party_ctx.reg();
+Status& replace_status_effect(fl::context::EncounterCtx& party_ctx, entt::entity target,
+                              ClearExisting&& clear_existing, Configure&& configure) {
+  auto& reg = party_ctx.reg();
 
   if (reg.any_of<Status>(target)) {
     std::invoke(std::forward<ClearExisting>(clear_existing), party_ctx, target);
   }
 
-  auto &status = reg.emplace<Status>(target);
+  auto& status = reg.emplace<Status>(target);
   status.effect = StatusEffectLifetime::create_instance(party_ctx, target);
   std::invoke(std::forward<Configure>(configure), status);
   return status;

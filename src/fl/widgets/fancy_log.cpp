@@ -1,7 +1,7 @@
-#include <entt/entity/handle.hpp>
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <entt/entity/handle.hpp>
 #include <utility>
 
 #include "fancy_log.hpp"
@@ -20,33 +20,28 @@ std::string player_name_tag_for(entt::handle target) {
   using fl::ecs::components::PartyMember;
   using fl::loot::ArmorKind;
 
-  auto &member = target.get<PartyMember>();
-  auto &closet = member.closet();
-  auto &reg = *target.registry();
+  auto& member = target.get<PartyMember>();
+  auto& closet = member.closet();
+  auto& reg = *target.registry();
 
-  const std::array armor_slots{closet.chest,   closet.helm,  closet.pants,
-                               closet.belt,    closet.boots, closet.gloves,
-                               closet.sleeves, closet.cape};
+  const std::array armor_slots{closet.chest, closet.helm,   closet.pants,   closet.belt,
+                               closet.boots, closet.gloves, closet.sleeves, closet.cape};
 
   for (auto item : armor_slots) {
     if (item == entt::null || !reg.valid(item)) {
       continue;
     }
 
-    const auto *equipment = reg.try_get<Equipment>(item);
+    const auto* equipment = reg.try_get<Equipment>(item);
     if (equipment == nullptr || !equipment->is_armor()) {
       continue;
     }
 
     switch (equipment->armor_kind()) {
-    case ArmorKind::cloth:
-      return "cloth_player_name";
-    case ArmorKind::leather:
-      return "leather_player_name";
-    case ArmorKind::plate:
-      return "plate_player_name";
-    case ArmorKind::none:
-      break;
+    case ArmorKind::cloth: return "cloth_player_name";
+    case ArmorKind::leather: return "leather_player_name";
+    case ArmorKind::plate: return "plate_player_name";
+    case ArmorKind::none: break;
     }
   }
 
@@ -62,11 +57,10 @@ std::string FancyLog::name_tag_for(entt::handle target) {
   using fl::ecs::components::PartyMember;
   using fl::ecs::components::Stats;
 
-  auto &target_stats = target.get<Stats>();
+  auto& target_stats = target.get<Stats>();
 
   if (target.any_of<PartyMember>()) {
-    return fmt::format("[{}]({})", player_name_tag_for(target),
-                       target_stats.name_);
+    return fmt::format("[{}]({})", player_name_tag_for(target), target_stats.name_);
   }
 
   return fmt::format("[enemy_name]({})", target_stats.name_);
@@ -100,7 +94,9 @@ void FancyLog::append_markup(std::string_view utf8_line) {
   push(parse_markup(utf8_line));
 }
 
-void FancyLog::append(Element el) { push(std::move(el)); }
+void FancyLog::append(Element el) {
+  push(std::move(el));
+}
 
 // ---- styles ---------------------------------------------------------------
 
@@ -108,42 +104,60 @@ void FancyLog::style(std::string tag, Decorator deco) {
   style_map[std::move(tag)] = deco;
 }
 
-void FancyLog::styles(StyleMap map) { style_map = std::move(map); }
+void FancyLog::styles(StyleMap map) {
+  style_map = std::move(map);
+}
 
-void FancyLog::clear_styles() { style_map.clear(); }
+void FancyLog::clear_styles() {
+  style_map.clear();
+}
 
 // ---- housekeeping ---------------------------------------------------------
 
-void FancyLog::clear() { log.clear(); }
+void FancyLog::clear() {
+  log.clear();
+}
 
 // ---- sizing / scrolling ---------------------------------------------------
 
-void FancyLog::set_max_rows(int rows) { opts.max_rows = std::max(0, rows); }
+void FancyLog::set_max_rows(int rows) {
+  opts.max_rows = std::max(0, rows);
+}
 
-int FancyLog::max_rows() const { return opts.max_rows; }
+int FancyLog::max_rows() const {
+  return opts.max_rows;
+}
 
 void FancyLog::set_max_entries(size_t n) {
   opts.max_entries = n == 0 ? 1 : n;
 
-  while (log.size() > opts.max_entries)
-    log.pop_front();
+  while (log.size() > opts.max_entries) log.pop_front();
 }
 
-size_t FancyLog::max_entries() const { return opts.max_entries; }
+size_t FancyLog::max_entries() const {
+  return opts.max_entries;
+}
 
-void FancyLog::set_autoscroll(bool v) { opts.autoscroll = v; }
+void FancyLog::set_autoscroll(bool v) {
+  opts.autoscroll = v;
+}
 
-bool FancyLog::autoscroll() const { return opts.autoscroll; }
+bool FancyLog::autoscroll() const {
+  return opts.autoscroll;
+}
 
-size_t FancyLog::size() const { return log.size(); }
+size_t FancyLog::size() const {
+  return log.size();
+}
 
-bool FancyLog::empty() const { return log.empty(); }
+bool FancyLog::empty() const {
+  return log.empty();
+}
 
 // ---- ComponentBase --------------------------------------------------------
 
 ftxui::Element FancyLog::Render() {
-  cursor_ =
-      std::clamp(cursor_, 0, std::max(0, static_cast<int>(log.size()) - 1));
+  cursor_ = std::clamp(cursor_, 0, std::max(0, static_cast<int>(log.size()) - 1));
 
   Elements lines(log.begin(), log.end());
   if (!lines.empty()) {
@@ -174,8 +188,7 @@ bool FancyLog::OnEvent(ftxui::Event event) {
 
   const int max_cursor = static_cast<int>(log.size()) - 1;
 
-  if (event == ftxui::Event::ArrowDown ||
-      event == ftxui::Event::Character("j")) {
+  if (event == ftxui::Event::ArrowDown || event == ftxui::Event::Character("j")) {
     opts.autoscroll = false;
     cursor_ = std::min(cursor_ + 1, max_cursor);
     return true;
@@ -214,7 +227,9 @@ bool FancyLog::OnEvent(ftxui::Event event) {
   return false;
 }
 
-void FancyLog::set_focused(bool focused) noexcept { focused_ = focused; }
+void FancyLog::set_focused(bool focused) noexcept {
+  focused_ = focused;
+}
 
 // ---- internals ------------------------------------------------------------
 
@@ -224,7 +239,7 @@ Element FancyLog::parse_markup(std::string_view s) const {
   const size_t n = s.size();
   size_t i = 0;
 
-  auto flush_plain = [&](std::string &buf) {
+  auto flush_plain = [&](std::string& buf) {
     if (!buf.empty()) {
       parts.push_back(text(buf));
       buf.clear();
@@ -276,11 +291,9 @@ Element FancyLog::parse_markup(std::string_view s) const {
 
   flush_plain(plain);
 
-  if (parts.empty())
-    return text("");
+  if (parts.empty()) return text("");
 
-  if (parts.size() == 1)
-    return std::move(parts.front());
+  if (parts.size() == 1) return std::move(parts.front());
 
   return hbox(std::move(parts));
 }
@@ -288,8 +301,7 @@ Element FancyLog::parse_markup(std::string_view s) const {
 void FancyLog::push(Element el) {
   log.push_back(std::move(el));
 
-  if (log.size() > opts.max_entries)
-    log.pop_front();
+  if (log.size() > opts.max_entries) log.pop_front();
 
   if (opts.autoscroll) {
     cursor_ = static_cast<int>(log.size()) - 1;

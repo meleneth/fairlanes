@@ -20,12 +20,13 @@ public:
     return seconds * kBeatsPerSecond;
   }
 
-  void advance_beat() noexcept { ++elapsed_beats_; }
+  void advance_beat() noexcept {
+    ++elapsed_beats_;
+  }
 
   void set_beat_rate_multiplier(int multiplier) noexcept {
-    beat_rate_multiplier_.store(
-        std::clamp(multiplier, 1, kMaxBeatRateMultiplier),
-        std::memory_order_relaxed);
+    beat_rate_multiplier_.store(std::clamp(multiplier, 1, kMaxBeatRateMultiplier),
+                                std::memory_order_relaxed);
   }
 
   [[nodiscard]] int beat_rate_multiplier() const noexcept {

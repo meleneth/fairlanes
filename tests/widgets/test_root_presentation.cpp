@@ -23,17 +23,17 @@
 #include "fl/widgets/all_account_battle_screen.hpp"
 #include "fl/widgets/battle_render_budget.hpp"
 #include "fl/widgets/chaos_attract_root.hpp"
+#include "fl/widgets/important_notice_overlay.hpp"
 #include "fl/widgets/root_chrome.hpp"
 #include "fl/widgets/root_component.hpp"
 #include "fl/widgets/story_start_picker.hpp"
-#include "fl/widgets/important_notice_overlay.hpp"
 
 namespace {
 
 constexpr int kRenderWidth = 120;
 constexpr int kRenderHeight = 40;
 
-std::string screen_text(const ftxui::Screen &screen) {
+std::string screen_text(const ftxui::Screen& screen) {
   std::string result;
   for (int y = 0; y < screen.dimy(); ++y) {
     if (y != 0) {
@@ -46,9 +46,8 @@ std::string screen_text(const ftxui::Screen &screen) {
   return result;
 }
 
-std::string render_to_string(fl::widgets::RootComponent &root) {
-  auto element = root.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
-                                             kRenderWidth) |
+std::string render_to_string(fl::widgets::RootComponent& root) {
+  auto element = root.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, kRenderWidth) |
                  ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, kRenderHeight);
   auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(kRenderWidth),
                                       ftxui::Dimension::Fixed(kRenderHeight));
@@ -56,9 +55,8 @@ std::string render_to_string(fl::widgets::RootComponent &root) {
   return screen_text(screen);
 }
 
-std::string render_to_string(fl::widgets::ChaosAttractRoot &root) {
-  auto element = root.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
-                                             kRenderWidth) |
+std::string render_to_string(fl::widgets::ChaosAttractRoot& root) {
+  auto element = root.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, kRenderWidth) |
                  ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, kRenderHeight);
   auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(kRenderWidth),
                                       ftxui::Dimension::Fixed(kRenderHeight));
@@ -66,36 +64,31 @@ std::string render_to_string(fl::widgets::ChaosAttractRoot &root) {
   return screen_text(screen);
 }
 
-std::string render_to_string(fl::widgets::ChaosAttractRoot &root,
-                             const fl::primitives::WorldClock &world_clock,
-                             int width = kRenderWidth,
-                             int height = kRenderHeight) {
+std::string render_to_string(fl::widgets::ChaosAttractRoot& root,
+                             const fl::primitives::WorldClock& world_clock,
+                             int width = kRenderWidth, int height = kRenderHeight) {
   auto element = fl::widgets::render_root_chrome(world_clock, root.Render()) |
                  ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width) |
                  ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, height);
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(width),
-                                      ftxui::Dimension::Fixed(height));
+  auto screen =
+      ftxui::Screen::Create(ftxui::Dimension::Fixed(width), ftxui::Dimension::Fixed(height));
   ftxui::Render(screen, element);
   return screen_text(screen);
 }
 
-std::optional<ftxui::Pixel>
-find_prompt_pixel(fl::widgets::ChaosAttractRoot &root) {
+std::optional<ftxui::Pixel> find_prompt_pixel(fl::widgets::ChaosAttractRoot& root) {
   constexpr std::string_view prompt = "ENTER TO BEGIN";
-  auto element = root.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
-                                             kRenderWidth) |
+  auto element = root.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, kRenderWidth) |
                  ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, kRenderHeight);
   auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(kRenderWidth),
                                       ftxui::Dimension::Fixed(kRenderHeight));
   ftxui::Render(screen, element);
 
   for (int y = 0; y < kRenderHeight; ++y) {
-    for (int x = 0;
-         x <= kRenderWidth - static_cast<int>(prompt.size()); ++x) {
+    for (int x = 0; x <= kRenderWidth - static_cast<int>(prompt.size()); ++x) {
       bool matches = true;
       for (std::size_t i = 0; i < prompt.size(); ++i) {
-        if (screen.PixelAt(x + static_cast<int>(i), y).character !=
-            std::string(1, prompt[i])) {
+        if (screen.PixelAt(x + static_cast<int>(i), y).character != std::string(1, prompt[i])) {
           matches = false;
           break;
         }
@@ -110,15 +103,14 @@ find_prompt_pixel(fl::widgets::ChaosAttractRoot &root) {
   return std::nullopt;
 }
 
-std::optional<std::size_t> find_line_containing(const std::string &rendered,
+std::optional<std::size_t> find_line_containing(const std::string& rendered,
                                                 std::string_view needle) {
   std::size_t line_index = 0;
   std::size_t start = 0;
   while (start <= rendered.size()) {
     const auto end = rendered.find('\n', start);
     const auto line =
-        rendered.substr(start, end == std::string::npos ? std::string::npos
-                                                        : end - start);
+        rendered.substr(start, end == std::string::npos ? std::string::npos : end - start);
     if (line.find(needle) != std::string::npos) {
       return line_index;
     }
@@ -132,18 +124,15 @@ std::optional<std::size_t> find_line_containing(const std::string &rendered,
   return std::nullopt;
 }
 
-std::optional<std::size_t>
-find_line_containing(const std::string &rendered, std::string_view first,
-                     std::string_view second) {
+std::optional<std::size_t> find_line_containing(const std::string& rendered, std::string_view first,
+                                                std::string_view second) {
   std::size_t line_index = 0;
   std::size_t start = 0;
   while (start <= rendered.size()) {
     const auto end = rendered.find('\n', start);
     const auto line =
-        rendered.substr(start, end == std::string::npos ? std::string::npos
-                                                        : end - start);
-    if (line.find(first) != std::string::npos &&
-        line.find(second) != std::string::npos) {
+        rendered.substr(start, end == std::string::npos ? std::string::npos : end - start);
+    if (line.find(first) != std::string::npos && line.find(second) != std::string::npos) {
       return line_index;
     }
     if (end == std::string::npos) {
@@ -156,16 +145,13 @@ find_line_containing(const std::string &rendered, std::string_view first,
   return std::nullopt;
 }
 
-std::optional<std::string> line_at(const std::string &rendered,
-                                   std::size_t target_line) {
+std::optional<std::string> line_at(const std::string& rendered, std::size_t target_line) {
   std::size_t line_index = 0;
   std::size_t start = 0;
   while (start <= rendered.size()) {
     const auto end = rendered.find('\n', start);
     if (line_index == target_line) {
-      return rendered.substr(start, end == std::string::npos
-                                        ? std::string::npos
-                                        : end - start);
+      return rendered.substr(start, end == std::string::npos ? std::string::npos : end - start);
     }
     if (end == std::string::npos) {
       break;
@@ -177,20 +163,18 @@ std::optional<std::string> line_at(const std::string &rendered,
   return std::nullopt;
 }
 
-fl::widgets::RootComponent make_gameplay_root(fl::GrandCentral &gc) {
-  return fl::widgets::RootComponent{gc.account_context(0), gc.accounts(),
-                                    gc.game_log(), gc.world_clock()};
+fl::widgets::RootComponent make_gameplay_root(fl::GrandCentral& gc) {
+  return fl::widgets::RootComponent{gc.account_context(0), gc.accounts(), gc.game_log(),
+                                    gc.world_clock()};
 }
 
-ftxui::Component make_all_account_surface(fl::GrandCentral &gc) {
-  return ftxui::Make<fl::widgets::AllAccountBattleScreen>(gc.reg(),
-                                                          gc.accounts());
+ftxui::Component make_all_account_surface(fl::GrandCentral& gc) {
+  return ftxui::Make<fl::widgets::AllAccountBattleScreen>(gc.reg(), gc.accounts());
 }
 
 } // namespace
 
-TEST_CASE("Normal gameplay renders the normal key manifest",
-          "[widgets][root][presentation]") {
+TEST_CASE("Normal gameplay renders the normal key manifest", "[widgets][root][presentation]") {
   fl::GrandCentral gc{2, 3, 1};
   auto root = make_gameplay_root(gc);
 
@@ -221,10 +205,8 @@ TEST_CASE("Important notices rise from bottom right and wait for acknowledgement
   notices.enqueue({"BIOME UNLOCKED", "Origin Plains Tower", 20}, start);
 
   auto render_notice = [&](Overlay::Clock::time_point now) {
-    auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(80),
-                                        ftxui::Dimension::Fixed(24));
-    ftxui::Render(screen, notices.render(24, now) |
-                              ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 80) |
+    auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(80), ftxui::Dimension::Fixed(24));
+    ftxui::Render(screen, notices.render(24, now) | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 80) |
                               ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 24));
     return screen_text(screen);
   };
@@ -251,8 +233,7 @@ TEST_CASE("Autoplay acknowledges each achievement-style notice after sixty secon
   REQUIRE(notices.active());
   notices.tick(start + std::chrono::seconds{60});
   REQUIRE(notices.active());
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(80),
-                                      ftxui::Dimension::Fixed(24));
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(80), ftxui::Dimension::Fixed(24));
   ftxui::Render(screen, notices.render(24, start + std::chrono::seconds{60}));
   REQUIRE(screen_text(screen).find("Second") != std::string::npos);
   notices.tick(start + std::chrono::seconds{119});
@@ -269,46 +250,40 @@ TEST_CASE("Autoplay acknowledges each achievement-style notice after sixty secon
 TEST_CASE("Root queues milestone events and consumes the acknowledging key",
           "[widgets][root][notice]") {
   fl::GrandCentral gc{1, 1, 1};
-  auto root = fl::widgets::RootComponent{
-      gc.account_context(0), gc.accounts(), gc.game_log(), gc.world_clock(),
-      nullptr, &gc.raid_milestones().bus()};
+  auto root =
+      fl::widgets::RootComponent{gc.account_context(0), gc.accounts(), gc.game_log(),
+                                 gc.world_clock(),      nullptr,       &gc.raid_milestones().bus()};
   const auto baseline = render_to_string(root);
-  auto &bus = gc.accounts().front().parties().front().party_bus();
-  bus.emit(fl::events::PartyEvent{
-      fl::events::BiomeUnlocked{"origin_plains_tower"}});
-  bus.emit(fl::events::PartyEvent{
-      fl::events::CycleUnlocked{fl::primitives::Cycle::Resonance}});
+  auto& bus = gc.accounts().front().parties().front().party_bus();
+  bus.emit(fl::events::PartyEvent{fl::events::BiomeUnlocked{"origin_plains_tower"}});
+  bus.emit(fl::events::PartyEvent{fl::events::CycleUnlocked{fl::primitives::Cycle::Resonance}});
   gc.raid_milestones().bus().emit(fl::events::AchievementUnlocked{
-      fl::events::AchievementId::RaidMutualDestruction,
-      gc.accounts().front().account_id(), 1});
+      fl::events::AchievementId::RaidMutualDestruction, gc.accounts().front().account_id(), 1});
 
   REQUIRE(render_to_string(root).find("BIOME UNLOCKED") != std::string::npos);
   REQUIRE(root.OnEvent(ftxui::Event::Character(" ")));
   REQUIRE(render_to_string(root).find("CYCLE UNLOCKED") != std::string::npos);
   REQUIRE(root.OnEvent(ftxui::Event::Return));
-  REQUIRE(render_to_string(root).find("ACHIEVEMENT UNLOCKED") !=
-          std::string::npos);
+  REQUIRE(render_to_string(root).find("ACHIEVEMENT UNLOCKED") != std::string::npos);
   REQUIRE(root.OnEvent(ftxui::Event::Character(" ")));
   REQUIRE(render_to_string(root) == baseline);
   REQUIRE(root.OnEvent(ftxui::Event::Character(" ")));
   REQUIRE(render_to_string(root) != baseline);
 }
 
-TEST_CASE("Story keys lead from the Visitor defeat to pub recruitment",
-          "[widgets][root][story]") {
+TEST_CASE("Story keys lead from the Visitor defeat to pub recruitment", "[widgets][root][story]") {
   fl::GrandCentral game{1, 1, 0, true, true, 42, true};
-  auto root = fl::widgets::RootComponent{
-      game.account_context(0), game.accounts(), game.game_log(),
-      game.world_clock(), &game.discoveries(),
-      &game.raid_milestones().bus(), game.objectives()};
+  auto root = fl::widgets::RootComponent{game.account_context(0), game.accounts(),
+                                         game.game_log(),         game.world_clock(),
+                                         &game.discoveries(),     &game.raid_milestones().bus(),
+                                         game.objectives()};
   game.innervate_event_system();
   game.advance_beat();
   REQUIRE(render_to_string(root).find("OBJECTIVE REVEALED") != std::string::npos);
   REQUIRE(root.OnEvent(ftxui::Event::Return));
   REQUIRE(root.OnEvent(ftxui::Event::Character("o")));
   REQUIRE(render_to_string(root).find("Recruit a hero") != std::string::npos);
-  REQUIRE(render_to_string(root).find("Press v to visit the village") !=
-          std::string::npos);
+  REQUIRE(render_to_string(root).find("Press v to visit the village") != std::string::npos);
   REQUIRE(root.OnEvent(ftxui::Event::Character("v")));
   REQUIRE(render_to_string(root).find("Village") != std::string::npos);
   REQUIRE(root.OnEvent(ftxui::Event::Return));
@@ -323,9 +298,9 @@ TEST_CASE("Story keys lead from the Visitor defeat to pub recruitment",
 TEST_CASE("Manual village navigation is scoped to a selected party",
           "[widgets][root][story][tower]") {
   fl::GrandCentral game{1, 1, 1, true, true, 42, true};
-  auto root = fl::widgets::RootComponent{
-      game.account_context(0), game.accounts(), game.game_log(),
-      game.world_clock(), nullptr, nullptr, game.objectives()};
+  auto root = fl::widgets::RootComponent{game.account_context(0), game.accounts(), game.game_log(),
+                                         game.world_clock(),      nullptr,         nullptr,
+                                         game.objectives()};
 
   // The account battle view is the multi-party surface and cannot choose a
   // route for whichever party happens to be selected in the command model.
@@ -347,26 +322,24 @@ TEST_CASE("Manual village navigation is scoped to a selected party",
   REQUIRE(root.OnEvent(ftxui::Event::Return));
   rendered = render_to_string(root);
   REQUIRE(rendered.find("Choose a Biome") != std::string::npos);
-  REQUIRE(rendered.find("Origin Woodland  Cleared 0  Next 1") !=
-          std::string::npos);
+  REQUIRE(rendered.find("Origin Woodland  Cleared 0  Next 1") != std::string::npos);
 
   REQUIRE(root.OnEvent(ftxui::Event::Return));
   rendered = render_to_string(root);
   REQUIRE(rendered.find("Choose a Floor") != std::string::npos);
   REQUIRE(rendered.find("Floor 1 [next target]") != std::string::npos);
   REQUIRE(root.OnEvent(ftxui::Event::Return));
-  const auto &party = game.accounts().front().parties().front();
+  const auto& party = game.accounts().front().parties().front();
   REQUIRE(party.tower_route().has_value());
   REQUIRE(party.tower_route()->biome_id == "origin_woodland_tower");
   REQUIRE(party.tower_route()->floor == 1);
 }
 
-TEST_CASE("Sandbox console switch warns that story cannot be recovered",
-          "[widgets][root][story]") {
+TEST_CASE("Sandbox console switch warns that story cannot be recovered", "[widgets][root][story]") {
   fl::GrandCentral game{1, 1, 0, true, true, 42, true};
-  auto root = fl::widgets::RootComponent{
-      game.account_context(0), game.accounts(), game.game_log(),
-      game.world_clock(), nullptr, nullptr, game.objectives()};
+  auto root = fl::widgets::RootComponent{game.account_context(0), game.accounts(), game.game_log(),
+                                         game.world_clock(),      nullptr,         nullptr,
+                                         game.objectives()};
   REQUIRE(root.OnEvent(ftxui::Event::Character("`")));
   for (char character : std::string{"sandbox"})
     REQUIRE(root.OnEvent(ftxui::Event::Character(std::string(1, character))));
@@ -387,8 +360,7 @@ TEST_CASE("Attract exit picker offers manual story and autoplay with a toggle hi
           "[widgets][story][start]") {
   bool finished = false;
   fl::widgets::StoryStartPicker picker{[&] { finished = true; }};
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(100),
-                                      ftxui::Dimension::Fixed(24));
+  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(100), ftxui::Dimension::Fixed(24));
   ftxui::Render(screen, picker.Render());
   const auto displayed = screen_text(screen);
   REQUIRE(displayed.find("Manual story") != std::string::npos);
@@ -410,9 +382,9 @@ TEST_CASE("Attract exit picker offers manual story and autoplay with a toggle hi
 TEST_CASE("Story autoplay requires confirmation when enabled from the root",
           "[widgets][root][story]") {
   fl::GrandCentral game{1, 1, 0, true, true, 42, true};
-  auto root = fl::widgets::RootComponent{
-      game.account_context(0), game.accounts(), game.game_log(),
-      game.world_clock(), nullptr, nullptr, game.objectives()};
+  auto root = fl::widgets::RootComponent{game.account_context(0), game.accounts(), game.game_log(),
+                                         game.world_clock(),      nullptr,         nullptr,
+                                         game.objectives()};
   REQUIRE_FALSE(game.objectives()->autoplay_enabled());
   REQUIRE(root.OnEvent(ftxui::Event::Character("a")));
   REQUIRE(render_to_string(root).find("Enable story autoplay") != std::string::npos);
@@ -433,18 +405,16 @@ TEST_CASE("Account battle combatants keep fixed twenty-percent widths",
   constexpr int column_width = width / 5;
   fl::GrandCentral gc{1, 1, 5};
   auto account_ctx = gc.account_context(0);
-  auto &members = account_ctx.account_data().party(0).members();
-  account_ctx.reg().get<fl::ecs::components::Stats>(members.front().member_id())
-      .name_ = std::string(60, 'X');
+  auto& members = account_ctx.account_data().party(0).members();
+  account_ctx.reg().get<fl::ecs::components::Stats>(members.front().member_id()).name_ =
+      std::string(60, 'X');
   fl::widgets::AccountBattleView view{account_ctx};
 
-  fl::widgets::force_battle_render_target(
-      fl::widgets::BattleLayoutProfile::Standard);
-  auto element = view.Render() |
-                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width) |
+  fl::widgets::force_battle_render_target(fl::widgets::BattleLayoutProfile::Standard);
+  auto element = view.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width) |
                  ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, height);
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(width),
-                                      ftxui::Dimension::Fixed(height));
+  auto screen =
+      ftxui::Screen::Create(ftxui::Dimension::Fixed(width), ftxui::Dimension::Fixed(height));
   ftxui::Render(screen, element);
   fl::widgets::clear_forced_battle_render_target();
 
@@ -452,8 +422,7 @@ TEST_CASE("Account battle combatants keep fixed twenty-percent widths",
   for (int y = 0; y < height && hp_row < 0; ++y) {
     int hp_labels = 0;
     for (int x = 0; x + 1 < width; ++x) {
-      if (screen.PixelAt(x, y).character == "H" &&
-          screen.PixelAt(x + 1, y).character == "P") {
+      if (screen.PixelAt(x, y).character == "H" && screen.PixelAt(x + 1, y).character == "P") {
         ++hp_labels;
       }
     }
@@ -465,8 +434,7 @@ TEST_CASE("Account battle combatants keep fixed twenty-percent widths",
   REQUIRE(hp_row >= 0);
   for (int column = 0; column < 5; ++column) {
     REQUIRE(screen.PixelAt(column * column_width, hp_row).character == "│");
-    REQUIRE(screen.PixelAt((column + 1) * column_width - 1, hp_row).character ==
-            "│");
+    REQUIRE(screen.PixelAt((column + 1) * column_width - 1, hp_row).character == "│");
   }
 }
 
@@ -479,25 +447,19 @@ TEST_CASE("Account battle rows stay fixed across encounter transitions",
   fl::widgets::AccountBattleView view{account_ctx};
   const auto anchor = account_ctx.reg()
                           .get<fl::ecs::components::Stats>(
-                              account_ctx.account_data()
-                                  .party(1)
-                                  .members()
-                                  .front()
-                                  .member_id())
+                              account_ctx.account_data().party(1).members().front().member_id())
                           .name_;
 
   auto render_view = [&] {
-    auto element = view.Render() |
-                   ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width) |
+    auto element = view.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width) |
                    ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, height);
-    auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(width),
-                                        ftxui::Dimension::Fixed(height));
+    auto screen =
+        ftxui::Screen::Create(ftxui::Dimension::Fixed(width), ftxui::Dimension::Fixed(height));
     ftxui::Render(screen, element);
     return screen_text(screen);
   };
 
-  fl::widgets::force_battle_render_target(
-      fl::widgets::BattleLayoutProfile::Standard);
+  fl::widgets::force_battle_render_target(fl::widgets::BattleLayoutProfile::Standard);
   const auto before = find_line_containing(render_view(), anchor);
   account_ctx.account_data().party(0).create_encounter();
   const auto during = find_line_containing(render_view(), anchor);
@@ -511,20 +473,20 @@ TEST_CASE("Account battle rows stay fixed across encounter transitions",
 TEST_CASE("Account battle reveals ATB when the roster has vertical space",
           "[widgets][account-battle][layout][atb]") {
   using fl::widgets::BattleLayoutProfile;
-  const auto scenario = GENERATE(
-      std::tuple{BattleLayoutProfile::Standard, 5, false},
-      std::tuple{BattleLayoutProfile::Wide, 5, true},
-      std::tuple{BattleLayoutProfile::Showcase, 5, true},
-      // Three parties occupy exactly two-thirds below Compact's moon chrome.
-      std::tuple{BattleLayoutProfile::Compact, 3, false},
-      std::tuple{BattleLayoutProfile::Compact, 2, true});
+  const auto scenario =
+      GENERATE(std::tuple{BattleLayoutProfile::Standard, 5, false},
+               std::tuple{BattleLayoutProfile::Wide, 5, true},
+               std::tuple{BattleLayoutProfile::Showcase, 5, true},
+               // Three parties occupy exactly two-thirds below Compact's moon chrome.
+               std::tuple{BattleLayoutProfile::Compact, 3, false},
+               std::tuple{BattleLayoutProfile::Compact, 2, true});
   const auto [profile, party_count, shows_atb] = scenario;
   const auto target = fl::widgets::battle_render_target_spec(profile);
   fl::GrandCentral gc{1, static_cast<std::uint8_t>(party_count), 5};
   auto ctx = gc.account_context(0);
   int hero = 0;
-  for (auto &party : ctx.account_data().parties()) {
-    for (auto &member : party.members()) {
+  for (auto& party : ctx.account_data().parties()) {
+    for (auto& member : party.members()) {
       gc.reg().get<fl::ecs::components::Stats>(member.member_id()).name_ =
           "Hero" + std::to_string(++hero) + "!";
     }
@@ -534,15 +496,14 @@ TEST_CASE("Account battle reveals ATB when the roster has vertical space",
   fl::widgets::force_battle_render_target(profile);
   auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(target.width),
                                       ftxui::Dimension::Fixed(target.height));
-  ftxui::Render(screen, fl::widgets::render_root_chrome(
-                            ctx.account_data().calendar(), view.Render()));
+  ftxui::Render(screen,
+                fl::widgets::render_root_chrome(ctx.account_data().calendar(), view.Render()));
   fl::widgets::clear_forced_battle_render_target();
 
   int atb_bars = 0;
   for (int y = 0; y < screen.dimy(); ++y) {
     for (int x = 0; x + 2 < screen.dimx(); ++x) {
-      if (screen.PixelAt(x, y).character == "A" &&
-          screen.PixelAt(x + 1, y).character == "T" &&
+      if (screen.PixelAt(x, y).character == "A" && screen.PixelAt(x + 1, y).character == "T" &&
           screen.PixelAt(x + 2, y).character == "B")
         ++atb_bars;
     }
@@ -550,8 +511,7 @@ TEST_CASE("Account battle reveals ATB when the roster has vertical space",
   REQUIRE(atb_bars == (shows_atb ? party_count * 10 : 0));
   const auto rendered = screen_text(screen);
   for (int i = 1; i <= party_count * 5; ++i)
-    REQUIRE(rendered.find("Hero" + std::to_string(i) + "!") !=
-            std::string::npos);
+    REQUIRE(rendered.find("Hero" + std::to_string(i) + "!") != std::string::npos);
 }
 
 TEST_CASE("Account battle log panes keep fixed fractional widths",
@@ -562,23 +522,20 @@ TEST_CASE("Account battle log panes keep fixed fractional widths",
   constexpr std::array pane_markers{'A', 'B', 'C', 'D', 'E', 'F'};
   fl::GrandCentral gc{1, 5, 5};
   auto account_ctx = gc.account_context(0);
-  auto &account = account_ctx.account_data();
+  auto& account = account_ctx.account_data();
   account.log().clear();
   account.log().append_plain(std::string(100, pane_markers.front()));
   for (std::size_t i = 0; i < account.parties().size(); ++i) {
     account.parties()[i].log().clear();
-    account.parties()[i].log().append_plain(
-        std::string(i + 1, pane_markers[i + 1]));
+    account.parties()[i].log().append_plain(std::string(i + 1, pane_markers[i + 1]));
   }
   fl::widgets::AccountBattleView view{account_ctx};
 
-  fl::widgets::force_battle_render_target(
-      fl::widgets::BattleLayoutProfile::Standard);
-  auto element = view.Render() |
-                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width) |
+  fl::widgets::force_battle_render_target(fl::widgets::BattleLayoutProfile::Standard);
+  auto element = view.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width) |
                  ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, height);
-  auto screen = ftxui::Screen::Create(ftxui::Dimension::Fixed(width),
-                                      ftxui::Dimension::Fixed(height));
+  auto screen =
+      ftxui::Screen::Create(ftxui::Dimension::Fixed(width), ftxui::Dimension::Fixed(height));
   ftxui::Render(screen, element);
   fl::widgets::clear_forced_battle_render_target();
 
@@ -586,8 +543,7 @@ TEST_CASE("Account battle log panes keep fixed fractional widths",
   for (int y = 0; y < height && marker_row < 0; ++y) {
     bool matches = true;
     for (std::size_t pane = 0; pane < pane_starts.size(); ++pane) {
-      if (screen.PixelAt(pane_starts[pane], y).character !=
-          std::string(1, pane_markers[pane])) {
+      if (screen.PixelAt(pane_starts[pane], y).character != std::string(1, pane_markers[pane])) {
         matches = false;
         break;
       }
@@ -619,26 +575,25 @@ TEST_CASE("Normal gameplay collapses and expands the metrics overlay",
   REQUIRE(render_to_string(root).find("FPS ") != std::string::npos);
 }
 
-TEST_CASE("Party screens dispatch return-to-town requests with r",
-          "[widgets][root][party][town]") {
+TEST_CASE("Party screens dispatch return-to-town requests with r", "[widgets][root][party][town]") {
   fl::GrandCentral gc{1, 1, 1};
   auto root = make_gameplay_root(gc);
-  auto &party = gc.accounts().front().party(0);
+  auto& party = gc.accounts().front().party(0);
   int request_count = 0;
-  auto request_sub =
-      party.party_bus().subscribe<fl::events::PartyReturnToTownRequested>(
-          [&](const auto &) { ++request_count; });
+  auto request_sub = party.party_bus().subscribe<fl::events::PartyReturnToTownRequested>(
+      [&](const auto&) { ++request_count; });
 
   SECTION("party battle") {}
 
-  SECTION("player and inventory") { root.show_party(0, 0); }
+  SECTION("player and inventory") {
+    root.show_party(0, 0);
+  }
 
   REQUIRE(root.OnEvent(ftxui::Event::Character("r")));
   REQUIRE(request_count == 1);
 }
 
-TEST_CASE("Account commands preserve the selected gameplay screen",
-          "[widgets][root][commands]") {
+TEST_CASE("Account commands preserve the selected gameplay screen", "[widgets][root][commands]") {
   fl::GrandCentral gc{2, 1, 1};
   auto root = make_gameplay_root(gc);
 
@@ -654,14 +609,13 @@ TEST_CASE("Account commands preserve the selected gameplay screen",
   REQUIRE(rendered.find("Ashen Vanguard") != std::string::npos);
 }
 
-TEST_CASE("Raid spawn console command summons a new Visitor",
-          "[widgets][root][commands][raid]") {
+TEST_CASE("Raid spawn console command summons a new Visitor", "[widgets][root][commands][raid]") {
   fl::GrandCentral gc{1, 1, 1};
   auto root = make_gameplay_root(gc);
-  auto &account = gc.accounts().front();
+  auto& account = gc.accounts().front();
   bool announced = false;
-  auto started_sub = account.raid_bus().subscribe<fl::events::RaidStarted>(
-      [&](const auto &) { announced = true; });
+  auto started_sub =
+      account.raid_bus().subscribe<fl::events::RaidStarted>([&](const auto&) { announced = true; });
 
   REQUIRE_FALSE(account.in_raid());
   REQUIRE(root.OnEvent(ftxui::Event::Character("`")));
@@ -675,8 +629,7 @@ TEST_CASE("Raid spawn console command summons a new Visitor",
           fl::monster::MonsterKind::VisitorHerald);
 }
 
-TEST_CASE("Chaos Attract hides the normal key manifest",
-          "[widgets][root][presentation]") {
+TEST_CASE("Chaos Attract hides the normal key manifest", "[widgets][root][presentation]") {
   fl::GrandCentral attract_gc{8, 5, 5};
   fl::widgets::ChaosAttractRoot root{make_all_account_surface(attract_gc)};
 
@@ -689,8 +642,7 @@ TEST_CASE("Chaos Attract hides the normal key manifest",
   REQUIRE(rendered.find("Moons") != std::string::npos);
 }
 
-TEST_CASE("Chaos Attract renders the begin prompt",
-          "[widgets][root][presentation]") {
+TEST_CASE("Chaos Attract renders the begin prompt", "[widgets][root][presentation]") {
   fl::GrandCentral attract_gc{8, 5, 5};
   fl::widgets::ChaosAttractRoot root{make_all_account_surface(attract_gc)};
 
@@ -712,8 +664,7 @@ TEST_CASE("Chaos Attract selected battle omits roster introduction lines",
   fl::widgets::ChaosAttractRoot root{make_all_account_surface(attract_gc)};
 
   fl::widgets::force_battle_render_target(fl::widgets::BattleLayoutProfile::Wide);
-  const auto rendered =
-      render_to_string(root, attract_gc.world_clock(), 180, 50);
+  const auto rendered = render_to_string(root, attract_gc.world_clock(), 180, 50);
   fl::widgets::clear_forced_battle_render_target();
 
   REQUIRE(rendered.find("Party: A1 P1") == std::string::npos);
@@ -723,8 +674,7 @@ TEST_CASE("Chaos Attract selected battle omits roster introduction lines",
   REQUIRE(rendered.find("No encounter") == std::string::npos);
 }
 
-TEST_CASE("Chaos Attract renders selector rows in two-line mode",
-          "[widgets][root][presentation]") {
+TEST_CASE("Chaos Attract renders selector rows in two-line mode", "[widgets][root][presentation]") {
   fl::GrandCentral attract_gc{8, 5, 5};
   fl::widgets::ChaosAttractRoot root{make_all_account_surface(attract_gc)};
 
@@ -757,16 +707,14 @@ TEST_CASE("Chaos Attract overview spends wide rows on player names",
   fl::widgets::ChaosAttractRoot root{make_all_account_surface(attract_gc)};
 
   fl::widgets::force_battle_render_target(fl::widgets::BattleLayoutProfile::Wide);
-  const auto rendered =
-      render_to_string(root, attract_gc.world_clock(), 180, 50);
+  const auto rendered = render_to_string(root, attract_gc.world_clock(), 180, 50);
   fl::widgets::clear_forced_battle_render_target();
 
   REQUIRE(rendered.find("Alderion(10)") != std::string::npos);
   REQUIRE(rendered.find("Bramblethorn(10)") != std::string::npos);
 }
 
-TEST_CASE("Chaos Attract prompt color changes across frames",
-          "[widgets][root][presentation]") {
+TEST_CASE("Chaos Attract prompt color changes across frames", "[widgets][root][presentation]") {
   fl::GrandCentral attract_gc{8, 5, 5};
   fl::widgets::ChaosAttractRoot root{make_all_account_surface(attract_gc)};
 
@@ -783,13 +731,11 @@ TEST_CASE("Chaos Attract prompt color changes across frames",
   REQUIRE(first->character == later->character);
 }
 
-TEST_CASE("Chaos Attract selection moves through party rows",
-          "[widgets][root][presentation]") {
+TEST_CASE("Chaos Attract selection moves through party rows", "[widgets][root][presentation]") {
   fl::GrandCentral attract_gc{8, 5, 5};
-  auto surface = ftxui::Make<fl::widgets::AllAccountBattleScreen>(
-      attract_gc.reg(), attract_gc.accounts());
-  auto *all_accounts =
-      dynamic_cast<fl::widgets::AllAccountBattleScreen *>(surface.get());
+  auto surface =
+      ftxui::Make<fl::widgets::AllAccountBattleScreen>(attract_gc.reg(), attract_gc.accounts());
+  auto* all_accounts = dynamic_cast<fl::widgets::AllAccountBattleScreen*>(surface.get());
   fl::widgets::ChaosAttractRoot root{std::move(surface)};
 
   REQUIRE(render_to_string(root).find("A1 P1") != std::string::npos);
@@ -810,8 +756,7 @@ TEST_CASE("Chaos Attract selection moves through party rows",
   REQUIRE(all_accounts->selected_party_index() == 0);
 }
 
-TEST_CASE("Chaos Attract toggles keybind help",
-          "[widgets][root][presentation]") {
+TEST_CASE("Chaos Attract toggles keybind help", "[widgets][root][presentation]") {
   fl::GrandCentral attract_gc{8, 5, 5};
   fl::widgets::ChaosAttractRoot root{make_all_account_surface(attract_gc)};
 

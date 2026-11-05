@@ -1,0 +1,23 @@
+---
+BasedOnStyle: LLVM
+Standard: c++20
+
+IndentWidth: 2
+ContinuationIndentWidth: 4
+ColumnLimit: 100
+
+BreakBeforeBraces: Attach
+PointerAlignment: Left
+ReferenceAlignment: Pointer
+NamespaceIndentation: None
+
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: true
+
+IncludeBlocks: Preserve
+SortIncludes: CaseSensitive
+...

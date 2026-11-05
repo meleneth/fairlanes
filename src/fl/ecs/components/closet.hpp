@@ -36,15 +36,13 @@ struct Closet {
 
   Closet();
 
-  [[nodiscard]] bool
-  has_equipped_skill(fl::skills::SkillKey skill) const noexcept;
+  [[nodiscard]] bool has_equipped_skill(fl::skills::SkillKey skill) const noexcept;
   [[nodiscard]] bool has_open_skill_slot() const noexcept;
   bool equip_skill(fl::skills::SkillKey skill) noexcept;
   bool unequip_skill(fl::skills::SkillKey skill) noexcept;
 
-  [[nodiscard]] entt::entity
-  equipped_item(fl::loot::EquipmentSlot slot) const noexcept;
-  [[nodiscard]] entt::entity &equipped_item(fl::loot::EquipmentSlot slot);
+  [[nodiscard]] entt::entity equipped_item(fl::loot::EquipmentSlot slot) const noexcept;
+  [[nodiscard]] entt::entity& equipped_item(fl::loot::EquipmentSlot slot);
 
   bool empty() const;
 };

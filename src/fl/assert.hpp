@@ -31,12 +31,11 @@ inline constexpr bool kEnableAsserts = (FL_ENABLE_ASSERTS != 0);
 // -----------------------------------------------------------------------------
 // Sink (swap to spdlog/Tracy later if you want).
 // -----------------------------------------------------------------------------
-[[noreturn]] inline void
-fail(std::string_view msg,
-     std::source_location loc = std::source_location::current()) {
+[[noreturn]] inline void fail(std::string_view msg,
+                              std::source_location loc = std::source_location::current()) {
 
-  fmt::print(stderr, "ASSERTION FAILED\n  {}:{}\n  {}\n  {}\n", loc.file_name(),
-             loc.line(), loc.function_name(), msg);
+  fmt::print(stderr, "ASSERTION FAILED\n  {}:{}\n  {}\n  {}\n", loc.file_name(), loc.line(),
+             loc.function_name(), msg);
 
   std::fflush(stderr);
   std::abort();
@@ -49,7 +48,7 @@ fail(std::string_view msg,
 // -----------------------------------------------------------------------------
 template <typename... Args>
 inline void assert_fmt(bool condition, std::source_location loc,
-                       fmt::format_string<Args...> fmt_str, Args &&...args) {
+                       fmt::format_string<Args...> fmt_str, Args&&... args) {
 
   if constexpr (kEnableAsserts) {
     if (!condition) {
@@ -63,13 +62,11 @@ inline void assert_fmt(bool condition, std::source_location loc,
 }
 
 // Message-only helper
-inline void
-assert_msg(bool condition, std::string_view msg = "assertion failed",
-           std::source_location loc = std::source_location::current()) {
+inline void assert_msg(bool condition, std::string_view msg = "assertion failed",
+                       std::source_location loc = std::source_location::current()) {
 
   if constexpr (kEnableAsserts) {
-    if (!condition)
-      fl::fail(msg, loc);
+    if (!condition) fl::fail(msg, loc);
   } else {
     (void)condition;
     (void)msg;
@@ -83,9 +80,8 @@ assert_msg(bool condition, std::string_view msg = "assertion failed",
 // - Use this when message/args are expensive or have side effects.
 // -----------------------------------------------------------------------------
 template <class MsgFn>
-inline void
-assert_lazy(bool condition, MsgFn &&make_msg,
-            std::source_location loc = std::source_location::current()) {
+inline void assert_lazy(bool condition, MsgFn&& make_msg,
+                        std::source_location loc = std::source_location::current()) {
 
   if constexpr (kEnableAsserts) {
     if (!condition) {

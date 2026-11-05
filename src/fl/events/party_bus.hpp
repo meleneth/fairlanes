@@ -22,9 +22,16 @@ struct MemberJoined {
 };
 struct PartyWiped {};
 struct PartyVictory {};
-struct TowerFloorCleared { std::string biome_id; int floor{1}; };
-struct BiomeUnlocked { std::string biome_id; };
-struct CycleUnlocked { fl::primitives::Cycle cycle; };
+struct TowerFloorCleared {
+  std::string biome_id;
+  int floor{1};
+};
+struct BiomeUnlocked {
+  std::string biome_id;
+};
+struct CycleUnlocked {
+  fl::primitives::Cycle cycle;
+};
 // A normal encounter is fully populated and ready for combat ticks.
 struct PartyCombatStarted {};
 struct PartyLeftCombat {};
@@ -32,7 +39,9 @@ struct PartyReturnToTownRequested {};
 struct PartyReturnedToTown {};
 // Extraction preserves observation learning without claiming combat victory.
 struct PartySummonedToRaid {};
-struct PartyRaidResolved { bool victory{false}; };
+struct PartyRaidResolved {
+  bool victory{false};
+};
 struct PartyGainedXP {
   int amount{0};
 };
@@ -70,14 +79,11 @@ struct EquipmentEquipped {
 };
 
 using PartyEvent =
-    std::variant<PartyCreated, MemberJoined, PartyWiped, PartyVictory,
-                 TowerFloorCleared,
-                 BiomeUnlocked, CycleUnlocked,
-                 PartyCombatStarted, PartyLeftCombat,
-                 PartyReturnToTownRequested, PartyReturnedToTown,
-                 PartySummonedToRaid, PartyRaidResolved, PartyGainedXP,
-                 PartyGainedLevel, PartyHealed, PartyRevitalizeRequested,
-                 LootDropRequested, PartyTick, MonsterEncountered,
+    std::variant<PartyCreated, MemberJoined, PartyWiped, PartyVictory, TowerFloorCleared,
+                 BiomeUnlocked, CycleUnlocked, PartyCombatStarted, PartyLeftCombat,
+                 PartyReturnToTownRequested, PartyReturnedToTown, PartySummonedToRaid,
+                 PartyRaidResolved, PartyGainedXP, PartyGainedLevel, PartyHealed,
+                 PartyRevitalizeRequested, LootDropRequested, PartyTick, MonsterEncountered,
                  SkillWitnessed, EquipmentEquipRequested, EquipmentEquipped>;
 
 using PartyBus = seerin::VariantBus<PartyEvent>;
@@ -131,10 +137,9 @@ struct PlayerDied {
   entt::entity killer{entt::null};
 };
 
-using CombatantEvent =
-    std::variant<PoisonApplied, FreezeApplied, FreezeStarted, FreezeEnded,
-    SkillHitLanded, SkillCastStarted, SkillActionSelected, SkillCastFinished,
-                 FleeAttempted, CombatantFled, PlayerDied>;
+using CombatantEvent = std::variant<PoisonApplied, FreezeApplied, FreezeStarted, FreezeEnded,
+                                    SkillHitLanded, SkillCastStarted, SkillActionSelected,
+                                    SkillCastFinished, FleeAttempted, CombatantFled, PlayerDied>;
 
 using CombatantBus = seerin::VariantBus<CombatantEvent>;
 
@@ -144,19 +149,17 @@ template <class Bus> struct ScopedListener {
 
   ScopedListener() = default;
 
-  template <class T, class Fn>
-  ScopedListener(Bus &bus, std::in_place_type_t<T>, Fn &&fn) {
+  template <class T, class Fn> ScopedListener(Bus& bus, std::in_place_type_t<T>, Fn&& fn) {
     auto handle = bus.template on<T>(std::forward<Fn>(fn));
-    disconnect_ = [&bus, handle]() mutable {
-      bus.template callbacks<T>().remove(handle);
-    };
+    disconnect_ = [&bus, handle]() mutable { bus.template callbacks<T>().remove(handle); };
     connected_ = true;
   }
 
-  ScopedListener(ScopedListener &&rhs) noexcept { *this = std::move(rhs); }
-  ScopedListener &operator=(ScopedListener &&rhs) noexcept {
-    if (this == &rhs)
-      return *this;
+  ScopedListener(ScopedListener&& rhs) noexcept {
+    *this = std::move(rhs);
+  }
+  ScopedListener& operator=(ScopedListener&& rhs) noexcept {
+    if (this == &rhs) return *this;
     reset();
     disconnect_ = std::move(rhs.disconnect_);
     connected_ = rhs.connected_;
@@ -164,7 +167,9 @@ template <class Bus> struct ScopedListener {
     return *this;
   }
 
-  ~ScopedListener() { reset(); }
+  ~ScopedListener() {
+    reset();
+  }
 
   void reset() {
     if (connected_ && disconnect_) {
@@ -174,8 +179,8 @@ template <class Bus> struct ScopedListener {
     disconnect_ = nullptr;
   }
 
-  ScopedListener(const ScopedListener &) = delete;
-  ScopedListener &operator=(const ScopedListener &) = delete;
+  ScopedListener(const ScopedListener&) = delete;
+  ScopedListener& operator=(const ScopedListener&) = delete;
 };
 
 using ScopedPartyListener = ScopedListener<PartyBus>;

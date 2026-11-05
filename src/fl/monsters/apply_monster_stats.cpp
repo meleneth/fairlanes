@@ -14,12 +14,11 @@
 namespace fl::monster {
 namespace {
 
-void apply_starfire_anomaly_visuals(fl::primitives::EntityBuilder &builder) {
-  auto &reg = builder.ctx().reg();
+void apply_starfire_anomaly_visuals(fl::primitives::EntityBuilder& builder) {
+  auto& reg = builder.ctx().reg();
   const auto entity = builder.entity();
 
-  auto &statuses =
-      reg.get_or_emplace<fl::ecs::components::CombatStatuses>(entity);
+  auto& statuses = reg.get_or_emplace<fl::ecs::components::CombatStatuses>(entity);
   auto haste = fl::ecs::components::CombatStatusEffect{};
   haste.id = statuses.next_id++;
   haste.kind = fl::ecs::components::CombatStatusKind::Haste;
@@ -35,30 +34,25 @@ void apply_starfire_anomaly_visuals(fl::primitives::EntityBuilder &builder) {
   config.duration_seconds = 2.0F;
   config.seed = 0x57A2F17Eu;
   reg.emplace_or_replace<fl::ecs::components::CombatantUnderlayDecals>(
-      entity,
-      fl::ecs::components::CombatantUnderlayDecals{
-          fl::ecs::components::DecalEffect{
-              seerin::uWu{0}, fl::ecs::components::DecalEffect::Clock::now(),
-              std::chrono::milliseconds{2000},
-              fl::widgets::effects::DecalAnimationKind::Starfire, config}});
+      entity, fl::ecs::components::CombatantUnderlayDecals{fl::ecs::components::DecalEffect{
+                  seerin::uWu{0}, fl::ecs::components::DecalEffect::Clock::now(),
+                  std::chrono::milliseconds{2000},
+                  fl::widgets::effects::DecalAnimationKind::Starfire, config}});
 }
 
 } // namespace
 
-void apply_monster_stats(fl::primitives::EntityBuilder &builder,
-                         MonsterKind kind) {
+void apply_monster_stats(fl::primitives::EntityBuilder& builder, MonsterKind kind) {
   const auto generated = generated_content::stats(kind);
 
-  auto &stats =
-      builder.ctx().reg().get<fl::ecs::components::Stats>(builder.entity());
+  auto& stats = builder.ctx().reg().get<fl::ecs::components::Stats>(builder.entity());
   stats.name_ = generated.display_name;
   stats.hp_ = generated.hp;
   stats.max_hp_ = generated.hp;
   stats.resistances_ = generated.resistances;
 
   if (generated.level > 0) {
-    auto &xp =
-        builder.ctx().reg().get<fl::ecs::components::TrackXP>(builder.entity());
+    auto& xp = builder.ctx().reg().get<fl::ecs::components::TrackXP>(builder.entity());
     xp.level_ = generated.level;
     xp.xp_ = xp.xp_for_level(generated.level);
     xp.next_level_at = xp.xp_for_level(generated.level + 1);

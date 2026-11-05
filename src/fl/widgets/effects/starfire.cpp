@@ -33,8 +33,7 @@ struct Star {
   int heat = kMaxStarHeat;
 };
 
-[[nodiscard]] std::pair<double, double> rotate2d(double a, double b,
-                                                 double angle) {
+[[nodiscard]] std::pair<double, double> rotate2d(double a, double b, double angle) {
   const double cos_a = std::cos(angle);
   const double sin_a = std::sin(angle);
   return {cos_a * a - sin_a * b, sin_a * a + cos_a * b};
@@ -47,24 +46,21 @@ struct Star {
 [[nodiscard]] int frame_for_progress(float progress, int frame_count) {
   const int last_frame = sanitize_frame_count(frame_count) - 1;
   return std::clamp(
-      static_cast<int>(std::round(clamp_progress(progress) *
-                                  static_cast<float>(last_frame))),
-      0, last_frame);
+      static_cast<int>(std::round(clamp_progress(progress) * static_cast<float>(last_frame))), 0,
+      last_frame);
 }
 
 [[nodiscard]] double spin_angle_for_frame(int frame, int frame_count) {
   const int last_frame = sanitize_frame_count(frame_count) - 1;
-  return (static_cast<double>(std::clamp(frame, 0, last_frame)) /
-          static_cast<double>(last_frame)) *
+  return (static_cast<double>(std::clamp(frame, 0, last_frame)) / static_cast<double>(last_frame)) *
          kTau * static_cast<double>(kSpinRevolutions);
 }
 
 [[nodiscard]] char glyph_for_heat(int value) {
   static constexpr std::string_view glyphs = " .,:;!*^#@";
-  const float heat = std::clamp(
-      static_cast<float>(value) / static_cast<float>(kFlamePix), 0.0F, 1.0F);
-  const auto index =
-      static_cast<std::size_t>(heat * static_cast<float>(glyphs.size() - 1));
+  const float heat =
+      std::clamp(static_cast<float>(value) / static_cast<float>(kFlamePix), 0.0F, 1.0F);
+  const auto index = static_cast<std::size_t>(heat * static_cast<float>(glyphs.size() - 1));
   return glyphs[index];
 }
 
@@ -84,21 +80,21 @@ struct Star {
   return colors;
 }
 
-[[nodiscard]] ftxui::Color
-color_for_heat(int value, const std::vector<ftxui::Color> &flame_palette) {
-  const auto index = static_cast<std::size_t>(
-      std::clamp(value, 0, static_cast<int>(flame_palette.size() - 1)));
+[[nodiscard]] ftxui::Color color_for_heat(int value,
+                                          const std::vector<ftxui::Color>& flame_palette) {
+  const auto index =
+      static_cast<std::size_t>(std::clamp(value, 0, static_cast<int>(flame_palette.size() - 1)));
   return flame_palette[index];
 }
 
-[[nodiscard]] ftxui::Color
-glow_for_heat(int value, const std::vector<ftxui::Color> &flame_palette) {
+[[nodiscard]] ftxui::Color glow_for_heat(int value,
+                                         const std::vector<ftxui::Color>& flame_palette) {
   const int glow_value = std::clamp(value / 2, 0, kFlamePix);
   return flame_palette[static_cast<std::size_t>(glow_value)];
 }
 
-void seed_stars(std::vector<int> &buffer, int width, int height,
-                const std::vector<Star> &stars, double angle) {
+void seed_stars(std::vector<int>& buffer, int width, int height, const std::vector<Star>& stars,
+                double angle) {
   if (width <= 0 || height <= 0) {
     return;
   }
@@ -106,7 +102,7 @@ void seed_stars(std::vector<int> &buffer, int width, int height,
   const double cx = static_cast<double>(width) * 0.5;
   const double cy = static_cast<double>(height) * 0.5;
 
-  for (const auto &star : stars) {
+  for (const auto& star : stars) {
     double rx = star.x;
     double ry = star.y;
     double rz = star.z;
@@ -116,19 +112,19 @@ void seed_stars(std::vector<int> &buffer, int width, int height,
     std::tie(rx, ry) = rotate2d(rx, ry, angle);
 
     const double depth = std::max(0.35, 3.0 - rz);
-    const int px = static_cast<int>(std::floor(
-        (rx / depth) * static_cast<double>(width) * kProjectionScale + cx));
-    const int py = static_cast<int>(std::floor(
-        (ry / depth) * static_cast<double>(height) * kProjectionScale + cy));
+    const int px = static_cast<int>(
+        std::floor((rx / depth) * static_cast<double>(width) * kProjectionScale + cx));
+    const int py = static_cast<int>(
+        std::floor((ry / depth) * static_cast<double>(height) * kProjectionScale + cy));
 
     if (px >= 0 && py >= 0 && px < width && py < height) {
-      auto &cell = buffer[static_cast<std::size_t>(py * width + px)];
+      auto& cell = buffer[static_cast<std::size_t>(py * width + px)];
       cell = std::max(cell, star.heat);
     }
   }
 }
 
-void diffuse_fire(std::vector<int> &buffer, int width, int height) {
+void diffuse_fire(std::vector<int>& buffer, int width, int height) {
   if (width < 3 || height < 3) {
     return;
   }
@@ -136,10 +132,10 @@ void diffuse_fire(std::vector<int> &buffer, int width, int height) {
   for (int y = 1; y < height - 1; ++y) {
     for (int x = 1; x < width - 1; ++x) {
       const auto index = static_cast<std::size_t>(y * width + x);
-      const int value = (buffer[index - 1] + buffer[index + 1] +
-                         buffer[index - static_cast<std::size_t>(width)] +
-                         buffer[index + static_cast<std::size_t>(width)]) >>
-                        2;
+      const int value =
+          (buffer[index - 1] + buffer[index + 1] + buffer[index - static_cast<std::size_t>(width)] +
+           buffer[index + static_cast<std::size_t>(width)]) >>
+          2;
       buffer[index] = value > 0 ? value - 1 : 0;
     }
   }
@@ -194,8 +190,7 @@ Frame Starfire::render(float progress) const {
 
   const int target_frame = frame_for_progress(progress, impl_->frame_count);
   const int buffer_height = frame.height + 3;
-  std::vector<int> buffer(static_cast<std::size_t>(frame.width * buffer_height),
-                          0);
+  std::vector<int> buffer(static_cast<std::size_t>(frame.width * buffer_height), 0);
 
   for (int step = 0; step <= target_frame; ++step) {
     seed_stars(buffer, frame.width, frame.height, impl_->stars,
@@ -211,16 +206,12 @@ Frame Starfire::render(float progress) const {
       }
 
       const float alpha =
-          std::clamp(static_cast<float>(value) / static_cast<float>(kFlamePix),
-                     0.0F, 1.0F);
+          std::clamp(static_cast<float>(value) / static_cast<float>(kFlamePix), 0.0F, 1.0F);
       const auto bg = impl_->config.use_background_glow && value > 20
-                          ? std::optional<ftxui::Color>{glow_for_heat(
-                                value, impl_->flame_palette)}
+                          ? std::optional<ftxui::Color>{glow_for_heat(value, impl_->flame_palette)}
                           : std::nullopt;
-      const char glyph =
-          impl_->config.use_foreground_sparks ? glyph_for_heat(value) : ' ';
-      apply_cell(frame, x, y, glyph,
-                 color_for_heat(value, impl_->flame_palette), bg, alpha);
+      const char glyph = impl_->config.use_foreground_sparks ? glyph_for_heat(value) : ' ';
+      apply_cell(frame, x, y, glyph, color_for_heat(value, impl_->flame_palette), bg, alpha);
     }
   }
 
@@ -231,7 +222,9 @@ float Starfire::duration_seconds() const {
   return impl_ ? impl_->config.duration_seconds : 1.0F;
 }
 
-std::string_view Starfire::name() const { return "Starfire"; }
+std::string_view Starfire::name() const {
+  return "Starfire";
+}
 
 DecalAnimationKind Starfire::kind() const {
   return DecalAnimationKind::Starfire;

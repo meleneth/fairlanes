@@ -13,13 +13,12 @@
 
 namespace fl::ecs::systems {
 namespace {
-bool grant_builder(fl::context::PartyCtx &ctx,
-                   const fl::loot::EquipmentBuilder &builder) {
-  auto &party = ctx.party_data();
-  if (fl::loot::inventory_has_unique_item(ctx.reg(), party.items(),
-                                          builder.unique_id)) return false;
+bool grant_builder(fl::context::PartyCtx& ctx, const fl::loot::EquipmentBuilder& builder) {
+  auto& party = ctx.party_data();
+  if (fl::loot::inventory_has_unique_item(ctx.reg(), party.items(), builder.unique_id))
+    return false;
   const auto item = builder.create(ctx.reg());
-  const auto &equipment = ctx.reg().get<fl::ecs::components::Equipment>(item);
+  const auto& equipment = ctx.reg().get<fl::ecs::components::Equipment>(item);
   ctx.log().append(ftxui::hbox({
       ftxui::text("Loot found: ") | fl::lospec500::at(19),
       fl::widgets::equipment_name_label(equipment),
@@ -29,21 +28,19 @@ bool grant_builder(fl::context::PartyCtx &ctx,
 }
 } // namespace
 
-fl::events::ScopedPartyListener
-LootDropSystem::bind_listener(fl::context::PartyCtx &party_ctx) {
-  return fl::events::ScopedPartyListener{
-      party_ctx.bus(), std::in_place_type<fl::events::LootDropRequested>,
-      [&party_ctx](const fl::events::LootDropRequested &ev) {
-        if (ev.party != party_ctx.self()) {
-          return;
-        }
+fl::events::ScopedPartyListener LootDropSystem::bind_listener(fl::context::PartyCtx& party_ctx) {
+  return fl::events::ScopedPartyListener{party_ctx.bus(),
+                                         std::in_place_type<fl::events::LootDropRequested>,
+                                         [&party_ctx](const fl::events::LootDropRequested& ev) {
+                                           if (ev.party != party_ctx.self()) {
+                                             return;
+                                           }
 
-        LootDropSystem::commit(party_ctx, ev.source);
-      }};
+                                           LootDropSystem::commit(party_ctx, ev.source);
+                                         }};
 }
 
-void LootDropSystem::commit(fl::context::PartyCtx &party_ctx,
-                            entt::entity source) {
+void LootDropSystem::commit(fl::context::PartyCtx& party_ctx, entt::entity source) {
   if (source == entt::null || !party_ctx.reg().valid(source)) {
     return;
   }
@@ -56,9 +53,8 @@ void LootDropSystem::commit(fl::context::PartyCtx &party_ctx,
   (void)grant_builder(party_ctx, *builder);
 }
 
-bool LootDropSystem::grant_unique(
-    fl::context::PartyCtx &ctx,
-    fl::loot::generated_content::GearId item) {
+bool LootDropSystem::grant_unique(fl::context::PartyCtx& ctx,
+                                  fl::loot::generated_content::GearId item) {
   return grant_builder(ctx, fl::loot::generated_content::definition(item).item);
 }
 

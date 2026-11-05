@@ -22,8 +22,8 @@
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/systems/special_festival_event.hpp"
 #include "fl/ecs/systems/visual_resolver.hpp"
-#include "fl/monsters/register_monsters.hpp"
 #include "fl/generated/ftxer_composition_root.hpp"
+#include "fl/monsters/register_monsters.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/fancy_log_sink.hpp"
 #include "fl/primitives/hero_names.hpp"
@@ -58,17 +58,14 @@ void GrandCentral::_create_initial_accounts() {
   // party_ctx.party_loop_ctx();
 
   for (std::size_t a = 0; a < num_accounts_; ++a) {
-    auto &account_data =
-        accounts_.emplace_back(reg_.create(), record_progress_, tower_balance_);
+    auto& account_data = accounts_.emplace_back(reg_.create(), record_progress_, tower_balance_);
 
-    logger_.info(
-        "[yellow](Account " + std::to_string(a) + " initialized with ID " +
-        std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
-            account_data.account_id())) +
-        ")");
+    logger_.info("[yellow](Account " + std::to_string(a) + " initialized with ID " +
+                 std::to_string(
+                     static_cast<std::underlying_type_t<entt::entity>>(account_data.account_id())) +
+                 ")");
     auto entity = account_data.account_id();
-    reg_.emplace<fl::ecs::components::IsAccount>(
-        entity, entity, account_data.log(), account_data);
+    reg_.emplace<fl::ecs::components::IsAccount>(entity, entity, account_data.log(), account_data);
 
     for (std::size_t p = 0; p < num_parties_per_account_; ++p) {
       auto party_name = party_names.at(party_index);
@@ -76,17 +73,14 @@ void GrandCentral::_create_initial_accounts() {
       auto account_ctx = account_context(account_data);
 
       auto party_id = reg_.create();
-      auto &party_data = account_data.parties().emplace_back(
-          party_id, account_ctx, party_name);
-      reg_.emplace<fl::ecs::components::IsParty>(party_id, party_id,
-                                                 party_data);
+      auto& party_data = account_data.parties().emplace_back(party_id, account_ctx, party_name);
+      reg_.emplace<fl::ecs::components::IsParty>(party_id, party_id, party_data);
 
       ++party_index;
 
       account_data.log().append_markup(
           "[green](Party " + party_name + " initialized with ID " +
-          std::to_string(static_cast<std::underlying_type_t<entt::entity>>(
-              party_data.party_id())) +
+          std::to_string(static_cast<std::underlying_type_t<entt::entity>>(party_data.party_id())) +
           ")");
 
       for (std::size_t m = 0; m < num_members_per_party_; ++m) {
@@ -95,8 +89,7 @@ void GrandCentral::_create_initial_accounts() {
       }
 
       if (!story_mode_ || !party_data.members().empty())
-        fl::ecs::systems::SpecialFestivalEvent::grant_starting_drops(
-            party_data.party_ctx());
+        fl::ecs::systems::SpecialFestivalEvent::grant_starting_drops(party_data.party_ctx());
     }
   }
 
@@ -104,53 +97,49 @@ void GrandCentral::_create_initial_accounts() {
   TracyPlot("GC.PlayerCount", static_cast<double>(player_index));
 }
 
-GrandCentral::GrandCentral(uint8_t num_accounts,
-                           uint8_t num_parties_per_account,
-                           uint8_t num_members_per_party,
-                           bool record_discoveries, bool record_progress,
-                           std::optional<std::uint64_t> gameplay_seed,
+GrandCentral::GrandCentral(uint8_t num_accounts, uint8_t num_parties_per_account,
+                           uint8_t num_members_per_party, bool record_discoveries,
+                           bool record_progress, std::optional<std::uint64_t> gameplay_seed,
                            bool story_mode, bool story_autoplay,
                            fl::primitives::TowerBalance tower_balance)
-    : record_progress_(record_progress), story_mode_(story_mode),
-      story_autoplay_(story_autoplay), tower_balance_(tower_balance),
-      num_accounts_(num_accounts),
+    : record_progress_(record_progress), story_mode_(story_mode), story_autoplay_(story_autoplay),
+      tower_balance_(tower_balance), num_accounts_(num_accounts),
       num_parties_per_account_(num_parties_per_account),
-      num_members_per_party_(num_members_per_party), reg_(),
-      rng_(gameplay_seed), log_bus_(),
+      num_members_per_party_(num_members_per_party), reg_(), rng_(gameplay_seed), log_bus_(),
       logger_{log_bus_}, game_log_(std::make_unique<fl::widgets::FancyLog>()),
       fancy_log_sink_(std::make_unique<fl::primitives::FancyLogSink>(
           log_bus_, *game_log_, fl::primitives::LogLevel::trace)) {
   fl::monster::register_all_monsters();
   _create_initial_accounts();
   if (story_mode && !accounts_.empty())
-    objectives_ = std::make_unique<fl::primitives::ObjectiveSystem>(
-        account_context(0));
+    objectives_ = std::make_unique<fl::primitives::ObjectiveSystem>(account_context(0));
   if (objectives_) objectives_->request_autoplay(story_autoplay_);
   if (record_progress_) {
-    for (auto &account : accounts_) raid_milestones_.bind(account.raid_bus(), account.account_id());
+    for (auto& account : accounts_) raid_milestones_.bind(account.raid_bus(), account.account_id());
   }
   if (record_discoveries) {
     discovery_listener_ =
-        std::make_unique<fl::primitives::DiscoveryJournalListener>(discoveries_,
-                                                                   reg_);
-    for (auto &account : accounts_) {
-      for (auto &party : account.parties()) {
+        std::make_unique<fl::primitives::DiscoveryJournalListener>(discoveries_, reg_);
+    for (auto& account : accounts_) {
+      for (auto& party : account.parties()) {
         discovery_listener_->bind(party.party_bus());
       }
     }
   }
   for (std::size_t index = 0; index < accounts_.size(); ++index) {
-    raid_log_subscriptions_.emplace_back(accounts_[index].raid_bus(),
-        std::in_place_type<fl::events::RaidResolved>,
-        [this, index](const auto &event) {
-          const auto outcome = event.result == fl::events::RaidResult::Victory
-              ? "victory" : event.result == fl::events::RaidResult::MutualDestruction
-              ? "wipe (mutual destruction)" : "wipe";
-          logger_.info("Visitor raid: Account " + std::to_string(index + 1) +
-              " - " + outcome + "; " + std::to_string(event.parties) +
-              " parties, " + std::to_string(event.combat_beats) + " combat beats. " +
-              (event.result == fl::events::RaidResult::Victory
-                  ? "Two exclusive trinkets awarded per party." : "Await the next Visitor; no retries."));
+    raid_log_subscriptions_.emplace_back(
+        accounts_[index].raid_bus(), std::in_place_type<fl::events::RaidResolved>,
+        [this, index](const auto& event) {
+          const auto outcome = event.result == fl::events::RaidResult::Victory ? "victory"
+                               : event.result == fl::events::RaidResult::MutualDestruction
+                                   ? "wipe (mutual destruction)"
+                                   : "wipe";
+          logger_.info("Visitor raid: Account " + std::to_string(index + 1) + " - " + outcome +
+                       "; " + std::to_string(event.parties) + " parties, " +
+                       std::to_string(event.combat_beats) + " combat beats. " +
+                       (event.result == fl::events::RaidResult::Victory
+                            ? "Two exclusive trinkets awarded per party."
+                            : "Await the next Visitor; no retries."));
         });
   }
   bootstrap_logs();
@@ -176,8 +165,7 @@ fl::context::AccountCtx GrandCentral::account_context(std::size_t idx) {
   return fl::context::AccountCtx{reg_, rng_, accounts_.at(idx)};
 }
 
-fl::context::AccountCtx
-GrandCentral::account_context(fl::primitives::AccountData &account) {
+fl::context::AccountCtx GrandCentral::account_context(fl::primitives::AccountData& account) {
   return fl::context::AccountCtx{reg_, rng_, account};
 }
 
@@ -193,8 +181,7 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
     }
 
     const double elapsed_seconds =
-        static_cast<double>(elapsed_beats) /
-        world_clock_.effective_beats_per_wall_second();
+        static_cast<double>(elapsed_beats) / world_clock_.effective_beats_per_wall_second();
 
     return elapsed_seconds >= *opts.cutoff_seconds;
   };
@@ -226,12 +213,10 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
           }
 
           const auto frame_dt = std::chrono::duration_cast<clock::duration>(
-              std::chrono::duration<double>(
-                  1.0 / world_clock_.effective_beats_per_wall_second()));
+              std::chrono::duration<double>(1.0 / world_clock_.effective_beats_per_wall_second()));
 
           TracyPlot("GC.EffectiveBeatRate",
-                    static_cast<int64_t>(
-                        world_clock_.effective_beats_per_wall_second()));
+                    static_cast<int64_t>(world_clock_.effective_beats_per_wall_second()));
 
           {
             ZoneScopedN("HeadlessBeatDispatch");
@@ -279,8 +264,7 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
     return root_component()->Render();
   });
 
-  auto *root = dynamic_cast<fl::generated::ftxer::CompositionRoot *>(
-      root_component().get());
+  auto* root = dynamic_cast<fl::generated::ftxer::CompositionRoot*>(root_component().get());
   ui = CatchEvent(ui, [&](Event e) {
     std::scoped_lock lock(frame_mutex_);
     root->OnEvent(e);
@@ -324,12 +308,10 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
       }
 
       const auto frame_dt = std::chrono::duration_cast<clock::duration>(
-          std::chrono::duration<double>(
-              1.0 / world_clock_.effective_beats_per_wall_second()));
+          std::chrono::duration<double>(1.0 / world_clock_.effective_beats_per_wall_second()));
 
-      TracyPlot(
-          "GC.EffectiveBeatRate",
-          static_cast<int64_t>(world_clock_.effective_beats_per_wall_second()));
+      TracyPlot("GC.EffectiveBeatRate",
+                static_cast<int64_t>(world_clock_.effective_beats_per_wall_second()));
 
       {
         ZoneScopedN("BeatDispatch");
@@ -368,60 +350,54 @@ void GrandCentral::bootstrap_logs() {
 }
 
 void GrandCentral::innervate_event_system(bool enable_visitors) {
-  for (auto &account : accounts_) {
-    account.hook_to_beat(account_context(account), gc_beat_bus_, world_clock_,
-                         enable_visitors);
+  for (auto& account : accounts_) {
+    account.hook_to_beat(account_context(account), gc_beat_bus_, world_clock_, enable_visitors);
   }
   if (objectives_)
     story_autoplay_sub_ = gc_beat_bus_.subscribe<seerin::Beat>(
-        [this](const seerin::Beat &) { objectives_->advance_autoplay(); });
+        [this](const seerin::Beat&) { objectives_->advance_autoplay(); });
 }
 
 void GrandCentral::build_ui() {
   log_wall_ = ftxui::Make<fl::widgets::LogWall>(*game_log_, accounts_);
 
-  auto &account = accounts_.front();
+  auto& account = accounts_.front();
 
   auto existing_ui = ftxui::Make<fl::widgets::RootComponent>(
-      fl::context::AccountCtx{reg_, rng_, account}, accounts_, *game_log_,
-      world_clock_, &discoveries_, &raid_milestones_.bus(), objectives_.get());
-  auto adapter =
-      std::make_unique<fl::widgets::FtxerUiAdapter>(std::move(existing_ui));
-  root_component_ = ftxui::Make<fl::generated::ftxer::CompositionRoot>(
-      std::move(adapter));
+      fl::context::AccountCtx{reg_, rng_, account}, accounts_, *game_log_, world_clock_,
+      &discoveries_, &raid_milestones_.bus(), objectives_.get());
+  auto adapter = std::make_unique<fl::widgets::FtxerUiAdapter>(std::move(existing_ui));
+  root_component_ = ftxui::Make<fl::generated::ftxer::CompositionRoot>(std::move(adapter));
 }
 
 bool GrandCentral::sandbox_requested() const {
-  const auto *root = dynamic_cast<const fl::generated::ftxer::CompositionRoot *>(
-      root_component_.get());
+  const auto* root =
+      dynamic_cast<const fl::generated::ftxer::CompositionRoot*>(root_component_.get());
   return root && root->sandbox_requested();
 }
 void GrandCentral::resolve_visuals_for_render() {
   ZoneScopedN("ResolveVisualsForRender");
-  for (auto &account : accounts_) {
-    for (auto &party : account.parties()) {
+  for (auto& account : accounts_) {
+    for (auto& party : account.parties()) {
       auto visual_time = seerin::uWu{};
       if (party.has_encounter()) {
         visual_time = party.encounter_data().visual_time();
       }
 
-      for (const auto &member : party.members()) {
-        fl::ecs::systems::VisualResolver::resolve_entity(
-            reg_, member.member_id(), visual_time);
+      for (const auto& member : party.members()) {
+        fl::ecs::systems::VisualResolver::resolve_entity(reg_, member.member_id(), visual_time);
       }
 
       if (!party.has_encounter()) {
         continue;
       }
 
-      auto &encounter = party.encounter_data();
+      auto& encounter = party.encounter_data();
       for (auto entity : encounter.attackers().members()) {
-        fl::ecs::systems::VisualResolver::resolve_entity(reg_, entity,
-                                                         visual_time);
+        fl::ecs::systems::VisualResolver::resolve_entity(reg_, entity, visual_time);
       }
       for (auto entity : encounter.defenders().members()) {
-        fl::ecs::systems::VisualResolver::resolve_entity(reg_, entity,
-                                                         visual_time);
+        fl::ecs::systems::VisualResolver::resolve_entity(reg_, entity, visual_time);
       }
     }
   }

@@ -7,11 +7,10 @@ namespace fl::ecs::systems {
 
 class ManualEquipmentSystem {
 public:
-  static fl::events::ScopedPartyListener
-  bind_listener(fl::context::PartyCtx &party_ctx);
+  static fl::events::ScopedPartyListener bind_listener(fl::context::PartyCtx& party_ctx);
 
-  static bool commit(fl::context::PartyCtx &party_ctx,
-                     const fl::events::EquipmentEquipRequested &request);
+  static bool commit(fl::context::PartyCtx& party_ctx,
+                     const fl::events::EquipmentEquipRequested& request);
 };
 
 } // namespace fl::ecs::systems

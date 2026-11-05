@@ -32,8 +32,8 @@ class Session {
 public:
   explicit Session(Options options);
   ~Session();
-  Session(const Session &) = delete;
-  Session &operator=(const Session &) = delete;
+  Session(const Session&) = delete;
+  Session& operator=(const Session&) = delete;
 
   void advance_beat();
   // Call after GrandCentral has dispatched a beat in its client loop.
@@ -42,18 +42,17 @@ public:
   [[nodiscard]] std::string_view outcome() const;
   [[nodiscard]] std::uint64_t beats() const;
   [[nodiscard]] std::int64_t uwu() const;
-  [[nodiscard]] const nlohmann::json &recording() const;
-  [[nodiscard]] fl::GrandCentral &game();
-  void write(const std::string &path) const;
-  [[nodiscard]] std::optional<std::string>
-  first_divergence(const nlohmann::json &expected) const;
+  [[nodiscard]] const nlohmann::json& recording() const;
+  [[nodiscard]] fl::GrandCentral& game();
+  void write(const std::string& path) const;
+  [[nodiscard]] std::optional<std::string> first_divergence(const nlohmann::json& expected) const;
 
 private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
 };
 
-nlohmann::json read_recording(const std::string &path);
-Options options_from_recording(const nlohmann::json &recording);
+nlohmann::json read_recording(const std::string& path);
+Options options_from_recording(const nlohmann::json& recording);
 
 } // namespace fl::regression

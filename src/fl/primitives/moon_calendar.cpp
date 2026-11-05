@@ -6,12 +6,10 @@
 
 namespace fl::primitives {
 
-MoonCalendarSnapshot MoonCalendar::snapshot(const WorldClock &clock) noexcept {
+MoonCalendarSnapshot MoonCalendar::snapshot(const WorldClock& clock) noexcept {
   const auto day = clock.calendar_day();
-  const auto runner_day =
-      static_cast<int>(day % static_cast<std::uint64_t>(kRunnerCycleDays));
-  const auto elder_day =
-      static_cast<int>(day % static_cast<std::uint64_t>(kElderCycleDays));
+  const auto runner_day = static_cast<int>(day % static_cast<std::uint64_t>(kRunnerCycleDays));
+  const auto elder_day = static_cast<int>(day % static_cast<std::uint64_t>(kElderCycleDays));
 
   return MoonCalendarSnapshot{
       .day = day,
@@ -43,8 +41,7 @@ MoonPhase MoonCalendar::phase_for_day(std::uint64_t day, int cycle_days,
   const auto cycle = static_cast<std::uint64_t>(cycle_days);
   const auto day_in_cycle = day % cycle;
   const auto phase_index =
-      (static_cast<int>((day_in_cycle * 8U) / cycle) + phase_offset_eighths) %
-      8;
+      (static_cast<int>((day_in_cycle * 8U) / cycle) + phase_offset_eighths) % 8;
 
   return static_cast<MoonPhase>(phase_index);
 }
@@ -58,8 +55,7 @@ std::string_view MoonCalendar::phase_name(MoonPhase phase) noexcept {
   return kNames[static_cast<std::size_t>(phase)];
 }
 
-std::uint64_t MoonCalendar::days_until(std::uint64_t day,
-                                       int cycle_days) noexcept {
+std::uint64_t MoonCalendar::days_until(std::uint64_t day, int cycle_days) noexcept {
   const auto cycle = static_cast<std::uint64_t>(cycle_days);
   return (cycle - (day % cycle)) % cycle;
 }

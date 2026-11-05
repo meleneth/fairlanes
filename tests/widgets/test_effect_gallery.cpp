@@ -15,7 +15,7 @@ std::size_t effect_count() {
 }
 
 std::string_view effect_name(std::size_t index) {
-  const auto &effects = fl::widgets::effects::available_decal_animation_kinds();
+  const auto& effects = fl::widgets::effects::available_decal_animation_kinds();
   return fl::widgets::effects::name(effects[index % effects.size()]);
 }
 
@@ -23,12 +23,10 @@ std::string_view effect_name(std::size_t index) {
 
 TEST_CASE("Effect gallery effect list is populated from decal catalog",
           "[widgets][effect-gallery]") {
-  REQUIRE_FALSE(
-      fl::widgets::effects::available_decal_animation_kinds().empty());
+  REQUIRE_FALSE(fl::widgets::effects::available_decal_animation_kinds().empty());
 }
 
-TEST_CASE("Effect gallery navigation wraps in both directions",
-          "[widgets][effect-gallery]") {
+TEST_CASE("Effect gallery navigation wraps in both directions", "[widgets][effect-gallery]") {
   auto state = fl::widgets::EffectGalleryState{};
   const auto count = effect_count();
   REQUIRE(count > 1);
@@ -87,9 +85,8 @@ TEST_CASE("Effect gallery background navigation wraps in both directions",
   CHECK(labels.next == "Savannah");
 }
 
-TEST_CASE(
-    "Effect gallery combatant count controls accept digits one through six",
-    "[widgets][effect-gallery]") {
+TEST_CASE("Effect gallery combatant count controls accept digits one through six",
+          "[widgets][effect-gallery]") {
   auto state = fl::widgets::EffectGalleryState{};
 
   REQUIRE(state.set_combatant_count_from_digit('1'));

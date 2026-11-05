@@ -1,5 +1,5 @@
-#include <entt/entity/handle.hpp>
 #include "party_loop.hpp"
+#include <entt/entity/handle.hpp>
 
 #include "fl/ecs/components/encounter.hpp"
 #include "fl/ecs/components/is_party.hpp"
@@ -10,20 +10,20 @@
 #include "fl/context.hpp"
 #include "fl/primitives/encounter_builder.hpp"
 #include "fl/primitives/party_data.hpp"
+#include "fl/tracy_shim.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include <fmt/format.h>
 #include <spdlog/spdlog.h>
-#include "fl/tracy_shim.hpp"
 
 namespace fl::fsm {
-void PartyLoop::Ops::enter_idle(fl::context::PartyCtx &ctx) {
+void PartyLoop::Ops::enter_idle(fl::context::PartyCtx& ctx) {
   ZoneScopedN("PartyLoop::enter_idle");
   (void)ctx;
   // Mark the party attached to this FSM as idle.
   // ctx.log().append_markup("[cyan](PartyLoop) Entering idle state.");
 };
 
-void PartyLoop::Ops::enter_farming(fl::context::PartyCtx &ctx) {
+void PartyLoop::Ops::enter_farming(fl::context::PartyCtx& ctx) {
   ZoneScopedN("PartyLoop::enter_farming");
   // Also set the label for the party tied to this FSM (nice for local UI)
   // ctx.log().append_markup("[cyan](PartyLoop) Entering farming state.");
@@ -42,25 +42,25 @@ void PartyLoop::Ops::enter_farming(fl::context::PartyCtx &ctx) {
       ctx.party_data().apply_recommended_farming_plan();
     } else {
       const auto advice = ctx.party_data().farming_choice_advice();
-      ctx.log().append_markup(fmt::format(
-          "Choose where this party is farming: [ability](Brawn), "
-          "[ability](Cunning), [ability](Wisdom), [xp](Wealth & Materials), "
-          "or [level](Gear). Autotree recommends [ability]({}).",
-          fl::primitives::display_name(advice.recommended_focus)));
+      ctx.log().append_markup(
+          fmt::format("Choose where this party is farming: [ability](Brawn), "
+                      "[ability](Cunning), [ability](Wisdom), [xp](Wealth & Materials), "
+                      "or [level](Gear). Autotree recommends [ability]({}).",
+                      fl::primitives::display_name(advice.recommended_focus)));
       return;
     }
   }
 
   std::optional<fl::primitives::EncounterBuilder::TowerFloor> floor;
   if (const auto route = ctx.party_data().tower_route())
-    floor = fl::primitives::EncounterBuilder::TowerFloor{
-        std::string(route->biome_id), route->floor};
+    floor =
+        fl::primitives::EncounterBuilder::TowerFloor{std::string(route->biome_id), route->floor};
   ctx.party_data().begin_tower_encounter();
-  fl::primitives::EncounterBuilder{ctx, ctx.party_data().encounter_mode(),
-                                    std::move(floor)}.thump_it_out();
+  fl::primitives::EncounterBuilder{ctx, ctx.party_data().encounter_mode(), std::move(floor)}
+      .thump_it_out();
 };
 
-void PartyLoop::Ops::exit_farming(fl::context::PartyCtx &ctx) {
+void PartyLoop::Ops::exit_farming(fl::context::PartyCtx& ctx) {
   ZoneScopedN("PartyLoop::exit_farming");
   // Always leave combat when exiting Farming, even when enemies died (not a
   // party wipe). This emits PartyLeftCombat so that subscriptions like
@@ -78,52 +78,50 @@ void PartyLoop::Ops::exit_farming(fl::context::PartyCtx &ctx) {
   // ReplenishParty::commit(h);
 };
 
-void PartyLoop::Ops::enter_dead(fl::context::PartyCtx &ctx) {
+void PartyLoop::Ops::enter_dead(fl::context::PartyCtx& ctx) {
   ZoneScopedN("PartyLoop::enter_dead");
-  ctx.log().append_plain(
-      "A passing caravan drags the fallen party back to town.");
+  ctx.log().append_plain("A passing caravan drags the fallen party back to town.");
   ctx.party_data().leave_combat();
   ctx.party_data().start_town_penalty();
 }
 
-void PartyLoop::Ops::enter_fixing(fl::context::PartyCtx &ctx) {
+void PartyLoop::Ops::enter_fixing(fl::context::PartyCtx& ctx) {
   ZoneScopedN("PartyLoop::enter_fixing");
   (void)ctx;
 }
 
-void PartyLoop::Ops::exit_fixing(fl::context::PartyCtx &ctx) {
+void PartyLoop::Ops::exit_fixing(fl::context::PartyCtx& ctx) {
   ZoneScopedN("PartyLoop::exit_fixing");
   (void)ctx;
 }
 
-void PartyLoop::Ops::enter_gearing(fl::context::PartyCtx &ctx) {
+void PartyLoop::Ops::enter_gearing(fl::context::PartyCtx& ctx) {
   ZoneScopedN("PartyLoop::enter_gearing");
   fl::ecs::systems::PartyGearing::commit(ctx);
 }
 
-void PartyLoop::Ops::return_to_town(fl::context::PartyCtx &ctx) {
+void PartyLoop::Ops::return_to_town(fl::context::PartyCtx& ctx) {
   ZoneScopedN("PartyLoop::return_to_town");
   ctx.party_data().return_to_town();
 }
 
-void PartyLoop::Ops::fixing_tick(fl::context::PartyCtx &ctx) {
+void PartyLoop::Ops::fixing_tick(fl::context::PartyCtx& ctx) {
   ZoneScopedN("PartyLoop::fixing_tick");
   ctx.party_data().tick_town_penalty();
   if (!ctx.party_data().town_penalty_active()) {
-    ctx.bus().emit(
-        fl::events::PartyEvent{fl::events::PartyRevitalizeRequested{}});
+    ctx.bus().emit(fl::events::PartyEvent{fl::events::PartyRevitalizeRequested{}});
   }
 }
 
-void PartyLoop::Ops::combat_tick(fl::context::PartyCtx &ctx) {
+void PartyLoop::Ops::combat_tick(fl::context::PartyCtx& ctx) {
   ZoneScopedN("PartyLoop::combat_tick");
   ctx.bus().emit(fl::events::PartyEvent{fl::events::PartyTick{}});
 };
-bool PartyLoop::Ops::in_combat(fl::context::PartyCtx &ctx) {
+bool PartyLoop::Ops::in_combat(fl::context::PartyCtx& ctx) {
   return ctx.party_data().in_combat();
 }
 
-bool PartyLoop::Ops::fixing_done(fl::context::PartyCtx &ctx) {
+bool PartyLoop::Ops::fixing_done(fl::context::PartyCtx& ctx) {
   return !ctx.party_data().town_penalty_active();
 }
 } // namespace fl::fsm
