@@ -43,6 +43,12 @@ modes. Auto selects the newest sequentially unlocked Origin biome and claims the
 first legal opportunity for its party. Manual mode disables these strategic
 decisions without rewriting tower state.
 
+The story autoplay toggle applies to all parties in the account. GrandCentral
+owns one controller per party, synchronizes all existing controllers through
+the shared toggle event, and creates an enabled controller for a party unlocked
+while autoplay is already active. Controllers do not share tower or recovery
+state.
+
 After three failed attempts, auto retreats to the highest cleared floor, farms
 two victories, and retries the frontier. Three failures while recovering move
 the farm target down one floor. If floor 1 cannot be won and no lower legal

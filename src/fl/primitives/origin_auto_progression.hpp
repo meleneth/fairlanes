@@ -18,7 +18,7 @@ namespace fl::primitives {
 class OriginAutoProgression {
 public:
   OriginAutoProgression(fl::context::AccountCtx account, std::size_t party_index,
-                        fl::events::StoryBus& story_bus);
+                        fl::events::StoryBus& story_bus, bool initially_enabled = false);
   OriginAutoProgression(const OriginAutoProgression&) = delete;
   OriginAutoProgression& operator=(const OriginAutoProgression&) = delete;
 

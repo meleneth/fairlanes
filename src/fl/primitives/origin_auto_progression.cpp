@@ -10,7 +10,8 @@ namespace fl::primitives {
 
 OriginAutoProgression::OriginAutoProgression(fl::context::AccountCtx account,
                                              std::size_t party_index,
-                                             fl::events::StoryBus& story_bus)
+                                             fl::events::StoryBus& story_bus,
+                                             bool initially_enabled)
     : account_(account), party_index_(party_index), story_bus_(&story_bus) {
   autoplay_sub_ = fl::events::ScopedStoryListener{
       story_bus, std::in_place_type<fl::events::AutoplayChanged>,
@@ -37,6 +38,8 @@ OriginAutoProgression::OriginAutoProgression(fl::context::AccountCtx account,
                            });
   party_subs_.emplace_back(bus, std::in_place_type<fl::events::PartyEncounterBoundary>,
                            [this](const auto&) { request_evaluation(); });
+  party_subs_.emplace_back(bus, std::in_place_type<fl::events::TowerDestinationChanged>,
+                           [this](const auto&) { request_evaluation(); });
   party_subs_.emplace_back(bus, std::in_place_type<fl::events::TowerFloorCleared>,
                            [this](const fl::events::TowerFloorCleared& event) {
                              last_clear_ = event;
@@ -60,6 +63,7 @@ OriginAutoProgression::OriginAutoProgression(fl::context::AccountCtx account,
                                  [this](const auto&) { request_evaluation(); });
   recruitment_subs_.emplace_back(progression_bus, std::in_place_type<fl::events::HeroRecruited>,
                                  [this](const auto&) { request_evaluation(); });
+  if (initially_enabled) set_enabled(true);
 }
 
 PartyData& OriginAutoProgression::party() const {
@@ -94,6 +98,14 @@ void OriginAutoProgression::evaluate() {
   ignore_next_raid_wipe_ = false;
   controlled.block_origin_auto_progression(false);
 
+  if (!controlled.tower_route()) {
+    if (controlled.select_tower(PartyData::kOriginBiomeIds.front())) {
+      decide("select_biome", PartyData::kOriginBiomeIds.front(), 1);
+      return;
+    }
+    become_blocked("no accessible Origin tower");
+    return;
+  }
   if (recruit_if_possible()) return;
   if (completed_biome_) {
     outcome_ = Outcome::None;
@@ -118,14 +130,6 @@ void OriginAutoProgression::evaluate() {
 
   if (controlled.members().empty()) {
     become_blocked("no party members");
-    return;
-  }
-  if (!controlled.tower_route()) {
-    if (controlled.select_tower(PartyData::kOriginBiomeIds.front())) {
-      decide("select_biome", PartyData::kOriginBiomeIds.front(), 1);
-      return;
-    }
-    become_blocked("no accessible Origin tower");
     return;
   }
   if (select_newest_unlocked_biome()) return;
@@ -240,8 +244,8 @@ bool OriginAutoProgression::select_newest_unlocked_biome() {
 }
 
 void OriginAutoProgression::decide(std::string_view action, std::string_view target, int floor) {
-  story_bus_->emit(fl::events::StoryEvent{
-      fl::events::OriginAutoProgressionDecision{std::string(action), std::string(target), floor}});
+  story_bus_->emit(fl::events::StoryEvent{fl::events::OriginAutoProgressionDecision{
+      party_index_, std::string(action), std::string(target), floor}});
 }
 
 void OriginAutoProgression::become_blocked(std::string_view reason) {

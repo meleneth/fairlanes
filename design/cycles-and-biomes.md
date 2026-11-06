@@ -86,5 +86,8 @@ monsters; those fallback patterns are implementation scaffolding, not settled
 encounter design or balance.
 
 The party-scoped `OriginAutoProgression` decision controller described above is
-also **Implemented** for the first story party. Its policy is intentionally
-Origin-only and does not optimize equipment, skills, transfers, or later cycles.
+also **Implemented** for every party in the story account. The autoplay toggle
+is global: existing controllers change mode together, and newly unlocked
+parties inherit its current state. Each controller still reads and changes only
+its assigned party's progression. The policy is intentionally Origin-only and
+does not optimize equipment, skills, transfers, or later cycles.

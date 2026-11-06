@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
 #include <variant>
 
@@ -25,6 +26,7 @@ struct RecruitmentClaimRequested {
   std::string opportunity_id;
 };
 struct OriginAutoProgressionDecision {
+  std::size_t party_index{0};
   std::string action;
   std::string target;
   int floor{0};

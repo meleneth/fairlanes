@@ -123,8 +123,7 @@ GrandCentral::GrandCentral(uint8_t num_accounts, uint8_t num_parties_per_account
   }
   if (story_mode && !accounts_.empty()) {
     objectives_ = std::make_unique<fl::primitives::ObjectiveSystem>(account_context(0));
-    origin_auto_progression_ = std::make_unique<fl::primitives::OriginAutoProgression>(
-        account_context(0), 0, objectives_->bus());
+    sync_origin_auto_progressions();
   }
   if (objectives_) objectives_->request_autoplay(story_autoplay_);
   if (record_progress_) {
@@ -360,8 +359,20 @@ void GrandCentral::innervate_event_system(bool enable_visitors) {
   if (objectives_)
     story_autoplay_sub_ = gc_beat_bus_.subscribe<seerin::Beat>([this](const seerin::Beat&) {
       objectives_->advance_autoplay();
-      origin_auto_progression_->evaluate();
+      sync_origin_auto_progressions();
+      for (auto& progression : origin_auto_progressions_) progression->evaluate();
     });
+}
+
+void GrandCentral::sync_origin_auto_progressions() {
+  if (!objectives_ || accounts_.empty()) return;
+  auto account = account_context(0);
+  const auto party_count = account.account_data().parties().size();
+  while (origin_auto_progressions_.size() < party_count) {
+    origin_auto_progressions_.push_back(std::make_unique<fl::primitives::OriginAutoProgression>(
+        account, origin_auto_progressions_.size(), objectives_->bus(),
+        objectives_->autoplay_enabled()));
+  }
 }
 
 void GrandCentral::build_ui() {

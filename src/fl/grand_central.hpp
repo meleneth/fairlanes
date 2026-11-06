@@ -8,6 +8,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <vector>
 
 #include <entt/entity/registry.hpp>
 #include <ftxui/component/component.hpp>
@@ -149,7 +150,7 @@ private:
   std::deque<fl::primitives::AccountData> accounts_;
   fl::primitives::RaidMilestones raid_milestones_;
   std::unique_ptr<fl::primitives::ObjectiveSystem> objectives_;
-  std::unique_ptr<fl::primitives::OriginAutoProgression> origin_auto_progression_;
+  std::vector<std::unique_ptr<fl::primitives::OriginAutoProgression>> origin_auto_progressions_;
   std::vector<fl::events::ScopedRaidListener> raid_log_subscriptions_;
 
   std::unique_ptr<fl::widgets::FancyLog> game_log_;
@@ -160,6 +161,7 @@ private:
 
   // ---- internal helpers ----
   void _create_initial_accounts();
+  void sync_origin_auto_progressions();
   void bootstrap_logs();
   void build_ui();
 };

@@ -134,6 +134,42 @@ TEST_CASE("Production autoplay continues from the first clear into the next enco
   REQUIRE(party.in_combat());
 }
 
+TEST_CASE("The global autoplay toggle controls every existing party",
+          "[origin-autoplay][mode][global]") {
+  fl::GrandCentral game{1, 3, 1, true, true, 7, true, true};
+  auto* story = game.objectives();
+  REQUIRE(story != nullptr);
+  for (const auto& party : game.accounts().front().parties())
+    REQUIRE(party.progression_control_mode() == fl::primitives::ProgressionControlMode::Auto);
+
+  story->request_autoplay(false);
+  for (const auto& party : game.accounts().front().parties())
+    REQUIRE(party.progression_control_mode() == fl::primitives::ProgressionControlMode::Manual);
+
+  story->request_autoplay(true);
+  for (const auto& party : game.accounts().front().parties())
+    REQUIRE(party.progression_control_mode() == fl::primitives::ProgressionControlMode::Auto);
+}
+
+TEST_CASE("A party unlocked after autoplay starts inherits the global automatic mode",
+          "[origin-autoplay][mode][global][recruitment]") {
+  fl::GrandCentral game{1, 1, 0, true, true, 7, true, true};
+  auto account = game.account_context(0);
+  auto& account_data = account.account_data();
+  account_data.party(0).party_bus().emit(
+      fl::events::PartyEvent{fl::events::TowerFloorCleared{"origin_woodland_tower", 25}});
+  account_data.resolve_recruitment_events(account);
+  REQUIRE(account_data.parties().size() == 2);
+
+  game.innervate_event_system(false);
+  game.advance_beat();
+  auto& unlocked = account_data.party(1);
+  REQUIRE(unlocked.progression_control_mode() == fl::primitives::ProgressionControlMode::Auto);
+  REQUIRE(unlocked.tower_route()->biome_id == "origin_woodland_tower");
+  game.advance_beat();
+  REQUIRE(unlocked.members().size() == 1);
+}
+
 TEST_CASE("Origin autoplay follows frontier clears without treating replay as another clear",
           "[origin-autoplay][progression]") {
   AutoHarness harness;
