@@ -177,7 +177,7 @@ TEST_CASE("Committed out-of-tier milestones wait for a creatable destination wit
           fl::primitives::RecruitmentOpportunityState::Available);
 }
 
-TEST_CASE("Production floor-five victory unlocks and manually claims a stable recruit",
+TEST_CASE("Production autoplay claims the stable floor-five recruit after its unlock",
           "[regression][recruitment][integration][production]") {
   fl::GrandCentral game{1, 1, 0, true, true, 11, true, true};
   auto ctx = game.account_context(0);
@@ -212,10 +212,12 @@ TEST_CASE("Production floor-five victory unlocks and manually claims a stable re
           party.latest_tower_floor("origin_woodland_tower"), party.tower_floor_attempts(),
           party.members().size(), party.has_encounter(), party.all_members_dead());
   REQUIRE(beats < 30'000);
-  REQUIRE(ordered == std::vector<std::string>{"floor-cleared", "opportunity-unlocked"});
-  game.objectives()->request_recruitment("origin_woodland_floor_5_recruit");
+  REQUIRE(ordered ==
+          std::vector<std::string>{"floor-cleared", "opportunity-unlocked", "hero-recruited"});
   REQUIRE(party.members().size() == 3);
   REQUIRE(party.members().back().name() == "Cyran Vale");
+  game.objectives()->request_recruitment("origin_woodland_floor_5_recruit");
+  REQUIRE(party.members().size() == 3);
   REQUIRE(ordered ==
           std::vector<std::string>{"floor-cleared", "opportunity-unlocked", "hero-recruited"});
 }

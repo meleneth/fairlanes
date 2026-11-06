@@ -121,8 +121,11 @@ GrandCentral::GrandCentral(uint8_t num_accounts, uint8_t num_parties_per_account
       account.enable_origin_recruitment();
     }
   }
-  if (story_mode && !accounts_.empty())
+  if (story_mode && !accounts_.empty()) {
     objectives_ = std::make_unique<fl::primitives::ObjectiveSystem>(account_context(0));
+    origin_auto_progression_ = std::make_unique<fl::primitives::OriginAutoProgression>(
+        account_context(0), 0, objectives_->bus());
+  }
   if (objectives_) objectives_->request_autoplay(story_autoplay_);
   if (record_progress_) {
     for (auto& account : accounts_) raid_milestones_.bind(account.raid_bus(), account.account_id());
@@ -355,8 +358,10 @@ void GrandCentral::innervate_event_system(bool enable_visitors) {
     account.hook_to_beat(account_context(account), gc_beat_bus_, world_clock_, enable_visitors);
   }
   if (objectives_)
-    story_autoplay_sub_ = gc_beat_bus_.subscribe<seerin::Beat>(
-        [this](const seerin::Beat&) { objectives_->advance_autoplay(); });
+    story_autoplay_sub_ = gc_beat_bus_.subscribe<seerin::Beat>([this](const seerin::Beat&) {
+      objectives_->advance_autoplay();
+      origin_auto_progression_->evaluate();
+    });
 }
 
 void GrandCentral::build_ui() {

@@ -139,7 +139,7 @@ TEST_CASE("The story party clears the physical slice and can return to Woodland 
     ++beats;
   }
   REQUIRE(story->completed("recruit_second_hero"));
-  REQUIRE(party.members().size() == 2);
+  REQUIRE(party.members().size() == 3);
   REQUIRE(std::ranges::any_of(party.members(), [](const auto& member) {
     return member.grimoire().knows(fl::skills::SkillId::Brace);
   }));

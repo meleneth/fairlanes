@@ -52,6 +52,14 @@ five towers without requiring completion of the preceding 100-floor tower.
 Exact unlock milestones may be revisited as the overlapping progression economy
 is balanced.
 
+**Decided:** Origin autoplay is a deliberately limited early-game policy, not a
+general game-playing AI. When enabled for a party, it observes committed
+progression facts and submits ordinary destination and recruitment requests at
+simulation boundaries. It may choose the newest unlocked Origin biome, use a
+bounded retry/farming recovery after defeats, and stop when no legal recovery
+exists. Manual mode makes none of these strategic choices; both modes continue
+to use the same party loop and combat simulation.
+
 ## Cross-biome gates
 
 **Decided:** Special encounters may demand capabilities that are easier to
@@ -76,3 +84,7 @@ destination changes, and floor-100 completion are **Implemented**. Every Origin
 tower has a temporary generated 100-floor encounter table using its declared
 monsters; those fallback patterns are implementation scaffolding, not settled
 encounter design or balance.
+
+The party-scoped `OriginAutoProgression` decision controller described above is
+also **Implemented** for the first story party. Its policy is intentionally
+Origin-only and does not optimize equipment, skills, transfers, or later cycles.

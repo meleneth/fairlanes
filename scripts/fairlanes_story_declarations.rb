@@ -57,3 +57,15 @@ autoplay_route :origin_opening, steps: [
   { wait_for: :village_gear_purchased, action: :choose_dialogue,
     target: :second_volunteer, choice: :accept }
 ]
+
+# A short production-policy trace pinned by the Origin controller regression.
+# It intentionally covers strategic continuation, not combat balance.
+origin_auto_regression :origin_woodland_opening,
+  seed: 7,
+  clears: 2,
+  expected_decisions: [
+    {action: :enabled},
+    {action: :select_biome, target: :origin_woodland_tower, floor: 1},
+    {action: :continue, target: :origin_woodland_tower, floor: 2},
+    {action: :continue, target: :origin_woodland_tower, floor: 3}
+  ]

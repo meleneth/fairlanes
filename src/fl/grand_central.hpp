@@ -18,6 +18,7 @@
 #include "fl/primitives/discovery_journal.hpp"
 #include "fl/primitives/logging.hpp"
 #include "fl/primitives/objective_system.hpp"
+#include "fl/primitives/origin_auto_progression.hpp"
 #include "fl/primitives/random_hub.hpp"
 #include "fl/primitives/tower_balance.hpp"
 #include "fl/primitives/world_clock.hpp"
@@ -148,6 +149,7 @@ private:
   std::deque<fl::primitives::AccountData> accounts_;
   fl::primitives::RaidMilestones raid_milestones_;
   std::unique_ptr<fl::primitives::ObjectiveSystem> objectives_;
+  std::unique_ptr<fl::primitives::OriginAutoProgression> origin_auto_progression_;
   std::vector<fl::events::ScopedRaidListener> raid_log_subscriptions_;
 
   std::unique_ptr<fl::widgets::FancyLog> game_log_;

@@ -34,6 +34,7 @@ namespace fl::primitives {
 class EntityBuilder;
 class FancyLogSink;
 class Logger;
+class OriginAutoProgression;
 class RandomHub;
 class RandomStream;
 struct AccountData;

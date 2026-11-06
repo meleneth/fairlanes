@@ -26,3 +26,7 @@ Generated from the Ruby story DSL. `Handled` entries must match the handwritten 
 | `two_starter_wins` | `return_to_town` | — | — |
 | `two_starter_wins` | `buy_gear` | `village_guard_hide` | — |
 | `village_gear_purchased` | `choose_dialogue` | `second_volunteer` | `accept` |
+
+## Origin auto-progression regressions
+
+- `origin_woodland_opening`: seed 7, 2 frontier clears, 4 pinned decisions.

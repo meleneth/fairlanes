@@ -61,6 +61,13 @@ While autoplay is enabled, achievement-style notices auto-acknowledge after
 Cleared notices retain their enqueue, display, and clearance timestamps in
 presentation history, in the order they were cleared.
 
+The Ruby-authored opening actions and the party-scoped Origin progression
+controller share the same autoplay toggle. The authored route handles dialogue,
+the town return, and the first purchase; `OriginAutoProgression` handles legal
+tower and recruitment choices after committed simulation boundaries. The Ruby
+DSL also pins a short Origin controller decision trace for deterministic
+regression coverage.
+
 The previous 8-account, 5-party, 5-hero setup is available through the
 `sandbox` console command. It asks for confirmation and warns that the current
 story session cannot be recovered. The switch creates a fresh full-roster game.

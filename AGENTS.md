@@ -716,6 +716,15 @@ Cycle, their monster skills, and unassigned monsters and skills are generated
 from the Ruby DSL into `brainstorms/biome-tower-map.md`; run
 `fairlanes_biome_plan_check` to verify it.
 
+`OriginAutoProgression` is the deliberately narrow strategy controller for the
+first story party. Party and account events only mark evaluation pending; the
+controller evaluates after the account production beat, then uses normal tower
+selection and recruitment requests. It does not construct encounters, own
+progression state, optimize parties, or plan later Cycles. The story autoplay
+toggle enables or disables its decisions; manual and auto combat both remain on
+the existing `PartyLoop`. Keep this policy specific rather than turning it into
+a generic AI framework. See `docs/party-progression.md`.
+
 Use specific EnTT headers: `entity/entity.hpp` for IDs/null, `entity/fwd.hpp`
 for declared registry/handle references, `entity/registry.hpp` for registry
 operations, and `entity/handle.hpp` for constructed handles. Avoid the umbrella

@@ -38,4 +38,5 @@ module FairlanesContent
   Objective = Struct.new(:id, :title, :description, :revealed_by, :completed_by, keyword_init: true)
   Dialogue = Struct.new(:id, :location, :npc, :start, :nodes, keyword_init: true)
   AutoplayRoute = Struct.new(:id, :steps, keyword_init: true)
+  OriginAutoRegression = Struct.new(:id, :seed, :clears, :expected_decisions, keyword_init: true)
 end

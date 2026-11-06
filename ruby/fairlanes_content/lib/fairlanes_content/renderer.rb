@@ -25,6 +25,7 @@ module FairlanesContent
     def objectives = declarations.objectives
     def dialogues = declarations.dialogues
     def autoplay_routes = declarations.autoplay_routes
+    def origin_auto_regressions = declarations.origin_auto_regressions
 
     def recruitment_content_hpp
       rows = recruitment_opportunities.map do |entry|
@@ -101,9 +102,19 @@ module FairlanesContent
       autoplay_rows = autoplay_routes.each_with_index.map do |route, ri|
         "  AutoplayRoute{#{cpp_string(route.id.to_s)}, kAutoplaySteps#{ri}},"
       end.join("\n")
+      origin_auto_tables = origin_auto_regressions.each_with_index.map do |regression, ri|
+        rows = regression.expected_decisions.map do |decision|
+          "  OriginAutoExpectedDecision{#{cpp_string(decision[:action].to_s)}, #{cpp_string(decision.fetch(:target, '').to_s)}, #{decision.fetch(:floor, 0)}},"
+        end.join("\n")
+        "inline constexpr std::array<OriginAutoExpectedDecision, #{regression.expected_decisions.size}> kOriginAutoExpected#{ri}{{\n#{rows}\n}};"
+      end.join("\n")
+      origin_auto_rows = origin_auto_regressions.each_with_index.map do |regression, ri|
+        "  OriginAutoRegression{#{cpp_string(regression.id.to_s)}, #{regression.seed}, #{regression.clears}, kOriginAutoExpected#{ri}},"
+      end.join("\n")
       <<~CPP
         #pragma once
         #include <array>
+        #include <cstdint>
         #include <span>
         #include <string_view>
         namespace fl::story::generated_content {
@@ -124,6 +135,13 @@ module FairlanesContent
           std::string_view target, choice;
         };
         struct AutoplayRoute { std::string_view id; std::span<const AutoplayStep> steps; };
+        struct OriginAutoExpectedDecision { std::string_view action, target; int floor; };
+        struct OriginAutoRegression {
+          std::string_view id;
+          std::uint64_t seed;
+          int clears;
+          std::span<const OriginAutoExpectedDecision> expected_decisions;
+        };
         inline constexpr std::array<Event, #{story_events.size}> kEvents{{
         #{event_rows}
         }};
@@ -137,6 +155,10 @@ module FairlanesContent
         #{autoplay_tables}
         inline constexpr std::array<AutoplayRoute, #{autoplay_routes.size}> kAutoplayRoutes{{
         #{autoplay_rows}
+        }};
+        #{origin_auto_tables}
+        inline constexpr std::array<OriginAutoRegression, #{origin_auto_regressions.size}> kOriginAutoRegressions{{
+        #{origin_auto_rows}
         }};
         inline const Dialogue *find_dialogue(std::string_view id) {
           for (const auto &dialogue : kDialogues) if (dialogue.id == id) return &dialogue;
@@ -180,6 +202,12 @@ module FairlanesContent
         end
         lines << ""
       end
+      lines << "## Origin auto-progression regressions"
+      lines << ""
+      origin_auto_regressions.each do |regression|
+        lines << "- `#{regression.id}`: seed #{regression.seed}, #{regression.clears} frontier clears, #{regression.expected_decisions.size} pinned decisions."
+      end
+      lines << ""
       lines.join("\n")
     end
 
@@ -1548,6 +1576,14 @@ module FairlanesContent
                 "target" => step[:target]&.to_s, "choice" => step[:choice]&.to_s }
             end }
         end,
+        "origin_auto_regressions" => origin_auto_regressions.map do |regression|
+          { "id" => regression.id.to_s, "seed" => regression.seed, "clears" => regression.clears,
+            "expected_decisions" => regression.expected_decisions.map do |decision|
+              { "action" => decision[:action].to_s,
+                "target" => decision.fetch(:target, '').to_s,
+                "floor" => decision.fetch(:floor, 0) }
+            end }
+        end,
         "regressions" => regressions.map do |scenario|
           { "id" => scenario.id.to_s,
             "encounter" => { "biome" => scenario.encounter[:biome].to_s,
@@ -1580,7 +1616,7 @@ module FairlanesContent
         "title" => "Fairlanes Generated Content Manifest",
         "type" => "object",
         "additionalProperties" => false,
-        "required" => %w[schema_version source runtime_authority visuals statuses skills random_combat_skills monsters gear encounter_pools tower_patterns biomes biome_plans recruitment_opportunities story_events objectives dialogues autoplay_routes regressions],
+        "required" => %w[schema_version source runtime_authority visuals statuses skills random_combat_skills monsters gear encounter_pools tower_patterns biomes biome_plans recruitment_opportunities story_events objectives dialogues autoplay_routes origin_auto_regressions regressions],
         "properties" => {
           "schema_version" => { "const" => 1 },
           "source" => string_type,
@@ -1688,6 +1724,13 @@ module FairlanesContent
             "id" => string_type,
             "steps" => { "type" => "array", "minItems" => 1,
                          "items" => { "type" => "object" } }
+          }),
+          "origin_auto_regressions" => array_schema(%w[id seed clears expected_decisions], {
+            "id" => string_type,
+            "seed" => { "type" => "integer", "minimum" => 0 },
+            "clears" => { "type" => "integer", "minimum" => 1 },
+            "expected_decisions" => { "type" => "array", "minItems" => 1,
+                                      "items" => { "type" => "object" } }
           }),
           "regressions" => array_schema(%w[id encounter encounters party seeds beat_cap recording_version variants], {
             "id" => string_type, "encounter" => { "type" => "object" },

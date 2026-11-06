@@ -1,11 +1,11 @@
 {
   "beat_cap": 3200,
   "build": {
-    "revision": "a8e22f9bf196ed83a60f72cca9f5cca899a10a0d",
+    "revision": "6fd361b53e6a1d0a7a74cd3a0f0416c7097b4949",
     "source_dirty": true,
     "version": "0.1.0"
   },
-  "content_sha256": "a4d60976544b544d9e30b0b5b1d56dc5a3ce79cfd154793c08ed81c69f6253fb",
+  "content_sha256": "72345b7f6ffb9214b3950c761117d92139cf7728a857dd2260222a455ddc9bb8",
   "encounter_results": [
     {
       "beats": 451,

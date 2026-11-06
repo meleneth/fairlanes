@@ -28,6 +28,28 @@ Plains, Murky Swamp, or Caves unlocks the next ordered biome for that party.
 Each tower currently has a generated 100-floor fallback pattern so it remains
 playable while authored encounter design is refined.
 
+## Origin automatic progression
+
+`OriginAutoProgression` observes the controlled party's committed victory,
+wipe, encounter-boundary, floor-clear, biome-unlock, tower-completion, and
+membership facts. It also observes account progression-bus recruitment facts
+and the story autoplay toggle. Handlers only mark a decision pending; evaluation
+runs after the account's production beat and recruitment resolution.
+
+The controller issues the existing `PartyData::select_tower` request and
+`RecruitmentClaimRequested` story command. It never constructs an encounter:
+the normal `PartyLoop` remains the encounter scheduler in both manual and auto
+modes. Auto selects the newest sequentially unlocked Origin biome and claims the
+first legal opportunity for its party. Manual mode disables these strategic
+decisions without rewriting tower state.
+
+After three failed attempts, auto retreats to the highest cleared floor, farms
+two victories, and retries the frontier. Three failures while recovering move
+the farm target down one floor. If floor 1 cannot be won and no lower legal
+recovery exists, the controller blocks new auto encounters until autoplay is
+disabled or re-enabled. This bounded policy is deliberately simple and is not
+a general strategy engine.
+
 - A frontier victory emits `TowerFloorCleared` once, advances the frontier, and
   automatically continues.
 - A cleared-floor victory leaves the selected farming floor unchanged.

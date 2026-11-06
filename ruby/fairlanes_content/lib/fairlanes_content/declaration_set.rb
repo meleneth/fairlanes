@@ -7,7 +7,8 @@ module FairlanesContent
   class DeclarationSet
     attr_reader :visuals, :skills, :random_combat_skills, :monsters, :statuses,
                 :gears, :encounter_pools, :tower_patterns, :biomes, :regressions, :biome_plans,
-                :recruitment_opportunities, :story_events, :objectives, :dialogues, :autoplay_routes
+                :recruitment_opportunities, :story_events, :objectives, :dialogues, :autoplay_routes,
+                :origin_auto_regressions
 
     def self.load_file(path)
       new.tap { |set| set.load_file(path) }
@@ -30,6 +31,7 @@ module FairlanesContent
       @objectives = []
       @dialogues = []
       @autoplay_routes = []
+      @origin_auto_regressions = []
     end
 
     def load_file(path)
@@ -187,6 +189,12 @@ module FairlanesContent
       autoplay_routes << AutoplayRoute.new(id: id, steps: steps)
     end
 
+    def origin_auto_regression(id, seed:, clears:, expected_decisions:)
+      origin_auto_regressions << OriginAutoRegression.new(
+        id: id, seed: seed, clears: clears, expected_decisions: expected_decisions
+      )
+    end
+
     private
 
     def cpp_name(id)
@@ -228,6 +236,8 @@ module FairlanesContent
       dialogues.freeze
       autoplay_routes.each(&:freeze)
       autoplay_routes.freeze
+      origin_auto_regressions.each(&:freeze)
+      origin_auto_regressions.freeze
     end
   end
 end

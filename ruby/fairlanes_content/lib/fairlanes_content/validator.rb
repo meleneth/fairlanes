@@ -165,6 +165,27 @@ module FairlanesContent
           end
         end
       end
+      regression_ids = declarations.origin_auto_regressions.map(&:id)
+      errors << "duplicate origin auto regression ids" unless regression_ids.uniq == regression_ids
+      declarations.origin_auto_regressions.each do |regression|
+        prefix = "origin auto regression #{regression.id}"
+        errors << "#{prefix} has invalid id" unless stable_id?(regression.id)
+        unless regression.seed.is_a?(Integer) && regression.seed >= 0
+          errors << "#{prefix} has invalid seed"
+        end
+        unless regression.clears.is_a?(Integer) && regression.clears.positive?
+          errors << "#{prefix} has invalid clear count"
+        end
+        unless regression.expected_decisions.is_a?(Array) && !regression.expected_decisions.empty?
+          errors << "#{prefix} has no expected decisions"
+          next
+        end
+        regression.expected_decisions.each do |decision|
+          valid = decision.is_a?(Hash) && (decision.keys - %i[action target floor]).empty? &&
+                  stable_id?(decision[:action]) && decision.fetch(:floor, 0).is_a?(Integer)
+          errors << "#{prefix} has an invalid decision" unless valid
+        end
+      end
     end
 
     def validate_duplicate_ids(errors)

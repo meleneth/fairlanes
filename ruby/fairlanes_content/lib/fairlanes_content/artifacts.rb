@@ -202,6 +202,7 @@ module FairlanesContent
         objectives
         dialogues
         autoplay_routes
+        origin_auto_regressions
         regressions
       ]
       required.each { |key| errors << "manifest missing #{key}" unless manifest.key?(key) }
@@ -226,6 +227,9 @@ module FairlanesContent
       errors << "manifest objectives must be an array" unless manifest["objectives"].is_a?(Array)
       errors << "manifest dialogues must be an array" unless manifest["dialogues"].is_a?(Array)
       errors << "manifest autoplay_routes must be an array" unless manifest["autoplay_routes"].is_a?(Array)
+      unless manifest["origin_auto_regressions"].is_a?(Array)
+        errors << "manifest origin_auto_regressions must be an array"
+      end
       errors << "manifest regressions must be an array" unless manifest["regressions"].is_a?(Array)
 
       validate_manifest_skills(manifest, errors)

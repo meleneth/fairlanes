@@ -221,7 +221,10 @@ public:
     encounter_start_blocked_ = blocked;
   }
   bool encounter_start_blocked() const noexcept {
-    return encounter_start_blocked_;
+    return encounter_start_blocked_ || origin_auto_progression_blocked_;
+  }
+  void block_origin_auto_progression(bool blocked) noexcept {
+    origin_auto_progression_blocked_ = blocked;
   }
   bool plains_unlocked() const noexcept {
     return biome_unlocked("origin_plains_tower");
@@ -396,6 +399,7 @@ private:
   std::optional<PendingTowerDestination> pending_tower_destination_;
   bool repeat_selected_floor_{false};
   bool encounter_start_blocked_{false};
+  bool origin_auto_progression_blocked_{false};
   bool tower_complete_waiting_{false};
 
   seerin::BeatBus party_beat_bus_{};

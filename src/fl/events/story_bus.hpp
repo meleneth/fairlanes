@@ -24,8 +24,14 @@ struct VillagePurchaseRequested {
 struct RecruitmentClaimRequested {
   std::string opportunity_id;
 };
+struct OriginAutoProgressionDecision {
+  std::string action;
+  std::string target;
+  int floor{0};
+};
 using StoryEvent = std::variant<StoryFact, ObjectiveRevealed, AutoplayRequested, AutoplayChanged,
-                                VillagePurchaseRequested, RecruitmentClaimRequested>;
+                                VillagePurchaseRequested, RecruitmentClaimRequested,
+                                OriginAutoProgressionDecision>;
 using StoryBus = seerin::VariantBus<StoryEvent>;
 using ScopedStoryListener = ScopedListener<StoryBus>;
 } // namespace fl::events

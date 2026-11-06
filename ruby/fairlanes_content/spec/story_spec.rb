@@ -10,6 +10,7 @@ RSpec.describe "Story DSL" do
     expect(FairlanesContent::Validator.new(declarations).validate).to be_empty
     cpp = FairlanesContent::Renderer.new(declarations).story_content_hpp
     expect(cpp).to include("struct Objective", "struct Dialogue", "recruit_first_hero", "recruit_angry_fellow")
+    expect(cpp).to include("struct OriginAutoRegression", "origin_woodland_opening")
   end
 
   it "reports dialogue events without handlers" do
@@ -17,6 +18,7 @@ RSpec.describe "Story DSL" do
     expect(report).to include("## Dialogue events without handlers", "- `ask_about_visitor`")
     expect(report).not_to include("- `recruit_angry_fellow`")
     expect(report).to include("## Autoplay enabled routes", "`origin_opening`", "`buy_gear`")
+    expect(report).to include("## Origin auto-progression regressions", "`origin_woodland_opening`")
   end
 
   it "rejects autoplay steps with unknown facts or dialogue choices" do
