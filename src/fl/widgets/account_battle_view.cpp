@@ -3,6 +3,7 @@
 #include <ftxui/dom/elements.hpp>
 
 #include <algorithm>
+#include <string>
 
 #include "account_battle_view.hpp"
 #include "fl/context.hpp"
@@ -18,6 +19,7 @@
 #include "fl/widgets/combatant.hpp"
 #include "fl/widgets/farming_choice_view.hpp"
 #include "fl/widgets/party_status.hpp"
+#include "fl/widgets/tower_route_label.hpp"
 
 namespace fl::widgets {
 
@@ -106,6 +108,28 @@ ftxui::Element AccountBattleView::Render() {
   auto column_width = [&](std::size_t column) {
     return base_column_width + (column < static_cast<std::size_t>(extra_columns) ? 1 : 0);
   };
+
+  std::vector<ftxui::Element> tower_readouts;
+  tower_readouts.reserve(column_count);
+  for (std::size_t i = 0; i < parties.size() && i < column_count; ++i) {
+    const auto route = parties[i].tower_route();
+    std::string label = "P" + std::to_string(i + 1) + " No tower";
+    if (route) {
+      label = "P" + std::to_string(i + 1) + " ";
+      label += tower_biome_label(route->biome_id);
+      label += " Floor " + std::to_string(route->floor) + "/100";
+    }
+    tower_readouts.push_back(
+        ftxui::text(std::move(label)) | ftxui::center |
+        ftxui::size(ftxui::WIDTH, ftxui::EQUAL, column_width(tower_readouts.size())));
+  }
+  while (tower_readouts.size() < column_count) {
+    tower_readouts.push_back(ftxui::filler() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL,
+                                                           column_width(tower_readouts.size())));
+  }
+  rows.push_back(ftxui::hbox(std::move(tower_readouts)) |
+                 ftxui::size(ftxui::WIDTH, ftxui::EQUAL, account_width) |
+                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, 1) | ftxui::inverted);
 
   auto render_entity_row_5 = [&](const std::vector<entt::entity>& ents) {
     std::vector<ftxui::Element> row;

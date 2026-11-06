@@ -21,6 +21,7 @@
 #include "fl/widgets/textures/bog_background.hpp"
 #include "fl/widgets/textures/forest_background.hpp"
 #include "fl/widgets/textures/savannah_background.hpp"
+#include "fl/widgets/tower_route_label.hpp"
 
 namespace fl::widgets {
 namespace {
@@ -94,26 +95,6 @@ ftxui::Element labeled_separator(std::string label, int width) {
   const int fill = std::max(0, width - static_cast<int>(marker.size()));
   return text(marker + std::string(static_cast<std::size_t>(fill), '-')) |
          size(WIDTH, EQUAL, width);
-}
-
-std::string tower_separator_label(const fl::primitives::PartyData& party) {
-  std::string label{party.name()};
-  const auto route = party.tower_route();
-  if (!route) return label;
-
-  std::string biome{route->biome_id};
-  if (route->biome_id == "origin_woodland_tower")
-    biome = "Origin Woodland";
-  else if (route->biome_id == "origin_plains_tower")
-    biome = "Origin Plains";
-  else if (route->biome_id == "origin_murky_swamp_tower")
-    biome = "Origin Murky Swamp";
-  else if (route->biome_id == "origin_caves_tower")
-    biome = "Origin Caves";
-  else if (route->biome_id == "origin_desert_tower")
-    biome = "Origin Desert";
-  label += " | " + biome + " | Floor " + std::to_string(route->floor) + "/100";
-  return label;
 }
 
 std::uint32_t forest_seed_for_party(const std::string& party_name, std::size_t party_index) {
@@ -234,7 +215,7 @@ ftxui::Element PartyBattleScreen::Render() {
   std::string divider_label = party_name;
   if (primary_party != nullptr) {
     party_name = std::string(primary_party->name());
-    divider_label = tower_separator_label(*primary_party);
+    divider_label = tower_route_label(*primary_party);
     if (primary_party->needs_farm_focus_choice()) {
       const auto selected = std::min(party_index_, parties.size() - 1);
       if (!farming_choice_ || farming_choice_party_index_ != selected) {

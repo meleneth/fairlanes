@@ -108,6 +108,7 @@ private:
   fl::generated::ftxer::ShellCallbacks shell_;
   std::optional<fl::monster::MonsterKind> return_monster_;
   std::optional<fl::skills::SkillId> selected_skill_;
+  std::optional<fl::generated::ftxer::ScreenId> presented_screen_;
   bool quit_requested_{false};
   bool sandbox_requested_{false};
   bool help_hint_collapsed_{false};

@@ -365,6 +365,21 @@ TEST_CASE("Manual village navigation is scoped to a selected party",
   REQUIRE(party.tower_route()->floor == 1);
 }
 
+TEST_CASE("Normal combat does not steal account battle navigation",
+          "[widgets][root][navigation][events]") {
+  fl::GrandCentral game{1, 1, 1};
+  auto root = make_gameplay_root(game);
+
+  REQUIRE(root.OnEvent(ftxui::Event::Character(" ")));
+  REQUIRE(root.current_screen() == fl::generated::ftxer::ScreenId::AccountBattle);
+  render_to_string(root);
+
+  fl::primitives::EncounterBuilder{game.account_context(0).account_data().party(0).party_ctx()}
+      .thump_it_out();
+
+  REQUIRE(root.current_screen() == fl::generated::ftxer::ScreenId::AccountBattle);
+}
+
 TEST_CASE("Village recruitment board claims an available milestone exactly once",
           "[widgets][story][recruitment]") {
   fl::GrandCentral game{1, 1, 0, true, true, 42, true};
@@ -500,6 +515,28 @@ TEST_CASE("Account battle combatants keep fixed twenty-percent widths",
     REQUIRE(screen.PixelAt(column * column_width, hp_row).character == "│");
     REQUIRE(screen.PixelAt((column + 1) * column_width - 1, hp_row).character == "│");
   }
+}
+
+TEST_CASE("Account battle shows every party tower route", "[widgets][account-battle][tower]") {
+  constexpr int width = 140;
+  constexpr int height = 40;
+  fl::GrandCentral gc{1, 2, 1};
+  auto account_ctx = gc.account_context(0);
+  REQUIRE(account_ctx.account_data().party(0).select_tower("origin_woodland_tower", 1));
+  REQUIRE(account_ctx.account_data().party(1).select_tower("origin_woodland_tower", 1));
+  fl::widgets::AccountBattleView view{account_ctx};
+
+  fl::widgets::force_battle_render_target(fl::widgets::BattleLayoutProfile::Standard);
+  auto element = view.Render() | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, width) |
+                 ftxui::size(ftxui::HEIGHT, ftxui::EQUAL, height);
+  auto screen =
+      ftxui::Screen::Create(ftxui::Dimension::Fixed(width), ftxui::Dimension::Fixed(height));
+  ftxui::Render(screen, element);
+  fl::widgets::clear_forced_battle_render_target();
+
+  const auto rendered = screen_text(screen);
+  REQUIRE(rendered.find("P1 Woodland Floor 1/100") != std::string::npos);
+  REQUIRE(rendered.find("P2 Woodland Floor 1/100") != std::string::npos);
 }
 
 TEST_CASE("Account battle rows stay fixed across encounter transitions",

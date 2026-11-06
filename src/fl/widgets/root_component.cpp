@@ -268,6 +268,7 @@ ftxui::Component RootComponent::make_keybind_help_overlay() {
 ftxui::Element RootComponent::decorate(generated::ScreenId screen, ftxui::Element content) {
   using namespace ftxui;
   ZoneScoped;
+  presented_screen_ = screen;
   console_overlay()->tick();
   important_notices_.tick();
   update_fps_counter();
@@ -425,7 +426,7 @@ void RootComponent::bind_party_presentation_events(fl::primitives::AccountData& 
 
 void RootComponent::on_party_combat_started(entt::entity account) {
   if (ctx_.account_data().account_id() == account && !ctx_.account_data().in_raid() &&
-      shell_.navigate)
+      presented_screen_ == generated::ScreenId::Raid && shell_.navigate)
     shell_.navigate(generated::ScreenId::PartyBattle, false);
 }
 
