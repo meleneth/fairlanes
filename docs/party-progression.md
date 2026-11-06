@@ -39,9 +39,11 @@ runs after the account's production beat and recruitment resolution.
 The controller issues the existing `PartyData::select_tower` request and
 `RecruitmentClaimRequested` story command. It never constructs an encounter:
 the normal `PartyLoop` remains the encounter scheduler in both manual and auto
-modes. Auto selects the newest sequentially unlocked Origin biome and claims the
-first legal opportunity for its party. Manual mode disables these strategic
-decisions without rewriting tower state.
+modes. Auto selects the least-progressed unlocked Origin biome, using declaration
+order to break ties, and claims the first legal opportunity for its party. This
+keeps the five towers moving through the recruitment bands instead of abandoning
+floor-25, floor-50, and floor-75 opportunities after their floor-9 unlocks.
+Manual mode disables these strategic decisions without rewriting tower state.
 
 The story autoplay toggle applies to all parties in the account. GrandCentral
 owns one controller per party, synchronizes all existing controllers through

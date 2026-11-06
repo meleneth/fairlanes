@@ -236,6 +236,37 @@ TEST_CASE("Origin autoplay claims legal recruitment and leaves surplus opportuni
           }) == recruit_decisions);
 }
 
+TEST_CASE("Origin autoplay revisits towers to staff a blocked second party",
+          "[origin-autoplay][recruitment][multi-party]") {
+  AutoHarness harness;
+  harness.enable();
+
+  int clears = 0;
+  while (harness.account.account_data().parties().size() < 2 && clears++ < 150)
+    harness.clear_selected_floor();
+  REQUIRE(harness.account.account_data().parties().size() == 2);
+
+  fl::primitives::OriginAutoProgression second_party_controller{harness.account, 1,
+                                                                harness.story.bus(), true};
+  second_party_controller.evaluate();
+  second_party_controller.evaluate();
+  auto& second_party = harness.account.account_data().party(1);
+  REQUIRE(second_party.members().size() == 1);
+
+  // A one-member party can become blocked at its frontier. The lead party's
+  // next floor-25 clear must still unlock and deliver another legal recruit.
+  second_party.block_origin_auto_progression(true);
+  clears = 0;
+  while (second_party.members().size() < 2 && clears++ < 10) {
+    harness.clear_selected_floor();
+    second_party_controller.evaluate();
+  }
+
+  REQUIRE(second_party.members().size() == 2);
+  REQUIRE_FALSE(second_party.encounter_start_blocked());
+  REQUIRE(harness.party().highest_tower_floor_cleared("origin_plains_tower") >= 25);
+}
+
 TEST_CASE("Origin autoplay bounds retries, farms, and returns to the failed frontier",
           "[origin-autoplay][recovery]") {
   AutoHarness harness;

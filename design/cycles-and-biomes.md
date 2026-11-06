@@ -55,10 +55,12 @@ is balanced.
 **Decided:** Origin autoplay is a deliberately limited early-game policy, not a
 general game-playing AI. When enabled for a party, it observes committed
 progression facts and submits ordinary destination and recruitment requests at
-simulation boundaries. It may choose the newest unlocked Origin biome, use a
-bounded retry/farming recovery after defeats, and stop when no legal recovery
-exists. Manual mode makes none of these strategic choices; both modes continue
-to use the same party loop and combat simulation.
+simulation boundaries. It advances the least-progressed unlocked Origin biome
+with deterministic Origin-order tie breaking, uses a bounded retry/farming
+recovery after defeats, and stops when no legal recovery exists. This simple
+policy keeps all five towers moving through their shared recruitment bands.
+Manual mode makes none of these strategic choices; both modes continue to use
+the same party loop and combat simulation.
 
 ## Cross-biome gates
 

@@ -44,7 +44,7 @@ private:
   bool recruit_if_possible();
   bool handle_defeat();
   bool handle_recovery_victory();
-  bool select_newest_unlocked_biome();
+  bool select_least_progressed_biome();
   void decide(std::string_view action, std::string_view target = {}, int floor = 0);
   void become_blocked(std::string_view reason);
 

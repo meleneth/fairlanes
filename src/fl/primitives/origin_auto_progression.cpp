@@ -112,7 +112,7 @@ void OriginAutoProgression::evaluate() {
     recovery_.reset();
     last_clear_.reset();
     completed_biome_.reset();
-    if (select_newest_unlocked_biome()) return;
+    if (select_least_progressed_biome()) return;
     become_blocked("Origin route complete");
     return;
   }
@@ -132,7 +132,7 @@ void OriginAutoProgression::evaluate() {
     become_blocked("no party members");
     return;
   }
-  if (select_newest_unlocked_biome()) return;
+  if (select_least_progressed_biome()) return;
 
   const auto route = *controlled.tower_route();
   if (route.floor <= controlled.highest_tower_floor_cleared(route.biome_id)) {
@@ -208,7 +208,7 @@ bool OriginAutoProgression::handle_recovery_victory() {
       last_clear_->floor == recovery_->frontier) {
     decide("frontier_recovered", recovery_->biome_id, recovery_->frontier);
     recovery_.reset();
-    return select_newest_unlocked_biome();
+    return select_least_progressed_biome();
   }
   ++recovery_->farming_victories;
   if (recovery_->farming_victories < kFarmingVictoriesBeforeRetry) {
@@ -224,23 +224,22 @@ bool OriginAutoProgression::handle_recovery_victory() {
   return true;
 }
 
-bool OriginAutoProgression::select_newest_unlocked_biome() {
+bool OriginAutoProgression::select_least_progressed_biome() {
   auto& controlled = party();
   const auto current = controlled.tower_route();
-  const auto current_it = current ? std::ranges::find(PartyData::kOriginBiomeIds, current->biome_id)
-                                  : PartyData::kOriginBiomeIds.end();
-  const auto current_index =
-      current_it == PartyData::kOriginBiomeIds.end()
-          ? std::size_t{0}
-          : static_cast<std::size_t>(std::distance(PartyData::kOriginBiomeIds.begin(), current_it));
-  for (std::size_t index = PartyData::kOriginBiomeIds.size(); index-- > current_index + 1;) {
-    const auto biome = PartyData::kOriginBiomeIds[index];
+  std::optional<std::string_view> selected;
+  int selected_floor = 101;
+  for (const auto biome : PartyData::kOriginBiomeIds) {
     if (!controlled.biome_unlocked(biome)) continue;
-    if (!controlled.select_tower(biome)) continue;
-    decide("select_biome", biome, controlled.latest_tower_floor(biome));
-    return true;
+    const int cleared = controlled.highest_tower_floor_cleared(biome);
+    if (cleared >= 100 || cleared >= selected_floor) continue;
+    selected = biome;
+    selected_floor = cleared;
   }
-  return false;
+  if (!selected || (current && current->biome_id == *selected)) return false;
+  if (!controlled.select_tower(*selected)) return false;
+  decide("select_biome", *selected, controlled.latest_tower_floor(*selected));
+  return true;
 }
 
 void OriginAutoProgression::decide(std::string_view action, std::string_view target, int floor) {
