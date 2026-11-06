@@ -158,6 +158,46 @@ TEST_CASE("The first physical progression floors resolve to authored lineups",
   REQUIRE(cover->cover.release_skill == fl::skills::SkillId::BumperRush);
 }
 
+TEST_CASE("Every Origin biome resolves a nonempty encounter for all one hundred floors",
+          "[tower][content][origin]") {
+  for (const auto biome : fl::primitives::PartyData::kOriginBiomeIds) {
+    for (int floor = 1; floor <= 100; ++floor) {
+      const auto* lineup = fl::primitives::generated_content::floor_lineup(biome, floor);
+      CAPTURE(biome, floor);
+      REQUIRE(lineup != nullptr);
+      REQUIRE(lineup->monster_count > 0);
+    }
+  }
+}
+
+TEST_CASE("Origin biomes unlock in order from each preceding floor nine",
+          "[tower][progression][biomes]") {
+  fl::GrandCentral game{1, 1, 5};
+  auto ctx = game.account_context(0).party_context(0);
+  auto& party = ctx.party_data();
+  std::vector<std::string> unlocked;
+  fl::events::ScopedPartyListener unlock_sub{
+      party.party_bus(), std::in_place_type<fl::events::BiomeUnlocked>,
+      [&](const fl::events::BiomeUnlocked& event) { unlocked.push_back(event.biome_id); }};
+
+  for (std::size_t biome_index = 0; biome_index < fl::primitives::PartyData::kOriginBiomeIds.size();
+       ++biome_index) {
+    const auto biome = fl::primitives::PartyData::kOriginBiomeIds[biome_index];
+    REQUIRE(party.biome_unlocked(biome));
+    REQUIRE(party.select_tower(biome));
+    for (int floor = 1; floor <= 9; ++floor) {
+      CAPTURE(biome, floor);
+      REQUIRE(party.tower_route()->floor == floor);
+      clear_selected_tower_floor(ctx);
+    }
+    if (biome_index + 1 < fl::primitives::PartyData::kOriginBiomeIds.size())
+      REQUIRE(party.biome_unlocked(fl::primitives::PartyData::kOriginBiomeIds[biome_index + 1]));
+  }
+
+  REQUIRE(unlocked == std::vector<std::string>{"origin_plains_tower", "origin_murky_swamp_tower",
+                                               "origin_caves_tower", "origin_desert_tower"});
+}
+
 TEST_CASE("Woodland floor nine unlocks Plains, whose first clear rewards the cape",
           "[tower][progression][reward]") {
   fl::GrandCentral game{1, 1, 5};

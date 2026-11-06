@@ -26,6 +26,19 @@
 
 namespace fl::primitives {
 
+namespace {
+
+std::string_view origin_biome_display(std::string_view biome_id) {
+  if (biome_id == "origin_woodland_tower") return "Origin Woodland Tower";
+  if (biome_id == "origin_plains_tower") return "Origin Plains Tower";
+  if (biome_id == "origin_murky_swamp_tower") return "Origin Murky Swamp Tower";
+  if (biome_id == "origin_caves_tower") return "Origin Caves Tower";
+  if (biome_id == "origin_desert_tower") return "Origin Desert Tower";
+  return biome_id;
+}
+
+} // namespace
+
 bool PartyRoster::remove(entt::entity member) {
   const auto found = std::ranges::find_if(
       members_, [member](const MemberData* candidate) { return candidate->member_id() == member; });
@@ -59,34 +72,17 @@ PartyData::PartyData(entt::entity party_id, fl::context::AccountCtx& account_ctx
 void PartyData::commit_tower_victory() {
   if (in_raid() || !encounter_data_ || encounter_tower_biome_.empty()) return;
 
-  int* selected = nullptr;
-  int* latest = nullptr;
-  int* cleared = nullptr;
-  if (encounter_tower_biome_ == "origin_woodland_tower") {
-    selected = &woodland_floor_;
-    latest = &woodland_latest_floor_;
-    cleared = &woodland_cleared_floor_;
-  } else if (encounter_tower_biome_ == "origin_plains_tower") {
-    selected = &plains_floor_;
-    latest = &plains_latest_floor_;
-    cleared = &plains_cleared_floor_;
-  } else {
-    return;
-  }
+  auto* tower = tower_state(encounter_tower_biome_);
+  if (tower == nullptr || !tower->unlocked) return;
 
-  const bool frontier = encounter_tower_floor_ == *latest && encounter_tower_floor_ > *cleared;
+  const bool frontier = encounter_tower_floor_ == tower->latest_floor &&
+                        encounter_tower_floor_ > tower->cleared_floor;
   if (frontier) {
-    *cleared = encounter_tower_floor_;
+    tower->cleared_floor = encounter_tower_floor_;
     party_bus_.emit(fl::events::PartyEvent{
         fl::events::TowerFloorCleared{encounter_tower_biome_, encounter_tower_floor_}});
 
-    if (encounter_tower_biome_ == "origin_woodland_tower" && encounter_tower_floor_ == 9 &&
-        !plains_unlocked_) {
-      plains_unlocked_ = true;
-      party_bus_.emit(fl::events::PartyEvent{fl::events::BiomeUnlocked{"origin_plains_tower"}});
-      log_->append_plain("Origin Plains Tower unlocked. Woodland progression continues until a "
-                         "new destination is selected.");
-    }
+    if (encounter_tower_floor_ == 9) unlock_next_origin_biome(encounter_tower_biome_);
     if (encounter_tower_biome_ == "origin_plains_tower" && encounter_tower_floor_ == 1 &&
         !plains_reward_awarded_) {
       fl::ecs::systems::LootDropSystem::grant_unique(
@@ -99,8 +95,8 @@ void PartyData::commit_tower_victory() {
       tower_complete_waiting_ = !repeat_selected_floor_;
       party_bus_.emit(fl::events::PartyEvent{fl::events::TowerCompleted{encounter_tower_biome_}});
     } else {
-      *latest = encounter_tower_floor_ + 1;
-      if (!repeat_selected_floor_) *selected = *latest;
+      tower->latest_floor = encounter_tower_floor_ + 1;
+      if (!repeat_selected_floor_) tower->selected_floor = tower->latest_floor;
     }
   }
   tower_floor_attempts_ = 0;
@@ -108,8 +104,8 @@ void PartyData::commit_tower_victory() {
 }
 
 std::optional<PartyData::TowerRoute> PartyData::tower_route() const noexcept {
-  if (tower_biome_ == "origin_woodland_tower") return TowerRoute{tower_biome_, woodland_floor_};
-  if (tower_biome_ == "origin_plains_tower") return TowerRoute{tower_biome_, plains_floor_};
+  const auto* tower = tower_state(tower_biome_);
+  if (tower && tower->unlocked) return TowerRoute{tower->biome_id, tower->selected_floor};
   return std::nullopt;
 }
 
@@ -121,19 +117,51 @@ void PartyData::begin_tower_encounter() {
 }
 
 int PartyData::latest_tower_floor(std::string_view biome_id) const noexcept {
-  if (biome_id == "origin_woodland_tower") return woodland_latest_floor_;
-  if (biome_id == "origin_plains_tower" && plains_unlocked_) return plains_latest_floor_;
-  return 0;
+  const auto* tower = tower_state(biome_id);
+  return tower && tower->unlocked ? tower->latest_floor : 0;
 }
 
 int PartyData::highest_tower_floor_cleared(std::string_view biome_id) const noexcept {
-  if (biome_id == "origin_woodland_tower") return woodland_cleared_floor_;
-  if (biome_id == "origin_plains_tower" && plains_unlocked_) return plains_cleared_floor_;
-  return 0;
+  const auto* tower = tower_state(biome_id);
+  return tower && tower->unlocked ? tower->cleared_floor : 0;
+}
+
+PartyData::OriginTowerState* PartyData::tower_state(std::string_view biome_id) noexcept {
+  const auto found = std::ranges::find(origin_towers_, biome_id, &OriginTowerState::biome_id);
+  return found == origin_towers_.end() ? nullptr : &*found;
+}
+
+const PartyData::OriginTowerState*
+PartyData::tower_state(std::string_view biome_id) const noexcept {
+  const auto found = std::ranges::find(origin_towers_, biome_id, &OriginTowerState::biome_id);
+  return found == origin_towers_.end() ? nullptr : &*found;
+}
+
+bool PartyData::biome_unlocked(std::string_view biome_id) const noexcept {
+  const auto* tower = tower_state(biome_id);
+  return tower != nullptr && tower->unlocked;
+}
+
+std::size_t PartyData::unlocked_origin_biome_count() const noexcept {
+  return static_cast<std::size_t>(
+      std::ranges::count(origin_towers_, true, &OriginTowerState::unlocked));
+}
+
+void PartyData::unlock_next_origin_biome(std::string_view cleared_biome) {
+  const auto current = std::ranges::find(kOriginBiomeIds, cleared_biome);
+  if (current == kOriginBiomeIds.end() || std::next(current) == kOriginBiomeIds.end()) return;
+  auto* next = tower_state(*std::next(current));
+  if (next == nullptr || next->unlocked) return;
+  next->unlocked = true;
+  party_bus_.emit(fl::events::PartyEvent{fl::events::BiomeUnlocked{std::string(next->biome_id)}});
+  log_->append_plain(fmt::format("{} unlocked. {} progression continues until a new destination "
+                                 "is selected.",
+                                 origin_biome_display(next->biome_id),
+                                 origin_biome_display(cleared_biome)));
 }
 
 bool PartyData::select_tower(std::string_view biome_id, std::optional<int> floor) {
-  if (biome_id != "origin_woodland_tower" && biome_id != "origin_plains_tower") {
+  if (tower_state(biome_id) == nullptr) {
     log_->append_plain("Tower destination rejected: unknown biome.");
     return false;
   }
@@ -164,7 +192,7 @@ bool PartyData::commit_tower_destination(std::string_view biome_id, int selected
   const auto current = tower_route();
   const bool changed = tower_biome_ != biome_id || !current || current->floor != selected_floor;
   tower_biome_ = biome_id;
-  (biome_id == "origin_woodland_tower" ? woodland_floor_ : plains_floor_) = selected_floor;
+  tower_state(biome_id)->selected_floor = selected_floor;
   if (changed) tower_floor_attempts_ = 0;
   tower_choice_pending_ = false;
   tower_complete_waiting_ = false;
@@ -423,11 +451,8 @@ std::optional<PartyData::TeacherEncounter>
 PartyData::find_accessible_teacher(entt::entity member, fl::skills::SkillKey skill) const {
   if (!members_.contains(member)) return std::nullopt;
 
-  constexpr std::array<std::string_view, 5> kOriginBiomes{
-      "origin_woodland_tower", "origin_plains_tower", "origin_murky_swamp_tower",
-      "origin_caves_tower", "origin_desert_tower"};
   std::optional<TeacherEncounter> best;
-  for (const auto biome : kOriginBiomes) {
+  for (const auto biome : kOriginBiomeIds) {
     const int accessible = latest_tower_floor(biome);
     for (int floor = 1; floor <= accessible; ++floor) {
       const auto* lineup = fl::primitives::generated_content::floor_lineup(biome, floor);

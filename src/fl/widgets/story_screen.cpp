@@ -1,6 +1,7 @@
 #include "story_screen.hpp"
 
 #include <algorithm>
+#include <array>
 #include <string>
 #include <utility>
 #include <vector>
@@ -15,6 +16,20 @@
 
 namespace fl::widgets {
 
+namespace {
+
+constexpr std::array<std::string_view, 5> kOriginBiomeNames{
+    "Origin Woodland", "Origin Plains", "Origin Murky Swamp", "Origin Caves", "Origin Desert"};
+
+std::string_view origin_biome_name(std::string_view biome_id) {
+  const auto found = std::ranges::find(fl::primitives::PartyData::kOriginBiomeIds, biome_id);
+  if (found == fl::primitives::PartyData::kOriginBiomeIds.end()) return biome_id;
+  return kOriginBiomeNames[static_cast<std::size_t>(
+      std::distance(fl::primitives::PartyData::kOriginBiomeIds.begin(), found))];
+}
+
+} // namespace
+
 StoryScreen::StoryScreen(const fl::primitives::ObjectiveSystem& objectives,
                          const fl::primitives::PartyData& party, EmitChoice emit_choice,
                          Purchase purchase, SelectTower select_tower, Recruit recruit, Start start)
@@ -24,11 +39,11 @@ StoryScreen::StoryScreen(const fl::primitives::ObjectiveSystem& objectives,
       mode_(start == Start::Objectives ? Mode::Objectives : Mode::Village) {}
 
 std::size_t StoryScreen::biome_count() const noexcept {
-  return party_->plains_unlocked() ? 2U : 1U;
+  return party_->unlocked_origin_biome_count();
 }
 
 std::string_view StoryScreen::selected_biome_id() const noexcept {
-  return biome_selection_ == 1 ? "origin_plains_tower" : "origin_woodland_tower";
+  return fl::primitives::PartyData::kOriginBiomeIds[biome_selection_];
 }
 
 void StoryScreen::open_dialogue(std::string_view id) {
@@ -180,14 +195,13 @@ ftxui::Element StoryScreen::Render() {
                            "  Cleared " + std::to_string(party_->highest_tower_floor_cleared(id)) +
                            "  Next " + std::to_string(party_->latest_tower_floor(id))));
     };
-    add_biome(0, "Origin Woodland", "origin_woodland_tower");
-    if (party_->plains_unlocked()) add_biome(1, "Origin Plains", "origin_plains_tower");
+    for (std::size_t index = 0; index < biome_count(); ++index)
+      add_biome(index, kOriginBiomeNames[index], fl::primitives::PartyData::kOriginBiomeIds[index]);
   } else if (mode_ == Mode::Floors) {
     title = "Choose a Floor";
     const auto biome = selected_biome_id();
     const int latest = party_->latest_tower_floor(biome);
-    lines.push_back(text(biome == "origin_plains_tower" ? "Origin Plains" : "Origin Woodland") |
-                    bold);
+    lines.push_back(text(std::string(origin_biome_name(biome))) | bold);
     lines.push_back(text("Cleared through floor " +
                          std::to_string(party_->highest_tower_floor_cleared(biome))));
     lines.push_back(

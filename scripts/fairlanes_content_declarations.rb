@@ -756,6 +756,23 @@ biome :origin_plains_tower, display: "Origin Plains Tower", floors: 100,
          cover: {protected: 0, protector: 1, release_skill: :bumper_rush}}
       ]
 
+# Temporary full-tower patterns keep every Origin biome playable while their
+# encounter identities and balance are refined through deliberate design work.
+tower_pattern :murky_swamp_progression,
+              monsters: %i[mosquito_choir dragonfly_cutter bog_snail]
+biome :origin_murky_swamp_tower, display: "Origin Murky Swamp Tower", floors: 100,
+      pattern: :murky_swamp_progression
+
+tower_pattern :caves_progression,
+              monsters: %i[cave_bat blind_scorpion echo_moth]
+biome :origin_caves_tower, display: "Origin Caves Tower", floors: 100,
+      pattern: :caves_progression
+
+tower_pattern :desert_progression,
+              monsters: %i[sand_scorpion tarantula_nomad]
+biome :origin_desert_tower, display: "Origin Desert Tower", floors: 100,
+      pattern: :desert_progression
+
 # Five tower biomes per Cycle. This plan also generates the brainstorming map
 # from the live monster declarations and their skill lists.
 biome_plan :origin_woodland_tower, cycle: :origin, order: 1,

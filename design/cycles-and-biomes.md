@@ -46,6 +46,12 @@ current declarations. They do not override this intended structure.
 The order describes the progression shape, not a requirement to finish each
 tower before touching the next.
 
+**Decided:** For the current playable Origin foundation, clearing floor 9 of a
+biome unlocks the next biome in the order above. This provides access to all
+five towers without requiring completion of the preceding 100-floor tower.
+Exact unlock milestones may be revisited as the overlapping progression economy
+is balanced.
+
 ## Cross-biome gates
 
 **Decided:** Special encounters may demand capabilities that are easier to
@@ -64,7 +70,9 @@ the broader Origin difficulty curve. Candidate questions belong in
 The first playable slice and its current numbers are documented in
 [the Origin Woodland progression slice](../docs/origin-woodland-slice.md).
 
-Per-party Woodland/Plains histories, automatic frontier continuation,
-repeat-floor farming, wipe retry, boundary destination changes, and floor-100
-completion are **Implemented**. The remaining declared biomes still require
-resolved encounter content before they can use the same runtime path.
+Per-party histories for all five Origin biomes, sequential floor-9 unlocks,
+automatic frontier continuation, repeat-floor farming, wipe retry, boundary
+destination changes, and floor-100 completion are **Implemented**. Every Origin
+tower has a temporary generated 100-floor encounter table using its declared
+monsters; those fallback patterns are implementation scaffolding, not settled
+encounter design or balance.

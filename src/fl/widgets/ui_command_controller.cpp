@@ -374,17 +374,19 @@ void UiCommandController::handle(std::string_view command) {
               ", attempts " + std::to_string(party.tower_floor_attempts()) + ")");
       else
         write("tower route inactive");
-      write(party.plains_unlocked() ? "Plains unlocked" : "Plains unlocks after Woodland floor 9");
-      if (party.tower_choice_pending())
-        write("Choose tower plains for the detour or tower woodland for floor 10.");
+      for (const auto biome : fl::primitives::PartyData::kOriginBiomeIds)
+        write(std::string(biome) + (party.biome_unlocked(biome) ? " unlocked" : " locked"));
       return;
     }
-    const auto biome = words[1] == "woodland" ? "origin_woodland_tower"
-                       : words[1] == "plains" ? "origin_plains_tower"
-                                              : "";
+    const auto biome = words[1] == "woodland"                       ? "origin_woodland_tower"
+                       : words[1] == "plains"                       ? "origin_plains_tower"
+                       : words[1] == "swamp" || words[1] == "murky" ? "origin_murky_swamp_tower"
+                       : words[1] == "caves"                        ? "origin_caves_tower"
+                       : words[1] == "desert"                       ? "origin_desert_tower"
+                                                                    : "";
     std::optional<int> floor;
     if (words.size() > 3) {
-      write("usage: tower <woodland|plains> [unlocked floor]");
+      write("usage: tower <woodland|plains|swamp|caves|desert> [unlocked floor]");
       return;
     }
     if (words.size() == 3) {
@@ -590,6 +592,9 @@ void UiCommandController::show_help(std::string_view topic) {
   if (topic == "tower") {
     write("tower woodland [floor]: choose Woodland and any unlocked floor");
     write("tower plains [floor]: choose Plains after Woodland floor 9");
+    write("tower swamp [floor]: choose Murky Swamp after Plains floor 9");
+    write("tower caves [floor]: choose Caves after Murky Swamp floor 9");
+    write("tower desert [floor]: choose Desert after Caves floor 9");
     write("tower status: show selected floor, latest unlock, and attempts");
     return;
   }

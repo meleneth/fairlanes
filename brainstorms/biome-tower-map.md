@@ -30,7 +30,7 @@ Each Cycle has five ordered 100-floor tower biomes. `Playable` means the biome h
 | `prairie_meerkat` | `pebble_spit`, `flee`, `thump` | 18 | `common_woodland` |
 | `dust_hare` | `bump`, `gnat_cloud`, `flee` | 22 | `common_woodland` |
 
-### 3. `origin_murky_swamp_tower` — Planned
+### 3. `origin_murky_swamp_tower` — Playable
 
 | Monster ID | Current skills | Current HP | Current runtime pool |
 | --- | --- | ---: | --- |
@@ -38,7 +38,7 @@ Each Cycle has five ordered 100-floor tower biomes. `Playable` means the biome h
 | `dragonfly_cutter` | `rake_line`, `venom_needle`, `flee` | 26 | `common_woodland` |
 | `bog_snail` | `shell_guard`, `squish`, `miasma_cloud` | 38 | `common_woodland` |
 
-### 4. `origin_caves_tower` — Planned
+### 4. `origin_caves_tower` — Playable
 
 | Monster ID | Current skills | Current HP | Current runtime pool |
 | --- | --- | ---: | --- |
@@ -46,7 +46,7 @@ Each Cycle has five ordered 100-floor tower biomes. `Playable` means the biome h
 | `blind_scorpion` | `venom_needle`, `burrow`, `bump` | 30 | `common_woodland` |
 | `echo_moth` | `whiteout`, `gnat_cloud`, `flee` | 24 | `common_woodland` |
 
-### 5. `origin_desert_tower` — Planned
+### 5. `origin_desert_tower` — Playable
 
 | Monster ID | Current skills | Current HP | Current runtime pool |
 | --- | --- | ---: | --- |

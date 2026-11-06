@@ -1,6 +1,7 @@
 // party_data.hpp
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <deque>
 #include <functional> // std::invoke
@@ -202,6 +203,9 @@ public:
     std::string_view biome_id;
     int floor;
   };
+  static constexpr std::array<std::string_view, 5> kOriginBiomeIds{
+      "origin_woodland_tower", "origin_plains_tower", "origin_murky_swamp_tower",
+      "origin_caves_tower", "origin_desert_tower"};
   std::optional<TowerRoute> tower_route() const noexcept;
   bool select_tower(std::string_view biome_id, std::optional<int> floor = std::nullopt);
   int latest_tower_floor(std::string_view biome_id) const noexcept;
@@ -220,8 +224,10 @@ public:
     return encounter_start_blocked_;
   }
   bool plains_unlocked() const noexcept {
-    return plains_unlocked_;
+    return biome_unlocked("origin_plains_tower");
   }
+  bool biome_unlocked(std::string_view biome_id) const noexcept;
+  std::size_t unlocked_origin_biome_count() const noexcept;
   bool tower_choice_pending() const noexcept {
     return tower_choice_pending_;
   }
@@ -360,14 +366,24 @@ private:
   std::string tower_biome_{};
   std::string encounter_tower_biome_{};
   int encounter_tower_floor_{0};
-  int woodland_floor_{1};
-  int plains_floor_{1};
-  int woodland_latest_floor_{1};
-  int plains_latest_floor_{1};
-  int woodland_cleared_floor_{0};
-  int plains_cleared_floor_{0};
+  struct OriginTowerState {
+    std::string_view biome_id;
+    int selected_floor{1};
+    int latest_floor{1};
+    int cleared_floor{0};
+    bool unlocked{false};
+  };
+  std::array<OriginTowerState, 5> origin_towers_{{
+      {kOriginBiomeIds[0], 1, 1, 0, true},
+      {kOriginBiomeIds[1], 1, 1, 0, false},
+      {kOriginBiomeIds[2], 1, 1, 0, false},
+      {kOriginBiomeIds[3], 1, 1, 0, false},
+      {kOriginBiomeIds[4], 1, 1, 0, false},
+  }};
+  OriginTowerState* tower_state(std::string_view biome_id) noexcept;
+  const OriginTowerState* tower_state(std::string_view biome_id) const noexcept;
+  void unlock_next_origin_biome(std::string_view cleared_biome);
   int tower_floor_attempts_{0};
-  bool plains_unlocked_{false};
   bool tower_choice_pending_{false};
   bool story_shop_pending_{false};
   int darrin_marks_{0};

@@ -19,9 +19,14 @@ both are safe. Request and committed facts use the existing party bus.
 
 ## Tower authority
 
-`PartyData` is the tower progression authority. Woodland/Plains unlocks,
+`PartyData` is the tower progression authority. Origin biome unlocks,
 highest-cleared floors, frontier floors, selected destination, attempts, and
 pending destination are per party.
+
+All five Origin towers now use that authority. Clearing floor 9 of Woodland,
+Plains, Murky Swamp, or Caves unlocks the next ordered biome for that party.
+Each tower currently has a generated 100-floor fallback pattern so it remains
+playable while authored encounter design is refined.
 
 - A frontier victory emits `TowerFloorCleared` once, advances the frontier, and
   automatically continues.

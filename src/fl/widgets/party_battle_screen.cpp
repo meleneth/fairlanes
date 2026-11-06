@@ -106,6 +106,12 @@ std::string tower_separator_label(const fl::primitives::PartyData& party) {
     biome = "Origin Woodland";
   else if (route->biome_id == "origin_plains_tower")
     biome = "Origin Plains";
+  else if (route->biome_id == "origin_murky_swamp_tower")
+    biome = "Origin Murky Swamp";
+  else if (route->biome_id == "origin_caves_tower")
+    biome = "Origin Caves";
+  else if (route->biome_id == "origin_desert_tower")
+    biome = "Origin Desert";
   label += " | " + biome + " | Floor " + std::to_string(route->floor) + "/100";
   return label;
 }

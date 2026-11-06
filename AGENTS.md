@@ -644,8 +644,9 @@ Important progression notices are driven by typed `BiomeUnlocked` and
 `CycleUnlocked` party events, and the existing `AchievementUnlocked` bus. The
 root owns a queued, colored notice overlay that rises from lower right to upper
 right. Space or Enter acknowledges one notice and is consumed before normal
-input handling. The floor-9 Woodland clear currently emits `BiomeUnlocked` for
-Origin Plains; cycle unlock producers are future work.
+input handling. Each floor-9 clear in the ordered Origin route emits
+`BiomeUnlocked` for the next biome (Woodland, Plains, Murky Swamp, Caves, then
+Desert); cycle unlock producers are future work.
 
 Normal client startup now uses the first story slice: a day-zero Visitor defeats
 an empty party, revealing the Ruby-authored **Recruit a hero** objective. `o`
@@ -706,11 +707,13 @@ Armor, Max HP, and per-channel resistances through `EquipmentBuilder`.
 Effective combat stats read currently equipped items, so swapping does not
 stack bonuses or heal. An explicit tower floor goes through `EncounterBuilder`
 while ordinary spawn selection remains unchanged. The generated floor manifest
-is `docs/tour/generated/floor-manifest.md`. The first playable route runs
-Woodland floors 1–10, unlocks Plains on clearing floor 9, and awards Mossbound
-Cape after Plains floor 1. See `docs/origin-woodland-slice.md`. The five towers
-per Cycle, their monster skills, and unassigned monsters and skills are
-generated from the Ruby DSL into `brainstorms/biome-tower-map.md`; run
+is `docs/tour/generated/floor-manifest.md`. The first authored slice runs
+Woodland floors 1–10 and awards Mossbound Cape after Plains floor 1. All five
+Origin towers are playable through sequential floor-9 unlocks and currently use
+temporary 100-floor generated patterns where encounters have not yet been
+individually authored. See `docs/origin-woodland-slice.md`. The five towers per
+Cycle, their monster skills, and unassigned monsters and skills are generated
+from the Ruby DSL into `brainstorms/biome-tower-map.md`; run
 `fairlanes_biome_plan_check` to verify it.
 
 Use specific EnTT headers: `entity/entity.hpp` for IDs/null, `entity/fwd.hpp`
