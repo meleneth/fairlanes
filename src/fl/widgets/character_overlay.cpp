@@ -144,8 +144,8 @@ ftxui::Element CharacterOverlay::Render() {
                                     "boundary; combat remains live behind this overlay."
                                   : message_)});
   return window(text("Character skills & equipment"), std::move(body)) |
-         size(WIDTH, LESS_THAN, 110) | size(HEIGHT, LESS_THAN, 40) | center |
-         bgcolor(fl::lospec500::color_at(0)) | clear_under;
+         size(WIDTH, LESS_THAN, 110) | size(HEIGHT, LESS_THAN, 40) |
+         bgcolor(fl::lospec500::color_at(0)) | clear_under | center;
 }
 
 } // namespace fl::widgets

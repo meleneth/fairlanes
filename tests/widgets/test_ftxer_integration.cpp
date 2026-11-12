@@ -91,12 +91,16 @@ TEST_CASE("Character overlay preserves the active battle and live simulation",
   REQUIRE(root.composition->OnEvent(ftxui::Event::Character("c")));
   const auto open = render(root.component);
   REQUIRE(open.find("Character skills & equipment") != std::string::npos);
+  REQUIRE(open.find("Stormbreak Company") != std::string::npos);
   REQUIRE(open.find("MAX") != std::string::npos);
   REQUIRE(open.find("1 Cloth (control)") != std::string::npos);
   const auto before = game.world_clock().elapsed_beats();
   game.advance_beat();
   REQUIRE(game.world_clock().elapsed_beats() == before + 1);
   REQUIRE(root.composition->current_screen() == screen);
+  const auto live = render(root.component);
+  REQUIRE(live.find("Character skills & equipment") != std::string::npos);
+  REQUIRE(live.find("Stormbreak Company") != std::string::npos);
 
   REQUIRE(root.composition->OnEvent(ftxui::Event::Escape));
   REQUIRE(root.composition->current_screen() == screen);
