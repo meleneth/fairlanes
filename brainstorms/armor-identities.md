@@ -1,8 +1,8 @@
 # Armor identity directions
 
-> **Brainstorm — non-canonical.** Canonical design says armor type should be a
-> primary influence on emergent combat role, but assigns no bonuses yet. See
-> [`design/characters.md`](../design/characters.md).
+> **Brainstorm — non-canonical.** Canonical design leaves armor type's degree of
+> influence and particular bonuses unresolved. See
+> [`design/equipment.md`](../design/equipment.md).
 
 Possible axes to explore without assigning fixed identities:
 
@@ -27,6 +27,10 @@ Questions for later design approval:
   learned skills?
 - How can armor guide a role without becoming an innate class under another
   name?
+- Should armor kind remain a compatibility group for automatic gearing, or is
+  the current grouping only temporary inventory behavior?
+- Should weapon style share armor-kind labels at all? The current automatic
+  gearing path couples them, but accepted design does not.
 
 The discipline/armor affinities proposed in
 [`grimoire_cycle_focuses.md`](grimoire_cycle_focuses.md) remain one exploratory

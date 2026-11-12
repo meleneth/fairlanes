@@ -11,6 +11,13 @@ capabilities are exercised, and characters acquire skills through observation.
 See [characters](characters.md) and [progression](progression.md) for the primary
 rules.
 
+**Decided:** Skills may value one or several equipment-provided stats, and
+different stats may affect different skill dimensions. Scaling relationships
+are explicit and skill-specific: Attack is not automatically applied to every
+skill, and a universal damage multiplier is not a substitute for meaningful
+build choices. Equipment owns the complete rule in
+[equipment](equipment.md).
+
 **Decided:** Defensive mechanics have domains of effectiveness. No single
 defensive mechanism must answer every threat. Significant encounters should
 permit more than one viable solution through preparation, party construction,

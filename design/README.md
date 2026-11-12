@@ -25,6 +25,8 @@ home rather than restating a divergent copy.
 
 - [Characters](characters.md): character identity, role formation, and skill
   availability.
+- [Equipment](equipment.md): equipment power, specialization, provenance, and
+  build-shaping stat bonuses.
 - [Progression](progression.md): levels, XP, and progression philosophy.
 - [Parties and recruitment](parties-and-recruitment.md): roster structure,
   recruitment milestones, and event operation.

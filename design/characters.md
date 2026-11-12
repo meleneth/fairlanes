@@ -2,7 +2,8 @@
 
 Primary authority for player-character identity and the sources of combat role.
 See [progression](progression.md) for levels and XP and [combat](combat.md) for
-how those sources interact in encounters.
+how those sources interact in encounters. Equipment specialization and armor's
+unresolved mechanical identity are owned by [equipment](equipment.md).
 
 ## Shared foundation
 
@@ -36,9 +37,9 @@ biome-specific hero abilities require a new explicit design decision.
 - equipped skills; and
 - combat strategy.
 
-Armor type is intended to be a primary influence on role. Its particular
-bonuses and tradeoffs are **Unresolved**; candidate identities belong in
-[`brainstorms/armor-identities.md`](../brainstorms/armor-identities.md).
+Equipment and skills shape specialization without creating fixed classes.
+Armor type's particular bonuses, tradeoffs, and degree of influence are
+**Unresolved**; see [equipment](equipment.md) for the authoritative boundary.
 
 ## Skills
 

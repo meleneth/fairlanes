@@ -16,6 +16,13 @@ directly to the same floor number in every biome. Players should move between
 biomes for useful skills, equipment, recruitment opportunities, and other
 capabilities.
 
+**Decided:** Biome origin influences the probability distribution of equipment
+bonuses without absolutely restricting them. This creates cross-biome farming
+incentives: equipment from an earlier biome may remain useful when its stat
+distribution better supports a newly observed skill. Exact Origin weights and
+stat associations are experimental. Equipment owns the complete rule in
+[equipment](equipment.md).
+
 **Decided:** Tower history, biome unlocks, the selected farming destination,
 and pending destination changes are party-scoped. Strategic destination
 requests made during combat commit at the encounter boundary; the latest valid

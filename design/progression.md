@@ -25,6 +25,9 @@ arbitrary maximum level before entering another cycle.
 that baseline. Skills determine how available power is applied. Leveling alone
 must not become a universal answer to progression barriers.
 
+Equipment specialization, including the distinction between tier budget, slot,
+biome influence, and skill value, is owned by [equipment](equipment.md).
+
 Players may solve difficult encounters through combinations of levels,
 equipment, learned skills, skill loadouts, party composition, tactical choices,
 and biome detours. Skilled players may advance while underleveled; farming may
