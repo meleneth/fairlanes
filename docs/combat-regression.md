@@ -15,6 +15,7 @@ scripts/regress compare origin_woodland_brace_progression
 scripts/regress compare origin_woodland_honey_badger --json
 scripts/regress recruitment
 scripts/regress inspect build-linux-debug/regression-artifacts/origin_woodland_brace_progression/learn_brace/recordings/origin_woodland_brace_progression.learn_brace.seed1.json --mechanic brace
+scripts/regress inspect build-linux-debug/regression-artifacts/origin_woodland_brace_progression/learn_brace/recordings/origin_woodland_brace_progression.learn_brace.seed1.json --classification attrition
 scripts/regress verify
 ```
 
@@ -34,11 +35,12 @@ replay divergence. Open the full recording only if that focused timeline is not
 enough. Do not pipe whole recordings or build logs into an automated agent's
 context.
 
-`--json` emits `fairlanes-regression-experiment-summary` version 1. It contains
+`--json` emits `fairlanes-regression-experiment-summary` version 2. It contains
 aggregates, compact per-seed outcomes, semantic assertion results, mechanic
-metrics, and comparison deltas—not the event stream. Measurements unavailable
-from authoritative data are `null`. Full recordings remain beside the compact
-per-run `fairlanes-regression-run-summary` version 1 files. These summary schemas
+metrics, classification counts and evidence, and comparison deltas—not the event
+stream. Measurements unavailable from authoritative data are explicitly
+indeterminate. Full recordings remain beside the compact per-run
+`fairlanes-regression-run-summary` version 2 files. These summary schemas
 are independent of combat recording versions.
 
 Successful build and test output is captured rather than printed. A failure
@@ -99,7 +101,11 @@ Existing simple recordings continue to use `fairlanes-combat-recording` version
 metrics. Version 2 adds an ordered encounter list, encounter indexes and global
 timestamps on events, per-encounter results, retained party snapshots, and
 explicit between-encounter skill selection inputs. The reader and replay path
-accept both versions. Recordings contain the fixture ID, build version and source
+accept both versions. Legacy pinned recordings without a content-identity policy
+are verified from their full deterministic inputs, initial state, event stream,
+and terminal results; newly written recordings declare strict content identity
+and also require the generated-content hash to match. Recordings contain the
+fixture ID, build version and source
 revision, SHA-256 of the Ruby content
 declarations, generator, and library sources, gameplay seed and sequence,
 beat cap, expected and actual results, explicit initial actor stats, ATB
@@ -140,6 +146,45 @@ resolved target, so Cover assertions do not infer interception from log text.
 Status state events similarly make Brace application and consumption explicit.
 The Cover fixture now ends in hero victory with Attack scaling active; its
 asserted purpose remains the causal interception and release sequence.
+
+## Behavioral classifications
+
+Terminal outcome, observed behavior, and declared expectations are independent.
+A beat cap remains a terminal outcome; it does not itself prove a stalemate.
+Each classification uses the versioned `fairlanes-combat-classification` schema,
+an encounter scope, `observed`, `suspected`, or `indeterminate` status, and
+concise structured evidence. Results are ordered by stable classification ID
+and then encounter index. Classification code reads production-session
+telemetry and never changes combat state.
+
+| ID | Meaning and evidence | Limitation |
+| --- | --- | --- |
+| `no_progress` | A prolonged interval has no HP, status, or instrumented resource progress | A short setup interval is not classified |
+| `stalemate_candidate` | A beat-capped no-progress encounter repeatedly completes only nonproductive actions | Always `suspected`; proof would require reachability analysis showing no future action, expiry, target, RNG, or resource transition can lead to victory |
+| `control_lock` | A living actor spends at least half the encounter under one prolonged full action-denial interval | Silence is not universal denial because it blocks only spell-tagged skills |
+| `resource_exhaustion` | Authoritative resource telemetry identifies exhausted actors and resources | Current combat lacks general action-resource telemetry, so this is `indeterminate`, never inferred from inactivity |
+| `attrition` | A long encounter distributes repeated HP/status progress without a dominant idle interval | This describes curve shape, not whether duration is balanced |
+| `burst_dominance` | A short terminal victory has productive action from only one side before meaningful retaliation | It does not claim another seed could not retaliate |
+
+Thresholds are classifier policy expressed in deterministic simulated uWu, not
+gameplay balance rules. The production session stores bounded per-encounter
+totals and bounded actor rows: HP loss/recovery, other state changes, action
+attempts/completions/productivity, first meaningful action, longest no-progress
+interval, and Freeze/Stun denial uptime. Dead actors do not accrue denial time,
+and every longitudinal encounter resets telemetry. Rendered log text is not an
+input.
+
+Variant declarations accept `classification_expectations`, mapping a stable ID
+to `required`, `forbidden`, `allowed`, or `observe`. Omitted entries default to
+`observe`. Only required/forbidden failures affect correctness; allowed and
+unasserted differences remain diagnostics. Unknown IDs, policies, and malformed
+maps fail content validation.
+
+Future classifications need authoritative telemetry for consumable skill
+resources and regeneration, rejected or retargeted attempts, partial Silence
+eligibility by current loadout, evasion attempts, and explicit healing-source
+events. Until those measurements exist, analysis reports indeterminate evidence
+instead of invented zeroes.
 
 Use `scripts/regress compare FIXTURE` for these experiments. The lower-level
 equivalent still supports `--all-seeds`, `--record-dir`, and `--summary-dir`.

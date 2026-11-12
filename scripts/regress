@@ -40,6 +40,17 @@ def print_experiment(report, seed_breakdown: false)
     variant.dig("correctness", "semantic_assertions").each do |assertion|
       puts "    #{assertion['passed'] ? 'PASS' : 'FAIL'}: #{assertion['id']} (observed=#{assertion['observed']})"
     end
+    variant.dig("correctness", "classification_expectations").each do |expectation|
+      puts "    #{expectation['passed'] ? 'PASS' : 'FAIL'}: classification #{expectation['id']} is #{expectation['policy']} (observed=#{expectation['observed']})"
+    end
+    classifications = variant.fetch("classifications")
+    unless classifications.fetch("counts").empty?
+      puts "    classifications: #{classifications['counts'].map { |key, count| "#{key}=#{count}" }.join(' ')}"
+      classifications.fetch("evidence").first(3).each do |entry|
+        interval = entry.dig("evidence", "interval_uwu")
+        puts "      #{entry['id']} #{entry['status']} seed=#{entry['seed']} encounter=#{entry.dig('scope', 'encounter_index')} interval=#{interval || 'n/a'}"
+      end
+    end
     observe = variant.dig("mechanics", "observe")
     brace = variant.dig("mechanics", "brace")
     bleed = variant.dig("mechanics", "bleed")
@@ -58,6 +69,16 @@ def print_experiment(report, seed_breakdown: false)
     puts "  OBSERVATION #{comparison['candidate']} - #{comparison['baseline']}: wins=#{delta['victories'] >= 0 ? '+' : ''}#{delta['victories']}, duration=#{number(delta['mean_duration_seconds'])}s, party_hp=#{number(delta['mean_remaining_party_hp'])}, survivors=#{number(delta['mean_survivors'])}"
   end
   puts "  artifacts: #{report.fetch('artifacts')}"
+end
+
+def print_classification(report)
+  puts "#{report['fixture']} seed=#{report['seed']} outcome=#{report['outcome']}"
+  puts "  classification=#{report['classification']}"
+  report.fetch("evidence").each do |entry|
+    puts "  encounter=#{entry.dig('scope', 'encounter_index')} status=#{entry['status']} evidence=#{JSON.generate(entry['evidence'])}"
+  end
+  puts "  no matching evidence" if report.fetch("evidence").empty?
+  puts "  recording: #{report['recording']}"
 end
 
 def print_timeline(report)
@@ -96,6 +117,7 @@ parser = OptionParser.new do |opts|
   opts.on("--encounter N", Integer, "Inspect one encounter index") { |value| options[:encounter] = value }
   opts.on("--skill ID", "Inspect one skill ID, such as brace/1") { |value| options[:skill] = value }
   opts.on("--mechanic NAME", "Inspect brace, bleed, or cover events") { |value| options[:mechanic] = value }
+  opts.on("--classification ID", "Inspect focused classification evidence") { |value| options[:classification] = value }
   opts.on("--limit N", Integer, "Maximum timeline events (default 60)") { |value| options[:limit] = value }
   opts.on("--seeds", "Include the seed-by-seed result table") { options[:seeds] = true }
   opts.on("--replay", "Verify the inspected recording through production replay") { options[:replay] = true }
@@ -133,9 +155,11 @@ begin
     raise FairlanesRegression::Error, "unexpected arguments: #{ARGV.join(' ')}" unless ARGV.empty?
     replay = harness.verify_recording(path) if options[:replay]
     report = harness.inspect_recording(path, encounter: options[:encounter], skill: options[:skill],
-                                       mechanic: options[:mechanic], limit: options[:limit])
+                                       mechanic: options[:mechanic], classification: options[:classification],
+                                       limit: options[:limit])
     report["replay"] = replay if replay
-    puts(options[:json] ? JSON.pretty_generate(report) : print_timeline(report))
+    puts(options[:json] ? JSON.pretty_generate(report) :
+           options[:classification] ? print_classification(report) : print_timeline(report))
   when "verify"
     passed = harness.verify
     puts(options[:json] ? JSON.pretty_generate({"schema" => "fairlanes-regression-verification",

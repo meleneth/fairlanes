@@ -18,6 +18,9 @@ module FairlanesContent
                                       :brace_applied, :brace_consumed, :brace_mitigated,
                                       :eviscerate_cast, :bleed_applied, :bleed_ticked,
                                       :bleed_death, :cover_intercepted, :cover_released].freeze
+    REGRESSION_CLASSIFICATIONS = Set[:no_progress, :stalemate_candidate, :control_lock,
+                                     :resource_exhaustion, :attrition, :burst_dominance].freeze
+    CLASSIFICATION_POLICIES = Set[:required, :forbidden, :allowed, :observe].freeze
     GEAR_SLOTS = Set[:mainhand, :offhand, :chest, :helm, :pants, :boots,
                      :gloves, :sleeves, :belt, :cape, :necklace, :ring_1,
                      :ring_2, :knife].freeze
@@ -410,7 +413,7 @@ module FairlanesContent
         errors << "#{prefix} has duplicate variants" unless variant_ids.uniq.size == variant_ids.size
         variants.each do |variant|
           unless variant.is_a?(Hash) &&
-                 (variant.keys - %i[id equipped_item generated_equipment skill_overrides observe_members next_skill expected_wins assertions]).empty?
+                 (variant.keys - %i[id equipped_item generated_equipment skill_overrides observe_members next_skill expected_wins assertions classification_expectations]).empty?
             errors << "#{prefix} variant has unknown fields"
           end
           errors << "#{prefix} has invalid variant id" unless stable_id?(variant[:id])
@@ -452,6 +455,12 @@ module FairlanesContent
           unless assertions.is_a?(Array) && assertions.uniq.size == assertions.size &&
                  assertions.all? { |assertion| VALID_REGRESSION_ASSERTIONS.include?(assertion) }
             errors << "#{prefix} has invalid semantic assertions"
+          end
+          classifications = variant.fetch(:classification_expectations, {})
+          unless classifications.is_a?(Hash) && classifications.all? do |id, policy|
+            REGRESSION_CLASSIFICATIONS.include?(id) && CLASSIFICATION_POLICIES.include?(policy)
+          end
+            errors << "#{prefix} has invalid classification expectations"
           end
         end
       end

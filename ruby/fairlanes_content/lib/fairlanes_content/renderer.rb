@@ -1683,6 +1683,8 @@ module FairlanesContent
                 "observe_members" => variant.fetch(:observe_members, []),
                 "next_skill" => variant[:next_skill]&.to_s,
                 "assertions" => variant.fetch(:assertions, []).map(&:to_s),
+                "classification_expectations" => variant.fetch(:classification_expectations, {})
+                                                         .transform_keys(&:to_s).transform_values(&:to_s),
                 "expected_wins" => variant[:expected_wins] && [variant[:expected_wins].begin, variant[:expected_wins].end] }
             end }
         end

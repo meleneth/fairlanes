@@ -35,7 +35,7 @@ TEST_CASE("Seeded regression fights repeat their ordered events", "[regression][
   fl::regression::Session compact{{"woodland_mouse_duel", 42, 1200}};
   while (!compact.finished()) compact.advance_beat();
   REQUIRE(compact.summary().at("schema") == "fairlanes-regression-run-summary");
-  REQUIRE(compact.summary().at("version") == 1);
+  REQUIRE(compact.summary().at("version") == 2);
   REQUIRE(compact.summary().at("seed") == 42);
   REQUIRE(compact.summary().at("outcome") == "hero_victory");
   REQUIRE(compact.recording().at("version") == 1);
@@ -44,8 +44,15 @@ TEST_CASE("Seeded regression fights repeat their ordered events", "[regression][
   const auto second = completed_recording(1);
   REQUIRE(first.at("events") == second.at("events"));
   REQUIRE(first.at("result") == second.at("result"));
+  REQUIRE(first.at("regression_telemetry") == second.at("regression_telemetry"));
   REQUIRE(first.at("events").back().at("type") == "end");
   REQUIRE(first.at("events").back().at("outcome") == "hero_victory");
+  const auto& telemetry = compact.summary().at("final_encounter").at("telemetry");
+  REQUIRE(telemetry.at("schema") == "fairlanes-combat-telemetry");
+  REQUIRE(telemetry.at("version") == 1);
+  REQUIRE(telemetry.at("actions").at("attempted").get<int>() > 0);
+  REQUIRE(telemetry.at("progress").at("hp_lost").get<int>() > 0);
+  REQUIRE(telemetry.at("resources").at("available") == false);
 }
 
 TEST_CASE("Overdrive changes pacing without changing gameplay events", "[regression][overdrive]") {
@@ -64,6 +71,13 @@ TEST_CASE("Beat cap is recorded separately from a loss and divergence is located
   REQUIRE(capped.finished());
   REQUIRE(capped.outcome() == "beat_cap");
   REQUIRE(capped.recording().at("result").at("outcome") == "beat_cap");
+
+  auto strict_content = capped.recording();
+  strict_content["content_sha256"] = "different";
+  REQUIRE(capped.first_divergence(strict_content).value().find("content identity") !=
+          std::string::npos);
+  strict_content.erase("content_identity_policy");
+  REQUIRE_FALSE(capped.first_divergence(strict_content).has_value());
 
   auto changed = capped.recording();
   changed["events"][0]["outcome"] = "mouse_victory";
@@ -117,6 +131,8 @@ TEST_CASE("Brace learning persists into the next authored encounter and is selec
   REQUIRE(recording.at("version") == 2);
   REQUIRE(recording.at("encounters").size() == 2);
   REQUIRE(recording.at("encounter_results").size() == 2);
+  REQUIRE(recording.at("encounter_results").at(0).at("telemetry").at("duration_uwu") > 0);
+  REQUIRE(recording.at("encounter_results").at(1).at("telemetry").at("duration_uwu") > 0);
   REQUIRE(recording.at("encounter_results").at(0).at("outcome") == "hero_victory");
   REQUIRE(recording.at("encounter_results").at(1).at("outcome") == "hero_victory");
   REQUIRE(std::ranges::any_of(recording.at("events"), [](const auto& event) {

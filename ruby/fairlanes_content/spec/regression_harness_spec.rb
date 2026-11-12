@@ -5,6 +5,35 @@ require "rbconfig"
 require_relative "../../../scripts/regression_harness"
 
 RSpec.describe FairlanesRegression do
+  def telemetry(duration: 10_000, changes: 2, hp_lost: 5, longest_idle: 5_000,
+                attempted: 2, completed: 2, productive: 2, actors: nil, resources: nil)
+    actors ||= [
+      {"id" => "hero", "side" => "heroes", "attempted_actions" => attempted,
+       "completed_actions" => completed, "productive_actions" => productive,
+       "first_meaningful_action_uwu" => 4_800, "control_denied_uwu" => 0,
+       "longest_control_denial_uwu" => 0},
+      {"id" => "enemy", "side" => "enemies", "attempted_actions" => attempted,
+       "completed_actions" => completed, "productive_actions" => productive,
+       "first_meaningful_action_uwu" => 4_800, "control_denied_uwu" => 0,
+       "longest_control_denial_uwu" => 0}
+    ]
+    {"schema" => "fairlanes-combat-telemetry", "version" => 1,
+     "duration_uwu" => duration,
+     "progress" => {"hp_lost" => hp_lost, "hp_recovered" => 0,
+                    "other_state_changes" => 0, "meaningful_changes" => changes,
+                    "longest_no_progress_uwu" => longest_idle},
+     "actions" => {"attempted" => attempted, "completed" => completed,
+                   "productive" => productive, "nonproductive" => completed - productive},
+     "actors" => actors,
+     "resources" => resources || {"available" => false, "reason" => "not instrumented"}}
+  end
+
+  def classifications(outcome: "hero_victory", **telemetry_options)
+    described_class::Classifications.analyze_encounter(
+      {"encounter_index" => 0, "outcome" => outcome,
+       "telemetry" => telemetry(**telemetry_options)})
+  end
+
   def run_summary(seed:, outcome: "hero_victory", learned: true, cap: false)
     initial = [{"known_skills" => ["observe/1"], "loadout" => ["observe/1"],
                 "stats" => {"attack" => 3, "armor" => 2, "max_hp" => 20,
@@ -86,6 +115,10 @@ RSpec.describe FairlanesRegression do
       File.write(path, JSON.generate(
                          "fixture" => "brace_test", "gameplay_seed" => 4,
                          "result" => {"outcome" => "hero_victory"},
+                         "regression_telemetry" => [
+                           {"encounter_index" => 0, "outcome" => "hero_victory",
+                            "telemetry" => telemetry}
+                         ],
                          "events" => [
                            {"seq" => 1, "uwu" => 80, "type" => "action", "skill" => "brace/1",
                             "encounter_index" => 0},
@@ -95,8 +128,12 @@ RSpec.describe FairlanesRegression do
       harness = described_class::Harness.new(root: dir)
       report = harness.inspect_recording(path, encounter: 0, mechanic: "brace")
       expect(report.fetch("events").map { |event| event.fetch("seq") }).to eq([1])
+      focused = harness.inspect_recording(path, classification: "resource_exhaustion")
+      expect(focused.fetch("evidence").first.fetch("status")).to eq("indeterminate")
       expect { harness.inspect_recording(path, mechanic: "bogus") }.to raise_error(
         described_class::Error, /unknown mechanic/)
+      expect { harness.inspect_recording(path, classification: "bogus") }.to raise_error(
+        described_class::Error, /unknown classification/)
     end
   end
 
@@ -135,5 +172,125 @@ RSpec.describe FairlanesRegression do
       expect(report.dig("party_five_opportunities", "declared")).to eq(5)
       expect(report.fetch("checks").values).to all(be(true))
     end
+  end
+
+  it "leaves a normal short victory free of pathological classifications" do
+    ids = classifications.map { |entry| [entry["id"], entry["status"]] }
+    expect(ids).to eq([["resource_exhaustion", "indeterminate"]])
+  end
+
+  it "recognizes prolonged genuine progress as attrition rather than no progress" do
+    entries = classifications(duration: 100_000, changes: 12, hp_lost: 40,
+                              longest_idle: 20_000)
+    expect(entries.map { |entry| entry["id"] }).to include("attrition")
+    expect(entries.map { |entry| entry["id"] }).not_to include("no_progress")
+  end
+
+  it "distinguishes sustained control denial from temporary control and recovery" do
+    locked = telemetry(duration: 60_000, actors: [
+      {"id" => "hero", "side" => "heroes", "productive_actions" => 0,
+       "longest_control_denial_uwu" => 40_000, "control_denied_uwu" => 40_000}
+    ])
+    temporary = telemetry(duration: 60_000, actors: [
+      {"id" => "hero", "side" => "heroes", "productive_actions" => 2,
+       "longest_control_denial_uwu" => 8_000, "control_denied_uwu" => 8_000}
+    ])
+    locked_ids = described_class::Classifications.analyze_encounter(
+      {"outcome" => "enemy_victory", "telemetry" => locked}).map { |entry| entry["id"] }
+    recovered_ids = described_class::Classifications.analyze_encounter(
+      {"outcome" => "hero_victory", "telemetry" => temporary}).map { |entry| entry["id"] }
+    expect(locked_ids).to include("control_lock")
+    expect(recovered_ids).not_to include("control_lock")
+  end
+
+  it "reports beat-cap no progress without claiming a proven stalemate" do
+    entries = classifications(outcome: "beat_cap", duration: 200_000, changes: 0,
+                              hp_lost: 0, longest_idle: 200_000,
+                              attempted: 0, completed: 0, productive: 0)
+    expect(entries.map { |entry| [entry["id"], entry["status"]] }).to include(
+      ["no_progress", "observed"])
+    expect(entries.map { |entry| entry["id"] }).not_to include("stalemate_candidate")
+  end
+
+  it "marks a deterministic non-damaging action loop only as a stalemate candidate" do
+    entries = classifications(outcome: "beat_cap", duration: 200_000, changes: 0,
+                              hp_lost: 0, longest_idle: 200_000,
+                              attempted: 5, completed: 5, productive: 0)
+    candidate = entries.find { |entry| entry["id"] == "stalemate_candidate" }
+    expect(candidate.fetch("status")).to eq("suspected")
+    expect(candidate.dig("evidence", "limitation")).to include("not analyzed")
+  end
+
+  it "detects burst victory before meaningful retaliation" do
+    actors = [
+      {"id" => "hero", "side" => "heroes", "productive_actions" => 1,
+       "longest_control_denial_uwu" => 0, "control_denied_uwu" => 0},
+      {"id" => "enemy", "side" => "enemies", "productive_actions" => 0,
+       "longest_control_denial_uwu" => 0, "control_denied_uwu" => 0}
+    ]
+    expect(classifications(duration: 20_000, actors: actors).map { |entry| entry["id"] }).to include(
+      "burst_dominance")
+  end
+
+  it "keeps classifications independent across encounter boundaries" do
+    run = {"encounters" => [
+      {"encounter_index" => 0, "outcome" => "hero_victory", "telemetry" => telemetry},
+      {"encounter_index" => 1, "outcome" => "beat_cap",
+       "telemetry" => telemetry(duration: 200_000, changes: 0, hp_lost: 0,
+                                longest_idle: 200_000, attempted: 4, completed: 4, productive: 0)}
+    ]}
+    entries = described_class::Classifications.analyze_run(run)
+    candidate = entries.find { |entry| entry["id"] == "stalemate_candidate" }
+    expect(candidate.dig("scope", "encounter_index")).to eq(1)
+  end
+
+  it "enforces required and forbidden declarations without failing observed-only differences" do
+    observed = classifications(duration: 100_000, changes: 12, hp_lost: 40,
+                               longest_idle: 20_000)
+    expectations = described_class::Classifications.expectations(
+      {"classification_expectations" => {"attrition" => "required",
+                                           "control_lock" => "forbidden",
+                                           "burst_dominance" => "allowed"}}, observed)
+    expect(expectations).to all(include("passed" => true))
+    failed = described_class::Classifications.expectations(
+      {"classification_expectations" => {"attrition" => "forbidden"}}, observed)
+    expect(failed.first.fetch("passed")).to be(false)
+  end
+
+  it "uses indeterminate classifications when telemetry is unavailable" do
+    entries = described_class::Classifications.analyze_encounter({"outcome" => "hero_victory"})
+    expect(entries.length).to eq(described_class::Classifications::IDS.length)
+    expect(entries).to all(include("status" => "indeterminate"))
+    expect(entries).to all(satisfy { |entry| entry.dig("evidence", "unavailable") == ["telemetry"] })
+  end
+
+  it "observes resource exhaustion only from sufficient resource telemetry" do
+    entries = classifications(duration: 200_000, changes: 0, hp_lost: 0,
+                              longest_idle: 100_000,
+                              resources: {"available" => true, "state_changes" => 2,
+                                          "exhausted_actors" => ["hero"],
+                                          "resource_ids" => ["charges"]})
+    resource = entries.find { |entry| entry["id"] == "resource_exhaustion" }
+    expect(resource.fetch("status")).to eq("observed")
+    expect(resource.dig("evidence", "actors")).to eq(["hero"])
+    expect(entries.map { |entry| entry["id"] }).not_to include("no_progress")
+  end
+
+  it "keeps classification ordering and structured evidence stable" do
+    encounter = {"outcome" => "beat_cap",
+                 "telemetry" => telemetry(duration: 200_000, changes: 0, hp_lost: 0,
+                                          longest_idle: 200_000, attempted: 3,
+                                          completed: 3, productive: 0)}
+    first = described_class::Classifications.analyze_encounter(encounter)
+    second = described_class::Classifications.analyze_encounter(Marshal.load(Marshal.dump(encounter)))
+    expect(first).to eq(second)
+    expect(first.map { |entry| entry["id"] }).to eq(
+      %w[no_progress stalemate_candidate resource_exhaustion])
+  end
+
+  it "reads legacy summaries and recordings as unavailable rather than zero telemetry" do
+    legacy = run_summary(seed: 1)
+    entries = described_class::Classifications.analyze_run(legacy)
+    expect(entries).to all(include("status" => "indeterminate"))
   end
 end

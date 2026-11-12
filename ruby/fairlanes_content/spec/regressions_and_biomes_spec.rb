@@ -52,11 +52,14 @@ RSpec.describe "Ruby regression and biome plans" do
     scenario.variants.first[:equipped_item] = :unknown_cape
     scenario.variants.first[:next_skill] = :unknown_skill
     scenario.variants.first[:assertions] = [:unknown_assertion]
+    scenario.variants.first[:classification_expectations] = {unknown: :required}
+    scenario.variants.last[:classification_expectations] = {attrition: :sometimes}
     scenario.variants.last[:id] = scenario.variants.first[:id]
     errors = FairlanesContent::Validator.new(declarations).validate
     expect(errors).to include("regression origin_woodland_floor10 references unknown gear unknown_cape",
                               "regression origin_woodland_floor10 references unknown next skill unknown_skill",
                               "regression origin_woodland_floor10 has invalid semantic assertions",
+                              "regression origin_woodland_floor10 has invalid classification expectations",
                               "regression origin_woodland_floor10 has duplicate variants")
   end
 end

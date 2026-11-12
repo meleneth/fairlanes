@@ -147,6 +147,30 @@ struct Session::Impl {
     int bleed_clears{0};
     std::int64_t longest_bleed_uwu{0};
   } metrics;
+  struct ActorTelemetry {
+    std::string id;
+    std::string side;
+    int attempted_actions{0};
+    int completed_actions{0};
+    int productive_actions{0};
+    std::optional<std::int64_t> first_meaningful_uwu;
+    std::int64_t control_denied_uwu{0};
+    std::int64_t longest_control_denial_uwu{0};
+    std::int64_t current_control_denial_uwu{0};
+  };
+  struct CombatTelemetry {
+    int attempted_actions{0};
+    int completed_actions{0};
+    int productive_actions{0};
+    int hp_lost{0};
+    int hp_recovered{0};
+    int other_state_changes{0};
+    std::uint64_t progress_generation{0};
+    std::int64_t last_progress_uwu{0};
+    std::int64_t longest_no_progress_uwu{0};
+    std::unordered_map<entt::entity, ActorTelemetry> actors;
+    std::unordered_map<entt::entity, bool> active_action_productive;
+  } telemetry;
   std::unordered_map<entt::entity, std::int64_t> active_bleeds;
   Json recording;
   Json compact_summary;
@@ -155,6 +179,102 @@ struct Session::Impl {
   Json compact_encounter_results = Json::array();
   std::uint64_t beats{0};
   std::string outcome;
+
+  std::int64_t encounter_elapsed_uwu() const {
+    return static_cast<std::int64_t>(beats - encounter_start_beat) * seerin::UWU_PER_BEAT.v;
+  }
+
+  void reset_telemetry() {
+    telemetry = {};
+    for (std::size_t index = 0; index < actors.size(); ++index) {
+      const auto& actor = actors[index];
+      ActorTelemetry entry;
+      entry.id = actor.id;
+      entry.side = index < hero_count ? "heroes" : "enemies";
+      telemetry.actors.emplace(actor.entity, std::move(entry));
+    }
+  }
+
+  void note_meaningful_action(entt::entity actor) {
+    auto& entry = telemetry.actors.at(actor);
+    if (!entry.first_meaningful_uwu) entry.first_meaningful_uwu = encounter_elapsed_uwu();
+    if (telemetry.active_action_productive.contains(actor))
+      telemetry.active_action_productive[actor] = true;
+  }
+
+  void note_progress() {
+    const auto now = encounter_elapsed_uwu();
+    telemetry.longest_no_progress_uwu =
+        std::max(telemetry.longest_no_progress_uwu, now - telemetry.last_progress_uwu);
+    telemetry.last_progress_uwu = now;
+    ++telemetry.progress_generation;
+  }
+
+  bool action_denied(entt::entity actor) const {
+    if (game.reg().all_of<fl::ecs::components::Freeze>(actor)) return true;
+    const auto* statuses = game.reg().try_get<fl::ecs::components::CombatStatuses>(actor);
+    return statuses && std::ranges::any_of(statuses->effects, [](const auto& status) {
+             return status.kind == fl::ecs::components::CombatStatusKind::Stun;
+           });
+  }
+
+  void sample_control_denial() {
+    for (const auto& actor : actors) {
+      auto& entry = telemetry.actors.at(actor.entity);
+      if (game.reg().get<Stats>(actor.entity).is_alive() && action_denied(actor.entity)) {
+        entry.control_denied_uwu += seerin::UWU_PER_BEAT.v;
+        entry.current_control_denial_uwu += seerin::UWU_PER_BEAT.v;
+        entry.longest_control_denial_uwu =
+            std::max(entry.longest_control_denial_uwu, entry.current_control_denial_uwu);
+      } else {
+        entry.current_control_denial_uwu = 0;
+      }
+    }
+  }
+
+  bool has_unobserved_state_progress() {
+    return std::ranges::any_of(
+        actors, [this](const Actor& actor) { return state(actor.entity) != actor.prior_state; });
+  }
+
+  Json telemetry_json() {
+    const auto duration = encounter_elapsed_uwu();
+    telemetry.longest_no_progress_uwu =
+        std::max(telemetry.longest_no_progress_uwu, duration - telemetry.last_progress_uwu);
+    Json actor_rows = Json::array();
+    std::vector<const ActorTelemetry*> ordered;
+    ordered.reserve(actors.size());
+    for (const auto& actor : actors) ordered.push_back(&telemetry.actors.at(actor.entity));
+    for (const auto* actor : ordered) {
+      actor_rows.push_back(
+          {{"id", actor->id},
+           {"side", actor->side},
+           {"attempted_actions", actor->attempted_actions},
+           {"completed_actions", actor->completed_actions},
+           {"productive_actions", actor->productive_actions},
+           {"first_meaningful_action_uwu",
+            actor->first_meaningful_uwu ? Json(*actor->first_meaningful_uwu) : Json(nullptr)},
+           {"control_denied_uwu", actor->control_denied_uwu},
+           {"longest_control_denial_uwu", actor->longest_control_denial_uwu}});
+    }
+    return {{"schema", "fairlanes-combat-telemetry"},
+            {"version", 1},
+            {"duration_uwu", duration},
+            {"progress",
+             {{"hp_lost", telemetry.hp_lost},
+              {"hp_recovered", telemetry.hp_recovered},
+              {"other_state_changes", telemetry.other_state_changes},
+              {"meaningful_changes", telemetry.progress_generation},
+              {"longest_no_progress_uwu", telemetry.longest_no_progress_uwu}}},
+            {"actions",
+             {{"attempted", telemetry.attempted_actions},
+              {"completed", telemetry.completed_actions},
+              {"productive", telemetry.productive_actions},
+              {"nonproductive", telemetry.completed_actions - telemetry.productive_actions}}},
+            {"actors", std::move(actor_rows)},
+            {"resources",
+             {{"available", false}, {"reason", "combat action resources are not instrumented"}}}};
+  }
 
   explicit Impl(Options selected)
       : options(std::move(selected)), game(1, 1, party_size_for(options.fixture), false, false,
@@ -207,6 +327,7 @@ struct Session::Impl {
 
     actors = {{"hero", hero, {}}, {armor_fixture ? "hare" : "mouse", mouse, {}}};
     for (auto& actor : actors) actor.prior_state = state(actor.entity);
+    reset_telemetry();
 
     recording = {
         {"format", "fairlanes-combat-recording"},
@@ -217,6 +338,7 @@ struct Session::Impl {
           {"revision", fl::build_identity::revision},
           {"source_dirty", fl::build_identity::source_dirty}}},
         {"content_sha256", fl::build_identity::content_sha256},
+        {"content_identity_policy", "strict"},
         {"gameplay_seed", options.seed},
         {"gameplay_sequence", game.rng().base_sequence()},
         {"beat_cap", options.beat_cap},
@@ -347,6 +469,7 @@ struct Session::Impl {
     for (std::size_t i = 0; i < built.attackers().members().size(); ++i)
       actors.push_back({"enemy" + std::to_string(i + 1), built.attackers().members()[i], {}});
     for (auto& actor : actors) actor.prior_state = state(actor.entity);
+    reset_telemetry();
 
     Json initial = Json::array();
     for (std::size_t i = 0; i < actors.size(); ++i) {
@@ -391,6 +514,7 @@ struct Session::Impl {
                    {"revision", fl::build_identity::revision},
                    {"source_dirty", fl::build_identity::source_dirty}}},
                  {"content_sha256", fl::build_identity::content_sha256},
+                 {"content_identity_policy", "strict"},
                  {"gameplay_seed", options.seed},
                  {"gameplay_sequence", game.rng().base_sequence()},
                  {"beat_cap", options.beat_cap},
@@ -484,6 +608,9 @@ struct Session::Impl {
     auto& bus = encounter->combatant_bus(actor);
     listeners.emplace_back(bus, std::in_place_type<fl::events::SkillActionSelected>,
                            [this](const auto& event) {
+                             ++telemetry.attempted_actions;
+                             ++telemetry.actors.at(event.actor).attempted_actions;
+                             telemetry.active_action_productive[event.actor] = false;
                              append({{"type", "action"},
                                      {"actor", actor_id(event.actor)},
                                      {"target", actor_id(event.target)},
@@ -505,6 +632,7 @@ struct Session::Impl {
                                metrics.incoming_damage += event.damage;
                              if (source.starts_with("hero"))
                                metrics.outgoing_damage += event.damage;
+                             note_meaningful_action(event.source);
                              append({{"type", "hit"},
                                      {"actor", actor_id(event.source)},
                                      {"target", actor_id(event.target)},
@@ -514,6 +642,7 @@ struct Session::Impl {
                            });
     listeners.emplace_back(bus, std::in_place_type<fl::events::DireBleedApplied>,
                            [this](const auto& event) {
+                             note_meaningful_action(event.source);
                              ++metrics.bleed_applications;
                              active_bleeds[event.target] = current_uwu();
                              append({{"type", "dire_bleed_applied"},
@@ -521,6 +650,10 @@ struct Session::Impl {
                                      {"target", actor_id(event.target)},
                                      {"damage_per_tick", event.damage_per_tick}});
                            });
+    listeners.emplace_back(bus, std::in_place_type<fl::events::PoisonApplied>,
+                           [this](const auto& event) { note_meaningful_action(event.source); });
+    listeners.emplace_back(bus, std::in_place_type<fl::events::FreezeApplied>,
+                           [this](const auto& event) { note_meaningful_action(event.source); });
     listeners.emplace_back(bus, std::in_place_type<fl::events::DireBleedTicked>,
                            [this](const auto& event) {
                              ++metrics.bleed_ticks;
@@ -558,10 +691,19 @@ struct Session::Impl {
                                        {"target", actor_id(event.target)},
                                        {"damage", event.damage}});
                            });
-    listeners.emplace_back(bus, std::in_place_type<fl::events::SkillCastFinished>,
-                           [this](const auto& event) {
-                             append({{"type", "cast_finish"}, {"actor", actor_id(event.caster)}});
-                           });
+    listeners.emplace_back(
+        bus, std::in_place_type<fl::events::SkillCastFinished>, [this](const auto& event) {
+          ++telemetry.completed_actions;
+          auto& actor = telemetry.actors.at(event.caster);
+          ++actor.completed_actions;
+          if (telemetry.active_action_productive[event.caster] || has_unobserved_state_progress()) {
+            ++telemetry.productive_actions;
+            ++actor.productive_actions;
+            if (!actor.first_meaningful_uwu) actor.first_meaningful_uwu = encounter_elapsed_uwu();
+          }
+          telemetry.active_action_productive.erase(event.caster);
+          append({{"type", "cast_finish"}, {"actor", actor_id(event.caster)}});
+        });
   }
 
   Json encounter_result(std::string_view resolved) {
@@ -602,7 +744,8 @@ struct Session::Impl {
             {"longest_bleed_seconds",
              static_cast<double>(longest_bleed_uwu) /
                  static_cast<double>(seerin::UWU_PER_BEAT.v *
-                                     fl::primitives::WorldClock::kBeatsPerSecond)}};
+                                     fl::primitives::WorldClock::kBeatsPerSecond)},
+            {"telemetry", telemetry_json()}};
   }
 
   void start_next_encounter() {
@@ -637,6 +780,7 @@ struct Session::Impl {
       actors.push_back(
           {"enemy" + std::to_string(index + 1), built.attackers().members()[index], {}});
     for (auto& actor : actors) actor.prior_state = state(actor.entity);
+    reset_telemetry();
     for (const auto& actor : actors) bind_events(actor.entity);
 
     const auto selection = skill_id(fl::skills::SkillKey{*variant->next_skill});
@@ -666,7 +810,7 @@ struct Session::Impl {
                      {"min_wins", variant->min_wins},
                      {"max_wins", variant->max_wins}};
     compact_summary = {{"schema", "fairlanes-regression-run-summary"},
-                       {"version", 1},
+                       {"version", 2},
                        {"fixture", options.fixture},
                        {"variant", options.variant.empty() ? Json(nullptr) : Json(options.variant)},
                        {"seed", options.seed},
@@ -691,6 +835,13 @@ struct Session::Impl {
     for (auto& actor : actors) {
       auto next = state(actor.entity);
       if (next != actor.prior_state) {
+        const int before_hp = actor.prior_state.at("hp").get<int>();
+        const int after_hp = next.at("hp").get<int>();
+        if (after_hp < before_hp) telemetry.hp_lost += before_hp - after_hp;
+        if (after_hp > before_hp) telemetry.hp_recovered += after_hp - before_hp;
+        if (next.at("statuses") != actor.prior_state.at("statuses"))
+          ++telemetry.other_state_changes;
+        note_progress();
         if (actor.id.starts_with("hero")) {
           const auto had_brace = std::ranges::find(actor.prior_state["statuses"], "Brace") !=
                                  actor.prior_state["statuses"].end();
@@ -706,6 +857,7 @@ struct Session::Impl {
         actor.prior_state = std::move(next);
       }
     }
+    sample_control_denial();
     const bool hero_alive = std::ranges::any_of(
         actors.begin(), actors.begin() + static_cast<std::ptrdiff_t>(hero_count),
         [this](const Actor& actor) { return game.reg().get<Stats>(actor.entity).is_alive(); });
@@ -728,6 +880,11 @@ struct Session::Impl {
       append({{"type", "end"}, {"outcome", resolved}});
       const auto result = encounter_result(resolved);
       compact_encounter_results.push_back(result);
+      if (!recording.contains("regression_telemetry"))
+        recording["regression_telemetry"] = Json::array();
+      recording["regression_telemetry"].push_back({{"encounter_index", encounter_index},
+                                                   {"outcome", resolved},
+                                                   {"telemetry", result.at("telemetry")}});
       if (recording.value("version", 1) == 2) {
         recording["encounter_results"].push_back(result);
         if (resolved == "hero_victory" && encounter_index + 1 < scenario->encounters.size()) {
@@ -818,12 +975,16 @@ std::optional<std::string> Session::first_divergence(const nlohmann::json& expec
     return "recording build version differs";
   }
   for (const auto* key :
-       {"fixture", "content_sha256", "gameplay_seed", "gameplay_sequence", "beat_cap",
-        "starting_world_beat", "starting_uwu", "initial_state", "fixture_parameters"}) {
+       {"fixture", "gameplay_seed", "gameplay_sequence", "beat_cap", "starting_world_beat",
+        "starting_uwu", "initial_state", "fixture_parameters"}) {
     if (!expected.contains(key) || expected.at(key) != impl_->recording.at(key)) {
       return std::string("recording metadata differs at ") + key;
     }
   }
+  if (expected.value("content_identity_policy", std::string{}) == "strict" &&
+      (!expected.contains("content_sha256") ||
+       expected.at("content_sha256") != impl_->recording.at("content_sha256")))
+    return "recording content identity differs";
   if (!expected.contains("external_inputs") || !expected.at("external_inputs").is_array())
     return "recording has no external input array";
   const auto& expected_inputs = expected.at("external_inputs");
@@ -856,16 +1017,29 @@ std::optional<std::string> Session::first_divergence(const nlohmann::json& expec
     if (got.size() < want.size()) {
       return "missing event " + std::to_string(got.size()) + ": " + want[got.size()].dump();
     }
-    if (!expected.contains("result") || expected.at("result") != impl_->recording.at("result")) {
+    auto comparable_result = impl_->recording.at("result");
+    if (expected.contains("result") && !expected.at("result").contains("telemetry"))
+      comparable_result.erase("telemetry");
+    if (!expected.contains("result") || expected.at("result") != comparable_result) {
       return "terminal result differs: expected " + expected.value("result", Json{}).dump() +
-             ", got " + impl_->recording.at("result").dump();
+             ", got " + comparable_result.dump();
     }
-    if (impl_->recording.value("version", 1) == 2 &&
-        (!expected.contains("encounter_results") ||
-         expected.at("encounter_results") != impl_->recording.at("encounter_results") ||
-         !expected.contains("final_party_state") ||
-         expected.at("final_party_state") != impl_->recording.at("final_party_state")))
-      return "progression result differs";
+    if (impl_->recording.value("version", 1) == 2) {
+      auto comparable_encounters = impl_->recording.at("encounter_results");
+      if (expected.contains("encounter_results")) {
+        const auto& expected_encounters = expected.at("encounter_results");
+        for (std::size_t index = 0;
+             index < comparable_encounters.size() && index < expected_encounters.size(); ++index) {
+          if (!expected_encounters[index].contains("telemetry"))
+            comparable_encounters[index].erase("telemetry");
+        }
+      }
+      if (!expected.contains("encounter_results") ||
+          expected.at("encounter_results") != comparable_encounters ||
+          !expected.contains("final_party_state") ||
+          expected.at("final_party_state") != impl_->recording.at("final_party_state"))
+        return "progression result differs";
+    }
   }
   return std::nullopt;
 }

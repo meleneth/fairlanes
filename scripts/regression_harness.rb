@@ -7,7 +7,148 @@ require_relative "quiet_command"
 
 module FairlanesRegression
   SUMMARY_SCHEMA = "fairlanes-regression-experiment-summary"
-  SUMMARY_VERSION = 1
+  SUMMARY_VERSION = 2
+
+  module Classifications
+    SCHEMA = "fairlanes-combat-classification"
+    VERSION = 1
+    IDS = %w[no_progress stalemate_candidate control_lock resource_exhaustion attrition burst_dominance].freeze
+    POLICIES = %w[required forbidden allowed observe].freeze
+    NO_PROGRESS_UWU = 144_000
+    CONTROL_LOCK_UWU = 28_800
+    ATTRITION_UWU = 57_600
+    BURST_UWU = 28_800
+
+    module_function
+
+    def result(id, encounter_index, status, evidence, scope: nil)
+      {"schema" => SCHEMA, "version" => VERSION, "id" => id,
+       "scope" => scope || {"kind" => "encounter", "encounter_index" => encounter_index},
+       "status" => status, "evidence" => evidence}
+    end
+
+    def unavailable(encounter_index, missing)
+      IDS.map do |id|
+        result(id, encounter_index, "indeterminate",
+               {"unavailable" => Array(missing).sort, "reason" => "required telemetry unavailable"})
+      end
+    end
+
+    def analyze_encounter(encounter, index: nil)
+      encounter_index = index || encounter["encounter_index"] || 0
+      telemetry = encounter["telemetry"]
+      return unavailable(encounter_index, ["telemetry"]) unless telemetry.is_a?(Hash)
+      unless telemetry["schema"] == "fairlanes-combat-telemetry" && telemetry["version"] == 1
+        return unavailable(encounter_index, ["supported_telemetry_schema"])
+      end
+
+      progress = telemetry["progress"]
+      actions = telemetry["actions"]
+      actors = telemetry["actors"]
+      required = {"duration_uwu" => telemetry["duration_uwu"], "progress" => progress,
+                  "actions" => actions, "actors" => actors}
+      missing = required.filter_map { |key, value| key if value.nil? }
+      return unavailable(encounter_index, missing) unless missing.empty?
+
+      duration = telemetry.fetch("duration_uwu")
+      changes = progress.fetch("meaningful_changes", nil)
+      longest_idle = progress.fetch("longest_no_progress_uwu", nil)
+      return unavailable(encounter_index, %w[meaningful_changes longest_no_progress_uwu]) if changes.nil? || longest_idle.nil?
+
+      found = []
+      resources = telemetry["resources"]
+      resource_changes = resources.is_a?(Hash) && resources["available"] ? resources.fetch("state_changes", 0) : 0
+      total_changes = changes + resource_changes
+      no_progress = duration >= NO_PROGRESS_UWU && total_changes.zero?
+      if no_progress
+        found << result("no_progress", encounter_index, "observed",
+                        {"interval_uwu" => {"from" => 0, "to" => duration},
+                         "meaningful_changes" => total_changes,
+                         "resource_state_changes" => resource_changes,
+                         "longest_no_progress_uwu" => longest_idle})
+      end
+
+      completed = actions.fetch("completed", 0)
+      nonproductive = actions.fetch("nonproductive", 0)
+      if encounter["outcome"] == "beat_cap" && no_progress && completed >= 2 && nonproductive == completed
+        found << result("stalemate_candidate", encounter_index, "suspected",
+                        {"interval_uwu" => {"from" => 0, "to" => duration},
+                         "terminal_outcome" => "beat_cap", "completed_actions" => completed,
+                         "nonproductive_actions" => nonproductive,
+                         "limitation" => "candidate only; future reachable states were not analyzed"})
+      end
+
+      locked = Array(actors).select do |actor|
+        actor.fetch("longest_control_denial_uwu", 0) >= CONTROL_LOCK_UWU &&
+          actor.fetch("control_denied_uwu", 0) * 2 >= duration
+      end
+      unless locked.empty?
+        actor_ids = locked.map { |actor| actor.fetch("id") }.sort
+        found << result("control_lock", encounter_index, "observed",
+                        {"actors" => locked.map { |actor| actor.fetch("id") }.sort,
+                         "interval_uwu" => {"minimum_duration" => CONTROL_LOCK_UWU},
+                         "longest_denial_uwu" => locked.to_h { |actor| [actor.fetch("id"), actor.fetch("longest_control_denial_uwu")] }},
+                        scope: {"kind" => "actors", "encounter_index" => encounter_index,
+                                "actor_ids" => actor_ids})
+      end
+
+      if !resources.is_a?(Hash) || !resources["available"]
+        found << result("resource_exhaustion", encounter_index, "indeterminate",
+                        {"unavailable" => ["resource_availability"],
+                         "reason" => resources&.fetch("reason", nil) || "resource telemetry unavailable"})
+      elsif Array(resources["exhausted_actors"]).any?
+        exhausted = Array(resources["exhausted_actors"]).sort
+        found << result("resource_exhaustion", encounter_index, "observed",
+                        {"actors" => exhausted, "resources" => Array(resources["resource_ids"]).sort},
+                        scope: {"kind" => "actors", "encounter_index" => encounter_index,
+                                "actor_ids" => exhausted})
+      end
+
+      hp_lost = progress.fetch("hp_lost", 0)
+      if duration >= ATTRITION_UWU && hp_lost.positive? && total_changes >= 3 && longest_idle * 2 < duration
+        found << result("attrition", encounter_index, "observed",
+                        {"interval_uwu" => {"from" => 0, "to" => duration}, "hp_lost" => hp_lost,
+                         "meaningful_changes" => total_changes, "longest_no_progress_uwu" => longest_idle})
+      end
+
+      victory = %w[hero_victory enemy_victory mouse_victory hare_victory].include?(encounter["outcome"])
+      productive_sides = Array(actors).select { |actor| actor.fetch("productive_actions", 0).positive? }
+                                     .map { |actor| actor.fetch("side") }.uniq.sort
+      if victory && duration <= BURST_UWU && hp_lost.positive? && productive_sides.length == 1
+        found << result("burst_dominance", encounter_index, "observed",
+                        {"interval_uwu" => {"from" => 0, "to" => duration},
+                         "productive_side" => productive_sides.first, "hp_lost" => hp_lost,
+                         "productive_actions_by_opposition" => 0},
+                        scope: {"kind" => "side", "encounter_index" => encounter_index,
+                                "side" => productive_sides.first})
+      end
+      found.sort_by { |entry| [IDS.index(entry.fetch("id")), entry.dig("scope", "encounter_index")] }
+    rescue KeyError => e
+      unavailable(encounter_index, [e.key.to_s])
+    end
+
+    def analyze_run(run)
+      encounters = Array(run["encounters"])
+      encounters = [run["final_encounter"]].compact if encounters.empty?
+      encounters.each_with_index.flat_map { |encounter, index| analyze_encounter(encounter, index:) }
+    end
+
+    def expectations(variant, classifications)
+      declarations = variant.fetch("classification_expectations", {})
+      IDS.filter_map do |id|
+        policy = declarations.fetch(id, "observe")
+        next if policy == "observe" && !declarations.key?(id)
+        matches = classifications.select { |entry| entry["id"] == id && entry["status"] != "indeterminate" }
+        passed = case policy
+                 when "required" then !matches.empty?
+                 when "forbidden" then matches.empty?
+                 else true
+                 end
+        {"id" => id, "policy" => policy, "passed" => passed,
+         "observed" => matches.length}
+      end
+    end
+  end
 
   class Error < StandardError
     attr_reader :status
@@ -189,8 +330,13 @@ module FairlanesRegression
         {"id" => id, "passed" => semantic_values.fetch(id).positive?,
          "observed" => semantic_values.fetch(id)}
       end
+      classifications = runs.flat_map do |run|
+        Classifications.analyze_run(run).map { |entry| entry.merge("seed" => run.fetch("seed")) }
+      end
+      classification_expectations = Classifications.expectations(variant, classifications)
       all_assertions = (win_assertion.nil? || win_assertion) &&
-                       semantic_assertions.all? { |assertion| assertion.fetch("passed") }
+                       semantic_assertions.all? { |assertion| assertion.fetch("passed") } &&
+                       classification_expectations.all? { |expectation| expectation.fetch("passed") }
       {
         "fixture" => fixture.fetch("id"), "variant" => variant.fetch("id"),
         "seeds" => runs.length, "victories" => victories,
@@ -207,7 +353,15 @@ module FairlanesRegression
         "correctness" => {"declared_win_range" => expected,
                            "win_assertion_passed" => win_assertion,
                            "semantic_assertions" => semantic_assertions,
+                           "classification_expectations" => classification_expectations,
                            "all_declared_assertions_passed" => all_assertions},
+        "classifications" => {
+          "counts" => classifications.group_by { |entry| [entry.fetch("id"), entry.fetch("status")] }
+                                         .sort_by { |(id, status), _| [Classifications::IDS.index(id), status] }
+                                         .to_h { |(id, status), entries| ["#{id}:#{status}", entries.length] },
+          "evidence" => classifications.reject { |entry| entry["status"] == "indeterminate" }.first(12),
+          "indeterminate" => classifications.count { |entry| entry["status"] == "indeterminate" }
+        },
         "mechanics" => mechanics,
         "combat" => combat
       }
@@ -288,8 +442,25 @@ module FairlanesRegression
       raise Error, "malformed JSON: #{path}: #{e.message}"
     end
 
-    def inspect_recording(path, encounter: nil, skill: nil, mechanic: nil, limit: 60)
+    def inspect_recording(path, encounter: nil, skill: nil, mechanic: nil, classification: nil, limit: 60)
       recording = read_json(path)
+      if classification
+        unless Classifications::IDS.include?(classification)
+          raise Error, "unknown classification: #{classification}"
+        end
+        results = Array(recording["regression_telemetry"])
+        results = Array(recording["encounter_results"]) if results.empty?
+        results = [recording["result"]].compact if results.empty?
+        evidence = results.each_with_index.flat_map do |result, index|
+          Classifications.analyze_encounter(result, index:)
+        end.select { |entry| entry["id"] == classification }
+        evidence.select! { |entry| entry.dig("scope", "encounter_index") == encounter } if encounter
+        return {"schema" => "fairlanes-regression-classification-inspection", "version" => 1,
+                "fixture" => recording["fixture"], "seed" => recording["gameplay_seed"],
+                "outcome" => recording.dig("result", "outcome"),
+                "classification" => classification, "evidence" => evidence,
+                "recording" => path}
+      end
       events = recording.fetch("events")
       events = events.select { |event| (event["encounter_index"] || 0) == encounter } if encounter
       events = events.select { |event| event["skill"] == skill || event["type"].include?(skill) } if skill
