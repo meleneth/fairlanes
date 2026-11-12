@@ -6,7 +6,9 @@
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/systems/effective_combat_stats.hpp"
+#include "fl/loot/equipment_stat_policy.hpp"
 #include "fl/primitives/party_data.hpp"
 
 namespace fl::ecs::systems {
@@ -37,6 +39,8 @@ bool ManualEquipmentSystem::commit(fl::context::PartyCtx& party_ctx,
   if (party_member == nullptr || equipment == nullptr || equipment->slot() != request.slot) {
     return false;
   }
+  const auto* xp = reg.try_get<fl::ecs::components::TrackXP>(request.member);
+  if (xp == nullptr || !fl::loot::can_equip(*equipment, xp->level_)) return false;
 
   auto inventory = std::vector<entt::entity>{party.items().begin(), party.items().end()};
   const auto item = std::find(inventory.begin(), inventory.end(), request.item);

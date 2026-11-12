@@ -588,7 +588,7 @@ end
   reboot_pulse: "Restore 4 HP to each living ally, capped at maximum HP. Does not cleanse statuses.",
   cinderburst: "Detonate an existing burn on one enemy for 8 fire damage, consuming the burn. Requires the burn to still be present when the blast lands.",
   observe: "Spend 12 beats observing, dealing 0 damage. Equipping Observe enables learning from other combatants; its rank caps learnable skill ranks. Observe itself is learned in order, at most 1 rank above the equipped rank, without a chance roll. Combat learning is kept on victory or raid summoning. Learning acquired during a raid is kept on shared victory, even for wiped parties, and lost on shared defeat. Other combat learning is lost on a party wipe.",
-  brace: "Arm a combat-local Brace on the user. The next landed direct physical hit is reduced by 35%, then Brace is spent. Misses, periodic damage, and nonphysical hits do not spend it.",
+  brace: "Arm a combat-local Brace on the user. The next landed direct physical hit is reduced by 35% plus 2 percentage points per effective Armor, capped at 70%, then Brace is spent. Misses, periodic damage, and nonphysical hits do not spend it.",
   flee: "Attempt to leave combat. The escape attempt has a 65% success chance outside raids and 0% in raids.",
   thump: "Deal 1-5 base physical damage to 1 enemy with a blunt attack at rank 1, plus 3 damage per additional rank and the attacker's flat Attack once. Physical resistance applies before percentage status modifiers; the target's flat Armor then reduces the physical portion before the minimum 1 damage floor. Hit at beat 26 + 2 x (rank - 1); finish at beat 31 + 3 x (rank - 1). Higher ranks hit harder but take longer.",
   eviscerate: "Inflict Dire Bleed on 1 enemy: they bleed to death unless it is stopped. Every 3 seconds, starting 3 seconds after application, deal physical damage equal to 10% of their maximum HP at application (rounded down, minimum 1), bypassing flat Attack and Armor. No timeout and no initial hit. Cleanse, target death or leaving combat clears it; source death or removal stops it at the next tick. Reapplication replaces the bleed and restarts its timer.",
@@ -692,7 +692,7 @@ gear :hearty_locket, display: "Hearty Locket",
      slot: :necklace, armor_kind: :none, tier: :plain, weight: 20,
      modifiers: {max_hp: 5}
 gear :mossbound_cape, display: "Mossbound Cape",
-     slot: :cape, armor_kind: :cloth, tier: :excellent, weight: 0,
+     slot: :cape, armor_kind: :cloth, tier: :plain, weight: 0,
      modifiers: {armor: 3, max_hp: 5}
 
 encounter_pool :woodland_starter, lineups: [
@@ -772,6 +772,35 @@ tower_pattern :desert_progression,
               monsters: %i[sand_scorpion tarantula_nomad]
 biome :origin_desert_tower, display: "Origin Desert Tower", floors: 100,
       pattern: :desert_progression
+
+# Provisional Origin equipment balance profiles. Canonical design requires
+# biome influence, but these particular associations and values remain
+# experimental (see brainstorms/equipment-balance.md).
+equipment_profile :origin_woodland_tower,
+  weights: {attack: 30, armor: 30, max_hp: 40, physical: 20,
+            magical: 10, fire: 10, ice: 10, lightning: 10},
+  kinds: {armor: 80, weapon: 10, jewelry: 5},
+  armor_kinds: {cloth: 50, leather: 50, plate: 0}
+equipment_profile :origin_plains_tower,
+  weights: {attack: 45, armor: 25, max_hp: 25, physical: 20,
+            magical: 10, fire: 15, ice: 10, lightning: 20},
+  kinds: {armor: 80, weapon: 10, jewelry: 5},
+  armor_kinds: {cloth: 0, leather: 50, plate: 50}
+equipment_profile :origin_murky_swamp_tower,
+  weights: {attack: 20, armor: 25, max_hp: 45, physical: 15,
+            magical: 35, fire: 10, ice: 15, lightning: 15},
+  kinds: {armor: 80, weapon: 10, jewelry: 5},
+  armor_kinds: {cloth: 50, leather: 0, plate: 50}
+equipment_profile :origin_caves_tower,
+  weights: {attack: 20, armor: 45, max_hp: 30, physical: 40,
+            magical: 15, fire: 10, ice: 25, lightning: 10},
+  kinds: {armor: 10, weapon: 10, jewelry: 75},
+  armor_kinds: {cloth: 34, leather: 33, plate: 33}
+equipment_profile :origin_desert_tower,
+  weights: {attack: 40, armor: 20, max_hp: 25, physical: 15,
+            magical: 10, fire: 50, ice: 10, lightning: 10},
+  kinds: {armor: 10, weapon: 75, jewelry: 10},
+  armor_kinds: {cloth: 34, leather: 33, plate: 33}
 
 # Five tower biomes per Cycle. This plan also generates the brainstorming map
 # from the live monster declarations and their skill lists.

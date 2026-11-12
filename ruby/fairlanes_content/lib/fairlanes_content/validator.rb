@@ -225,6 +225,32 @@ module FairlanesContent
           end
         end
       end
+      profile_stats = %i[attack armor max_hp physical magical fire ice lightning]
+      profile_biomes = declarations.equipment_profiles.map(&:biome)
+      errors << "duplicate equipment profile biomes" unless profile_biomes.uniq.size == profile_biomes.size
+      declarations.equipment_profiles.each do |profile|
+        prefix = "equipment profile #{profile.biome}"
+        errors << "#{prefix} references unknown biome" unless declarations.biomes.any? { |biome| biome.id == profile.biome }
+        if !profile.weights.is_a?(Hash) || (profile.weights.keys - profile_stats).any?
+          errors << "#{prefix} has unsupported stat weights"
+          next
+        end
+        profile.weights.each do |stat, weight|
+          errors << "#{prefix} has invalid #{stat} weight" unless non_negative_integer?(weight) && weight <= 1000
+        end
+        errors << "#{prefix} has no positive stat weights" unless profile.weights.values.any? { |weight| weight.is_a?(Integer) && weight.positive? }
+        {kinds: [%i[armor weapon jewelry], 95],
+         armor_kinds: [%i[cloth leather plate], 100]}.each do |field, (keys, total)|
+          values = profile.public_send(field)
+          if !values.is_a?(Hash) || (values.keys - keys).any?
+            errors << "#{prefix} has unsupported #{field} weights"
+          elsif values.values.any? { |weight| !non_negative_integer?(weight) }
+            errors << "#{prefix} has invalid #{field} weights"
+          elsif keys.sum { |key| values.fetch(key, 0) } != total
+            errors << "#{prefix} #{field} weights must total #{total}"
+          end
+        end
+      end
     end
 
     def validate_floor_content(errors)
@@ -381,13 +407,22 @@ module FairlanesContent
         errors << "#{prefix} has duplicate variants" unless variant_ids.uniq.size == variant_ids.size
         variants.each do |variant|
           unless variant.is_a?(Hash) &&
-                 (variant.keys - %i[id equipped_item skill_overrides observe_members next_skill expected_wins assertions]).empty?
+                 (variant.keys - %i[id equipped_item generated_equipment skill_overrides observe_members next_skill expected_wins assertions]).empty?
             errors << "#{prefix} variant has unknown fields"
           end
           errors << "#{prefix} has invalid variant id" unless stable_id?(variant[:id])
           item = variant[:equipped_item]
           if item && !declarations.gears.any? { |gear| gear.id == item }
             errors << "#{prefix} references unknown gear #{item}"
+          end
+          generated = variant[:generated_equipment]
+          if generated
+            valid_generated = generated.is_a?(Hash) &&
+              (generated.keys - %i[biome tier slot armor_kind]).empty? &&
+              declarations.biomes.any? { |biome| biome.id == generated[:biome] } &&
+              GEAR_TIERS.include?(generated[:tier]) && GEAR_SLOTS.include?(generated[:slot]) &&
+              ARMOR_KINDS.include?(generated.fetch(:armor_kind, :none))
+            errors << "#{prefix} has invalid generated equipment" unless valid_generated
           end
           overrides = variant.fetch(:skill_overrides, {})
           unless overrides.is_a?(Hash) && overrides.all? do |index, skill|

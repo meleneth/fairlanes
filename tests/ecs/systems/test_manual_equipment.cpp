@@ -8,6 +8,7 @@
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/systems/effective_combat_stats.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
 #include "fl/events/party_bus.hpp"
@@ -87,6 +88,27 @@ TEST_CASE("Manual equipment requests reject mismatched slots", "[party][equipmen
   REQUIRE_FALSE(emitted);
   REQUIRE(closet.chest == static_cast<entt::entity>(entt::null));
   REQUIRE(inventory_contains(party, helm));
+}
+
+TEST_CASE("Manual equipment keeps above-level tiers in inventory", "[party][equipment][level]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto ctx = gc.account_context(0).party_context(0);
+  auto& party = ctx.party_data();
+  auto& reg = ctx.reg();
+  party.replace_items({});
+  const auto hero = party.members().front().member_id();
+  reg.get<fl::ecs::components::TrackXP>(hero).level_ = 1;
+  const auto item = fl::loot::EquipmentBuilder{.slot = fl::loot::EquipmentSlot::cape,
+                                               .tier = fl::loot::Tier::fine,
+                                               .name = "Future Cape",
+                                               .armor = 8}
+                        .create(reg);
+  party.add_item(item);
+  party.party_bus().emit(fl::events::PartyEvent{
+      fl::events::EquipmentEquipRequested{hero, fl::loot::EquipmentSlot::cape, item}});
+  REQUIRE(reg.get<fl::ecs::components::PartyMember>(hero).closet().cape ==
+          static_cast<entt::entity>(entt::null));
+  REQUIRE(inventory_contains(party, item));
 }
 
 TEST_CASE("Swapping stat gear recomputes bonuses without stacking or healing",

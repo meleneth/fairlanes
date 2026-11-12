@@ -23,7 +23,8 @@ all declared seeds and variants by default; `compare` is the conventional name
 when interpreting paired variants. Recording and summary directories are made
 automatically. Normal output gives outcomes, beat caps, simulated duration,
 remaining HP, survivors, declared correctness checks, focused mechanic counts,
-and paired deltas. Balance differences are labelled `OBSERVATION` and never
+effective combat stats, damage dealt/received, and paired deltas. Balance
+differences are labelled `OBSERVATION` and never
 become failures unless the Ruby declaration explicitly asserts them.
 
 For investigation, start with the concise comparison, identify the unexpected
@@ -132,6 +133,7 @@ The physical progression fixtures are:
 | `origin_plains_cover_lesson` | `cover` | A projectile aimed at the meerkat resolves on the boar before Bumper Rush, then reaches the meerkat after the screen opens |
 | `origin_woodland_floor10` | `offensive`, `defensive` | The two-member opening party compares two Thump users with one Brace user against the same early physical milestone |
 | `origin_woodland_honey_badger` | `offensive`, `defensive` | Twelve seeds pin Eviscerate casts, bleed applications/ticks/damage/deaths, outcomes, survivors, HP, and duration at floor 50 |
+| `origin_equipment_floor50` | `minimal`, `moderate`, `offensive`, `defensive`, `swamp_distribution` | Eight seeds compare deterministic generated Origin equipment through effective stats, damage, duration, and survival at floor 50; the numeric results are unasserted balance observations |
 
 An action event retains the originally aimed target. Its hit event contains the
 resolved target, so Cover assertions do not infer interception from log text.

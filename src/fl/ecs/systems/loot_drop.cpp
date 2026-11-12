@@ -45,7 +45,8 @@ void LootDropSystem::commit(fl::context::PartyCtx& party_ctx, entt::entity sourc
     return;
   }
 
-  auto builder = fl::loot::global_loot_table().roll(party_ctx, "loot.global");
+  auto builder = fl::loot::global_loot_table().roll(party_ctx, "loot.global",
+                                                    party_ctx.party_data().encounter_biome());
   if (!builder) {
     return;
   }

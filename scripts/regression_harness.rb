@@ -150,6 +150,20 @@ module FairlanesRegression
         },
         "cover" => cover_metrics(recordings)
       }
+      initial_stats = runs.flat_map do |run|
+        Array(run["initial_party_state"]).filter_map { |member| member["stats"] }
+      end
+      stat_means = %w[attack armor max_hp].to_h do |stat|
+        [stat, mean(initial_stats.map { |entry| entry.fetch(stat) })]
+      end
+      resistance_means = %w[physical magical fire ice lightning].to_h do |channel|
+        [channel, mean(initial_stats.map { |entry| entry.fetch("resistances").fetch(channel) })]
+      end
+      combat = {
+        "mean_damage_dealt" => mean(runs.map { |run| Array(run["encounters"]).sum { |entry| entry.fetch("outgoing_damage", 0) } }),
+        "mean_damage_received" => mean(runs.map { |run| Array(run["encounters"]).sum { |entry| entry.fetch("incoming_damage", 0) } }),
+        "mean_effective_stats" => stat_means.merge("resistances" => resistance_means)
+      }
       win_assertion = expected && victories.between?(expected[0], expected[1]) && caps.zero?
       semantic_values = {
         "brace_learned" => mechanics.dig("observe", "skills_learned").fetch("brace/1", 0),
@@ -188,7 +202,8 @@ module FairlanesRegression
                            "win_assertion_passed" => win_assertion,
                            "semantic_assertions" => semantic_assertions,
                            "all_declared_assertions_passed" => all_assertions},
-        "mechanics" => mechanics
+        "mechanics" => mechanics,
+        "combat" => combat
       }
     end
 
@@ -247,8 +262,8 @@ module FairlanesRegression
       recordings_dir = File.join(base, "recordings")
       summaries_dir = File.join(base, "summaries")
       command = [binary, "--fixture", fixture_id, "--variant", variant_id, "--all-seeds",
-                 "--record-dir", recordings_dir, "--summary-dir", summaries_dir,
-                 "--assert-expected"]
+                 "--record-dir", recordings_dir, "--summary-dir", summaries_dir]
+      command << "--assert-expected" if variant["expected_wins"]
       runner.run(command, log_path: File.join(base, "run.log"), chdir: root)
       runs = fixture.fetch("seeds").map do |seed|
         read_json(File.join(summaries_dir, "#{fixture_id}.#{variant_id}.seed#{seed}.summary.json"))

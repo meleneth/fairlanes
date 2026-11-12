@@ -8,6 +8,7 @@
 
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
+#include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/systems/party_gearing.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/loot/equipment_builder.hpp"
@@ -48,6 +49,7 @@ TEST_CASE("PartyGearing equips the same armor kind already being worn",
   party.replace_items({});
   const auto member_id = party.members().front().member_id();
   auto& party_member = reg.get<fl::ecs::components::PartyMember>(member_id);
+  reg.get<fl::ecs::components::TrackXP>(member_id).level_ = 100;
   auto& closet = party_member.closet();
 
   closet.chest = make_item(reg, fl::loot::EquipmentSlot::chest, fl::loot::ArmorKind::cloth,
@@ -75,12 +77,12 @@ TEST_CASE("PartyGearing equips the same armor kind already being worn",
   fl::ecs::systems::PartyGearing::commit(party_ctx);
 
   REQUIRE(closet.helm == cloth_helm);
-  REQUIRE(closet.mainhand == cloth_mainhand);
+  REQUIRE(closet.mainhand == leather_mainhand);
   REQUIRE(closet.necklace == necklace);
   REQUIRE(inventory_contains(party, leather_helm));
-  REQUIRE(inventory_contains(party, leather_mainhand));
+  REQUIRE(inventory_contains(party, cloth_mainhand));
   REQUIRE_FALSE(inventory_contains(party, cloth_helm));
-  REQUIRE_FALSE(inventory_contains(party, cloth_mainhand));
+  REQUIRE_FALSE(inventory_contains(party, leather_mainhand));
   REQUIRE_FALSE(inventory_contains(party, necklace));
   REQUIRE(party.log().size() == previous_log_size + 3);
 }
@@ -122,8 +124,12 @@ TEST_CASE("PartyGearing upgrades only loose normal gear", "[party][gearing][upgr
   for (int i = 0; i < 3; ++i) {
     party.add_item(make_item(reg, fl::loot::EquipmentSlot::gloves, fl::loot::ArmorKind::leather,
                              fl::loot::Tier::plain, "Plain Leather Gloves"));
-    party.add_item(make_item(reg, fl::loot::EquipmentSlot::cape, fl::loot::ArmorKind::cloth,
-                             fl::loot::Tier::fine, "Mouse-Nibbled Cape"));
+    party.add_item(fl::loot::EquipmentBuilder{.slot = fl::loot::EquipmentSlot::cape,
+                                              .armor_kind = fl::loot::ArmorKind::cloth,
+                                              .tier = fl::loot::Tier::fine,
+                                              .name = "Mouse-Nibbled Cape",
+                                              .unique_id = "mouse_nibbled_cape"}
+                       .create(reg));
     party.add_item(make_item(reg, fl::loot::EquipmentSlot::belt, fl::loot::ArmorKind::plate,
                              fl::loot::Tier::mythic, "Mythic Plate Belt"));
     party.add_item(make_item(reg, fl::loot::EquipmentSlot::mainhand, fl::loot::ArmorKind::cloth,
@@ -173,4 +179,48 @@ TEST_CASE("PartyGearing upgrades only loose normal gear", "[party][gearing][upgr
   REQUIRE(sturdy_rings == 1);
   REQUIRE(party.items().size() == 9);
   REQUIRE(party.log().size() == previous_log_size + 3);
+}
+
+TEST_CASE("PartyGearing preserves stronger specialization and reevaluates on level gain",
+          "[party][gearing][stats][level]") {
+  fl::GrandCentral gc{1, 1, 1};
+  auto ctx = gc.account_context(0).party_context(0);
+  auto& party = ctx.party_data();
+  auto& reg = ctx.reg();
+  party.replace_items({});
+  const auto hero = party.members().front().member_id();
+  auto& member = reg.get<fl::ecs::components::PartyMember>(hero);
+  auto& xp = reg.get<fl::ecs::components::TrackXP>(hero);
+  xp.level_ = 9;
+
+  const auto specialized = fl::loot::EquipmentBuilder{.slot = fl::loot::EquipmentSlot::mainhand,
+                                                      .tier = fl::loot::Tier::plain,
+                                                      .name = "Specialized Plain Mainhand",
+                                                      .attack = 4}
+                               .create(reg);
+  member.closet().mainhand = specialized;
+  const auto eligible_later = fl::loot::EquipmentBuilder{.slot = fl::loot::EquipmentSlot::mainhand,
+                                                         .tier = fl::loot::Tier::sturdy,
+                                                         .name = "Sturdy Mainhand",
+                                                         .attack = 5}
+                                  .create(reg);
+  const auto shifted_build = fl::loot::EquipmentBuilder{.slot = fl::loot::EquipmentSlot::mainhand,
+                                                        .tier = fl::loot::Tier::plain,
+                                                        .name = "Defensive Plain Mainhand",
+                                                        .armor = 10}
+                                 .create(reg);
+  party.add_item(eligible_later);
+  party.add_item(shifted_build);
+
+  fl::ecs::systems::PartyGearing::commit(ctx);
+  REQUIRE(member.closet().mainhand == specialized);
+  REQUIRE(inventory_contains(party, eligible_later));
+  REQUIRE(inventory_contains(party, shifted_build));
+
+  xp.level_ = 10;
+  member.member_data().bus().emit(
+      fl::events::PartyEvent{fl::events::PartyGainedLevel{hero, xp.level_}});
+  REQUIRE(member.closet().mainhand == eligible_later);
+  REQUIRE(inventory_contains(party, specialized));
+  REQUIRE(inventory_contains(party, shifted_build));
 }

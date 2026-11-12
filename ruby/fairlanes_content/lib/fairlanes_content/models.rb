@@ -20,6 +20,7 @@ module FairlanesContent
   )
 
   Gear = Struct.new(:id, :display, :slot, :armor_kind, :tier, :weight, :modifiers, keyword_init: true)
+  EquipmentProfile = Struct.new(:biome, :weights, :kinds, :armor_kinds, keyword_init: true)
   EncounterPool = Struct.new(:id, :lineups, keyword_init: true)
   FloorBand = Struct.new(:from, :to, :pool, keyword_init: true)
   FloorOverride = Struct.new(

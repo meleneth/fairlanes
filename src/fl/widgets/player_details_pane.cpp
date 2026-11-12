@@ -150,6 +150,11 @@ ftxui::Element PlayerDetailsPane::Render() {
         text("HP " + std::to_string(stats->hp_) + "/" + std::to_string(effective.max_hp)));
     lines.push_back(text("Attack " + std::to_string(effective.attack) + "   Armor " +
                          std::to_string(effective.armor)));
+    const auto& r = effective.resistances;
+    lines.push_back(text("Resist P" + std::to_string(r.physical) + " M" +
+                         std::to_string(r.magical) + " F" + std::to_string(r.fire) + " I" +
+                         std::to_string(r.ice) + " L" + std::to_string(r.lightning)) |
+                    dim);
   } else {
     lines.push_back(text("No stats."));
   }

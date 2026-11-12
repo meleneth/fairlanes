@@ -25,6 +25,7 @@
 #include "fl/primitives/party_data.hpp"
 #include "fl/skills/skill_definition.hpp"
 #include "fl/skills/skill_learning.hpp"
+#include "fl/skills/skill_scaling.hpp"
 #include "fl/skills/skill_selection.hpp"
 #include "fl/skills/skill_visuals.hpp"
 #include "fl/skills/thump.hpp"
@@ -198,15 +199,18 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
   using fl::ecs::systems::CombatStatusSystem;
 
   switch (skill.base) {
-  case SkillId::Brace:
+  case SkillId::Brace: {
+    const int mitigation = brace_mitigation_percent(
+        fl::ecs::systems::effective_combat_stats(party_ctx.reg(), attacker));
     CombatStatusSystem::apply_status(party_ctx, scheduler,
                                      {.kind = CombatStatusKind::Brace,
                                       .name = display_name(skill),
                                       .source = attacker,
                                       .target = attacker,
-                                      .value = 35,
+                                      .value = mitigation,
                                       .negative = false});
     return;
+  }
   case SkillId::ShellGuard:
     CombatStatusSystem::apply_status(party_ctx, scheduler,
                                      {.kind = CombatStatusKind::Shield,

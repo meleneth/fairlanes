@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <entt/entity/entity.hpp>
+#include <fmt/format.h>
 #include <nlohmann/json.hpp>
 
 #include "fl/build_identity.hpp"
@@ -22,6 +23,7 @@
 #include "fl/ecs/components/poison.hpp"
 #include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/systems/effective_combat_stats.hpp"
 #include "fl/ecs/systems/manual_equipment.hpp"
 #include "fl/events/party_bus.hpp"
@@ -29,6 +31,7 @@
 #include "fl/generated/monster_content.hpp"
 #include "fl/generated/regression_content.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/loot/equipment_stat_policy.hpp"
 #include "fl/monsters/monster_kind.hpp"
 #include "fl/primitives/encounter_builder.hpp"
 #include "fl/primitives/encounter_data.hpp"
@@ -117,6 +120,7 @@ struct Session::Impl {
     int brace_mitigated_hits{0};
     int brace_mitigated_damage{0};
     int incoming_damage{0};
+    int outgoing_damage{0};
     int eviscerate_casts{0};
     int bleed_applications{0};
     int bleed_ticks{0};
@@ -287,6 +291,29 @@ struct Session::Impl {
         throw std::runtime_error("could not equip regression variant item");
       equipped_item_id = std::string(gear.unique_id());
     }
+    if (variant->generated_equipment) {
+      const auto& generated = *variant->generated_equipment;
+      for (std::size_t hero_index = 0; hero_index < actors.size(); ++hero_index) {
+        fl::loot::EquipmentBuilder builder{.slot = generated.slot,
+                                           .armor_kind = generated.armor_kind,
+                                           .tier = generated.tier,
+                                           .name = "Regression " + std::string(generated.biome_id) +
+                                                   " equipment"};
+        fl::loot::apply_ordinary_equipment_stats(
+            builder, game.rng(), generated.biome_id,
+            fmt::format("regression.equipment.{}.{}", variant->id, hero_index));
+        const auto item = builder.create(game.reg());
+        party.add_item(item);
+        auto& xp = game.reg().get<fl::ecs::components::TrackXP>(actors[hero_index].entity);
+        xp.level_ = std::max(xp.level_, fl::loot::equipment_minimum_level(generated.tier));
+        const auto request =
+            fl::events::EquipmentEquipRequested{actors[hero_index].entity, generated.slot, item};
+        if (!fl::ecs::systems::ManualEquipmentSystem::commit(party_ctx, request))
+          throw std::runtime_error("could not equip generated regression item");
+      }
+      equipped_item_id =
+          fmt::format("generated:{}:{}", generated.biome_id, static_cast<int>(generated.tier));
+    }
     party.revitalize_members();
 
     const auto first_encounter = scenario.encounters.front();
@@ -333,8 +360,7 @@ struct Session::Impl {
            {"loadout", loadout},
            {"known_skills", known},
            {"action_policy", hero ? "single_equipped_skill" : "monster_decision_rules"},
-           {"gear", hero && i == 0 && equipped_item_id ? Json::array({*equipped_item_id})
-                                                       : Json::array()}});
+           {"gear", hero && equipped_item_id ? Json::array({*equipped_item_id}) : Json::array()}});
     }
     extended_recording = scenario.recording_version == 2;
     recording = {{"format", "fairlanes-combat-recording"},
@@ -407,6 +433,7 @@ struct Session::Impl {
         if (skill) loadout.push_back(skill_id(*skill));
       result.push_back({{"id", "hero" + std::to_string(index + 1)},
                         {"hp", game.reg().get<Stats>(entity).hp_},
+                        {"stats", stats_json(game.reg(), entity)},
                         {"known_skills", std::move(known)},
                         {"loadout", std::move(loadout)}});
     }
@@ -453,8 +480,11 @@ struct Session::Impl {
     listeners.emplace_back(bus, std::in_place_type<fl::events::SkillHitLanded>,
                            [this](const auto& event) {
                              const auto target = actor_id(event.target);
+                             const auto source = actor_id(event.source);
                              if (target.starts_with("hero"))
                                metrics.incoming_damage += event.damage;
+                             if (source.starts_with("hero"))
+                               metrics.outgoing_damage += event.damage;
                              append({{"type", "hit"},
                                      {"actor", actor_id(event.source)},
                                      {"target", actor_id(event.target)},
@@ -540,6 +570,7 @@ struct Session::Impl {
             {"brace_mitigated_hits", metrics.brace_mitigated_hits},
             {"brace_mitigated_damage", metrics.brace_mitigated_damage},
             {"incoming_damage", metrics.incoming_damage},
+            {"outgoing_damage", metrics.outgoing_damage},
             {"eviscerate_casts", metrics.eviscerate_casts},
             {"bleed_applications", metrics.bleed_applications},
             {"bleed_ticks", metrics.bleed_ticks},

@@ -8,7 +8,7 @@ module FairlanesContent
     attr_reader :visuals, :skills, :random_combat_skills, :monsters, :statuses,
                 :gears, :encounter_pools, :tower_patterns, :biomes, :regressions, :biome_plans,
                 :recruitment_opportunities, :story_events, :objectives, :dialogues, :autoplay_routes,
-                :origin_auto_regressions
+                :origin_auto_regressions, :equipment_profiles
 
     def self.load_file(path)
       new.tap { |set| set.load_file(path) }
@@ -21,6 +21,7 @@ module FairlanesContent
       @monsters = []
       @statuses = []
       @gears = []
+      @equipment_profiles = []
       @encounter_pools = []
       @tower_patterns = []
       @biomes = []
@@ -133,6 +134,11 @@ module FairlanesContent
                         modifiers: modifiers)
     end
 
+    def equipment_profile(biome, weights:, kinds:, armor_kinds:)
+      equipment_profiles << EquipmentProfile.new(biome: biome, weights: weights, kinds: kinds,
+                                                  armor_kinds: armor_kinds)
+    end
+
     def encounter_pool(id, lineups:)
       encounter_pools << EncounterPool.new(id: id, lineups: lineups)
     end
@@ -216,6 +222,8 @@ module FairlanesContent
       statuses.freeze
       gears.each(&:freeze)
       gears.freeze
+      equipment_profiles.each(&:freeze)
+      equipment_profiles.freeze
       encounter_pools.each(&:freeze)
       encounter_pools.freeze
       tower_patterns.each(&:freeze)

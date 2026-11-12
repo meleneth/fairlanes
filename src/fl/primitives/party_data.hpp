@@ -207,6 +207,9 @@ public:
       "origin_woodland_tower", "origin_plains_tower", "origin_murky_swamp_tower",
       "origin_caves_tower", "origin_desert_tower"};
   std::optional<TowerRoute> tower_route() const noexcept;
+  std::string_view encounter_biome() const noexcept {
+    return encounter_tower_biome_;
+  }
   bool select_tower(std::string_view biome_id, std::optional<int> floor = std::nullopt);
   int latest_tower_floor(std::string_view biome_id) const noexcept;
   int highest_tower_floor_cleared(std::string_view biome_id) const noexcept;

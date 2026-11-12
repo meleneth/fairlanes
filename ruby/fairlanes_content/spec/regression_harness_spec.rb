@@ -6,7 +6,10 @@ require_relative "../../../scripts/regression_harness"
 
 RSpec.describe FairlanesRegression do
   def run_summary(seed:, outcome: "hero_victory", learned: true, cap: false)
-    initial = [{"known_skills" => ["observe/1"], "loadout" => ["observe/1"]}]
+    initial = [{"known_skills" => ["observe/1"], "loadout" => ["observe/1"],
+                "stats" => {"attack" => 3, "armor" => 2, "max_hp" => 20,
+                            "resistances" => {"physical" => 0, "magical" => 0, "fire" => 0,
+                                              "ice" => 0, "lightning" => 0}}}]
     final_skills = learned ? ["observe/1", "brace/1"] : ["observe/1"]
     {
       "seed" => seed,
@@ -19,7 +22,8 @@ RSpec.describe FairlanesRegression do
       "final_party_state" => [{"known_skills" => final_skills, "loadout" => ["brace/1"]}],
       "encounters" => [{"brace_applications" => 1, "brace_consumptions" => 1,
                          "brace_mitigated_hits" => 1,
-                         "brace_mitigated_damage" => 2}]
+                         "brace_mitigated_damage" => 2,
+                         "outgoing_damage" => 12, "incoming_damage" => 5}]
     }
   end
 
@@ -34,6 +38,8 @@ RSpec.describe FairlanesRegression do
                                                  [run_summary(seed: 1), run_summary(seed: 2)], [])
     expect(report.dig("correctness", "all_declared_assertions_passed")).to be(true)
     expect(report.dig("mechanics", "brace", "damage_prevented")).to eq(4)
+    expect(report.dig("combat", "mean_damage_dealt")).to eq(12.0)
+    expect(report.dig("combat", "mean_effective_stats", "attack")).to eq(3.0)
     expect(report.fetch("seed_results").map { |entry| entry.fetch("seed") }).to eq([1, 2])
     expect(report.dig("correctness", "semantic_assertions").map { |entry| entry.fetch("id") }).to eq(
       %w[brace_learned brace_retained brace_equipped brace_mitigated])

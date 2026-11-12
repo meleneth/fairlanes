@@ -12,6 +12,7 @@ struct EquipmentBuilder {
   fl::loot::Tier tier{fl::loot::Tier::worn};
   std::string name;
   std::string unique_id{};
+  std::string biome_id{};
   fl::primitives::Resistances resistances{};
   int attack{0};
   int armor{0};
@@ -21,7 +22,7 @@ struct EquipmentBuilder {
     auto item = reg.create();
 
     reg.emplace<fl::ecs::components::Equipment>(item, slot, name, armor_kind, tier, unique_id,
-                                                resistances, attack, armor, max_hp);
+                                                resistances, attack, armor, max_hp, biome_id);
 
     return item;
   }

@@ -1,11 +1,11 @@
 {
   "beat_cap": 1200,
   "build": {
-    "revision": "6fd361b53e6a1d0a7a74cd3a0f0416c7097b4949",
+    "revision": "e0f9c9d020a3c7adf129948a9679d74b5233e8a8",
     "source_dirty": true,
     "version": "0.1.0"
   },
-  "content_sha256": "72345b7f6ffb9214b3950c761117d92139cf7728a857dd2260222a455ddc9bb8",
+  "content_sha256": "fb89be668b2021eb2868f043a95b07510ce27566bfe73c9cbbacf3b63865a443",
   "events": [
     {
       "actor": "hero",

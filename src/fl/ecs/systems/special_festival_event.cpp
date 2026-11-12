@@ -19,7 +19,8 @@ void SpecialFestivalEvent::grant_starting_drops(fl::context::PartyCtx& ctx) {
 
   while (granted < kDropsPerParty) {
     const auto stream_name = fmt::format("festival.{}.{}", party_id, rolls++);
-    if (auto builder = loot.roll(ctx, stream_name)) {
+    if (auto builder =
+            loot.roll(ctx, stream_name, fl::primitives::PartyData::kOriginBiomeIds.front())) {
       ctx.party_data().add_item(builder->create(ctx.reg()));
       ++granted;
     }

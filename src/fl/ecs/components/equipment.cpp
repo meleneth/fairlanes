@@ -7,10 +7,11 @@ namespace fl::ecs::components {
 
 Equipment::Equipment(fl::loot::EquipmentSlot slot, std::string name, fl::loot::ArmorKind armor_kind,
                      fl::loot::Tier tier, std::string unique_id,
-                     fl::primitives::Resistances resistances, int attack, int armor, int max_hp)
+                     fl::primitives::Resistances resistances, int attack, int armor, int max_hp,
+                     std::string biome_id)
     : slot_(slot), armor_kind_(armor_kind), tier_(tier), name_(std::move(name)),
-      unique_id_(std::move(unique_id)), resistances_(resistances), attack_(attack), armor_(armor),
-      max_hp_(max_hp) {}
+      unique_id_(std::move(unique_id)), biome_id_(std::move(biome_id)), resistances_(resistances),
+      attack_(attack), armor_(armor), max_hp_(max_hp) {}
 
 fl::loot::EquipmentSlot Equipment::slot() const noexcept {
   return slot_;
@@ -38,6 +39,10 @@ std::string_view Equipment::unique_id() const noexcept {
 
 bool Equipment::is_unique() const noexcept {
   return !unique_id_.empty();
+}
+
+std::string_view Equipment::biome_id() const noexcept {
+  return biome_id_;
 }
 
 const fl::primitives::Resistances& Equipment::resistances() const noexcept {

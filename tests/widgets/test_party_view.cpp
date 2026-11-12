@@ -8,6 +8,7 @@
 #include <ftxui/screen/screen.hpp>
 
 #include "fl/ecs/components/party_member.hpp"
+#include "fl/ecs/components/track_xp.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/loot/equipment_builder.hpp"
 #include "fl/skills/skill_definition.hpp"
@@ -129,6 +130,7 @@ TEST_CASE("Party player inventory equips filtered gear through party events",
   party.add_item(helm);
 
   const auto member = party.members().front().member_id();
+  reg.get<fl::ecs::components::TrackXP>(member).level_ = 100;
   auto& closet = reg.get<fl::ecs::components::PartyMember>(member).closet();
   fl::widgets::PartyView view{account_ctx, 0};
 

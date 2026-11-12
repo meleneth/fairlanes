@@ -58,6 +58,35 @@ regression :origin_woodland_honey_badger,
      assertions: %i[eviscerate_cast bleed_applied bleed_ticked bleed_death]}
   ]
 
+# Provisional equipment progression comparison at the existing floor-50 gate.
+# Generated equipment is applied to every member so the variants measure party
+# builds rather than one hero's lucky item. No win range is asserted while the
+# numeric curves remain experimental.
+regression :origin_equipment_floor50,
+  encounter: {biome: :origin_woodland_tower, floor: 50},
+  party: Array.new(5) { {hp: 30, attack: 4, armor: 1, resistances: {},
+                         skill: :thump, policy: :single_equipped_skill} },
+  seeds: [1, 2, 3, 4, 5, 6, 7, 8],
+  beat_cap: 5000,
+  recording_version: 2,
+  variants: [
+    {id: :minimal,
+     generated_equipment: {biome: :origin_woodland_tower, tier: :worn,
+                           slot: :cape, armor_kind: :cloth}},
+    {id: :moderate,
+     generated_equipment: {biome: :origin_woodland_tower, tier: :fine,
+                           slot: :cape, armor_kind: :cloth}},
+    {id: :offensive,
+     generated_equipment: {biome: :origin_desert_tower, tier: :excellent,
+                           slot: :mainhand, armor_kind: :none}},
+    {id: :defensive,
+     generated_equipment: {biome: :origin_caves_tower, tier: :excellent,
+                           slot: :chest, armor_kind: :plate}},
+    {id: :swamp_distribution,
+     generated_equipment: {biome: :origin_murky_swamp_tower, tier: :excellent,
+                           slot: :chest, armor_kind: :plate}}
+  ]
+
 regression :origin_woodland_stag_lesson,
   encounter: {biome: :origin_woodland_tower, floor: 7},
   party: [

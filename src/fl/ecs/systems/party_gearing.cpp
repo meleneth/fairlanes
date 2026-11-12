@@ -14,8 +14,10 @@
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/systems/effective_combat_stats.hpp"
 #include "fl/loot/equipment_builder.hpp"
+#include "fl/loot/equipment_stat_policy.hpp"
 #include "fl/lospec500.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/widgets/equipment_label.hpp"
@@ -153,8 +155,7 @@ std::string generated_name(EquipmentSlot slot, ArmorKind kind, Tier tier) {
 }
 
 bool is_special(const Equipment& equipment) {
-  const auto name = equipment.name();
-  return name == "Boots of Damp Authority" || name == "Mouse-Nibbled Cape";
+  return equipment.is_unique();
 }
 
 bool is_better(const Equipment* candidate, const Equipment* current) {
@@ -164,7 +165,32 @@ bool is_better(const Equipment* candidate, const Equipment* current) {
   if (current == nullptr) {
     return true;
   }
-  return tier_rank(candidate->tier()) > tier_rank(current->tier());
+  const int candidate_value = fl::loot::equipment_combat_value(*candidate);
+  const int current_value = fl::loot::equipment_combat_value(*current);
+  if (candidate_value < current_value) return false;
+  if (candidate_value > current_value) {
+    if (current_value == 0) return true;
+    const auto& candidate_resistance = candidate->resistances();
+    const auto& current_resistance = current->resistances();
+    return candidate->attack() >= current->attack() && candidate->armor() >= current->armor() &&
+           candidate->max_hp() >= current->max_hp() &&
+           candidate_resistance.physical >= current_resistance.physical &&
+           candidate_resistance.magical >= current_resistance.magical &&
+           candidate_resistance.fire >= current_resistance.fire &&
+           candidate_resistance.ice >= current_resistance.ice &&
+           candidate_resistance.lightning >= current_resistance.lightning;
+  }
+  const auto& candidate_resistance = candidate->resistances();
+  const auto& current_resistance = current->resistances();
+  const bool same_modifiers = candidate->attack() == current->attack() &&
+                              candidate->armor() == current->armor() &&
+                              candidate->max_hp() == current->max_hp() &&
+                              candidate_resistance.physical == current_resistance.physical &&
+                              candidate_resistance.magical == current_resistance.magical &&
+                              candidate_resistance.fire == current_resistance.fire &&
+                              candidate_resistance.ice == current_resistance.ice &&
+                              candidate_resistance.lightning == current_resistance.lightning;
+  return same_modifiers && tier_rank(candidate->tier()) > tier_rank(current->tier());
 }
 
 void append_equipped_log(fl::context::PartyCtx& ctx, std::string_view member,
@@ -208,7 +234,8 @@ std::optional<ArmorKind> existing_armor_kind(entt::registry& reg, const Closet& 
 }
 
 std::optional<ArmorKind> best_available_armor_kind(entt::registry& reg,
-                                                   const std::vector<entt::entity>& inventory) {
+                                                   const std::vector<entt::entity>& inventory,
+                                                   int character_level) {
   struct Score {
     ArmorKind kind;
     int pieces{0};
@@ -223,7 +250,8 @@ std::optional<ArmorKind> best_available_armor_kind(entt::registry& reg,
 
   for (auto item : inventory) {
     const auto* equipment = reg.try_get<Equipment>(item);
-    if (equipment == nullptr || !equipment->is_armor()) {
+    if (equipment == nullptr || !equipment->is_armor() ||
+        !fl::loot::can_equip(*equipment, character_level)) {
       continue;
     }
 
@@ -252,22 +280,24 @@ std::optional<ArmorKind> best_available_armor_kind(entt::registry& reg,
 std::optional<std::size_t> find_best_inventory_item(entt::registry& reg,
                                                     const std::vector<entt::entity>& inventory,
                                                     EquipmentSlot slot, ArmorKind kind,
-                                                    const Equipment* current) {
+                                                    const Equipment* current, int character_level,
+                                                    bool match_kind = true) {
   std::optional<std::size_t> best_index;
   const Equipment* best_equipment = nullptr;
 
   for (std::size_t i = 0; i < inventory.size(); ++i) {
     const auto* equipment = reg.try_get<Equipment>(inventory[i]);
-    if (equipment == nullptr || equipment->slot() != slot || equipment->armor_kind() != kind) {
+    if (equipment == nullptr || equipment->slot() != slot ||
+        (match_kind && equipment->armor_kind() != kind)) {
       continue;
     }
+    if (!fl::loot::can_equip(*equipment, character_level)) continue;
 
     if (!is_better(equipment, current)) {
       continue;
     }
 
-    if (best_equipment == nullptr ||
-        tier_rank(equipment->tier()) > tier_rank(best_equipment->tier())) {
+    if (best_equipment == nullptr || is_better(equipment, best_equipment)) {
       best_index = i;
       best_equipment = equipment;
     }
@@ -286,35 +316,19 @@ void equip_party(fl::context::PartyCtx& ctx, std::vector<entt::entity>& inventor
     }
 
     auto& closet = party_member->closet();
+    const auto* xp = reg.try_get<fl::ecs::components::TrackXP>(member.member_id());
+    const int character_level = xp == nullptr ? 1 : xp->level_;
     auto preferred_kind = existing_armor_kind(reg, closet);
     if (!preferred_kind) {
-      preferred_kind = best_available_armor_kind(reg, inventory);
+      preferred_kind = best_available_armor_kind(reg, inventory, character_level);
     }
 
     if (preferred_kind) {
       for (auto slot : kArmorSlots) {
         auto& worn = slot_ref(closet, slot);
         const auto* current = worn == entt::null ? nullptr : reg.try_get<Equipment>(worn);
-        auto best_index = find_best_inventory_item(reg, inventory, slot, *preferred_kind, current);
-        if (!best_index) {
-          continue;
-        }
-
-        const auto next_item = inventory[*best_index];
-        const auto& next_equipment = reg.get<Equipment>(next_item);
-        inventory.erase(inventory.begin() + static_cast<std::ptrdiff_t>(*best_index));
-        if (worn != entt::null) {
-          inventory.push_back(worn);
-        }
-        worn = next_item;
-
-        append_equipped_log(ctx, member.name(), next_equipment, slot);
-      }
-
-      for (auto slot : kWeaponSlots) {
-        auto& worn = slot_ref(closet, slot);
-        const auto* current = worn == entt::null ? nullptr : reg.try_get<Equipment>(worn);
-        auto best_index = find_best_inventory_item(reg, inventory, slot, *preferred_kind, current);
+        auto best_index = find_best_inventory_item(reg, inventory, slot, *preferred_kind, current,
+                                                   character_level);
         if (!best_index) {
           continue;
         }
@@ -331,10 +345,26 @@ void equip_party(fl::context::PartyCtx& ctx, std::vector<entt::entity>& inventor
       }
     }
 
+    for (auto slot : kWeaponSlots) {
+      auto& worn = slot_ref(closet, slot);
+      const auto* current = worn == entt::null ? nullptr : reg.try_get<Equipment>(worn);
+      auto best_index = find_best_inventory_item(reg, inventory, slot, ArmorKind::none, current,
+                                                 character_level, false);
+      if (!best_index) continue;
+
+      const auto next_item = inventory[*best_index];
+      const auto& next_equipment = reg.get<Equipment>(next_item);
+      inventory.erase(inventory.begin() + static_cast<std::ptrdiff_t>(*best_index));
+      if (worn != entt::null) inventory.push_back(worn);
+      worn = next_item;
+      append_equipped_log(ctx, member.name(), next_equipment, slot);
+    }
+
     for (auto slot : kJewelrySlots) {
       auto& worn = slot_ref(closet, slot);
       const auto* current = worn == entt::null ? nullptr : reg.try_get<Equipment>(worn);
-      auto best_index = find_best_inventory_item(reg, inventory, slot, ArmorKind::none, current);
+      auto best_index =
+          find_best_inventory_item(reg, inventory, slot, ArmorKind::none, current, character_level);
       if (!best_index) {
         continue;
       }
@@ -399,22 +429,38 @@ void upgrade_inventory(fl::context::PartyCtx& ctx, std::vector<entt::entity>& in
             continue;
           }
 
-          std::vector<std::size_t> matches;
+          std::optional<std::array<std::size_t, 3>> match;
           for (std::size_t i = 0; i < inventory.size(); ++i) {
             const auto* equipment = reg.try_get<Equipment>(inventory[i]);
-            if (equipment != nullptr && !is_special(*equipment) && equipment->slot() == slot &&
-                equipment->armor_kind() == kind && equipment->tier() == tier) {
-              matches.push_back(i);
+            if (equipment == nullptr || is_special(*equipment) || equipment->slot() != slot ||
+                equipment->armor_kind() != kind || equipment->tier() != tier)
+              continue;
+            std::array<std::size_t, 3> candidates{i, 0, 0};
+            std::size_t count = 1;
+            for (std::size_t j = i + 1; j < inventory.size() && count < 3; ++j) {
+              const auto* other = reg.try_get<Equipment>(inventory[j]);
+              if (other != nullptr && !is_special(*other) && other->slot() == slot &&
+                  other->armor_kind() == kind && other->tier() == tier &&
+                  other->biome_id() == equipment->biome_id())
+                candidates[count++] = j;
+            }
+            if (count == 3) {
+              match = candidates;
+              break;
             }
           }
 
-          while (matches.size() >= 3) {
-            std::array<std::size_t, 3> consumed{matches.back(), 0, 0};
-            matches.pop_back();
-            consumed[1] = matches.back();
-            matches.pop_back();
-            consumed[2] = matches.back();
-            matches.pop_back();
+          if (match) {
+            auto consumed = *match;
+
+            const auto first = reg.get<Equipment>(inventory[consumed[0]]);
+            const auto second = reg.get<Equipment>(inventory[consumed[1]]);
+            const auto third = reg.get<Equipment>(inventory[consumed[2]]);
+            auto upgraded_builder = fl::loot::upgraded_equipment_builder(
+                first, second, third, *next, ctx.rng(),
+                fmt::format("equipment.upgrade.{}.{}.{}", static_cast<int>(slot),
+                            static_cast<int>(tier), first.biome_id()));
+            upgraded_builder.name = generated_name(slot, kind, *next);
 
             std::sort(consumed.begin(), consumed.end(), std::greater<>{});
             for (auto index : consumed) {
@@ -422,15 +468,7 @@ void upgrade_inventory(fl::context::PartyCtx& ctx, std::vector<entt::entity>& in
               inventory.erase(inventory.begin() + static_cast<std::ptrdiff_t>(index));
             }
 
-            auto upgraded_item =
-                fl::loot::EquipmentBuilder{
-                    .slot = slot,
-                    .armor_kind = kind,
-                    .tier = *next,
-                    .name = generated_name(slot, kind, *next),
-                    .unique_id = {},
-                }
-                    .create(reg);
+            auto upgraded_item = upgraded_builder.create(reg);
             inventory.push_back(upgraded_item);
             upgraded = true;
 

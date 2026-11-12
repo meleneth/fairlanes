@@ -1,6 +1,9 @@
 #include "member_data.hpp"
 
+#include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/systems/party_gearing.hpp"
+#include "fl/primitives/party_data.hpp"
 
 namespace fl::primitives {
 
@@ -14,6 +17,9 @@ void MemberData::hook_level_progression(entt::registry& reg) {
 
         if (auto* stats = reg.try_get<fl::ecs::components::Stats>(member_id_)) {
           stats->max_hp_ += 5;
+        }
+        if (auto* member = reg.try_get<fl::ecs::components::PartyMember>(member_id_)) {
+          fl::ecs::systems::PartyGearing::commit(member->party().party_data().party_ctx());
         }
       }};
 }

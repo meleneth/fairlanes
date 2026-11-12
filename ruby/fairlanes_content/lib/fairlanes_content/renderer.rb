@@ -15,6 +15,7 @@ module FairlanesContent
     def visuals = declarations.visuals
     def random_combat_skills = declarations.random_combat_skills
     def gears = declarations.gears
+    def equipment_profiles = declarations.equipment_profiles
     def encounter_pools = declarations.encounter_pools
     def tower_patterns = declarations.tower_patterns
     def biomes = declarations.biomes
@@ -269,13 +270,19 @@ module FairlanesContent
         variants = scenario.variants.map do |variant|
           wins = variant[:expected_wins]
           item = variant[:equipped_item] ? "fl::loot::generated_content::GearId::#{camel(variant[:equipped_item])}" : "std::nullopt"
+          generated = if variant[:generated_equipment]
+            gear = variant[:generated_equipment]
+            "Variant::GeneratedEquipment{#{cpp_string(gear[:biome].to_s)}, fl::loot::Tier::#{gear[:tier]}, fl::loot::EquipmentSlot::#{gear[:slot]}, fl::loot::ArmorKind::#{gear.fetch(:armor_kind, :none)}}"
+          else
+            "std::nullopt"
+          end
           overrides = (0...5).map do |member_index|
             skill_id = variant.fetch(:skill_overrides, {})[member_index]
             skill_id ? "fl::skills::SkillId::#{skills.find { |skill| skill.id == skill_id }.cpp_id}" : "std::nullopt"
           end.join(", ")
           observers = (0...5).map { |member_index| variant.fetch(:observe_members, []).include?(member_index) ? "true" : "false" }.join(", ")
           next_skill = variant[:next_skill] ? "fl::skills::SkillId::#{skills.find { |skill| skill.id == variant[:next_skill] }.cpp_id}" : "std::nullopt"
-          "  Variant{#{cpp_string(variant[:id].to_s)}, #{item}, {#{overrides}}, {#{observers}}, #{next_skill}, #{wins ? wins.begin : 0}, #{wins ? wins.end : 0}, #{wins ? 'true' : 'false'}},"
+          "  Variant{#{cpp_string(variant[:id].to_s)}, #{item}, #{generated}, {#{overrides}}, {#{observers}}, #{next_skill}, #{wins ? wins.begin : 0}, #{wins ? wins.end : 0}, #{wins ? 'true' : 'false'}},"
         end.join("\n")
         <<~CPP
           inline constexpr std::array<MemberSetup, #{scenario.party.size}> kMembers#{index}{{
@@ -301,6 +308,9 @@ module FairlanesContent
         #include <optional>
         #include <string_view>
         #include "fl/generated/gear_content.hpp"
+        #include "fl/loot/armor_kind.hpp"
+        #include "fl/loot/equipment_slot.hpp"
+        #include "fl/loot/tier.hpp"
         #include "fl/primitives/damage.hpp"
         #include "fl/skills/skill.hpp"
 
@@ -321,6 +331,13 @@ module FairlanesContent
         struct Variant {
           std::string_view id;
           std::optional<fl::loot::generated_content::GearId> equipped_item;
+          struct GeneratedEquipment {
+            std::string_view biome_id;
+            fl::loot::Tier tier;
+            fl::loot::EquipmentSlot slot;
+            fl::loot::ArmorKind armor_kind;
+          };
+          std::optional<GeneratedEquipment> generated_equipment;
           std::array<std::optional<fl::skills::SkillId>, 5> skill_overrides;
           std::array<bool, 5> observe_equipped;
           std::optional<fl::skills::SkillId> next_skill;
@@ -382,10 +399,19 @@ module FairlanesContent
         CPP
       end.join
       ids = gears.map { |gear| "  #{camel(gear.id)}," }.join("\n")
+      profile_stats = %i[attack armor max_hp physical magical fire ice lightning]
+      profile_rows = equipment_profiles.map do |profile|
+        weights = profile_stats.map { |stat| profile.weights.fetch(stat, 0) }.join(", ")
+        kinds = %i[armor weapon jewelry].map { |kind| profile.kinds.fetch(kind, 0) }.join(", ")
+        armor = %i[cloth leather plate].map { |kind| profile.armor_kinds.fetch(kind, 0) }.join(", ")
+        "  EquipmentProfile{#{cpp_string(profile.biome.to_s)}, EquipmentStatWeights{#{weights}}, EquipmentKindWeights{#{kinds}}, ArmorKindWeights{#{armor}}},"
+      end.join("\n")
       <<~CPP
         #pragma once
         #include <array>
         #include <cstddef>
+        #include <optional>
+        #include <string_view>
         #include <vector>
         #include "fl/loot/special_item.hpp"
 
@@ -404,6 +430,33 @@ module FairlanesContent
 
         inline std::vector<SpecialItem> special_items() {
           return {kSpecialItems.begin(), kSpecialItems.end()};
+        }
+
+        struct EquipmentStatWeights {
+          int attack;
+          int armor;
+          int max_hp;
+          int physical;
+          int magical;
+          int fire;
+          int ice;
+          int lightning;
+        };
+        struct EquipmentKindWeights { int armor; int weapon; int jewelry; };
+        struct ArmorKindWeights { int cloth; int leather; int plate; };
+        struct EquipmentProfile {
+          std::string_view biome_id;
+          EquipmentStatWeights weights;
+          EquipmentKindWeights kinds;
+          ArmorKindWeights armor_kinds;
+        };
+        inline constexpr std::array<EquipmentProfile, #{equipment_profiles.size}> kEquipmentProfiles{{
+        #{profile_rows}
+        }};
+        inline constexpr const EquipmentProfile *equipment_profile(std::string_view biome_id) {
+          for (const auto &profile : kEquipmentProfiles)
+            if (profile.biome_id == biome_id) return &profile;
+          return nullptr;
         }
         } // namespace fl::loot::generated_content
       CPP
@@ -1596,6 +1649,7 @@ module FairlanesContent
             "recording_version" => scenario.recording_version,
             "variants" => scenario.variants.map do |variant|
               { "id" => variant[:id].to_s, "equipped_item" => variant[:equipped_item]&.to_s,
+                "generated_equipment" => variant[:generated_equipment]&.transform_values { |value| value.is_a?(Symbol) ? value.to_s : value },
                 "skill_overrides" => variant.fetch(:skill_overrides, {}).transform_keys(&:to_s).transform_values(&:to_s),
                 "observe_members" => variant.fetch(:observe_members, []),
                 "next_skill" => variant[:next_skill]&.to_s,

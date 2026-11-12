@@ -22,6 +22,11 @@ def print_experiment(report, seed_breakdown: false)
     survivors = variant.fetch("survivors")
     puts "    duration=#{number(duration['mean'])}s (#{number(duration['min'])}..#{number(duration['max'])})"
     puts "    party_hp=#{number(hp['mean'])} (#{hp['min']}..#{hp['max']}) survivors=#{number(survivors['mean'])} (#{survivors['min']}..#{survivors['max']})"
+    combat = variant.fetch("combat")
+    stats = combat.fetch("mean_effective_stats")
+    resist = stats.fetch("resistances")
+    puts "    damage dealt=#{number(combat['mean_damage_dealt'])} received=#{number(combat['mean_damage_received'])}"
+    puts "    effective atk=#{number(stats['attack'])} armor=#{number(stats['armor'])} hp=#{number(stats['max_hp'])} resist=P#{number(resist['physical'])}/M#{number(resist['magical'])}/F#{number(resist['fire'])}/I#{number(resist['ice'])}/L#{number(resist['lightning'])}"
     if seed_breakdown
       variant.fetch("seed_results").each do |seed|
         puts "    seed=#{seed['seed']} outcome=#{seed['outcome']} duration=#{number(seed['simulated_seconds'])}s hp=#{seed['remaining_party_hp']} survivors=#{seed['survivors']}"

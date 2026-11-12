@@ -1,11 +1,11 @@
 {
   "beat_cap": 2400,
   "build": {
-    "revision": "6fd361b53e6a1d0a7a74cd3a0f0416c7097b4949",
+    "revision": "e0f9c9d020a3c7adf129948a9679d74b5233e8a8",
     "source_dirty": true,
     "version": "0.1.0"
   },
-  "content_sha256": "72345b7f6ffb9214b3950c761117d92139cf7728a857dd2260222a455ddc9bb8",
+  "content_sha256": "fb89be668b2021eb2868f043a95b07510ce27566bfe73c9cbbacf3b63865a443",
   "encounter_results": [
     {
       "beats": 629,
@@ -25,6 +25,7 @@
       "longest_bleed_seconds": 0.0,
       "longest_bleed_uwu": 0,
       "outcome": "hero_victory",
+      "outgoing_damage": 37,
       "remaining_hp": {
         "enemy1": 0,
         "enemy2": 0,
@@ -1157,7 +1158,20 @@
       ],
       "loadout": [
         "thump/1"
-      ]
+      ],
+      "stats": {
+        "armor": 1,
+        "attack": 2,
+        "hp": 6,
+        "max_hp": 20,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      }
     },
     {
       "hp": 12,
@@ -1168,7 +1182,20 @@
       ],
       "loadout": [
         "thump/1"
-      ]
+      ],
+      "stats": {
+        "armor": 0,
+        "attack": 2,
+        "hp": 12,
+        "max_hp": 20,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      }
     }
   ],
   "fixture": "origin_woodland_floor10",
@@ -1192,7 +1219,20 @@
       ],
       "loadout": [
         "thump/1"
-      ]
+      ],
+      "stats": {
+        "armor": 1,
+        "attack": 2,
+        "hp": 20,
+        "max_hp": 20,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      }
     },
     {
       "hp": 20,
@@ -1203,7 +1243,20 @@
       ],
       "loadout": [
         "thump/1"
-      ]
+      ],
+      "stats": {
+        "armor": 0,
+        "attack": 2,
+        "hp": 20,
+        "max_hp": 20,
+        "resistances": {
+          "fire": 0,
+          "ice": 0,
+          "lightning": 0,
+          "magical": 0,
+          "physical": 0
+        }
+      }
     }
   ],
   "initial_state": [
@@ -1249,7 +1302,9 @@
         "charge_per_beat": 80,
         "max_charge": 4800
       },
-      "gear": [],
+      "gear": [
+        "village_guard_hide"
+      ],
       "id": "hero2",
       "kind": "player",
       "known_skills": [
@@ -1394,6 +1449,7 @@
     "longest_bleed_seconds": 0.0,
     "longest_bleed_uwu": 0,
     "outcome": "hero_victory",
+    "outgoing_damage": 37,
     "remaining_hp": {
       "enemy1": 0,
       "enemy2": 0,

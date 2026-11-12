@@ -101,11 +101,23 @@ currently equipped items without permanently copying their bonuses onto the
 character. Thump reads effective Attack, and damage resolution reads effective
 Armor and resistances. Unique content can declare explicit modifiers.
 
-**Planned first slice:** Ordinary Origin drops receive deterministic,
-biome-weighted modifiers; three-item upgrades preserve a coherent
-specialization and provenance; automatic gearing compares a small combat-value
-score rather than tier alone; and existing inventory/detail views expose item
-modifiers and effective character stats.
+**Implemented first slice:** Ordinary Origin drops receive deterministic,
+biome-weighted persistent modifiers and follow the biome's separate acquisition
+weights. Three-item upgrades require matching provenance and preserve the
+inputs' combined specialization within a newly rolled higher-tier budget.
+Manual and automatic equipment enforce per-character tier eligibility, and a
+character's level-gain event reevaluates inventory. Existing inventory/detail
+views expose item modifiers, effective Attack/Armor/HP, and resistances. Thump
+scales flat damage from effective Attack; Brace scales its mitigation percentage
+from effective Armor; ordinary direct physical resolution also uses effective
+Armor.
+
+Automatic gearing is intentionally conservative. It equips empty slots and
+clear same-shape improvements, but does not replace a meaningful equipped stat
+with a different specialization merely because the candidate's aggregate score
+is larger. Tier breaks ties only when modifier value is otherwise equal.
+Choosing among non-dominating build alternatives remains a manual decision; the
+policy does not yet understand equipped skills or strategy.
 
 The following remain **Unresolved** design or experimental balance work:
 

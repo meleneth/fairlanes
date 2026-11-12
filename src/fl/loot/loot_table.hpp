@@ -9,7 +9,9 @@
 #include <vector>
 
 #include "fl/context.hpp"
+#include "fl/generated/gear_content.hpp"
 #include "fl/loot/equipment_builder.hpp"
+#include "fl/loot/equipment_stat_policy.hpp"
 #include "fl/primitives/random_hub.hpp"
 #include "item_kind.hpp"
 #include "special_item.hpp"
@@ -46,7 +48,8 @@ public:
   }
 
   template <fl::context::WorldCoreCtx Ctx>
-  [[nodiscard]] std::optional<EquipmentBuilder> roll(Ctx& ctx, std::string_view stream_name) const {
+  [[nodiscard]] std::optional<EquipmentBuilder> roll(Ctx& ctx, std::string_view stream_name,
+                                                     std::string_view biome_id = {}) const {
     auto drop = WeightedTable<bool>{{
         WeightedChoice<bool>{drop_chance_, true},
     }};
@@ -55,7 +58,19 @@ public:
       return std::nullopt;
     }
 
-    auto kind = kinds_.roll(ctx, std::string{stream_name} + ".kind");
+    const auto* profile = generated_content::equipment_profile(biome_id);
+    std::optional<ItemKind> kind;
+    if (profile != nullptr) {
+      kind = WeightedTable<ItemKind>{
+          {
+              {Weight{profile->kinds.armor}, ItemKind::armor},
+              {Weight{profile->kinds.weapon}, ItemKind::weapon},
+              {Weight{profile->kinds.jewelry}, ItemKind::jewelry},
+              {Weight{5}, ItemKind::special},
+          }}.roll(ctx, std::string{stream_name} + ".kind");
+    } else {
+      kind = kinds_.roll(ctx, std::string{stream_name} + ".kind");
+    }
     if (!kind) {
       return std::nullopt;
     }
@@ -68,19 +83,32 @@ public:
 
     if (*kind == ItemKind::armor) {
       auto slot = armor_slots_.roll(ctx, std::string{stream_name} + ".slot");
-      auto armor_kind = armor_kinds_.roll(ctx, std::string{stream_name} + ".armor_kind");
+      std::optional<fl::loot::ArmorKind> armor_kind;
+      if (profile != nullptr) {
+        armor_kind = WeightedTable<fl::loot::ArmorKind>{
+            {
+                {Weight{profile->armor_kinds.cloth}, fl::loot::ArmorKind::cloth},
+                {Weight{profile->armor_kinds.leather}, fl::loot::ArmorKind::leather},
+                {Weight{profile->armor_kinds.plate}, fl::loot::ArmorKind::plate},
+            }}.roll(ctx, std::string{stream_name} + ".armor_kind");
+      } else {
+        armor_kind = armor_kinds_.roll(ctx, std::string{stream_name} + ".armor_kind");
+      }
 
       if (!slot || !armor_kind) {
         return std::nullopt;
       }
 
-      return EquipmentBuilder{
+      EquipmentBuilder result{
           .slot = *slot,
           .armor_kind = *armor_kind,
           .tier = tier,
           .name = generated_name(*slot, *armor_kind, tier),
           .unique_id = {},
       };
+      apply_ordinary_equipment_stats(result, ctx.rng(), biome_id,
+                                     std::string{stream_name} + ".stats");
+      return result;
     }
 
     if (*kind == ItemKind::weapon) {
@@ -91,13 +119,16 @@ public:
         return std::nullopt;
       }
 
-      return EquipmentBuilder{
+      EquipmentBuilder result{
           .slot = *slot,
           .armor_kind = *armor_kind,
           .tier = tier,
           .name = generated_name(*slot, *armor_kind, tier),
           .unique_id = {},
       };
+      apply_ordinary_equipment_stats(result, ctx.rng(), biome_id,
+                                     std::string{stream_name} + ".stats");
+      return result;
     }
 
     if (*kind == ItemKind::jewelry) {
@@ -106,13 +137,16 @@ public:
         return std::nullopt;
       }
 
-      return EquipmentBuilder{
+      EquipmentBuilder result{
           .slot = *slot,
           .armor_kind = fl::loot::ArmorKind::none,
           .tier = tier,
           .name = generated_name(*slot, fl::loot::ArmorKind::none, tier),
           .unique_id = {},
       };
+      apply_ordinary_equipment_stats(result, ctx.rng(), biome_id,
+                                     std::string{stream_name} + ".stats");
+      return result;
     }
 
     return std::nullopt;
