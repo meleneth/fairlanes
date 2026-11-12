@@ -12,8 +12,8 @@ stats before enough skills exist to distinguish them coherently.
 
 Candidate policy questions:
 
-- What tier budget curve makes upgrades noticeable without making tier the only
-  sensible choice?
+- What inclusive tier budget ranges and character-level thresholds make
+  upgrades noticeable without making tier the only sensible choice?
 - Which slots may roll Attack, Armor, HP, or resistances, and how large should
   their budget multipliers be?
 - Which provisional weight vectors make the five Origin biomes measurably
@@ -25,6 +25,11 @@ Candidate policy questions:
   explicit design decision before it becomes permanent.
 - What simple score avoids obvious automatic-gearing downgrades while leaving
   deliberate specialization to manual equipment selection?
+
+Provisional acquisition mapping to test (not approved): Woodland Cloth/Leather,
+Plains Leather/Plate, and Murky Swamp Cloth/Plate. Caves then weights ordinary
+drops toward Jewelry and Desert toward Weapons. Swap the first three mappings
+during experiments if another ordering produces clearer early choices.
 
 ## Measurement target
 

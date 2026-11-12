@@ -23,6 +23,17 @@ distribution better supports a newly observed skill. Exact Origin weights and
 stat associations are experimental. Equipment owns the complete rule in
 [equipment](equipment.md).
 
+**Decided:** The five Origin biomes have distinct equipment-acquisition
+emphases. Woodland, Plains, and Murky Swamp each offer one of the three pairwise
+combinations of Cloth, Leather, and Plate; Caves emphasizes Jewelry; and Desert
+emphasizes Weapons. The assignment of particular armor pairs to the first three
+biomes remains **Unresolved**. Acquisition category is distinct from a biome's
+stat-weight distribution.
+
+These emphases are not late-game equipment unlocks. The existing early access
+to all five Origin biomes is intentional, allowing equipment detours across the
+overlapping progression network.
+
 **Decided:** Tower history, biome unlocks, the selected farming destination,
 and pending destination changes are party-scoped. Strategic destination
 requests made during combat commit at the encounter boundary; the latest valid

@@ -42,6 +42,26 @@ must remain potentially useful later, especially when a newly observed skill
 changes a character's preferred stats. Fairlanes has no mandatory biome sets or
 set bonuses.
 
+### Tier requirements and budgets
+
+**Decided:** Every equipment tier has a minimum character level required to
+equip it. Eligibility uses the individual character's level, never party level,
+current biome, or highest-cleared floor. Ineligible items remain in inventory
+for future use. Manual equipment changes and automatic gearing enforce the same
+eligibility rule, and eligible inventory is reconsidered through the existing
+level-progression event machinery when a character gains a level.
+
+**Decided:** Every tier defines an inclusive minimum and maximum stat-point
+budget. Item generation deterministically rolls within that range, then
+allocates the rolled budget among stats eligible for its slot and equipment
+type using biome-influenced weights. Tier supplies a budget rather than a
+uniform bonus to every stat. An item's rolled allocation is persistent item
+data and is not rerolled when effective combat stats are queried.
+
+**Decided:** Ordinary loot and upgraded equipment use one common stat-budget
+and allocation policy. Exact level thresholds, budget ranges, stat costs, and
+allocation weights are provisional balance choices.
+
 **Decided:** Ordinary equipment retains biome provenance. An operation that
 combines items from different biomes must resolve provenance explicitly rather
 than silently assigning an arbitrary biome. Unique items retain their declared
@@ -57,8 +77,9 @@ mechanics for the later cycles.
 **Decided:** Different Origin biomes should favor different stat distributions.
 The five biomes and their order are owned by
 [cycles and biomes](cycles-and-biomes.md). Particular weights, biome/stat
-associations, tier budgets, slot budgets, and random-allocation formulas are
-provisional balance choices, not canonical requirements.
+associations, budget ranges, level thresholds, slot adjustments, stat costs,
+and random-allocation formulas are provisional balance choices, not canonical
+requirements.
 
 ## Armor types
 
@@ -90,7 +111,8 @@ The following remain **Unresolved** design or experimental balance work:
 
 - the long-term stat vocabulary and any distinction between primary and derived
   stats beyond the existing combat-stat vocabulary;
-- exact tier and slot budgets, biome weights, and rounding/allocation rules;
+- exact tier budget ranges and level thresholds, slot adjustments, stat costs,
+  biome weights, and rounding/allocation rules;
 - which additional skills scale from which stats and at what coefficients;
 - how mixed-biome upgrades should work, if they are allowed at all;
 - how automatic gearing should understand a character's equipped skills and
