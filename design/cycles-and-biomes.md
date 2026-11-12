@@ -34,6 +34,12 @@ These emphases are not late-game equipment unlocks. The existing early access
 to all five Origin biomes is intentional, allowing equipment detours across the
 overlapping progression network.
 
+**Decided:** Origin monster affinities and player equipment specialization add
+cross-biome reasons to detour. Enemies may combine Cloth, Leather, and Plate
+disciplines, while players choose one active affinity and seek compatible gear
+or skills in other towers. This does not change Cycle identities, biome
+structure, or create biome-derived hero abilities.
+
 **Decided:** Tower history, biome unlocks, the selected farming destination,
 and pending destination changes are party-scoped. Strategic destination
 requests made during combat commit at the encounter boundary; the latest valid

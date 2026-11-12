@@ -81,17 +81,22 @@ associations, budget ranges, level thresholds, slot adjustments, stat costs,
 and random-allocation formulas are provisional balance choices, not canonical
 requirements.
 
-## Armor types
+## Origin armor affinities
 
-**Unresolved:** Cloth, Leather, and Plate exist, but their mechanical identities
-have not been approved. They do not imply character classes, and this document
-does not assign identities such as Cloth = magic, Leather = dexterity, or Plate
-= strength. Candidate directions and questions live in
-[`brainstorms/armor-identities.md`](../brainstorms/armor-identities.md).
+**Decided:** Cloth supports grappling, restraint, control, and interruption;
+Leather supports ranged combat, accuracy, mobility, and projectile tactics;
+Plate supports brawling, direct physical attacks, mitigation, and trading blows.
+These are mutable equipment specializations, never character classes.
 
-The current implementation uses armor kind as an automatic-gearing compatibility
-group and historically also applied that group to weapon selection. That is an
-implementation assumption, not accepted design.
+**Decided:** A player has exactly one active affinity and may change it in town.
+Monsters may declare one, two, or all three independently of equipment.
+Switching preserves the character, skills, equipped items, and item ownership.
+Replacement is incremental as compatible eligible items become available.
+
+**Implemented first pass:** A town affinity change triggers the existing
+deterministic party-gearing reevaluation. Existing pieces remain equipped when
+no compatible improvement exists. Exact bonuses, multipliers, replacement
+scoring, and balance coefficients remain experimental.
 
 ## Implementation and experiments
 
@@ -129,7 +134,7 @@ The following remain **Unresolved** design or experimental balance work:
 - how mixed-biome upgrades should work, if they are allowed at all;
 - how automatic gearing should understand a character's equipped skills and
   strategy beyond avoiding obvious total-value downgrades;
-- final armor-type identities; and
+- final numerical armor-affinity bonuses and transition scoring; and
 - later-cycle equipment mechanics.
 
 Current numerical experiments and candidate distributions belong in

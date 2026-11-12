@@ -75,6 +75,20 @@ incentives and diminishing returns over artificial restrictions; hard
 character-level caps and mandatory level requirements require an explicit new
 decision.
 
+## Monster difficulty
+
+**Decided:** Effective monster level remains reasonably close to the difficulty
+represented by a tower floor without being defined as equal to that floor.
+Monster identity, encounter role, biome, floor difficulty, elite/boss status,
+and explicit overrides may create bounded variation. Maximum HP and Attack
+combine effective level with persistent monster identity so fragile and durable
+monsters do not collapse into the same stat line. A centralized policy avoids
+applying two multipliers for the same progression intent.
+
+**Implemented first pass:** Origin tower construction uses bounded identity,
+biome, and authored-difficulty adjustments around the configured floor curve;
+identity HP remains the base of the HP curve. Exact curves are experimental.
+
 ## Current implementation gaps
 
 - **Planned:** Level progression beyond 100. `TrackXP` currently stops producing

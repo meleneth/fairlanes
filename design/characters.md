@@ -37,9 +37,10 @@ biome-specific hero abilities require a new explicit design decision.
 - equipped skills; and
 - combat strategy.
 
-Equipment and skills shape specialization without creating fixed classes.
-Armor type's particular bonuses, tradeoffs, and degree of influence are
-**Unresolved**; see [equipment](equipment.md) for the authoritative boundary.
+Equipment and skills shape specialization without creating fixed classes. Each
+player has exactly one mutable active armor affinity. It may be changed in town
+and is equipment/strategy state, not innate identity; see
+[equipment](equipment.md) for the affinity disciplines and transition contract.
 
 ## Skills
 

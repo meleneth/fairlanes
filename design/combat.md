@@ -18,6 +18,17 @@ skill, and a universal damage multiplier is not a substitute for meaningful
 build choices. Equipment owns the complete rule in
 [equipment](equipment.md).
 
+**Decided:** Players and monsters use the same affinity-driven skill evaluation.
+Players contribute one active affinity; monsters may contribute a declared set.
+A match influences effectiveness but does not universally prohibit off-affinity
+use. A multi-affinity monster receives at most one matching contribution for a
+single skill.
+
+**Decided:** Declarative scaling may affect multiple stats and effect dimensions,
+including damage, mitigation, accuracy, control duration or magnitude, timing,
+and healing. Non-numeric skills explicitly declare a neutral policy. Exact
+coefficients and caps are experimental implementation data.
+
 **Decided:** Defensive mechanics have domains of effectiveness. No single
 defensive mechanism must answer every threat. Significant encounters should
 permit more than one viable solution through preparation, party construction,
