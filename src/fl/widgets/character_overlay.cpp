@@ -87,6 +87,7 @@ ftxui::Element CharacterOverlay::Render() {
         fl::skills::evaluate_scaling(reg, member, def.scaling, def.scaling.base_effect);
     skills.push_back(paragraph((index == 0 ? "Observe: " : "Skill: ") +
                                fl::skills::display_name(*slot) + " | " +
+                               std::string(fl::skills::to_string(def.scaling.dimension)) + " | " +
                                fl::skills::describe_scaling(def.scaling) + " | current numeric " +
                                std::to_string(current.total)));
   }
@@ -96,7 +97,8 @@ ftxui::Element CharacterOverlay::Render() {
     const auto current =
         fl::skills::evaluate_scaling(reg, member, def.scaling, def.scaling.base_effect);
     learned_skills.push_back(paragraph("Available: " + fl::skills::display_name(skill) + " | " +
-                                       fl::skills::describe_scaling(def.scaling) +
+                                       std::string(fl::skills::to_string(def.scaling.dimension)) +
+                                       " | " + fl::skills::describe_scaling(def.scaling) +
                                        " | current numeric " + std::to_string(current.total)));
   }
 

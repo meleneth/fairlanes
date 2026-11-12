@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 
 #include <entt/entity/entity.hpp>
 #include <entt/entity/fwd.hpp>
@@ -33,5 +34,6 @@ struct SkillScalingResult {
 SkillScalingResult evaluate_scaling(entt::registry& reg, entt::entity actor,
                                     const SkillScalingRule& rule, int base) noexcept;
 std::string describe_scaling(const SkillScalingRule& rule);
+std::string_view to_string(ScalingDimension dimension) noexcept;
 
 } // namespace fl::skills

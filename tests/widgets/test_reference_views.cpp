@@ -31,6 +31,9 @@ TEST_CASE("Libram hides unwitnessed names and descriptions", "[discovery][widget
   const auto text = render(view);
   REQUIRE(text.find("Thump") != std::string::npos);
   REQUIRE(text.find("blunt attack") != std::string::npos);
+  REQUIRE(text.find("Scaling [damage]") != std::string::npos);
+  REQUIRE(text.find("MAX 40") != std::string::npos);
+  REQUIRE(text.find("Plate affinity +20%") != std::string::npos);
   REQUIRE(text.find("Eviscerate") == std::string::npos);
 }
 

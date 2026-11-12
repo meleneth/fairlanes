@@ -49,4 +49,17 @@ std::string describe_scaling(const SkillScalingRule& rule) {
                      rule.numerator, rule.denominator, rule.maximum_bonus,
                      fl::primitives::to_string(rule.affinity), rule.affinity_percent);
 }
+
+std::string_view to_string(ScalingDimension dimension) noexcept {
+  switch (dimension) {
+  case ScalingDimension::Neutral: return "neutral";
+  case ScalingDimension::Damage: return "damage";
+  case ScalingDimension::Healing: return "healing";
+  case ScalingDimension::Mitigation: return "mitigation";
+  case ScalingDimension::Control: return "control";
+  case ScalingDimension::Accuracy: return "accuracy";
+  case ScalingDimension::Timing: return "timing";
+  }
+  return "unknown";
+}
 } // namespace fl::skills
