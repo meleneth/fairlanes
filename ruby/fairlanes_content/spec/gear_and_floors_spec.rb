@@ -8,6 +8,7 @@ RSpec.describe "Gear and tower declarations" do
       set.monster :honey_badger, cycle: :origin, hp: 500,
                   description: "A stubborn test foe.", known_skills: %i[thump],
                   pool: :rare_woodland, resistances: {fire: 25}
+      set.monster_affinities :honey_badger, :cloth, :plate
       set.gear :damp_boots, display: "Damp Boots", slot: :boots,
                armor_kind: :leather, tier: :excellent, weight: 20,
                modifiers: {resistances: {lightning: 20}}

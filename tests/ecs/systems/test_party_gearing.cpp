@@ -9,6 +9,7 @@
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/track_xp.hpp"
+#include "fl/ecs/systems/change_combat_affinity.hpp"
 #include "fl/ecs/systems/party_gearing.hpp"
 #include "fl/grand_central.hpp"
 #include "fl/loot/equipment_builder.hpp"
@@ -223,4 +224,53 @@ TEST_CASE("PartyGearing preserves stronger specialization and reevaluates on lev
   REQUIRE(member.closet().mainhand == eligible_later);
   REQUIRE(inventory_contains(party, specialized));
   REQUIRE(inventory_contains(party, shifted_build));
+}
+
+TEST_CASE("Town affinity changes replace compatible armor without losing ownership",
+          "[party][gearing][affinity][inventory]") {
+  fl::GrandCentral game{1, 1, 1};
+  auto ctx = game.account_context(0).party_context(0);
+  auto& party = ctx.party_data();
+  auto& reg = ctx.reg();
+  party.replace_items({});
+  const auto hero = party.members().front().member_id();
+  auto& member = reg.get<fl::ecs::components::PartyMember>(hero);
+
+  const auto heirloom =
+      fl::loot::EquipmentBuilder{
+          .slot = fl::loot::EquipmentSlot::chest,
+          .armor_kind = fl::loot::ArmorKind::cloth,
+          .tier = fl::loot::Tier::plain,
+          .name = "Remembered Cloth Chest",
+          .unique_id = "remembered_cloth_chest",
+          .attack = 3,
+      }
+          .create(reg);
+  member.closet().chest = heirloom;
+  const auto leather = make_item(reg, fl::loot::EquipmentSlot::chest, fl::loot::ArmorKind::leather,
+                                 fl::loot::Tier::worn, "Worn Leather Chest");
+  const auto locked_plate =
+      make_item(reg, fl::loot::EquipmentSlot::chest, fl::loot::ArmorKind::plate,
+                fl::loot::Tier::sturdy, "Sturdy Plate Chest");
+  party.add_item(leather);
+  party.add_item(locked_plate);
+
+  REQUIRE(fl::ecs::systems::ChangeCombatAffinity::commit(ctx, hero,
+                                                         fl::primitives::CombatAffinity::Leather) ==
+          fl::ecs::systems::AffinityChangeResult::Changed);
+  REQUIRE(member.closet().chest == leather);
+  REQUIRE(inventory_count(party, heirloom) == 1);
+  REQUIRE(inventory_count(party, leather) == 0);
+  REQUIRE(inventory_count(party, locked_plate) == 1);
+  REQUIRE(reg.valid(heirloom));
+  REQUIRE(reg.get<fl::ecs::components::Equipment>(heirloom).unique_id() ==
+          "remembered_cloth_chest");
+  REQUIRE(reg.get<fl::ecs::components::Equipment>(heirloom).attack() == 3);
+
+  REQUIRE(fl::ecs::systems::ChangeCombatAffinity::commit(ctx, hero,
+                                                         fl::primitives::CombatAffinity::Plate) ==
+          fl::ecs::systems::AffinityChangeResult::Changed);
+  REQUIRE(member.closet().chest == leather);
+  REQUIRE(inventory_count(party, heirloom) == 1);
+  REQUIRE(inventory_count(party, locked_plate) == 1);
 }

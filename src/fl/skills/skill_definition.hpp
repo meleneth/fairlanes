@@ -6,6 +6,7 @@
 
 #include "fl/ecs/components/combat_status_kind.hpp"
 #include "fl/skills/skill.hpp"
+#include "fl/skills/skill_scaling.hpp"
 #include "fl/widgets/effects/decal_animation_kind.hpp"
 
 namespace fl::skills {
@@ -21,6 +22,7 @@ struct SkillDefinition {
   std::string_view description;
   std::optional<fl::ecs::components::CombatStatusKind> consumes_status{};
   int effect_damage{0};
+  SkillScalingRule scaling{};
 };
 
 std::span<const SkillDefinition* const> all_definitions() noexcept;

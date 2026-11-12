@@ -10,9 +10,11 @@ regression :origin_woodland_floor10,
   beat_cap: 2400,
   recording_version: 2,
   variants: [
-    {id: :offensive, equipped_item: :village_guard_hide, expected_wins: 8..8},
+    # The coherent identity-preserving tower curve intentionally exposes floor
+    # ten as a breakpoint for this under-geared two-hero party.
+    {id: :offensive, equipped_item: :village_guard_hide, expected_wins: 3..3},
     {id: :defensive, equipped_item: :village_guard_hide,
-     skill_overrides: {0 => :brace}, expected_wins: 2..2,
+     skill_overrides: {0 => :brace}, expected_wins: 0..0,
      assertions: %i[brace_applied brace_consumed brace_mitigated]}
   ]
 
@@ -52,7 +54,7 @@ regression :origin_woodland_honey_badger,
   beat_cap: 4000,
   recording_version: 2,
   variants: [
-    {id: :offensive, expected_wins: 6..6,
+    {id: :offensive, expected_wins: 0..0,
      assertions: %i[eviscerate_cast bleed_applied bleed_ticked bleed_death]},
     {id: :defensive, skill_overrides: {0 => :brace}, expected_wins: 0..0,
      assertions: %i[eviscerate_cast bleed_applied bleed_ticked bleed_death]}
@@ -87,6 +89,29 @@ regression :origin_equipment_floor50,
                            slot: :chest, armor_kind: :plate}}
   ]
 
+# One deterministic sample at each requested longitudinal checkpoint. Together
+# these fixtures cover every Origin biome; the concise regression summaries are
+# the review artifact for level, HP, Attack, duration, survival, and damage.
+[
+  [:origin_curve_floor01_woodland, :origin_woodland_tower, 1],
+  [:origin_curve_floor10_plains, :origin_plains_tower, 10],
+  [:origin_curve_floor25_swamp, :origin_murky_swamp_tower, 25],
+  [:origin_curve_floor40_caves, :origin_caves_tower, 40],
+  [:origin_curve_floor50_desert, :origin_desert_tower, 50],
+  [:origin_curve_floor60_woodland, :origin_woodland_tower, 60],
+  [:origin_curve_floor75_swamp, :origin_murky_swamp_tower, 75],
+  [:origin_curve_floor100_desert, :origin_desert_tower, 100]
+].each do |id, biome, floor|
+  regression id,
+    encounter: {biome: biome, floor: floor},
+    party: Array.new(5) { {hp: 30, attack: 4, armor: 1, resistances: {},
+                           skill: :thump, policy: :single_equipped_skill} },
+    seeds: [1],
+    beat_cap: 5000,
+    recording_version: 2,
+    variants: [{id: :baseline}]
+end
+
 regression :origin_woodland_stag_lesson,
   encounter: {biome: :origin_woodland_tower, floor: 7},
   party: [
@@ -114,7 +139,9 @@ regression :origin_woodland_brace_practice,
   seeds: [1],
   beat_cap: 1600,
   variants: [
-    {id: :braced, skill_overrides: {0 => :brace}, expected_wins: 1..1,
+    # Spending one of two heroes' turns on Brace now loses this seed after
+    # affinity-scaled monster attacks; the mechanic assertions remain the pin.
+    {id: :braced, skill_overrides: {0 => :brace}, expected_wins: 0..0,
      assertions: %i[brace_applied brace_consumed brace_mitigated]},
     {id: :unbraced, expected_wins: 1..1}
   ]
@@ -130,6 +157,8 @@ regression :origin_plains_cover_lesson,
   seeds: [1],
   beat_cap: 1600,
   variants: [
-    {id: :cover, expected_wins: 0..0,
+    # Attack-scaled projectile damage now lets the party win after demonstrating
+    # both the interception and its Bumper Rush release condition.
+    {id: :cover, expected_wins: 1..1,
      assertions: %i[cover_intercepted cover_released]}
   ]

@@ -55,6 +55,7 @@ public:
   ftxui::Component make_autoplay_confirmation_overlay();
   ftxui::Component make_sandbox_confirmation_overlay();
   ftxui::Component make_keybind_help_overlay();
+  ftxui::Component make_character_management_overlay();
 
   ftxui::Element decorate(fl::generated::ftxer::ScreenId screen, ftxui::Element content);
   bool intercept(const ftxui::Event& event);
@@ -63,6 +64,7 @@ public:
 
   bool toggle_autoplay(fl::generated::ftxer::ScreenId);
   bool toggle_help(fl::generated::ftxer::ScreenId);
+  bool open_character_management(fl::generated::ftxer::ScreenId);
   bool return_to_town(fl::generated::ftxer::ScreenId screen);
   bool collapse_help(fl::generated::ftxer::ScreenId);
   bool expand_help(fl::generated::ftxer::ScreenId);
@@ -126,6 +128,7 @@ private:
   ftxui::Component autoplay_confirmation_;
   ftxui::Component sandbox_confirmation_;
   ftxui::Component keybind_help_;
+  ftxui::Component character_management_;
   std::vector<fl::events::ScopedPartyListener> combat_started_subs_;
   std::vector<fl::events::ScopedPartyListener> milestone_subs_;
   std::vector<fl::events::ScopedPartyListener> party_unlocked_subs_;

@@ -10,6 +10,7 @@
 
 #include "account_battle_view.hpp"
 #include "bestiary_view.hpp"
+#include "character_overlay.hpp"
 #include "console_overlay.hpp"
 #include "effect_gallery_view.hpp"
 #include "fl/lospec500.hpp"
@@ -264,6 +265,10 @@ ftxui::Component RootComponent::make_sandbox_confirmation_overlay() {
 ftxui::Component RootComponent::make_keybind_help_overlay() {
   return keybind_help_;
 }
+ftxui::Component RootComponent::make_character_management_overlay() {
+  character_management_ = ftxui::Make<CharacterOverlay>(ctx_, commands_.party_index());
+  return character_management_;
+}
 
 ftxui::Element RootComponent::decorate(generated::ScreenId screen, ftxui::Element content) {
   using namespace ftxui;
@@ -318,6 +323,12 @@ bool RootComponent::toggle_autoplay(generated::ScreenId) {
 
 bool RootComponent::toggle_help(generated::ScreenId) {
   shell_.open_overlay(generated::OverlayId::KeybindHelp);
+  return true;
+}
+
+bool RootComponent::open_character_management(generated::ScreenId) {
+  if (ctx_.account_data().parties().empty()) return false;
+  shell_.open_overlay(generated::OverlayId::CharacterManagement);
   return true;
 }
 

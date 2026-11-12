@@ -22,6 +22,9 @@ module FairlanesContent
                      :gloves, :sleeves, :belt, :cape, :necklace, :ring_1,
                      :ring_2, :knife].freeze
     ARMOR_KINDS = Set[:none, :cloth, :leather, :plate].freeze
+    COMBAT_AFFINITIES = Set[:neutral, :cloth, :leather, :plate].freeze
+    SCALING_STATS = Set[:none, :attack, :armor].freeze
+    SCALING_DIMENSIONS = Set[:neutral, :damage, :healing, :mitigation, :control, :accuracy, :timing].freeze
     GEAR_TIERS = Set[:worn, :plain, :sturdy, :fine, :excellent,
                      :masterwork, :mythic].freeze
     RESISTANCE_CHANNELS = Set[:physical, :magical, :fire, :ice, :lightning].freeze
@@ -547,6 +550,19 @@ module FairlanesContent
 
     def validate_skills(errors)
       declarations.skills.each do |skill|
+        scaling = skill.scaling
+        unless scaling.is_a?(Hash) &&
+               (scaling.keys - %i[affinity stat dimension base numerator denominator cap affinity_percent]).empty?
+          errors << "skill #{skill.id} is missing an explicit scaling policy"
+        else
+          errors << "skill #{skill.id} has invalid affinity" unless COMBAT_AFFINITIES.include?(scaling[:affinity])
+          errors << "skill #{skill.id} has invalid scaling stat" unless SCALING_STATS.include?(scaling[:stat])
+          errors << "skill #{skill.id} has invalid scaling dimension" unless SCALING_DIMENSIONS.include?(scaling[:dimension])
+          errors << "skill #{skill.id} has invalid scaling denominator" unless scaling[:denominator].is_a?(Integer) && scaling[:denominator].positive?
+          %i[base numerator cap affinity_percent].each do |field|
+            errors << "skill #{skill.id} has invalid scaling #{field}" unless non_negative_integer?(scaling[field])
+          end
+        end
         if skill.execution == :status_detonation
           unless %i[shield haste burn blind silence slow stun].include?(skill.consumes_status)
             errors << "skill #{skill.id} has invalid consumed status"
@@ -608,6 +624,11 @@ module FairlanesContent
 
     def validate_decision_rules(errors)
       declarations.monsters.each do |monster|
+        if monster.cycle == :origin && !(monster.affinities.is_a?(Array) && !monster.affinities.empty? &&
+               monster.affinities.all? { |affinity| COMBAT_AFFINITIES.include?(affinity) && affinity != :neutral } &&
+               monster.affinities.uniq == monster.affinities)
+          errors << "monster #{monster.id} is missing a valid explicit affinity set"
+        end
         unless monster.decision_rules.is_a?(Array)
           errors << "monster #{monster.id} decision_rules must be an array"
           next

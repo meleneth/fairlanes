@@ -138,9 +138,8 @@ The physical progression fixtures are:
 An action event retains the originally aimed target. Its hit event contains the
 resolved target, so Cover assertions do not infer interception from log text.
 Status state events similarly make Brace application and consumption explicit.
-The Cover fixture's declared result is an enemy victory; its purpose is the
-causal interception sequence, while the production story-route test proves the
-normal party can clear Plains 1–3.
+The Cover fixture now ends in hero victory with Attack scaling active; its
+asserted purpose remains the causal interception and release sequence.
 
 Use `scripts/regress compare FIXTURE` for these experiments. The lower-level
 equivalent still supports `--all-seeds`, `--record-dir`, and `--summary-dir`.

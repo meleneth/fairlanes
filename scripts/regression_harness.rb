@@ -162,7 +162,13 @@ module FairlanesRegression
       combat = {
         "mean_damage_dealt" => mean(runs.map { |run| Array(run["encounters"]).sum { |entry| entry.fetch("outgoing_damage", 0) } }),
         "mean_damage_received" => mean(runs.map { |run| Array(run["encounters"]).sum { |entry| entry.fetch("incoming_damage", 0) } }),
-        "mean_effective_stats" => stat_means.merge("resistances" => resistance_means)
+        "mean_effective_stats" => stat_means.merge("resistances" => resistance_means),
+        "monsters" => recordings.flat_map do |recording|
+          Array(recording["initial_state"]).select { |actor| actor["kind"] == "monster" }.map do |actor|
+            {"name" => actor.fetch("name"), "level" => actor.fetch("level"),
+             "affinities" => actor.fetch("affinities"), "stats" => actor.fetch("stats")}
+          end
+        end.uniq
       }
       win_assertion = expected && victories.between?(expected[0], expected[1]) && caps.zero?
       semantic_values = {

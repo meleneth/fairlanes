@@ -116,8 +116,10 @@ ftxui::Element AccountBattleView::Render() {
     std::string label = "P" + std::to_string(i + 1) + " No tower";
     if (route) {
       label = "P" + std::to_string(i + 1) + " ";
+      if (!parties[i].has_encounter()) label += "Town ";
       label += tower_biome_label(route->biome_id);
-      label += " Floor " + std::to_string(route->floor) + "/100";
+      label +=
+          (parties[i].has_encounter() ? " Floor " : " F") + std::to_string(route->floor) + "/100";
     }
     tower_readouts.push_back(
         ftxui::text(std::move(label)) | ftxui::center |

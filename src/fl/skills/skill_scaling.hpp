@@ -1,37 +1,37 @@
 #pragma once
 
-#include <algorithm>
+#include <string>
 
-#include "fl/ecs/systems/effective_combat_stats.hpp"
+#include <entt/entity/entity.hpp>
+#include <entt/entity/fwd.hpp>
+
+#include "fl/primitives/combat_affinity.hpp"
 
 namespace fl::skills {
 
-enum class ScalingStat { Attack, Armor };
-enum class ScalingDimension { FlatDamage, MitigationPercent };
+enum class ScalingStat { None, Attack, Armor };
+enum class ScalingDimension { Neutral, Damage, Healing, Mitigation, Control, Accuracy, Timing };
 
 struct SkillScalingRule {
-  ScalingStat stat;
-  ScalingDimension dimension;
-  int numerator;
-  int denominator;
-  int maximum_bonus;
+  fl::primitives::CombatAffinity affinity{fl::primitives::CombatAffinity::Neutral};
+  ScalingStat stat{ScalingStat::None};
+  ScalingDimension dimension{ScalingDimension::Neutral};
+  int base_effect{0};
+  int numerator{0};
+  int denominator{1};
+  int maximum_bonus{0};
+  int affinity_percent{0};
 };
 
-// Experimental first-slice relationships. Keeping the coefficients as data
-// makes it clear that Attack is not a universal damage multiplier.
-inline constexpr SkillScalingRule kThumpAttackScaling{ScalingStat::Attack,
-                                                      ScalingDimension::FlatDamage, 1, 1, 0};
-inline constexpr SkillScalingRule kBraceArmorScaling{ScalingStat::Armor,
-                                                     ScalingDimension::MitigationPercent, 2, 1, 35};
+struct SkillScalingResult {
+  int base{0};
+  int stat_bonus{0};
+  int affinity_bonus{0};
+  int total{0};
+};
 
-inline int thump_attack_bonus(const fl::ecs::systems::EffectiveCombatStats& stats) noexcept {
-  return stats.attack * kThumpAttackScaling.numerator / kThumpAttackScaling.denominator;
-}
-
-inline int brace_mitigation_percent(const fl::ecs::systems::EffectiveCombatStats& stats) noexcept {
-  constexpr int base = 35;
-  const int bonus = stats.armor * kBraceArmorScaling.numerator / kBraceArmorScaling.denominator;
-  return base + std::clamp(bonus, 0, kBraceArmorScaling.maximum_bonus);
-}
+SkillScalingResult evaluate_scaling(entt::registry& reg, entt::entity actor,
+                                    const SkillScalingRule& rule, int base) noexcept;
+std::string describe_scaling(const SkillScalingRule& rule);
 
 } // namespace fl::skills

@@ -66,7 +66,8 @@ module FairlanesContent
         declarative_shape: declarative_shape,
         description: description,
         consumes_status: consumes_status,
-        effect_damage: effect_damage
+        effect_damage: effect_damage,
+        scaling: nil
       )
     end
 
@@ -106,8 +107,25 @@ module FairlanesContent
         pool: pool,
         decision_rules: decision_rules,
         description: description,
-        resistances: resistances
+        resistances: resistances,
+        affinities: nil
       )
+    end
+
+    def skill_scaling(id, affinity:, stat:, dimension:, numerator: 0, denominator: 1,
+                      cap: 0, affinity_percent: 20, base: nil)
+      entry = skills.find { |skill| skill.id == id }
+      raise ArgumentError, "Unknown skill #{id}" unless entry
+      entry.scaling = {affinity: affinity, stat: stat, dimension: dimension,
+                       base: base.nil? ? entry.effect_damage : base,
+                       numerator: numerator, denominator: denominator, cap: cap,
+                       affinity_percent: affinity_percent}
+    end
+
+    def monster_affinities(id, *affinities)
+      entry = monsters.find { |monster| monster.id == id }
+      raise ArgumentError, "Unknown monster #{id}" unless entry
+      entry.affinities = affinities
     end
 
     def monster_rules(id, *rules)

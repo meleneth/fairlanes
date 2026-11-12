@@ -7,6 +7,7 @@
 #include <ftxui/dom/node.hpp>
 #include <ftxui/screen/screen.hpp>
 
+#include "fl/ecs/components/party_member.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/generated/ftxer_composition_root.hpp"
 #include "fl/grand_central.hpp"
@@ -72,6 +73,33 @@ TEST_CASE("FTXer root owns navigation and preserves the previous battle",
 
   REQUIRE(root.composition->OnEvent(ftxui::Event::Escape));
   REQUIRE(root.composition->current_screen() == fl::generated::ftxer::ScreenId::PartyBattle);
+  REQUIRE(render(root.component).find("Stormbreak Company") != std::string::npos);
+}
+
+TEST_CASE("Character overlay preserves the active battle and live simulation",
+          "[ftxer][integration][overlay][character]") {
+  fl::GrandCentral game{1, 1, 1};
+  game.innervate_event_system(false);
+  auto party_ctx = game.account_context(0).party_context(0);
+  const auto member = party_ctx.party_data().members().front().member_id();
+  party_ctx.party_data().members().front().grimoire().learn(fl::skills::SkillId::Thump);
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::PartyMember>(member).equip_known_skill(
+      fl::skills::SkillId::Thump));
+  auto root = make_root(game);
+  const auto screen = root.composition->current_screen();
+
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character("c")));
+  const auto open = render(root.component);
+  REQUIRE(open.find("Character skills & equipment") != std::string::npos);
+  REQUIRE(open.find("MAX") != std::string::npos);
+  REQUIRE(open.find("1 Cloth (control)") != std::string::npos);
+  const auto before = game.world_clock().elapsed_beats();
+  game.advance_beat();
+  REQUIRE(game.world_clock().elapsed_beats() == before + 1);
+  REQUIRE(root.composition->current_screen() == screen);
+
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Escape));
+  REQUIRE(root.composition->current_screen() == screen);
   REQUIRE(render(root.component).find("Stormbreak Company") != std::string::npos);
 }
 

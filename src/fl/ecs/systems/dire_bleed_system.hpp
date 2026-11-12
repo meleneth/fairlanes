@@ -13,7 +13,7 @@ public:
   using Scheduler = seerin::TimedScheduler<seerin::AtbOutEvent>;
 
   static void apply(fl::context::EncounterCtx& party_ctx, Scheduler& scheduler, entt::entity source,
-                    entt::entity target);
+                    entt::entity target, int scaled_damage_per_tick = 0);
 
   static void bind_cleanup_and_schedule(fl::context::EncounterCtx& party_ctx, Scheduler& scheduler,
                                         entt::entity target);

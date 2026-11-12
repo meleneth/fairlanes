@@ -11,6 +11,7 @@
 #include <fmt/format.h>
 
 #include "fl/ecs/components/closet.hpp"
+#include "fl/ecs/components/combat_affinity.hpp"
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
@@ -233,6 +234,16 @@ std::optional<ArmorKind> existing_armor_kind(entt::registry& reg, const Closet& 
   return std::nullopt;
 }
 
+ArmorKind armor_kind_for(fl::primitives::CombatAffinity affinity) {
+  switch (affinity) {
+  case fl::primitives::CombatAffinity::Cloth: return ArmorKind::cloth;
+  case fl::primitives::CombatAffinity::Leather: return ArmorKind::leather;
+  case fl::primitives::CombatAffinity::Plate: return ArmorKind::plate;
+  case fl::primitives::CombatAffinity::Neutral: return ArmorKind::none;
+  }
+  return ArmorKind::none;
+}
+
 std::optional<ArmorKind> best_available_armor_kind(entt::registry& reg,
                                                    const std::vector<entt::entity>& inventory,
                                                    int character_level) {
@@ -318,7 +329,11 @@ void equip_party(fl::context::PartyCtx& ctx, std::vector<entt::entity>& inventor
     auto& closet = party_member->closet();
     const auto* xp = reg.try_get<fl::ecs::components::TrackXP>(member.member_id());
     const int character_level = xp == nullptr ? 1 : xp->level_;
-    auto preferred_kind = existing_armor_kind(reg, closet);
+    auto preferred_kind = std::optional<ArmorKind>{};
+    if (const auto* affinity =
+            reg.try_get<fl::ecs::components::ActiveCombatAffinity>(member.member_id()))
+      preferred_kind = armor_kind_for(affinity->value);
+    if (!preferred_kind) preferred_kind = existing_armor_kind(reg, closet);
     if (!preferred_kind) {
       preferred_kind = best_available_armor_kind(reg, inventory, character_level);
     }
@@ -327,8 +342,10 @@ void equip_party(fl::context::PartyCtx& ctx, std::vector<entt::entity>& inventor
       for (auto slot : kArmorSlots) {
         auto& worn = slot_ref(closet, slot);
         const auto* current = worn == entt::null ? nullptr : reg.try_get<Equipment>(worn);
-        auto best_index = find_best_inventory_item(reg, inventory, slot, *preferred_kind, current,
-                                                   character_level);
+        const auto* comparable =
+            current != nullptr && current->armor_kind() == *preferred_kind ? current : nullptr;
+        auto best_index = find_best_inventory_item(reg, inventory, slot, *preferred_kind,
+                                                   comparable, character_level);
         if (!best_index) {
           continue;
         }

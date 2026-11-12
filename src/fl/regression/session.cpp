@@ -15,6 +15,7 @@
 #include "fl/build_identity.hpp"
 #include "fl/ecs/components/atb_charge.hpp"
 #include "fl/ecs/components/closet.hpp"
+#include "fl/ecs/components/combat_affinity.hpp"
 #include "fl/ecs/components/combat_status.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"
 #include "fl/ecs/components/equipment.hpp"
@@ -70,6 +71,23 @@ Json atb_json(const fl::ecs::components::AtbCharge& atb) {
   return {{"charge", atb.charge},
           {"max_charge", atb.max_charge},
           {"charge_per_beat", atb.charge_per_beat}};
+}
+
+Json affinities_json(entt::registry& reg, entt::entity actor) {
+  Json result = Json::array();
+  if (const auto* active = reg.try_get<fl::ecs::components::ActiveCombatAffinity>(actor)) {
+    result.push_back(fl::primitives::to_string(active->value));
+    return result;
+  }
+  if (const auto* affinities = reg.try_get<fl::ecs::components::CombatAffinities>(actor)) {
+    for (const auto affinity :
+         {fl::primitives::CombatAffinity::Cloth, fl::primitives::CombatAffinity::Leather,
+          fl::primitives::CombatAffinity::Plate}) {
+      if (affinities->values.contains(affinity))
+        result.push_back(fl::primitives::to_string(affinity));
+    }
+  }
+  return result;
 }
 
 Json statuses_for(entt::registry& reg, entt::entity actor) {
@@ -354,6 +372,8 @@ struct Session::Impl {
           {{"id", actor.id},
            {"kind", hero ? "player" : "monster"},
            {"name", stats.name_},
+           {"level", game.reg().get<fl::ecs::components::TrackXP>(actor.entity).level_},
+           {"affinities", affinities_json(game.reg(), actor.entity)},
            {"stats", stats_json(game.reg(), actor.entity)},
            {"atb", atb_json(game.reg().get<fl::ecs::components::AtbCharge>(actor.entity))},
            {"statuses", statuses_for(game.reg(), actor.entity)},

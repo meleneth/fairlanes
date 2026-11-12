@@ -26,7 +26,7 @@ constexpr int kDireBleedTickBeats =
 } // namespace
 
 void DireBleedSystem::apply(fl::context::EncounterCtx& party_ctx, Scheduler& scheduler,
-                            entt::entity source, entt::entity target) {
+                            entt::entity source, entt::entity target, int scaled_damage_per_tick) {
   auto& reg = party_ctx.reg();
   if (!reg.valid(source) || !reg.valid(target)) {
     return;
@@ -37,7 +37,9 @@ void DireBleedSystem::apply(fl::context::EncounterCtx& party_ctx, Scheduler& sch
     return;
   }
 
-  const int damage_per_tick = std::max(1, effective_combat_stats(reg, target).max_hp / 10);
+  const int damage_per_tick = scaled_damage_per_tick > 0
+                                  ? scaled_damage_per_tick
+                                  : std::max(1, effective_combat_stats(reg, target).max_hp / 10);
   replace_status_effect<fl::ecs::components::DireBleed>(
       party_ctx, target,
       [](fl::context::EncounterCtx& ctx, entt::entity status_target) {

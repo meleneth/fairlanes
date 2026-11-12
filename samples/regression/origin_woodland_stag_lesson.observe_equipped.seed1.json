@@ -1,11 +1,11 @@
 {
   "beat_cap": 1200,
   "build": {
-    "revision": "e0f9c9d020a3c7adf129948a9679d74b5233e8a8",
+    "revision": "60b5b410aa1f802eecaae5d9fbb2920f3b631435",
     "source_dirty": true,
     "version": "0.1.0"
   },
-  "content_sha256": "fb89be668b2021eb2868f043a95b07510ce27566bfe73c9cbbacf3b63865a443",
+  "content_sha256": "676432d495570af68cf20cbcf34552673bcbfe4ebae4dcaedfc53541519f7c9e",
   "events": [
     {
       "actor": "hero1",
@@ -25,7 +25,7 @@
     {
       "actor": "hero1",
       "damage": 5,
-      "hp_after": 20,
+      "hp_after": 22,
       "seq": 2,
       "skill": "thump/1",
       "target": "enemy1",
@@ -35,11 +35,11 @@
     {
       "actor": "enemy1",
       "after": {
-        "hp": 20,
+        "hp": 22,
         "statuses": []
       },
       "before": {
-        "hp": 25,
+        "hp": 27,
         "statuses": []
       },
       "seq": 3,
@@ -70,7 +70,7 @@
     {
       "actor": "hero2",
       "damage": 3,
-      "hp_after": 17,
+      "hp_after": 19,
       "seq": 7,
       "skill": "thump/1",
       "target": "enemy1",
@@ -80,11 +80,11 @@
     {
       "actor": "enemy1",
       "after": {
-        "hp": 17,
+        "hp": 19,
         "statuses": []
       },
       "before": {
-        "hp": 20,
+        "hp": 22,
         "statuses": []
       },
       "seq": 8,
@@ -115,13 +115,13 @@
     {
       "actor": "enemy1",
       "after": {
-        "hp": 17,
+        "hp": 19,
         "statuses": [
           "Brace"
         ]
       },
       "before": {
-        "hp": 17,
+        "hp": 19,
         "statuses": []
       },
       "seq": 12,
@@ -189,7 +189,7 @@
     {
       "actor": "hero2",
       "damage": 3,
-      "hp_after": 14,
+      "hp_after": 16,
       "seq": 20,
       "skill": "thump/1",
       "target": "enemy1",
@@ -199,11 +199,11 @@
     {
       "actor": "enemy1",
       "after": {
-        "hp": 14,
+        "hp": 16,
         "statuses": []
       },
       "before": {
-        "hp": 17,
+        "hp": 19,
         "statuses": [
           "Brace"
         ]
@@ -261,8 +261,8 @@
     },
     {
       "actor": "enemy1",
-      "damage": 5,
-      "hp_after": 15,
+      "damage": 6,
+      "hp_after": 14,
       "seq": 27,
       "skill": "bumper_rush/1",
       "target": "hero2",
@@ -272,7 +272,7 @@
     {
       "actor": "hero2",
       "after": {
-        "hp": 15,
+        "hp": 14,
         "statuses": []
       },
       "before": {
@@ -307,7 +307,7 @@
     {
       "actor": "hero1",
       "damage": 6,
-      "hp_after": 8,
+      "hp_after": 10,
       "seq": 32,
       "skill": "thump/1",
       "target": "enemy1",
@@ -317,11 +317,11 @@
     {
       "actor": "enemy1",
       "after": {
-        "hp": 8,
+        "hp": 10,
         "statuses": []
       },
       "before": {
-        "hp": 14,
+        "hp": 16,
         "statuses": []
       },
       "seq": 33,
@@ -352,7 +352,7 @@
     {
       "actor": "hero2",
       "damage": 5,
-      "hp_after": 3,
+      "hp_after": 5,
       "seq": 37,
       "skill": "thump/1",
       "target": "enemy1",
@@ -362,11 +362,11 @@
     {
       "actor": "enemy1",
       "after": {
-        "hp": 3,
+        "hp": 5,
         "statuses": []
       },
       "before": {
-        "hp": 8,
+        "hp": 10,
         "statuses": []
       },
       "seq": 38,
@@ -421,7 +421,7 @@
     {
       "actor": "enemy1",
       "damage": 4,
-      "hp_after": 11,
+      "hp_after": 10,
       "seq": 44,
       "skill": "bumper_rush/1",
       "target": "hero2",
@@ -431,11 +431,11 @@
     {
       "actor": "hero2",
       "after": {
-        "hp": 11,
+        "hp": 10,
         "statuses": []
       },
       "before": {
-        "hp": 15,
+        "hp": 14,
         "statuses": []
       },
       "seq": 45,
@@ -503,7 +503,7 @@
     {
       "actor": "hero2",
       "damage": 3,
-      "hp_after": 0,
+      "hp_after": 2,
       "seq": 53,
       "skill": "thump/1",
       "target": "enemy1",
@@ -513,11 +513,11 @@
     {
       "actor": "enemy1",
       "after": {
-        "hp": 0,
+        "hp": 2,
         "statuses": []
       },
       "before": {
-        "hp": 3,
+        "hp": 5,
         "statuses": []
       },
       "seq": 54,
@@ -525,10 +525,126 @@
       "uwu": 36000
     },
     {
-      "outcome": "hero_victory",
+      "actor": "hero2",
       "seq": 55,
+      "type": "cast_finish",
+      "uwu": 36400
+    },
+    {
+      "actor": "enemy1",
+      "seq": 56,
+      "skill": "bumper_rush/1",
+      "target": "hero1",
+      "type": "action",
+      "uwu": 36400
+    },
+    {
+      "actor": "enemy1",
+      "seq": 57,
+      "skill": "bumper_rush/1",
+      "type": "cast_start",
+      "uwu": 36400
+    },
+    {
+      "actor": "enemy1",
+      "damage": 2,
+      "hp_after": 14,
+      "seq": 58,
+      "skill": "bumper_rush/1",
+      "target": "hero1",
+      "type": "hit",
+      "uwu": 37360
+    },
+    {
+      "actor": "hero1",
+      "after": {
+        "hp": 14,
+        "statuses": []
+      },
+      "before": {
+        "hp": 16,
+        "statuses": [
+          "Brace"
+        ]
+      },
+      "seq": 59,
+      "type": "state",
+      "uwu": 37360
+    },
+    {
+      "actor": "enemy1",
+      "damage": 4,
+      "hp_after": 6,
+      "seq": 60,
+      "skill": "bumper_rush/1",
+      "target": "hero2",
+      "type": "hit",
+      "uwu": 37600
+    },
+    {
+      "actor": "hero2",
+      "after": {
+        "hp": 6,
+        "statuses": []
+      },
+      "before": {
+        "hp": 10,
+        "statuses": []
+      },
+      "seq": 61,
+      "type": "state",
+      "uwu": 37600
+    },
+    {
+      "actor": "enemy1",
+      "seq": 62,
+      "type": "cast_finish",
+      "uwu": 37680
+    },
+    {
+      "actor": "hero1",
+      "seq": 63,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "action",
+      "uwu": 42240
+    },
+    {
+      "actor": "hero1",
+      "seq": 64,
+      "skill": "thump/1",
+      "type": "cast_start",
+      "uwu": 42240
+    },
+    {
+      "actor": "hero1",
+      "damage": 4,
+      "hp_after": 0,
+      "seq": 65,
+      "skill": "thump/1",
+      "target": "enemy1",
+      "type": "hit",
+      "uwu": 44320
+    },
+    {
+      "actor": "enemy1",
+      "after": {
+        "hp": 0,
+        "statuses": []
+      },
+      "before": {
+        "hp": 2,
+        "statuses": []
+      },
+      "seq": 66,
+      "type": "state",
+      "uwu": 44320
+    },
+    {
+      "outcome": "hero_victory",
+      "seq": 67,
       "type": "end",
-      "uwu": 36000
+      "uwu": 44320
     }
   ],
   "expected_outcome": null,
@@ -538,7 +654,7 @@
     "equipped_item": null,
     "tower_max_attack": 20,
     "tower_max_hp": 100,
-    "tower_max_level": 20,
+    "tower_max_level": 100,
     "variant": "observe_equipped"
   },
   "format": "fairlanes-combat-recording",
@@ -547,6 +663,9 @@
   "initial_state": [
     {
       "action_policy": "single_equipped_skill",
+      "affinities": [
+        "Cloth"
+      ],
       "atb": {
         "charge": 0,
         "charge_per_beat": 80,
@@ -559,6 +678,7 @@
         "observe/1",
         "thump/1"
       ],
+      "level": 1,
       "loadout": [
         "observe/1",
         "thump/1"
@@ -581,6 +701,9 @@
     },
     {
       "action_policy": "single_equipped_skill",
+      "affinities": [
+        "Cloth"
+      ],
       "atb": {
         "charge": 0,
         "charge_per_beat": 80,
@@ -593,6 +716,7 @@
         "observe/1",
         "thump/1"
       ],
+      "level": 1,
       "loadout": [
         "thump/1"
       ],
@@ -614,6 +738,10 @@
     },
     {
       "action_policy": "monster_decision_rules",
+      "affinities": [
+        "Cloth",
+        "Plate"
+      ],
       "atb": {
         "charge": 0,
         "charge_per_beat": 80,
@@ -627,6 +755,7 @@
         "bumper_rush/1",
         "smackdown_sweep/1"
       ],
+      "level": 9,
       "loadout": [
         "brace/1",
         "bumper_rush/1",
@@ -636,8 +765,8 @@
       "stats": {
         "armor": 0,
         "attack": 2,
-        "hp": 25,
-        "max_hp": 25,
+        "hp": 27,
+        "max_hp": 27,
         "resistances": {
           "fire": 0,
           "ice": 0,
@@ -650,15 +779,15 @@
     }
   ],
   "result": {
-    "beats": 451,
+    "beats": 555,
     "outcome": "hero_victory",
     "remaining_hp": {
       "enemy1": 0,
-      "hero1": 16,
-      "hero2": 11
+      "hero1": 14,
+      "hero2": 6
     },
-    "simulated_seconds": 37.583333333333336,
-    "uwu": 36000
+    "simulated_seconds": 46.25,
+    "uwu": 44320
   },
   "starting_uwu": 0,
   "starting_world_beat": 0,

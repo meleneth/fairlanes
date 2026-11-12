@@ -5,6 +5,7 @@
 
 #include "fl/context.hpp"
 #include "fl/ecs/components/color_override.hpp"
+#include "fl/ecs/components/combat_affinity.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
@@ -218,6 +219,7 @@ entt::entity PartyData::recruit_member(std::string name) {
   reg.emplace<fl::ecs::components::Stats>(id, member.name());
   member.hook_level_progression(reg);
   reg.emplace<fl::ecs::components::TrackXP>(id, party_ctx_.entity_context(id), 0);
+  reg.emplace<fl::ecs::components::ActiveCombatAffinity>(id);
   reg.emplace<fl::ecs::components::PartyMember>(id, party_ctx_.entity_context(id), member.name(),
                                                 party_id_, member);
   party_bus_.emit(fl::events::PartyEvent{fl::events::MemberJoined{id}});

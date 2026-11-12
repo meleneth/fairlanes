@@ -11,7 +11,8 @@ CompositionRoot::CompositionRoot(std::unique_ptr<ExternalUiAdapter> adapter)
       quit_confirmation_overlay_(adapter_->makeQuitConfirmationOverlay()),
       autoplay_confirmation_overlay_(adapter_->makeAutoplayConfirmationOverlay()),
       sandbox_confirmation_overlay_(adapter_->makeSandboxConfirmationOverlay()),
-      keybind_help_overlay_(adapter_->makeKeybindHelpOverlay()) {
+      keybind_help_overlay_(adapter_->makeKeybindHelpOverlay()),
+      character_management_overlay_(adapter_->makeCharacterManagementOverlay()) {
   adapter_->bind_shell({
       [this](ScreenId screen, bool remember) { return navigate(screen, remember); },
       [this](OverlayId overlay) { open_overlay(overlay); },
@@ -23,6 +24,7 @@ CompositionRoot::CompositionRoot(std::unique_ptr<ExternalUiAdapter> adapter)
   Add(autoplay_confirmation_overlay_);
   Add(sandbox_confirmation_overlay_);
   Add(keybind_help_overlay_);
+  Add(character_management_overlay_);
   current_screen_ = adapter_->initial_screen(current_screen_);
   active_screen_ = make_screen(current_screen_);
   Add(active_screen_);
@@ -74,6 +76,8 @@ bool CompositionRoot::run_binding(const ftxui::Event& event) {
   if (event == ftxui::Event::Character("a") && (current_screen_ == ScreenId::Raid || current_screen_ == ScreenId::Party || current_screen_ == ScreenId::AccountBattle || current_screen_ == ScreenId::PartyBattle || current_screen_ == ScreenId::EffectGallery || current_screen_ == ScreenId::Libram || current_screen_ == ScreenId::Bestiary || current_screen_ == ScreenId::Objectives || current_screen_ == ScreenId::Village)) return ([&] { const bool consumed = adapter_->toggle_autoplay(current_screen_);
     return consumed; }());
   if (event == ftxui::Event::Character("h") && (current_screen_ == ScreenId::Raid || current_screen_ == ScreenId::Party || current_screen_ == ScreenId::AccountBattle || current_screen_ == ScreenId::PartyBattle || current_screen_ == ScreenId::EffectGallery || current_screen_ == ScreenId::Libram || current_screen_ == ScreenId::Bestiary || current_screen_ == ScreenId::Objectives || current_screen_ == ScreenId::Village)) return ([&] { const bool consumed = adapter_->toggle_help(current_screen_);
+    return consumed; }());
+  if (event == ftxui::Event::Character("c") && (current_screen_ == ScreenId::Party || current_screen_ == ScreenId::AccountBattle || current_screen_ == ScreenId::PartyBattle)) return ([&] { const bool consumed = adapter_->open_character_management(current_screen_);
     return consumed; }());
   if (event == ftxui::Event::Character("r") && (current_screen_ == ScreenId::Raid || current_screen_ == ScreenId::Party || current_screen_ == ScreenId::AccountBattle || current_screen_ == ScreenId::PartyBattle || current_screen_ == ScreenId::EffectGallery || current_screen_ == ScreenId::Libram || current_screen_ == ScreenId::Bestiary || current_screen_ == ScreenId::Objectives || current_screen_ == ScreenId::Village)) return ([&] { const bool consumed = adapter_->return_to_town(current_screen_);
     return consumed; }());
@@ -188,6 +192,7 @@ ftxui::Component CompositionRoot::overlay_component(OverlayId overlay) const {
   case OverlayId::AutoplayConfirmation: return autoplay_confirmation_overlay_;
   case OverlayId::SandboxConfirmation: return sandbox_confirmation_overlay_;
   case OverlayId::KeybindHelp: return keybind_help_overlay_;
+  case OverlayId::CharacterManagement: return character_management_overlay_;
   }
   return {};
 }

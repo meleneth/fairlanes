@@ -535,8 +535,9 @@ TEST_CASE("Account battle shows every party tower route", "[widgets][account-bat
   fl::widgets::clear_forced_battle_render_target();
 
   const auto rendered = screen_text(screen);
-  REQUIRE(rendered.find("P1 Woodland Floor 1/100") != std::string::npos);
-  REQUIRE(rendered.find("P2 Woodland Floor 1/100") != std::string::npos);
+  // Idle readouts identify town explicitly instead of presenting a stale active floor.
+  REQUIRE(rendered.find("P1 Town Woodland F1/100") != std::string::npos);
+  REQUIRE(rendered.find("P2 Town Woodland F1/100") != std::string::npos);
 }
 
 TEST_CASE("Account battle rows stay fixed across encounter transitions",

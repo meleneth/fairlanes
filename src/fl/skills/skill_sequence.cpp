@@ -106,7 +106,10 @@ int apply_damage_skill(fl::context::EncounterCtx& party_ctx, entt::entity attack
   int damage = 0;
   if (definition(skill).effect_damage > 0) {
     auto attack = fl::context::AttackCtx::make_attack(party_ctx, attacker, target);
-    attack.damage().physical = definition(skill).effect_damage;
+    attack.damage().physical =
+        evaluate_scaling(party_ctx.reg(), attacker, definition(skill).scaling,
+                         definition(skill).effect_damage)
+            .total;
     damage = fl::ecs::systems::TakeDamage::commit(attack);
   } else {
     fl::skills::Thump thump;
@@ -129,7 +132,8 @@ void apply_status_detonation(fl::context::EncounterCtx& ctx, entt::entity attack
   if (!fl::ecs::systems::CombatStatusSystem::clear_status(ctx, target, *entry.consumes_status))
     return;
   auto attack = fl::context::AttackCtx::make_attack(ctx, attacker, target);
-  attack.damage().fire = entry.effect_damage;
+  attack.damage().fire =
+      evaluate_scaling(ctx.reg(), attacker, entry.scaling, entry.effect_damage).total;
   const int dealt = fl::ecs::systems::TakeDamage::commit(attack);
   ctx.log().append_markup(
       fmt::format("[ability]({}) detonated for [error]({}) damage.", display_name(skill), dealt));
@@ -197,11 +201,15 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
   using fl::ecs::components::CombatStatusKind;
   using fl::ecs::components::FieldDebuffKind;
   using fl::ecs::systems::CombatStatusSystem;
+  const auto scaled = [&](int base) {
+    return evaluate_scaling(party_ctx.reg(), attacker, definition(skill).scaling, base).total;
+  };
+  const int base_effect = definition(skill).scaling.base_effect;
 
   switch (skill.base) {
   case SkillId::Brace: {
-    const int mitigation = brace_mitigation_percent(
-        fl::ecs::systems::effective_combat_stats(party_ctx.reg(), attacker));
+    const int mitigation =
+        evaluate_scaling(party_ctx.reg(), attacker, definition(skill).scaling, base_effect).total;
     CombatStatusSystem::apply_status(party_ctx, scheduler,
                                      {.kind = CombatStatusKind::Brace,
                                       .name = display_name(skill),
@@ -218,7 +226,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                       .source = attacker,
                                       .target = target,
                                       .duration_seconds = 30,
-                                      .value = 35,
+                                      .value = scaled(base_effect),
                                       .negative = false});
     return;
   case SkillId::ArmorPlate:
@@ -228,7 +236,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                       .source = attacker,
                                       .target = target,
                                       .duration_seconds = 45,
-                                      .value = 60,
+                                      .value = scaled(base_effect),
                                       .negative = false});
     return;
   case SkillId::SmokeScreen:
@@ -237,7 +245,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                             .kind = FieldDebuffKind::AccuracyDown,
                                             .name = display_name(skill),
                                             .source = attacker,
-                                            .value = 35,
+                                            .value = scaled(base_effect),
                                             .duration_seconds = 30});
     return;
   case SkillId::HushHex:
@@ -246,7 +254,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                       .name = display_name(skill),
                                       .source = attacker,
                                       .target = target,
-                                      .duration_seconds = 24});
+                                      .duration_seconds = scaled(base_effect)});
     return;
   case SkillId::Clearbell: CombatStatusSystem::cleanse(party_ctx, attacker, target); return;
   case SkillId::KindleWound: {
@@ -269,18 +277,20 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
   }
   case SkillId::RootLeech: {
     auto damage = fl::primitives::Damage{};
-    damage.physical = 6;
+    damage.physical = scaled(base_effect);
     CombatStatusSystem::drain(party_ctx, attacker, target, damage, 50, display_name(skill));
     return;
   }
   case SkillId::WebSnare:
-    CombatStatusSystem::apply_status(party_ctx, scheduler,
-                                     {.kind = CombatStatusKind::Slow,
-                                      .name = display_name(skill),
-                                      .source = attacker,
-                                      .target = target,
-                                      .duration_seconds = 30,
-                                      .value = 25});
+    CombatStatusSystem::apply_status(
+        party_ctx, scheduler,
+        {.kind = CombatStatusKind::Slow,
+         .name = display_name(skill),
+         .source = attacker,
+         .target = target,
+         .duration_seconds = 30,
+         .value =
+             evaluate_scaling(party_ctx.reg(), attacker, definition(skill).scaling, 25).total});
     return;
   case SkillId::BlueScreen: {
     auto targets = opposing_alive_targets(party_ctx, attacker);
@@ -293,7 +303,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                         .name = display_name(skill),
                                         .source = attacker,
                                         .target = victim,
-                                        .duration_seconds = 12,
+                                        .duration_seconds = scaled(base_effect),
                                         .stacks = 1});
     }
     return;
@@ -304,7 +314,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                             .kind = FieldDebuffKind::DamageDown,
                                             .name = display_name(skill),
                                             .source = attacker,
-                                            .value = 30,
+                                            .value = scaled(base_effect),
                                             .duration_seconds = 30});
     return;
   case SkillId::ChecksumWard:
@@ -317,7 +327,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                       .source = attacker,
                                       .target = target,
                                       .duration_seconds = 36,
-                                      .value = 45,
+                                      .value = scaled(base_effect),
                                       .negative = false});
     return;
   case SkillId::Choirguard:
@@ -328,7 +338,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                         .source = attacker,
                                         .target = ally,
                                         .duration_seconds = 30,
-                                        .value = 30,
+                                        .value = scaled(base_effect),
                                         .negative = false});
     }
     return;
@@ -339,7 +349,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                       .source = attacker,
                                       .target = target,
                                       .duration_seconds = 30,
-                                      .value = 25,
+                                      .value = scaled(base_effect),
                                       .negative = false});
     return;
   case SkillId::RimeArmor:
@@ -349,7 +359,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                       .source = attacker,
                                       .target = target,
                                       .duration_seconds = 36,
-                                      .value = 40,
+                                      .value = scaled(base_effect),
                                       .negative = false});
     return;
   case SkillId::BattleFocus:
@@ -358,7 +368,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                             .kind = FieldDebuffKind::Vulnerable,
                                             .name = display_name(skill),
                                             .source = attacker,
-                                            .value = 15,
+                                            .value = scaled(base_effect),
                                             .duration_seconds = 24});
     return;
   case SkillId::PackHowl:
@@ -367,7 +377,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                             .kind = FieldDebuffKind::Vulnerable,
                                             .name = display_name(skill),
                                             .source = attacker,
-                                            .value = 25,
+                                            .value = scaled(base_effect),
                                             .duration_seconds = 24});
     return;
   case SkillId::SignalFlare:
@@ -376,7 +386,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                             .kind = FieldDebuffKind::AccuracyDown,
                                             .name = display_name(skill),
                                             .source = attacker,
-                                            .value = 20,
+                                            .value = scaled(base_effect),
                                             .duration_seconds = 24});
     return;
   case SkillId::ClockUp:
@@ -386,7 +396,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                       .source = attacker,
                                       .target = target,
                                       .duration_seconds = 30,
-                                      .value = 25,
+                                      .value = scaled(base_effect),
                                       .negative = false});
     return;
   case SkillId::Burrow:
@@ -396,7 +406,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                       .source = attacker,
                                       .target = attacker,
                                       .duration_seconds = 30,
-                                      .value = 45,
+                                      .value = scaled(base_effect),
                                       .negative = false});
     return;
   case SkillId::GnatCloud:
@@ -405,7 +415,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                             .kind = FieldDebuffKind::AccuracyDown,
                                             .name = display_name(skill),
                                             .source = attacker,
-                                            .value = 30,
+                                            .value = scaled(base_effect),
                                             .duration_seconds = 24});
     return;
   case SkillId::MiasmaCloud:
@@ -414,7 +424,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                             .kind = FieldDebuffKind::DamageDown,
                                             .name = display_name(skill),
                                             .source = attacker,
-                                            .value = 25,
+                                            .value = scaled(base_effect),
                                             .duration_seconds = 30});
     return;
   case SkillId::Whiteout:
@@ -423,7 +433,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                             .kind = FieldDebuffKind::AccuracyDown,
                                             .name = display_name(skill),
                                             .source = attacker,
-                                            .value = 45,
+                                            .value = scaled(base_effect),
                                             .duration_seconds = 30});
     return;
   case SkillId::WeightOfTuesday: {
@@ -435,7 +445,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                         .source = attacker,
                                         .target = victim,
                                         .duration_seconds = 30,
-                                        .value = 35});
+                                        .value = scaled(base_effect)});
     }
     CombatStatusSystem::apply_field_debuff(party_ctx, scheduler,
                                            {.team = enemy_field_team(party_ctx, attacker),
@@ -452,7 +462,7 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
                                             .kind = FieldDebuffKind::Vulnerable,
                                             .name = display_name(skill),
                                             .source = attacker,
-                                            .value = 35,
+                                            .value = scaled(base_effect),
                                             .duration_seconds = 18});
     return;
   default: return;
@@ -470,6 +480,8 @@ int apply_healing(fl::context::EncounterCtx& party_ctx, entt::entity healer, ent
     return 0;
   }
 
+  heal_amount =
+      evaluate_scaling(party_ctx.reg(), healer, definition(skill).scaling, heal_amount).total;
   const int before = target_stats->hp_;
   target_stats->hp_ =
       std::min(fl::ecs::systems::effective_combat_stats(party_ctx.reg(), target).max_hp,
@@ -619,7 +631,15 @@ void SkillSequencer::schedule_eviscerate(entt::entity attacker, entt::entity tar
   scheduler_.schedule_smelly_in_beats_for(
       24, attacker, "eviscerate: apply dire bleed and finish",
       [&party_ctx = party_ctx_, &scheduler = scheduler_, finish_turn, attacker, target] {
-        fl::ecs::systems::DireBleedSystem::apply(party_ctx, scheduler, attacker, target);
+        const int base_damage =
+            std::max(1, fl::ecs::systems::effective_combat_stats(party_ctx.reg(), target).max_hp *
+                            definition(SkillId::Eviscerate).scaling.base_effect / 100);
+        const int scaled_damage =
+            evaluate_scaling(party_ctx.reg(), attacker, definition(SkillId::Eviscerate).scaling,
+                             base_damage)
+                .total;
+        fl::ecs::systems::DireBleedSystem::apply(party_ctx, scheduler, attacker, target,
+                                                 scaled_damage);
         finish_turn(attacker);
       });
 
@@ -640,8 +660,12 @@ void SkillSequencer::schedule_poison(entt::entity attacker, entt::entity target)
   scheduler_.schedule_smelly_in_beats_for(
       24, attacker, "poison: apply and finish",
       [&party_ctx = party_ctx_, finish_turn, attacker, target] {
+        const int duration =
+            evaluate_scaling(party_ctx.reg(), attacker, definition(SkillId::Poison).scaling,
+                             definition(SkillId::Poison).scaling.base_effect)
+                .total;
         party_ctx.encounter().combatant_bus(target).emit(
-            fl::events::CombatantEvent{fl::events::PoisonApplied{attacker, target, 1, 27}});
+            fl::events::CombatantEvent{fl::events::PoisonApplied{attacker, target, 1, duration}});
         finish_turn(attacker);
       });
 
@@ -661,8 +685,12 @@ void SkillSequencer::schedule_cold_snap(entt::entity attacker, entt::entity targ
   scheduler_.schedule_smelly_in_beats_for(
       24, attacker, "cold snap: apply freeze and finish",
       [&party_ctx = party_ctx_, finish_turn, attacker, target] {
+        const int duration =
+            evaluate_scaling(party_ctx.reg(), attacker, definition(SkillId::ColdSnap).scaling,
+                             definition(SkillId::ColdSnap).scaling.base_effect)
+                .total;
         party_ctx.encounter().combatant_bus(target).emit(
-            fl::events::CombatantEvent{fl::events::FreezeApplied{attacker, target, 30}});
+            fl::events::CombatantEvent{fl::events::FreezeApplied{attacker, target, duration}});
         finish_turn(attacker);
       });
 

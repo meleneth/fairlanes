@@ -18,6 +18,12 @@ FactoryBot.define do
                 execution: :thump_like,
                 tags: %i[physical blunt melee],
                 declarative_shape: :handwritten_behavior
+      set.skill_scaling :thump,
+                        affinity: :plate,
+                        stat: :attack,
+                        dimension: :damage,
+                        numerator: 1,
+                        cap: 40
       set.random_combat_skills :thump
       set.monster :field_mouse,
                   cycle: :origin,
@@ -27,6 +33,7 @@ FactoryBot.define do
                   hp: 5,
                   known_skills: %i[thump],
                   pool: :common_woodland
+      set.monster_affinities :field_mouse, :plate
     end
   end
 end

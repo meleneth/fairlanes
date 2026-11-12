@@ -337,7 +337,7 @@ TEST_CASE("Party wipes across different parties do not crash and leave combat",
   }
 }
 
-TEST_CASE("Honey Badger Eviscerate applies Dire Bleed that ticks for 10 percent",
+TEST_CASE("Honey Badger Plate affinity scales Eviscerate's Dire Bleed",
           "[encounter][skills][bleed]") {
   fl::GrandCentral gc{1, 1, 1};
 
@@ -367,13 +367,13 @@ TEST_CASE("Honey Badger Eviscerate applies Dire Bleed that ticks for 10 percent"
 
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::DireBleed>(defender));
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::StatusTint>(defender));
-  REQUIRE(party_ctx.reg().get<fl::ecs::components::DireBleed>(defender).damage_per_tick == 10);
+  REQUIRE(party_ctx.reg().get<fl::ecs::components::DireBleed>(defender).damage_per_tick == 12);
 
   tick_party(party_ctx, 35);
   REQUIRE(stats.hp_ == 100);
 
   tick_party(party_ctx, 1);
-  REQUIRE(stats.hp_ == 90);
+  REQUIRE(stats.hp_ == 88);
 }
 
 TEST_CASE("Dire Bleed bypasses Armor on a one-HP target",
@@ -440,7 +440,7 @@ TEST_CASE("Dire Bleed releases the active combatant when the effect is applied",
   REQUIRE(party_ctx.reg().all_of<fl::ecs::components::DireBleed>(defender));
 
   tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(3));
-  REQUIRE(stats.hp_ == 90);
+  REQUIRE(stats.hp_ == 88);
 }
 
 TEST_CASE("Reapplied Dire Bleed refreshes its pending tick", "[encounter][skills][bleed]") {
@@ -477,7 +477,7 @@ TEST_CASE("Reapplied Dire Bleed refreshes its pending tick", "[encounter][skills
   REQUIRE(stats.hp_ == 100);
 
   tick_party(party_ctx, 1);
-  REQUIRE(stats.hp_ == 90);
+  REQUIRE(stats.hp_ == 88);
 }
 
 TEST_CASE("Dire Bleed is removed and pending target work is cleared on death",
@@ -1446,7 +1446,7 @@ TEST_CASE("Dire Bleed survives active-turn cleanup for the affected participant"
   REQUIRE(encounter.atb_engine().active_combatant() == entt::entity{});
 
   tick_party(party_ctx, fl::primitives::WorldClock::beats_from_seconds(3));
-  REQUIRE(stats.hp_ == 90);
+  REQUIRE(stats.hp_ == 88);
 }
 
 TEST_CASE("Poison survives active-turn cleanup for the affected participant",

@@ -27,6 +27,11 @@ def print_experiment(report, seed_breakdown: false)
     resist = stats.fetch("resistances")
     puts "    damage dealt=#{number(combat['mean_damage_dealt'])} received=#{number(combat['mean_damage_received'])}"
     puts "    effective atk=#{number(stats['attack'])} armor=#{number(stats['armor'])} hp=#{number(stats['max_hp'])} resist=P#{number(resist['physical'])}/M#{number(resist['magical'])}/F#{number(resist['fire'])}/I#{number(resist['ice'])}/L#{number(resist['lightning'])}"
+    combat.fetch("monsters", []).each do |monster|
+      monster_stats = monster.fetch("stats")
+      monster_resist = monster_stats.fetch("resistances")
+      puts "    monster #{monster['name']} L#{monster['level']} HP#{monster_stats['max_hp']} ATK#{monster_stats['attack']} resist=P#{monster_resist['physical']}/M#{monster_resist['magical']}/F#{monster_resist['fire']}/I#{monster_resist['ice']}/L#{monster_resist['lightning']} affinities=#{monster['affinities'].join('+')}"
+    end
     if seed_breakdown
       variant.fetch("seed_results").each do |seed|
         puts "    seed=#{seed['seed']} outcome=#{seed['outcome']} duration=#{number(seed['simulated_seconds'])}s hp=#{seed['remaining_party_hp']} survivors=#{seed['survivors']}"

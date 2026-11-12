@@ -26,6 +26,114 @@ Initial themed assignments for content planning; cycle metadata does not filter 
 | Conflict | 14 |
 | Singularity | 14 |
 
+## Origin Combat Affinities
+
+| Monster | Affinities | Skills |
+| --- | --- | --- |
+| Field Mouse | Plate | thump |
+| Honey Badger | Cloth + Plate | eviscerate |
+| Bumpkin Hare | Plate | bump |
+| Scaredy Cat | Leather + Plate | flee, thump |
+| Mire Squish | Cloth + Plate | squish |
+| Bark Smack | Plate | smack |
+| Poison Toad | Cloth | poison |
+| Grass Wolf | Plate | bite, pack_howl, claw |
+| Bristle Boar | Plate | bumper_rush, thump, shell_guard |
+| Prairie Meerkat | Leather + Plate | pebble_spit, flee, thump |
+| Squirrel Brigand | Leather + Plate | pebble_spit, flee, thump_around |
+| Webling Spider | Cloth + Leather + Plate | venom_needle, web_snare, bite |
+| Moss Wolf | Cloth + Plate | claw, pack_howl, root_leech |
+| Antler Stag | Cloth + Plate | brace, bumper_rush, smackdown_sweep |
+| Mosquito Choir | Cloth + Leather | venom_needle, gnat_cloud, blood_bloom |
+| Dragonfly Cutter | Leather + Plate | rake_line, venom_needle, flee |
+| Bog Snail | Cloth + Plate | shell_guard, squish, miasma_cloud |
+| Cave Bat | Cloth + Plate | bite, whiteout, flee |
+| Blind Scorpion | Cloth + Leather + Plate | venom_needle, burrow, bump |
+| Echo Moth | Cloth + Leather | whiteout, gnat_cloud, flee |
+| Sand Scorpion | Cloth + Leather + Plate | venom_needle, burrow, bump |
+| Tarantula Nomad | Cloth + Leather + Plate | bite, web_snare, venom_needle |
+| Dust Hare | Cloth + Plate | bump, gnat_cloud, flee |
+| Visitor's Herald | Cloth + Leather + Plate | visitor_fall |
+
+## Skill Affinity and Scaling
+
+Coefficients are experimental. `Neutral` is an explicit mechanically neutral affinity relationship.
+
+| Skill | Affinity | Dimension | Base | Stat formula | Affinity bonus |
+| --- | --- | --- | ---: | --- | ---: |
+| Observe | neutral | neutral | 0 | none × 0/1 (MAX 0) | 0% |
+| Flee | neutral | neutral | 65 | none × 0/1 (MAX 0) | 0% |
+| Thump | plate | damage | 1 | attack × 1/1 (MAX 40) | 20% |
+| Eviscerate | plate | damage | 10 | none × 0/1 (MAX 0) | 20% |
+| Poison | cloth | control | 27 | armor × 1/2 (MAX 20) | 20% |
+| Cold Snap | cloth | control | 30 | armor × 1/2 (MAX 20) | 20% |
+| Flame Strike | neutral | damage | 1 | attack × 1/2 (MAX 25) | 0% |
+| Flame Wave | neutral | damage | 1 | attack × 1/2 (MAX 25) | 0% |
+| Joltspasm | cloth | control | 1 | armor × 1/2 (MAX 20) | 20% |
+| Rocks Fall | plate | damage | 1 | none × 0/1 (MAX 0) | 20% |
+| Sour Breath | neutral | damage | 1 | attack × 1/2 (MAX 25) | 0% |
+| Mercyburst | neutral | healing | 5 | armor × 1/3 (MAX 20) | 0% |
+| Blood Bloom | neutral | damage | 1 | attack × 1/2 (MAX 25) | 0% |
+| Ice Splitter | leather | damage | 1 | attack × 1/2 (MAX 30) | 20% |
+| Gravity Sigh | cloth | control | 1 | armor × 1/2 (MAX 20) | 20% |
+| Bump | plate | damage | 1 | none × 0/1 (MAX 0) | 20% |
+| Squish | cloth | control | 1 | armor × 1/2 (MAX 20) | 20% |
+| Smack | plate | damage | 1 | none × 0/1 (MAX 0) | 20% |
+| Brace | plate | mitigation | 35 | armor × 2/1 (MAX 35) | 20% |
+| Thump Around | plate | damage | 1 | none × 0/1 (MAX 0) | 20% |
+| Rake Line | plate | damage | 1 | none × 0/1 (MAX 0) | 20% |
+| Smackdown Sweep | plate | damage | 1 | none × 0/1 (MAX 0) | 20% |
+| Bumper Rush | plate | damage | 1 | none × 0/1 (MAX 0) | 20% |
+| Kindle Wound | neutral | damage | 1 | attack × 1/2 (MAX 25) | 0% |
+| Cinder Veil | plate | mitigation | 25 | armor × 2/1 (MAX 35) | 20% |
+| Frost Fan | neutral | damage | 1 | attack × 1/2 (MAX 25) | 0% |
+| Rime Armor | plate | mitigation | 40 | armor × 2/1 (MAX 35) | 20% |
+| Whiteout | cloth | control | 45 | armor × 1/2 (MAX 20) | 20% |
+| Forked Jolt | neutral | damage | 1 | attack × 1/2 (MAX 25) | 0% |
+| Static Field | neutral | damage | 1 | attack × 1/2 (MAX 25) | 0% |
+| Overcharge | neutral | neutral | 35 | none × 0/1 (MAX 0) | 0% |
+| Mercywave | neutral | healing | 4 | armor × 1/3 (MAX 20) | 0% |
+| Clearbell | neutral | neutral | 0 | none × 0/1 (MAX 0) | 0% |
+| Hush Hex | cloth | control | 24 | armor × 1/2 (MAX 20) | 20% |
+| Choirguard | plate | mitigation | 30 | armor × 2/1 (MAX 35) | 20% |
+| Miasma Cloud | neutral | neutral | 25 | none × 0/1 (MAX 0) | 0% |
+| Rot Bloom | neutral | damage | 1 | attack × 1/2 (MAX 25) | 0% |
+| Root Leech | neutral | damage | 6 | attack × 1/2 (MAX 25) | 0% |
+| Pebble Spit | leather | damage | 1 | attack × 1/2 (MAX 30) | 20% |
+| Cave In | cloth | control | 1 | armor × 1/2 (MAX 20) | 20% |
+| Weight Of Tuesday | cloth | control | 35 | armor × 1/2 (MAX 20) | 20% |
+| Snap Shot | leather | damage | 1 | attack × 1/2 (MAX 30) | 20% |
+| Burst Fire | leather | damage | 1 | attack × 1/2 (MAX 30) | 20% |
+| Suppressing Fire | leather | damage | 1 | attack × 1/2 (MAX 30) | 20% |
+| Smoke Screen | cloth | control | 35 | armor × 1/2 (MAX 20) | 20% |
+| Field Dressing | neutral | healing | 5 | armor × 1/3 (MAX 20) | 0% |
+| Laser Stitch | leather | damage | 1 | attack × 1/2 (MAX 30) | 20% |
+| Laser Sweep | leather | damage | 1 | attack × 1/2 (MAX 30) | 20% |
+| Packet Storm | leather | damage | 1 | attack × 1/2 (MAX 30) | 20% |
+| Signal Jam | cloth | control | 30 | armor × 1/2 (MAX 20) | 20% |
+| Reboot Pulse | neutral | healing | 4 | armor × 1/3 (MAX 20) | 0% |
+| Clock Up | neutral | neutral | 25 | none × 0/1 (MAX 0) | 0% |
+| Blue Screen | cloth | control | 12 | armor × 1/2 (MAX 20) | 20% |
+| Null Pointer | neutral | damage | 1 | attack × 1/2 (MAX 25) | 0% |
+| Event Horizon | neutral | damage | 1 | attack × 1/2 (MAX 25) | 0% |
+| Bite | plate | damage | 1 | none × 0/1 (MAX 0) | 20% |
+| Pack Howl | neutral | neutral | 25 | none × 0/1 (MAX 0) | 0% |
+| Claw | plate | damage | 1 | none × 0/1 (MAX 0) | 20% |
+| Shell Guard | plate | mitigation | 35 | armor × 2/1 (MAX 35) | 20% |
+| Venom Needle | leather | damage | 1 | attack × 1/2 (MAX 30) | 20% |
+| Web Snare | cloth | control | 25 | armor × 1/2 (MAX 20) | 20% |
+| Gnat Cloud | cloth | control | 30 | armor × 1/2 (MAX 20) | 20% |
+| Burrow | plate | mitigation | 45 | armor × 2/1 (MAX 35) | 20% |
+| Battle Focus | neutral | neutral | 15 | none × 0/1 (MAX 0) | 0% |
+| Grenade Lob | leather | damage | 1 | attack × 1/2 (MAX 30) | 20% |
+| Armor Plate | plate | mitigation | 60 | armor × 2/1 (MAX 35) | 20% |
+| Signal Flare | neutral | neutral | 20 | none × 0/1 (MAX 0) | 0% |
+| Checksum Ward | plate | mitigation | 45 | armor × 2/1 (MAX 35) | 20% |
+| Plasma Arc | leather | damage | 1 | attack × 1/2 (MAX 30) | 20% |
+| Starblaze | neutral | damage | 1 | attack × 1/2 (MAX 25) | 0% |
+| Cinderburst | neutral | damage | 8 | attack × 1/2 (MAX 25) | 0% |
+| Visitor Fall | neutral | damage | 80 | attack × 1/2 (MAX 25) | 0% |
+
 ## Skill Metadata
 
 | Skill | C++ ID | Learn chance | Flee success | Random combat | Execution | Visual | Monsters | Shape |

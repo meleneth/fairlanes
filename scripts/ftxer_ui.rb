@@ -22,6 +22,7 @@ FAIRLANES_UI = FTXer.integration :fairlanes, namespace: "fl::generated::ftxer" d
   overlay :autoplay_confirmation
   overlay :sandbox_confirmation
   overlay :keybind_help
+  overlay :character_management
   empty_back opens: :quit_confirmation
 
   key "l", navigate: :libram, on: %i[raid party account_battle party_battle libram bestiary objectives village]
@@ -31,6 +32,7 @@ FAIRLANES_UI = FTXer.integration :fairlanes, namespace: "fl::generated::ftxer" d
   key "v", navigate: :village, on: :objectives, after: %i[party party_battle]
   key "a", action: :toggle_autoplay
   key "h", action: :toggle_help
+  key "c", action: :open_character_management, on: %i[party account_battle party_battle]
   key "r", action: :return_to_town
   key " ", navigate: :party_battle, on: %i[account_battle libram bestiary effect_gallery objectives village]
   key " ", navigate: :account_battle, on: :party_battle

@@ -7,6 +7,17 @@ RSpec.describe FairlanesContent::Validator do
     expect(described_class.new(declarations).validate).to be_empty
   end
 
+  it "requires explicit Origin affinity and skill scaling declarations" do
+    declarations = build(:declaration_set)
+    declarations.skills.first.scaling = nil
+    declarations.monsters.first.affinities = []
+
+    expect(described_class.new(declarations).validate).to include(
+      "skill thump is missing an explicit scaling policy",
+      "monster field_mouse is missing a valid explicit affinity set"
+    )
+  end
+
   it "rejects blank monster descriptions" do
     declarations = build(:declaration_set)
     declarations.monsters.first.description = "   "

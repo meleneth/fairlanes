@@ -19,9 +19,9 @@ inline std::string_view tower_biome_label(std::string_view biome_id) {
 inline std::string tower_route_label(const fl::primitives::PartyData& party) {
   std::string label{party.name()};
   const auto route = party.tower_route();
-  if (!route) return label;
+  if (!route) return label + " | Town | No tower selected";
 
-  label += " | Origin ";
+  label += party.has_encounter() ? " | Origin " : " | Town | Next: Origin ";
   label += tower_biome_label(route->biome_id);
   label += " | Floor " + std::to_string(route->floor) + "/100";
   return label;

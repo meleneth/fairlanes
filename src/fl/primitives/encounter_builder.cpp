@@ -75,14 +75,13 @@ EncounterData& EncounterBuilder::thump_it_out() {
       const auto entity = add_enemy_kind(floor->monsters[i]);
       const auto& balance = ctx_.account_data().tower_balance();
       auto& stats = ctx_.reg().get<fl::ecs::components::Stats>(entity);
-      stats.max_hp_ =
-          fl::primitives::TowerBalance::scale(balance.maximum_monster_hp, floor->hp_percent[i]);
-      stats.hp_ = stats.max_hp_;
-      stats.attack_ = fl::primitives::TowerBalance::scale(balance.maximum_monster_attack,
-                                                          floor->attack_percent[i]);
       auto& xp = ctx_.reg().get<fl::ecs::components::TrackXP>(entity);
-      xp.level_ = fl::primitives::TowerBalance::scale(balance.maximum_monster_level,
-                                                      floor->level_percent[i]);
+      const auto progression = balance.resolve(tower_floor_->floor, tower_floor_->biome_id,
+                                               xp.level_, stats.max_hp_, floor->level_percent[i]);
+      stats.max_hp_ = progression.max_hp;
+      stats.hp_ = stats.max_hp_;
+      stats.attack_ = progression.attack;
+      xp.level_ = progression.level;
       xp.xp_ = xp.xp_for_level(xp.level_);
       xp.next_level_at = xp.xp_for_level(xp.level_ + 1);
     } else {

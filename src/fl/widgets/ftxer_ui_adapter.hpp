@@ -28,6 +28,7 @@ public:
   ftxui::Component makeAutoplayConfirmationOverlay() override;
   ftxui::Component makeSandboxConfirmationOverlay() override;
   ftxui::Component makeKeybindHelpOverlay() override;
+  ftxui::Component makeCharacterManagementOverlay() override;
   ftxui::Element decorate(fl::generated::ftxer::ScreenId screen, ftxui::Element content) override;
   bool intercept(const ftxui::Event& event) override;
   void overlay_opened(fl::generated::ftxer::OverlayId overlay) override;
@@ -43,6 +44,7 @@ public:
   bool return_to_town(fl::generated::ftxer::ScreenId current) override;
   bool toggle_autoplay(fl::generated::ftxer::ScreenId current) override;
   bool toggle_help(fl::generated::ftxer::ScreenId current) override;
+  bool open_character_management(fl::generated::ftxer::ScreenId current) override;
   bool quit_requested() const override;
   bool sandbox_requested() const override;
 

@@ -59,6 +59,9 @@ ftxui::Component FtxerUiAdapter::makeSandboxConfirmationOverlay() {
 ftxui::Component FtxerUiAdapter::makeKeybindHelpOverlay() {
   return root_->make_keybind_help_overlay();
 }
+ftxui::Component FtxerUiAdapter::makeCharacterManagementOverlay() {
+  return root_->make_character_management_overlay();
+}
 ftxui::Element FtxerUiAdapter::decorate(generated::ScreenId screen, ftxui::Element content) {
   return root_->decorate(screen, std::move(content));
 }
@@ -103,6 +106,9 @@ bool FtxerUiAdapter::toggle_autoplay(generated::ScreenId current) {
 }
 bool FtxerUiAdapter::toggle_help(generated::ScreenId current) {
   return root_->toggle_help(current);
+}
+bool FtxerUiAdapter::open_character_management(generated::ScreenId current) {
+  return root_->open_character_management(current);
 }
 bool FtxerUiAdapter::quit_requested() const {
   return root_->quit_requested();

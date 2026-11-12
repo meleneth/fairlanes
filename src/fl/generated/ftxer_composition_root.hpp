@@ -11,7 +11,7 @@
 namespace fl::generated::ftxer {
 
 enum class ScreenId { Raid, Party, AccountBattle, PartyBattle, EffectGallery, Libram, Bestiary, Objectives, Village };
-enum class OverlayId { Console, QuitConfirmation, AutoplayConfirmation, SandboxConfirmation, KeybindHelp };
+enum class OverlayId { Console, QuitConfirmation, AutoplayConfirmation, SandboxConfirmation, KeybindHelp, CharacterManagement };
 
 struct ShellCallbacks {
   std::function<bool(ScreenId, bool)> navigate;
@@ -39,6 +39,7 @@ class ExternalUiAdapter {
   virtual ftxui::Component makeAutoplayConfirmationOverlay() = 0;
   virtual ftxui::Component makeSandboxConfirmationOverlay() = 0;
   virtual ftxui::Component makeKeybindHelpOverlay() = 0;
+  virtual ftxui::Component makeCharacterManagementOverlay() = 0;
   virtual ftxui::Element decorate(ScreenId screen, ftxui::Element content) = 0;
   virtual bool intercept(const ftxui::Event& event) = 0;
   virtual void overlay_opened(OverlayId overlay) = 0;
@@ -47,6 +48,7 @@ class ExternalUiAdapter {
   virtual bool expand_help(ScreenId current) = 0;
   virtual bool next_account(ScreenId current) = 0;
   virtual bool next_party(ScreenId current) = 0;
+  virtual bool open_character_management(ScreenId current) = 0;
   virtual bool overdrive_down(ScreenId current) = 0;
   virtual bool overdrive_up(ScreenId current) = 0;
   virtual bool previous_account(ScreenId current) = 0;
@@ -87,6 +89,7 @@ class CompositionRoot : public ftxui::ComponentBase {
   ftxui::Component autoplay_confirmation_overlay_;
   ftxui::Component sandbox_confirmation_overlay_;
   ftxui::Component keybind_help_overlay_;
+  ftxui::Component character_management_overlay_;
   ScreenId current_screen_{ScreenId::PartyBattle};
   std::vector<ScreenId> history_;
   std::vector<OverlayId> overlays_;

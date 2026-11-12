@@ -293,6 +293,49 @@ random_combat_skills(
   :starblaze
 )
 
+# Affinity/scaling is explicit content. Coefficients are first-pass balance data;
+# the relationship and effect dimension are the runtime contract.
+plate_damage = %i[thump eviscerate bump smack rocks_fall thump_around rake_line
+                  smackdown_sweep bumper_rush bite claw]
+leather_damage = %i[ice_splitter pebble_spit snap_shot burst_fire suppressing_fire
+                    laser_stitch laser_sweep packet_storm venom_needle grenade_lob plasma_arc]
+cloth_control = %i[poison cold_snap squish joltspasm gravity_sigh web_snare gnat_cloud cave_in
+                   weight_of_tuesday smoke_screen hush_hex signal_jam blue_screen whiteout]
+plate_mitigation = %i[brace shell_guard armor_plate cinder_veil rime_armor burrow checksum_ward choirguard]
+neutral_healing = %i[mercyburst mercywave field_dressing reboot_pulse]
+neutral_policy = %i[observe flee clearbell pack_howl battle_focus miasma_cloud overcharge clock_up signal_flare]
+
+plate_damage.each { |id| skill_scaling id, affinity: :plate, stat: :none, dimension: :damage, base: 1, numerator: 0, cap: 0 }
+skill_scaling :thump, affinity: :plate, stat: :attack, dimension: :damage, base: 1, numerator: 1, cap: 40
+skill_scaling :eviscerate, affinity: :plate, stat: :none, dimension: :damage, base: 10, numerator: 0, cap: 0
+leather_damage.each { |id| skill_scaling id, affinity: :leather, stat: :attack, dimension: :damage, base: 1, numerator: 1, denominator: 2, cap: 30 }
+control_bases = {poison: 27, cold_snap: 30, squish: 1, joltspasm: 1, gravity_sigh: 1,
+                 web_snare: 25, gnat_cloud: 30, cave_in: 1, weight_of_tuesday: 35,
+                 smoke_screen: 35, hush_hex: 24, signal_jam: 30, blue_screen: 12,
+                 whiteout: 45}
+cloth_control.each { |id| skill_scaling id, affinity: :cloth, stat: :armor, dimension: :control, base: control_bases.fetch(id), numerator: 1, denominator: 2, cap: 20 }
+mitigation_bases = {brace: 35, shell_guard: 35, armor_plate: 60, cinder_veil: 25,
+                    rime_armor: 40, burrow: 45, checksum_ward: 45, choirguard: 30}
+plate_mitigation.each { |id| skill_scaling id, affinity: :plate, stat: :armor, dimension: :mitigation, base: mitigation_bases.fetch(id), numerator: 2, cap: 35 }
+healing_bases = {mercyburst: 5, mercywave: 4, field_dressing: 5, reboot_pulse: 4}
+neutral_healing.each { |id| skill_scaling id, affinity: :neutral, stat: :armor, dimension: :healing, base: healing_bases.fetch(id), numerator: 1, denominator: 3, cap: 20, affinity_percent: 0 }
+neutral_bases = {observe: 0, flee: 65, clearbell: 0, pack_howl: 25, battle_focus: 15,
+                 miasma_cloud: 25, overcharge: 35, clock_up: 25, signal_flare: 20}
+neutral_policy.each { |id| skill_scaling id, affinity: :neutral, stat: :none, dimension: :neutral, base: neutral_bases.fetch(id), affinity_percent: 0 }
+skill_scaling :root_leech, affinity: :neutral, stat: :attack, dimension: :damage,
+              base: 6, numerator: 1, denominator: 2, cap: 25, affinity_percent: 0
+
+# Remaining elemental and cross-cycle attacks deliberately have stat scaling but
+# no Origin armor preference.
+skills.select { |entry| entry.scaling.nil? }.each do |entry|
+  dimension = entry.tags.include?(:damage) ? :damage : :neutral
+  stat = dimension == :damage ? :attack : :none
+  skill_scaling entry.id, affinity: :neutral, stat: stat, dimension: dimension,
+                base: dimension == :damage ? [entry.effect_damage, 1].max : 0,
+                numerator: dimension == :damage ? 1 : 0, denominator: 2,
+                cap: dimension == :damage ? 25 : 0, affinity_percent: 0
+end
+
 # Cycle is an explicit content assignment, independent of level and encounter pool.
 # Initial themed allocation; review counts in docs/tour/generated/content-balance.md.
 monster :field_mouse,
@@ -488,6 +531,22 @@ monster :visitor_herald,
         pool: :raid,
         description: "The first shadow cast by the Visitor walks before the falling sky. It has come for every banner in the account."
 
+# Origin monsters retain these sets independently of equipment. Mixed sets gain
+# the one matching bonus for each skill; set size never multiplies a single use.
+{
+  field_mouse: %i[plate], honey_badger: %i[cloth plate], bumpkin_hare: %i[plate],
+  scaredy_cat: %i[leather plate], mire_squish: %i[cloth plate], bark_smack: %i[plate],
+  poison_toad: %i[cloth], grass_wolf: %i[plate], bristle_boar: %i[plate],
+  prairie_meerkat: %i[leather plate], squirrel_brigand: %i[leather plate],
+  webling_spider: %i[cloth leather plate], moss_wolf: %i[cloth plate],
+  antler_stag: %i[cloth plate], mosquito_choir: %i[cloth leather],
+  dragonfly_cutter: %i[leather plate], bog_snail: %i[cloth plate],
+  cave_bat: %i[cloth plate], blind_scorpion: %i[cloth leather plate],
+  echo_moth: %i[cloth leather], sand_scorpion: %i[cloth leather plate],
+  tarantula_nomad: %i[cloth leather plate], dust_hare: %i[cloth plate],
+  visitor_herald: %i[cloth leather plate]
+}.each { |id, affinities| monster_affinities id, *affinities }
+
 # Bestiary flavor is revealed on encounter; skill discovery remains separate.
 {
   field_mouse: "A field mouse with dusty paws and absolute faith in the power of a good thump. Most adventuring careers begin with an argument over its grain.",
@@ -591,9 +650,9 @@ end
   brace: "Arm a combat-local Brace on the user. The next landed direct physical hit is reduced by 35% plus 2 percentage points per effective Armor, capped at 70%, then Brace is spent. Misses, periodic damage, and nonphysical hits do not spend it.",
   flee: "Attempt to leave combat. The escape attempt has a 65% success chance outside raids and 0% in raids.",
   thump: "Deal 1-5 base physical damage to 1 enemy with a blunt attack at rank 1, plus 3 damage per additional rank and the attacker's flat Attack once. Physical resistance applies before percentage status modifiers; the target's flat Armor then reduces the physical portion before the minimum 1 damage floor. Hit at beat 26 + 2 x (rank - 1); finish at beat 31 + 3 x (rank - 1). Higher ranks hit harder but take longer.",
-  eviscerate: "Inflict Dire Bleed on 1 enemy: they bleed to death unless it is stopped. Every 3 seconds, starting 3 seconds after application, deal physical damage equal to 10% of their maximum HP at application (rounded down, minimum 1), bypassing flat Attack and Armor. No timeout and no initial hit. Cleanse, target death or leaving combat clears it; source death or removal stops it at the next tick. Reapplication replaces the bleed and restarts its timer.",
-  poison: "Poison 1 enemy for 1 magical damage every 3 seconds: 9 ticks over 27 seconds, starting 3 seconds after application (9 total base damage). No initial hit. Cleanse, target death or leaving combat clears it; source death or removal stops further ticks. Reapplication replaces the poison and restarts its timer.",
-  cold_snap: "Freeze 1 enemy for 30 seconds, stopping combat readiness. No initial damage. Casting again while they are frozen clears Freeze and shatters them for ice damage equal to 50% of their maximum HP (rounded down, minimum 1). Freeze can be cleansed and ends on death or leaving combat.",
+  eviscerate: "Inflict Dire Bleed on 1 enemy: they bleed to death unless it is stopped. Every 3 seconds, starting 3 seconds after application, deal physical damage equal to 10% of their maximum HP at application (rounded down, minimum 1); matching Plate affinity increases each tick by 20% with integer rounding. Periodic damage bypasses flat Attack and Armor. No timeout and no initial hit. Cleanse, target death or leaving combat clears it; source death or removal stops it at the next tick. Reapplication replaces the bleed and restarts its timer.",
+  poison: "Poison 1 enemy for 1 magical damage every 3 seconds, starting 3 seconds after application. Base duration is 27 seconds (9 ticks), increased by half effective Armor up to 20 seconds; matching Cloth affinity then increases duration by 20% with integer rounding. No initial hit. Cleanse, target death or leaving combat clears it; source death or removal stops further ticks. Reapplication replaces the poison and restarts its timer.",
+  cold_snap: "Freeze 1 enemy, stopping combat readiness. Base duration is 30 seconds, increased by half effective Armor up to 20 seconds; matching Cloth affinity then increases duration by 20% with integer rounding. No initial damage. Casting again while they are frozen clears Freeze and shatters them for ice damage equal to 50% of their maximum HP (rounded down, minimum 1). Freeze can be cleansed and ends on death or leaving combat.",
   flame_strike: "Deal 1-5 physical damage to 1 enemy. The flame animation currently adds no fire damage or Burn.",
   flame_wave: "Deal 1-5 physical damage to each living enemy in sequence, 3 beats apart. The flame animation currently adds no fire damage or Burn.",
   mercyburst: "Restore 5 HP to 1 living ally, capped at their maximum HP.",

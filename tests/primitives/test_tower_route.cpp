@@ -106,10 +106,10 @@ TEST_CASE("Runtime tower maxima scale generated floor percentages", "[tower][bal
   const auto enemy = fight.attackers().members().front();
   const auto& stats = ctx.reg().get<fl::ecs::components::Stats>(enemy);
   const auto& xp = ctx.reg().get<fl::ecs::components::TrackXP>(enemy);
-  REQUIRE(stats.max_hp_ == 20);
-  REQUIRE(stats.hp_ == 20);
-  REQUIRE(stats.attack_ == 8);
-  REQUIRE(xp.level_ == 4);
+  REQUIRE(stats.max_hp_ == 18);
+  REQUIRE(stats.hp_ == 18);
+  REQUIRE(stats.attack_ == 3);
+  REQUIRE(xp.level_ == 3);
 }
 
 TEST_CASE("The first physical progression floors resolve to authored lineups",

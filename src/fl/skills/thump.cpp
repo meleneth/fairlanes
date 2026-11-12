@@ -11,6 +11,7 @@
 #include "fl/ecs/systems/take_damage.hpp"
 #include "fl/primitives/damage.hpp"
 #include "fl/primitives/random_hub.hpp"
+#include "fl/skills/skill_definition.hpp"
 #include "fl/skills/skill_scaling.hpp"
 #include "fl/widgets/fancy_log.hpp"
 #include "thump.hpp"
@@ -103,10 +104,9 @@ int Thump::thump(fl::context::AttackCtx&& ctx, SkillKey skill) {
   // Round the raw packet before the shared damage path applies mitigation.
   int dmg = static_cast<int>(std::floor(dealt + 0.5));
   dmg = std::max(0, dmg);
-  if (skill.base == SkillId::Thump && dmg > 0) {
-    dmg = std::max(0, dmg + fl::skills::thump_attack_bonus(fl::ecs::systems::effective_combat_stats(
-                                ctx.reg(), ctx.attacker())));
-  }
+  if (dmg > 0)
+    dmg = fl::skills::evaluate_scaling(ctx.reg(), ctx.attacker(), definition(skill).scaling, dmg)
+              .total;
   ctx.damage().physical = dmg;
   ctx.set_hit_kind(fl::primitives::HitKind::Direct);
   entt::handle attacker_h{ctx.reg(), ctx.attacker()};

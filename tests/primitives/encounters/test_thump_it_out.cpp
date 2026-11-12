@@ -298,16 +298,16 @@ TEST_CASE("Thump ranks produce distinct damage bands", "[encounter][skills][rank
   const int damage_v = damage_for(thump_v);
 
   REQUIRE(damage_i >= 1);
-  REQUIRE(damage_i <= 5);
-  REQUIRE(damage_iii >= 7);
-  REQUIRE(damage_iii <= 11);
+  REQUIRE(damage_i <= 6);
+  REQUIRE(damage_iii >= 8);
+  REQUIRE(damage_iii <= 13);
   REQUIRE(damage_v >= 13);
-  REQUIRE(damage_v <= 17);
+  REQUIRE(damage_v <= 20);
   REQUIRE(damage_i < damage_iii);
   REQUIRE(damage_iii < damage_v);
 }
 
-TEST_CASE("Attack applies once to Thump while other thump-like skills opt out",
+TEST_CASE("Attack and Plate affinity apply once to declared thump-like skills",
           "[encounter][skills][thump][damage][stats]") {
   fl::GrandCentral gc{1, 1, 1};
   auto party = gc.account_context(0).party_context(0);
@@ -329,17 +329,17 @@ TEST_CASE("Attack applies once to Thump while other thump-like skills opt out",
   REQUIRE(target.armor_ == 0);
   const int baseline = hit(fl::skills::SkillId::Thump);
   REQUIRE(baseline >= 1);
-  REQUIRE(baseline <= 5);
+  REQUIRE(baseline <= 6);
   source.attack_ = 8;
   target.armor_ = 3;
   const int thump_damage = hit(fl::skills::SkillId::Thump);
-  REQUIRE(thump_damage >= 6);
-  REQUIRE(thump_damage <= 10);
+  REQUIRE(thump_damage >= 7);
+  REQUIRE(thump_damage <= 12);
 
   target.armor_ = 0;
   const int bump_damage = hit(fl::skills::SkillId::Bump);
   REQUIRE(bump_damage >= 1);
-  REQUIRE(bump_damage <= 5);
+  REQUIRE(bump_damage <= 6); // Plate affinity contributes once to this brawl.
 
   target.armor_ = 100;
   REQUIRE(hit(fl::skills::SkillId::Thump) == 1);
@@ -368,7 +368,7 @@ TEST_CASE("Thump applies mitigation before resolving lethal overkill",
       thump.thump(fl::context::AttackCtx::make_attack(party_ctx, attacker, target), thump_v);
 
   REQUIRE(damage >= 6);
-  REQUIRE(damage <= 10);
+  REQUIRE(damage <= 12); // The Field Mouse's Plate affinity contributes once.
   REQUIRE(stats.hp_ == 0);
 }
 
