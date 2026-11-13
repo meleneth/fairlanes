@@ -31,6 +31,8 @@ home rather than restating a divergent copy.
 - [Parties and recruitment](parties-and-recruitment.md): roster structure,
   recruitment milestones, and event operation.
 - [Combat](combat.md): established combat-design principles and teaching roles.
+- [Resources and consumables](resources-and-consumables.md): character combat
+  resources, potion action semantics, and world-time flask effects.
 - [Cycles and biomes](cycles-and-biomes.md): cycle and tower structure, biome
   relationships, and cross-biome gates.
 

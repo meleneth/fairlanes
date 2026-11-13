@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <fstream>
+#include <numeric>
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
@@ -16,6 +17,8 @@
 #include "fl/ecs/components/atb_charge.hpp"
 #include "fl/ecs/components/closet.hpp"
 #include "fl/ecs/components/combat_affinity.hpp"
+#include "fl/ecs/components/combat_resources.hpp"
+#include "fl/ecs/components/consumable.hpp"
 #include "fl/ecs/components/combat_status.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"
 #include "fl/ecs/components/equipment.hpp"
@@ -25,7 +28,10 @@
 #include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
+#include "fl/ecs/components/timed_buffs.hpp"
 #include "fl/ecs/systems/effective_combat_stats.hpp"
+#include "fl/ecs/systems/combat_resource_system.hpp"
+#include "fl/ecs/systems/consumable_system.hpp"
 #include "fl/ecs/systems/manual_equipment.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/generated/floor_content.hpp"
@@ -39,6 +45,8 @@
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/world_clock.hpp"
 #include "fl/skills/skill.hpp"
+#include "fl/skills/skill_definition.hpp"
+#include "fl/skills/skill_scaling.hpp"
 #include "fl/widgets/fancy_log.hpp"
 
 namespace fl::regression {
@@ -157,6 +165,18 @@ struct Session::Impl {
     std::int64_t control_denied_uwu{0};
     std::int64_t longest_control_denial_uwu{0};
     std::int64_t current_control_denial_uwu{0};
+    std::array<int, 2> resource_start{};
+    std::array<int, 2> resource_generated{};
+    std::array<int, 2> resource_spent{};
+    std::array<int, 2> resource_restored{};
+    int resource_rejections{0};
+    int consumables_used{0};
+    int healing_received{0};
+    int healing_wasted{0};
+    int flask_applications{0};
+    int flask_expirations{0};
+    int resource_scaled_effects{0};
+    int resource_bonus_total{0};
   };
   struct CombatTelemetry {
     int attempted_actions{0};
@@ -191,6 +211,15 @@ struct Session::Impl {
       ActorTelemetry entry;
       entry.id = actor.id;
       entry.side = index < hero_count ? "heroes" : "enemies";
+      if (const auto* resources =
+              game.reg().try_get<fl::ecs::components::CombatResources>(actor.entity)) {
+        for (const auto resource : fl::resources::kCombatResources)
+          entry.resource_start[fl::resources::index(resource)] =
+              resources->get(resource).current;
+      }
+      if (const auto* buffs =
+              game.reg().try_get<fl::ecs::components::TimedBuffs>(actor.entity))
+        entry.flask_applications = static_cast<int>(buffs->effects.size());
       telemetry.actors.emplace(actor.entity, std::move(entry));
     }
   }
@@ -237,11 +266,35 @@ struct Session::Impl {
         actors, [this](const Actor& actor) { return state(actor.entity) != actor.prior_state; });
   }
 
+  bool resource_starved(entt::entity entity) {
+    const auto* member = game.reg().try_get<fl::ecs::components::PartyMember>(entity);
+    const auto* slots = game.reg().try_get<fl::ecs::components::SkillSlots>(entity);
+    const auto inspect = [&](const auto& equipped) {
+      return std::ranges::any_of(equipped, [&](const auto& skill) {
+        return skill && !fl::ecs::systems::CombatResourceSystem::eligibility(game.reg(), entity,
+                                                                             *skill)
+                             .eligible;
+      });
+    };
+    return member ? inspect(member->closet().skill_slots) : slots && inspect(slots->slots);
+  }
+
   Json telemetry_json() {
     const auto duration = encounter_elapsed_uwu();
     telemetry.longest_no_progress_uwu =
         std::max(telemetry.longest_no_progress_uwu, duration - telemetry.last_progress_uwu);
     Json actor_rows = Json::array();
+    Json consumable_inventory = Json::array();
+    std::vector<std::pair<std::string, int>> consumable_rows;
+    for (const auto item : party_ctx.party_data().items()) {
+      const auto* consumable = game.reg().try_get<fl::ecs::components::Consumable>(item);
+      if (!consumable) continue;
+      consumable_rows.emplace_back(fl::consumables::stable_id(consumable->kind),
+                                   consumable->quantity);
+    }
+    std::ranges::sort(consumable_rows);
+    for (const auto& [kind, quantity] : consumable_rows)
+      consumable_inventory.push_back({{"kind", kind}, {"quantity", quantity}});
     std::vector<const ActorTelemetry*> ordered;
     ordered.reserve(actors.size());
     for (const auto& actor : actors) ordered.push_back(&telemetry.actors.at(actor.entity));
@@ -255,7 +308,26 @@ struct Session::Impl {
            {"first_meaningful_action_uwu",
             actor->first_meaningful_uwu ? Json(*actor->first_meaningful_uwu) : Json(nullptr)},
            {"control_denied_uwu", actor->control_denied_uwu},
-           {"longest_control_denial_uwu", actor->longest_control_denial_uwu}});
+           {"longest_control_denial_uwu", actor->longest_control_denial_uwu},
+           {"resources",
+            {{"adrenaline",
+              {{"start", actor->resource_start[0]},
+               {"generated", actor->resource_generated[0]},
+               {"spent", actor->resource_spent[0]},
+               {"restored", actor->resource_restored[0]}}},
+             {"reflexes",
+              {{"start", actor->resource_start[1]},
+               {"generated", actor->resource_generated[1]},
+               {"spent", actor->resource_spent[1]},
+               {"restored", actor->resource_restored[1]}}}}},
+           {"resource_rejections", actor->resource_rejections},
+           {"consumables_used", actor->consumables_used},
+           {"healing_received", actor->healing_received},
+           {"healing_wasted", actor->healing_wasted},
+           {"flask_applications", actor->flask_applications},
+           {"flask_expirations", actor->flask_expirations},
+           {"resource_scaled_effects", actor->resource_scaled_effects},
+           {"resource_bonus_total", actor->resource_bonus_total}});
     }
     return {{"schema", "fairlanes-combat-telemetry"},
             {"version", 1},
@@ -271,15 +343,35 @@ struct Session::Impl {
               {"completed", telemetry.completed_actions},
               {"productive", telemetry.productive_actions},
               {"nonproductive", telemetry.completed_actions - telemetry.productive_actions}}},
+            {"consumable_inventory", std::move(consumable_inventory)},
             {"actors", std::move(actor_rows)},
             {"resources",
-             {{"available", false}, {"reason", "combat action resources are not instrumented"}}}};
+             {{"available", true},
+              {"state_changes",
+               std::accumulate(ordered.begin(), ordered.end(), 0,
+                               [](int total, const auto* actor) {
+                                 return total + actor->resource_generated[0] +
+                                        actor->resource_generated[1] + actor->resource_spent[0] +
+                                        actor->resource_spent[1] + actor->resource_restored[0] +
+                                        actor->resource_restored[1];
+                               })},
+              {"exhausted_actors",
+               [&] {
+                 Json exhausted = Json::array();
+                 for (std::size_t index = 0; index < ordered.size(); ++index)
+                   if (ordered[index]->resource_rejections > 0 ||
+                       resource_starved(actors[index].entity))
+                     exhausted.push_back(ordered[index]->id);
+                 return exhausted;
+               }()},
+              {"resource_ids", Json::array({"adrenaline", "reflexes"})}}}};
   }
 
   explicit Impl(Options selected)
       : options(std::move(selected)), game(1, 1, party_size_for(options.fixture), false, false,
                                            options.seed, false, false, options.tower_balance),
         account_ctx(game.account_context(0)), party_ctx(account_ctx.party_context(0)) {
+    remove_fixture_consumables();
     if (const auto* scenario = generated_content::find(options.fixture)) {
       setup_generated(*scenario);
       return;
@@ -381,6 +473,17 @@ struct Session::Impl {
     game.innervate_event_system(false);
   }
 
+  void remove_fixture_consumables() {
+    std::vector<entt::entity> retained;
+    for (const auto item : party_ctx.party_data().items()) {
+      if (game.reg().all_of<fl::ecs::components::Consumable>(item))
+        game.reg().destroy(item);
+      else
+        retained.push_back(item);
+    }
+    party_ctx.party_data().replace_items(std::move(retained));
+  }
+
   void setup_generated(const generated_content::Scenario& scenario) {
     this->scenario = &scenario;
     variant = generated_content::find_variant(scenario, options.variant);
@@ -413,6 +516,18 @@ struct Session::Impl {
         throw std::runtime_error("could not equip generated regression Observe");
       if (!party_member.equip_known_skill(configured_skill))
         throw std::runtime_error("could not equip generated regression skill");
+      if (variant->secondary_skills[index]) {
+        member.grimoire().learn(*variant->secondary_skills[index]);
+        if (!party_member.equip_known_skill(*variant->secondary_skills[index]))
+          throw std::runtime_error("could not equip generated regression secondary skill");
+      }
+      auto& resources = game.reg().get<fl::ecs::components::CombatResources>(entity);
+      if (variant->starting_adrenaline[index] >= 0)
+        resources.set(fl::resources::CombatResource::Adrenaline,
+                      variant->starting_adrenaline[index]);
+      if (variant->starting_reflexes[index] >= 0)
+        resources.set(fl::resources::CombatResource::Reflexes,
+                      variant->starting_reflexes[index]);
       actors.push_back({"hero" + std::to_string(index + 1), entity, {}});
       ++index;
     }
@@ -453,6 +568,29 @@ struct Session::Impl {
       }
       equipped_item_id =
           fmt::format("generated:{}:{}", generated.biome_id, static_cast<int>(generated.tier));
+    }
+    constexpr std::array consumable_kinds{
+        fl::consumables::ConsumableKind::HealingPotion,
+        fl::consumables::ConsumableKind::AdrenalinePotion,
+        fl::consumables::ConsumableKind::ReflexPotion,
+        fl::consumables::ConsumableKind::AttackFlask,
+        fl::consumables::ConsumableKind::ArmorFlask,
+        fl::consumables::ConsumableKind::TempoFlask};
+    for (std::size_t kind = 0; kind < consumable_kinds.size(); ++kind) {
+      const int quantity = variant->consumable_quantities[kind];
+      if (quantity <= 0) continue;
+      party.add_item(fl::ecs::systems::ConsumableSystem::create(
+          game.reg(), consumable_kinds[kind], quantity));
+    }
+    if (variant->prepared_flask) {
+      const auto item = std::ranges::find_if(party.items(), [&](const auto candidate) {
+        const auto* consumable = game.reg().try_get<fl::ecs::components::Consumable>(candidate);
+        return consumable && consumable->kind == *variant->prepared_flask;
+      });
+      if (item == party.items().end() ||
+          !fl::ecs::systems::ConsumableSystem::prepare_flask(
+              party_ctx, actors.front().entity, *item, game.world_clock().elapsed_beats()))
+        throw std::runtime_error("could not prepare regression flask");
     }
     party.revitalize_members();
 
@@ -632,6 +770,16 @@ struct Session::Impl {
                                metrics.incoming_damage += event.damage;
                              if (source.starts_with("hero"))
                                metrics.outgoing_damage += event.damage;
+                             const auto& definition = fl::skills::definition(event.skill);
+                             if (definition.scaling.resource_source !=
+                                 fl::skills::ResourceScalingSource::None) {
+                               auto& actor = telemetry.actors.at(event.source);
+                               ++actor.resource_scaled_effects;
+                               actor.resource_bonus_total +=
+                                   fl::skills::evaluate_scaling(
+                                       game.reg(), event.source, definition.scaling, 0, event.skill)
+                                       .resource_bonus;
+                             }
                              note_meaningful_action(event.source);
                              append({{"type", "hit"},
                                      {"actor", actor_id(event.source)},
@@ -704,6 +852,46 @@ struct Session::Impl {
           telemetry.active_action_productive.erase(event.caster);
           append({{"type", "cast_finish"}, {"actor", actor_id(event.caster)}});
         });
+    listeners.emplace_back(bus, std::in_place_type<fl::events::ResourceChanged>,
+                           [this](const auto& event) {
+                             auto& actor = telemetry.actors.at(event.actor);
+                             const auto index = fl::resources::index(event.resource);
+                             const int amount = std::abs(event.after - event.before);
+                             if (event.reason == fl::resources::ResourceChangeReason::SkillCost)
+                               actor.resource_spent[index] += amount;
+                             else if (event.reason ==
+                                      fl::resources::ResourceChangeReason::SkillGeneration)
+                               actor.resource_generated[index] += amount;
+                             else if (event.after < event.before)
+                               actor.resource_spent[index] += amount;
+                             else
+                               actor.resource_restored[index] += amount;
+                             note_progress();
+                           });
+    listeners.emplace_back(bus, std::in_place_type<fl::events::SkillResourceRejected>,
+                           [this](const auto& event) {
+                             ++telemetry.actors.at(event.actor).resource_rejections;
+                           });
+    listeners.emplace_back(bus, std::in_place_type<fl::events::ConsumableUsed>,
+                           [this](const auto& event) {
+                             auto& actor = telemetry.actors.at(event.actor);
+                             ++actor.consumables_used;
+                             if (event.kind == fl::consumables::ConsumableKind::HealingPotion) {
+                               actor.healing_received += event.effective_amount;
+                               actor.healing_wasted += event.wasted_amount;
+                             }
+                             note_progress();
+                           });
+    listeners.emplace_back(bus, std::in_place_type<fl::events::TimedBuffApplied>,
+                           [this](const auto& event) {
+                             ++telemetry.actors.at(event.actor).flask_applications;
+                             note_progress();
+                           });
+    listeners.emplace_back(bus, std::in_place_type<fl::events::TimedBuffExpired>,
+                           [this](const auto& event) {
+                             ++telemetry.actors.at(event.actor).flask_expirations;
+                             note_progress();
+                           });
   }
 
   Json encounter_result(std::string_view resolved) {

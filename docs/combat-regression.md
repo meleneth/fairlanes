@@ -162,7 +162,7 @@ telemetry and never changes combat state.
 | `no_progress` | A prolonged interval has no HP, status, or instrumented resource progress | A short setup interval is not classified |
 | `stalemate_candidate` | A beat-capped no-progress encounter repeatedly completes only nonproductive actions | Always `suspected`; proof would require reachability analysis showing no future action, expiry, target, RNG, or resource transition can lead to victory |
 | `control_lock` | A living actor spends at least half the encounter under one prolonged full action-denial interval | Silence is not universal denial because it blocks only spell-tagged skills |
-| `resource_exhaustion` | Authoritative resource telemetry identifies exhausted actors and resources | Current combat lacks general action-resource telemetry, so this is `indeterminate`, never inferred from inactivity |
+| `resource_exhaustion` | Authoritative resource telemetry identifies actors whose equipped resource-dependent skills are exhausted | It is never inferred merely from inactivity; encounters or legacy recordings without resource telemetry remain `indeterminate` |
 | `attrition` | A long encounter distributes repeated HP/status progress without a dominant idle interval | This describes curve shape, not whether duration is balanced |
 | `burst_dominance` | A short terminal victory has productive action from only one side before meaningful retaliation | It does not claim another seed could not retaliate |
 
@@ -180,11 +180,21 @@ to `required`, `forbidden`, `allowed`, or `observe`. Omitted entries default to
 unasserted differences remain diagnostics. Unknown IDs, policies, and malformed
 maps fail content validation.
 
-Future classifications need authoritative telemetry for consumable skill
-resources and regeneration, rejected or retargeted attempts, partial Silence
-eligibility by current loadout, evasion attempts, and explicit healing-source
-events. Until those measurements exist, analysis reports indeterminate evidence
-instead of invented zeroes.
+Resource telemetry now records per-actor starting pools, generation,
+expenditure, restoration, ineligible attempts, starvation at encounter end,
+consumable use and remaining quantity, effective healing and overhealing, and
+flask application/expiration. The paired `origin_resource_chain`,
+`origin_reflex_scaling`, and `origin_consumable_survival` fixtures compare
+otherwise identical resource starts, healing inventory, and Attack-flask
+preparation. These differences are observations, not balance assertions.
+
+Future classifications still need authoritative opportunity counts for
+distinguishing temporary from sustained starvation, resource time-series high
+water marks for `resource_runaway`, attribution ratios for
+`consumable_dependency`, and encounter-level requested-versus-effective healing
+for `healing_waste`. Rejected or retargeted attempts, partial Silence
+eligibility, and evasion attempts also need richer telemetry. Until supported,
+analysis reports indeterminate evidence instead of invented zeroes.
 
 Use `scripts/regress compare FIXTURE` for these experiments. The lower-level
 equivalent still supports `--all-seeds`, `--record-dir`, and `--summary-dir`.

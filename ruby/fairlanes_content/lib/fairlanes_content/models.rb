@@ -6,7 +6,7 @@ module FairlanesContent
   Skill = Struct.new(
     :id, :cpp_id, :display, :learn_chance_percent, :random_combat,
     :flee_success_percent, :execution, :visual, :tags, :declarative_shape, :description, :consumes_status, :effect_damage,
-    :scaling,
+    :scaling, :resources,
     keyword_init: true
   )
 
@@ -21,6 +21,7 @@ module FairlanesContent
   )
 
   Gear = Struct.new(:id, :display, :slot, :armor_kind, :tier, :weight, :modifiers, keyword_init: true)
+  Consumable = Struct.new(:id, :display, :magnitude, :duration_seconds, keyword_init: true)
   EquipmentProfile = Struct.new(:biome, :weights, :kinds, :armor_kinds, keyword_init: true)
   EncounterPool = Struct.new(:id, :lineups, keyword_init: true)
   FloorBand = Struct.new(:from, :to, :pool, keyword_init: true)

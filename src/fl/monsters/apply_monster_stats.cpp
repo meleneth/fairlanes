@@ -6,6 +6,7 @@
 
 #include "fl/ecs/components/combat_affinity.hpp"
 #include "fl/ecs/components/combat_status.hpp"
+#include "fl/ecs/components/combat_resources.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
@@ -53,6 +54,7 @@ void apply_monster_stats(fl::primitives::EntityBuilder& builder, MonsterKind kin
   stats.resistances_ = generated.resistances;
   builder.ctx().reg().emplace_or_replace<fl::ecs::components::CombatAffinities>(
       builder.entity(), fl::ecs::components::CombatAffinities{generated.affinities});
+  builder.ctx().reg().emplace_or_replace<fl::ecs::components::CombatResources>(builder.entity());
 
   if (generated.level > 0) {
     auto& xp = builder.ctx().reg().get<fl::ecs::components::TrackXP>(builder.entity());

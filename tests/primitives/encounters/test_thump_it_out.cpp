@@ -8,6 +8,7 @@
 #include <entt/entity/registry.hpp>
 
 #include "fl/ecs/components/combat_status.hpp"
+#include "fl/ecs/components/combat_affinity.hpp"
 #include "fl/ecs/components/monster_identity.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
@@ -315,6 +316,9 @@ TEST_CASE("Attack and Plate affinity apply once to declared thump-like skills",
   const auto attacker = encounter.attackers().members().front();
   const auto defender = encounter.defenders().members().front();
   auto& source = party.reg().get<fl::ecs::components::Stats>(attacker);
+  party.reg().emplace_or_replace<fl::ecs::components::CombatAffinities>(
+      attacker, fl::ecs::components::CombatAffinities{
+                    fl::primitives::CombatAffinitySet{fl::primitives::CombatAffinity::Plate}});
   auto& target = party.reg().get<fl::ecs::components::Stats>(defender);
   target.max_hp_ = 100;
   fl::skills::Thump thump;

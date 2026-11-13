@@ -10,6 +10,7 @@
 #include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/systems/combat_status_system.hpp"
+#include "fl/ecs/systems/combat_resource_system.hpp"
 #include "fl/primitives/random_hub.hpp"
 #include "fl/skills/skill_definition.hpp"
 
@@ -59,6 +60,8 @@ SkillKey choose_skill(entt::registry& reg, fl::primitives::RandomHub& rng, entt:
   for (const auto equipped : *equipped_skills) {
     if (equipped.has_value() && is_random_combat_skill(*equipped) &&
         fl::ecs::systems::CombatStatusSystem::can_use_skill(reg, actor, *equipped)) {
+      if (!fl::ecs::systems::CombatResourceSystem::eligibility(reg, actor, *equipped).eligible)
+        continue;
       known_combat_skills.push_back(*equipped);
     }
   }

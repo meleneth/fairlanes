@@ -5,6 +5,7 @@
 #include <type_traits>
 
 #include "fl/ecs/components/equipment.hpp"
+#include "fl/ecs/components/consumable.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/raid_trinket.hpp"
 #include "fl/ecs/components/stats.hpp"
@@ -151,6 +152,9 @@ ftxui::Element InventoryList::render_party_inventory() {
     Element line = text(entity_label(item));
     if (auto* equipment = reg_.try_get<fl::ecs::components::Equipment>(item)) {
       line = equipment_inventory_label(*equipment);
+    } else if (const auto* consumable = reg_.try_get<fl::ecs::components::Consumable>(item)) {
+      line = text(std::string(fl::consumables::display_name(consumable->kind)) + " ×" +
+                  std::to_string(consumable->quantity));
     } else if (reg_.all_of<fl::ecs::components::RaidTrinket>(item)) {
       line = text("Raid trinket [exclusive]") | color(Color::MagentaLight);
     } else if (auto* stats = reg_.try_get<fl::ecs::components::Stats>(item)) {

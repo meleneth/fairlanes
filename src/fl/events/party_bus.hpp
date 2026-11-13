@@ -4,6 +4,7 @@
 #include <entt/entity/fwd.hpp>
 
 #include <functional>
+#include <cstdint>
 #include <string>
 #include <utility>
 #include <variant>
@@ -11,7 +12,9 @@
 #include "fl/loot/equipment_slot.hpp"
 #include "fl/monsters/monster_kind.hpp"
 #include "fl/primitives/cycle.hpp"
+#include "fl/resources/combat_resource.hpp"
 #include "fl/skills/skill.hpp"
+#include "fl/consumables/consumable_kind.hpp"
 #include "sr/variant_bus.hpp"
 
 namespace fl::events {
@@ -193,6 +196,41 @@ struct SkillActionSelected {
 struct SkillCastFinished {
   entt::entity caster{entt::null};
 };
+struct ResourceChanged {
+  entt::entity actor{entt::null};
+  fl::resources::CombatResource resource{fl::resources::CombatResource::Adrenaline};
+  fl::resources::ResourceChangeReason reason{fl::resources::ResourceChangeReason::SkillCost};
+  int before{0};
+  int after{0};
+  fl::skills::SkillKey skill{fl::skills::SkillId::Observe};
+};
+struct SkillResourceRejected {
+  entt::entity actor{entt::null};
+  fl::skills::SkillKey skill{fl::skills::SkillId::Observe};
+  fl::resources::CombatResource resource{fl::resources::CombatResource::Adrenaline};
+  int required{0};
+  int available{0};
+};
+struct ConsumableUsed {
+  entt::entity actor{entt::null};
+  entt::entity item{entt::null};
+  fl::consumables::ConsumableKind kind{fl::consumables::ConsumableKind::HealingPotion};
+  int quantity_after{0};
+  int effective_amount{0};
+  int wasted_amount{0};
+};
+struct TimedBuffApplied {
+  entt::entity actor{entt::null};
+  fl::consumables::TimedBuffKind kind{fl::consumables::TimedBuffKind::Attack};
+  int magnitude{0};
+  std::uint64_t expires_world_beat{0};
+  bool replaced{false};
+};
+struct TimedBuffExpired {
+  entt::entity actor{entt::null};
+  fl::consumables::TimedBuffKind kind{fl::consumables::TimedBuffKind::Attack};
+  int magnitude{0};
+};
 struct FleeAttempted {
   entt::entity source{entt::null};
   int chance_percent{0};
@@ -211,7 +249,8 @@ using CombatantEvent =
     std::variant<PoisonApplied, FreezeApplied, FreezeStarted, FreezeEnded, DireBleedApplied,
                  DireBleedTicked, DireBleedCleared, BraceMitigated, SkillHitLanded,
                  SkillCastStarted, SkillActionSelected, SkillCastFinished, FleeAttempted,
-                 CombatantFled, PlayerDied>;
+                 ResourceChanged, SkillResourceRejected, ConsumableUsed, TimedBuffApplied,
+                 TimedBuffExpired, CombatantFled, PlayerDied>;
 
 using CombatantBus = seerin::VariantBus<CombatantEvent>;
 

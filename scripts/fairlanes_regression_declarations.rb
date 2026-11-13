@@ -162,3 +162,50 @@ regression :origin_plains_cover_lesson,
     {id: :cover, expected_wins: 1..1,
      assertions: %i[cover_intercepted cover_released]}
   ]
+
+# Controlled resource and consumable comparisons. These are observational:
+# they expose causal telemetry without turning provisional balance into pass/fail
+# expectations.
+regression :origin_resource_chain,
+  encounter: {biome: :origin_woodland_tower, floor: 10},
+  party: [
+    {hp: 100, attack: 2, armor: 5, resistances: {},
+     skill: :thump_around, policy: :single_equipped_skill}
+  ],
+  seeds: [17],
+  beat_cap: 5000,
+  recording_version: 2,
+  variants: [
+    {id: :empty_adrenaline, secondary_skills: {0 => :thump},
+     starting_resources: {0 => {adrenaline: 0}}},
+    {id: :full_adrenaline, secondary_skills: {0 => :thump},
+     starting_resources: {0 => {adrenaline: 10}}}
+  ]
+
+regression :origin_reflex_scaling,
+  encounter: {biome: :origin_murky_swamp_tower, floor: 1},
+  party: [
+    {hp: 30, attack: 4, armor: 1, resistances: {},
+     skill: :venom_needle, policy: :single_equipped_skill}
+  ],
+  seeds: [23],
+  beat_cap: 2400,
+  recording_version: 2,
+  variants: [
+    {id: :low_reflexes, starting_resources: {0 => {reflexes: 0}}},
+    {id: :high_reflexes, starting_resources: {0 => {reflexes: 10}}}
+  ]
+
+regression :origin_consumable_survival,
+  encounter: {biome: :origin_woodland_tower, floor: 10},
+  party: Array.new(2) { {hp: 20, attack: 2, armor: 0, resistances: {},
+                         skill: :thump, policy: :single_equipped_skill} },
+  seeds: [31],
+  beat_cap: 3200,
+  recording_version: 2,
+  variants: [
+    {id: :without_consumables},
+    {id: :with_healing, consumables: {healing_potion: 4}},
+    {id: :with_attack_flask, consumables: {attack_flask: 1},
+     prepared_flask: :attack_flask}
+  ]

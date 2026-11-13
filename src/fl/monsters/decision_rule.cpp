@@ -8,6 +8,7 @@
 #include "fl/ecs/components/skill_slots.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/systems/combat_status_system.hpp"
+#include "fl/ecs/systems/combat_resource_system.hpp"
 #include "fl/skills/skill_selection.hpp"
 #include <algorithm>
 #include <array>
@@ -60,6 +61,7 @@ std::optional<SkillDecision> evaluate_rules(entt::registry& reg, entt::entity ac
     for (auto equipped : slots->slots) {
       if (equipped && equipped->base == rule.skill &&
           fl::ecs::systems::CombatStatusSystem::can_use_skill(reg, actor, *equipped) &&
+          fl::ecs::systems::CombatResourceSystem::eligibility(reg, actor, *equipped).eligible &&
           (!skill || skill->rank < equipped->rank)) {
         skill = equipped;
       }

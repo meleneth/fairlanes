@@ -17,7 +17,10 @@
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/systems/casting_skill_system.hpp"
 #include "fl/ecs/systems/combat_status_system.hpp"
+#include "fl/ecs/systems/combat_resource_system.hpp"
+#include "fl/ecs/systems/consumable_system.hpp"
 #include "fl/ecs/systems/freeze_system.hpp"
+#include "fl/ecs/systems/effective_combat_stats.hpp"
 #include "fl/ecs/systems/poison_system.hpp"
 #include "fl/generated/monster_content.hpp"
 #include "fl/primitives/member_data.hpp"
@@ -71,6 +74,14 @@ void EncounterData::innervate_event_system() {
         if (fl::ecs::systems::CombatStatusSystem::consume_stun_turn(context_, attacker)) {
           atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{attacker}});
           return;
+        }
+
+        if (const auto potion =
+                fl::ecs::systems::ConsumableSystem::choose_combat_potion(context_, attacker)) {
+          if (fl::ecs::systems::ConsumableSystem::use_potion(context_, attacker, *potion)) {
+            atb_in().emit(seerin::AtbInEvent{seerin::FinishedTurn{attacker}});
+            return;
+          }
         }
 
         const auto decision = choose_action(attacker);
@@ -225,6 +236,7 @@ void EncounterData::finalize() {
   auto finish_casts = [this](const auto& team) {
     for (const auto combatant : team.members()) {
       if (context_.reg().valid(combatant)) {
+        fl::ecs::systems::CombatResourceSystem::finish_skill(context_.reg(), combatant);
         combatant_bus(combatant).emit(
             fl::events::CombatantEvent{fl::events::SkillCastFinished{combatant}});
       }
@@ -254,6 +266,7 @@ void EncounterData::clear_pending_events() {
 void EncounterData::clear_active_turn_for(entt::entity id) {
   ZoneScopedN("EncounterData::clear_active_turn_for");
   if (context_.reg().valid(id)) {
+    fl::ecs::systems::CombatResourceSystem::finish_skill(context_.reg(), id);
     combatant_bus(id).emit(fl::events::CombatantEvent{fl::events::SkillCastFinished{id}});
   }
   rt_.atb_.clear_active_turn_for(id);
@@ -392,8 +405,10 @@ EncounterData::EncounterData(entt::registry& reg, RandomHub& rng, fl::widgets::F
   });
 
   rt_.atb_.set_charge_rate_percent_fn([this](entt::entity entity) {
-    return 100 + fl::ecs::systems::CombatStatusSystem::turn_tempo_modifier_percent(context_.reg(),
-                                                                                   entity);
+    return fl::ecs::systems::effective_combat_stats(context_.reg(), entity)
+               .atb_charge_rate_percent +
+           fl::ecs::systems::CombatStatusSystem::turn_tempo_modifier_percent(context_.reg(),
+                                                                              entity);
   });
 
   if (subscribe_to_party_ticks)

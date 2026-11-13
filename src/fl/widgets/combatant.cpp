@@ -3,6 +3,7 @@
 #include "fill_bar.hpp"
 
 #include "fl/ecs/components/atb_charge.hpp"
+#include "fl/ecs/components/combat_resources.hpp"
 #include "fl/ecs/components/casting_skill.hpp"
 #include "fl/ecs/components/closet.hpp"
 #include "fl/ecs/components/dire_bleed.hpp"
@@ -529,6 +530,14 @@ ftxui::Element Combatant::Render() {
           labeled_fill_bar("ATB", clamp_fill(atb_fill), bar_width,
                            std::to_string(atb->charge) + "/" + std::to_string(atb->max_charge)));
     }
+  }
+  if (const auto* resources = reg.try_get<CombatResources>(entity)) {
+    const auto& adrenaline = resources->get(fl::resources::CombatResource::Adrenaline);
+    const auto& reflexes = resources->get(fl::resources::CombatResource::Reflexes);
+    content_lines.push_back(ftxui::text("ADR " + std::to_string(adrenaline.current) + "/" +
+                                        std::to_string(adrenaline.maximum) + "  RFX " +
+                                        std::to_string(reflexes.current) + "/" +
+                                        std::to_string(reflexes.maximum)));
   }
 
   // Top border labels

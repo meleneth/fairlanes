@@ -8,15 +8,20 @@
 
 #include "fl/ecs/components/combat_affinity.hpp"
 #include "fl/ecs/components/equipment.hpp"
+#include "fl/ecs/components/combat_resources.hpp"
+#include "fl/ecs/components/consumable.hpp"
+#include "fl/ecs/components/timed_buffs.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/systems/change_combat_affinity.hpp"
 #include "fl/ecs/systems/effective_combat_stats.hpp"
+#include "fl/ecs/systems/combat_resource_system.hpp"
 #include "fl/loot/equipment_slot.hpp"
 #include "fl/loot/equipment_stat_policy.hpp"
 #include "fl/lospec500.hpp"
 #include "fl/primitives/account_data.hpp"
 #include "fl/primitives/party_data.hpp"
+#include "fl/primitives/world_clock.hpp"
 #include "fl/skills/skill_definition.hpp"
 #include "fl/skills/skill_scaling.hpp"
 #include "fl/widgets/equipment_label.hpp"
@@ -84,22 +89,56 @@ ftxui::Element CharacterOverlay::Render() {
     }
     const auto& def = fl::skills::definition(*slot);
     const auto current =
-        fl::skills::evaluate_scaling(reg, member, def.scaling, def.scaling.base_effect);
+        fl::skills::evaluate_scaling(reg, member, def.scaling, def.scaling.base_effect, *slot);
+    const auto eligibility = fl::ecs::systems::CombatResourceSystem::eligibility(reg, member, *slot);
     skills.push_back(paragraph((index == 0 ? "Observe: " : "Skill: ") +
                                fl::skills::display_name(*slot) + " | " +
                                std::string(fl::skills::to_string(def.scaling.dimension)) + " | " +
                                fl::skills::describe_scaling(def.scaling) + " | current numeric " +
-                               std::to_string(current.total)));
+                               std::to_string(current.total) + " | " +
+                               fl::skills::describe_resource_policy(def.resources) +
+                               (eligibility.eligible ? " | READY"
+                                                    : " | UNAVAILABLE: " + eligibility.reason)));
   }
   Elements learned_skills;
   for (const auto skill : data.grimoire().known_skills()) {
     const auto& def = fl::skills::definition(skill);
     const auto current =
-        fl::skills::evaluate_scaling(reg, member, def.scaling, def.scaling.base_effect);
+        fl::skills::evaluate_scaling(reg, member, def.scaling, def.scaling.base_effect, skill);
+    const auto eligibility = fl::ecs::systems::CombatResourceSystem::eligibility(reg, member, skill);
     learned_skills.push_back(paragraph("Available: " + fl::skills::display_name(skill) + " | " +
                                        std::string(fl::skills::to_string(def.scaling.dimension)) +
                                        " | " + fl::skills::describe_scaling(def.scaling) +
-                                       " | current numeric " + std::to_string(current.total)));
+                                       " | current numeric " + std::to_string(current.total) +
+                                       " | " + fl::skills::describe_resource_policy(def.resources) +
+                                       (eligibility.eligible ? " | READY"
+                                                            : " | UNAVAILABLE: " + eligibility.reason)));
+  }
+
+  Elements resource_lines;
+  if (const auto* resources = reg.try_get<fl::ecs::components::CombatResources>(member)) {
+    for (const auto resource : fl::resources::kCombatResources) {
+      const auto& pool = resources->get(resource);
+      resource_lines.push_back(text(std::string(fl::resources::display_name(resource)) + " " +
+                                    std::to_string(pool.current) + "/" +
+                                    std::to_string(pool.maximum)));
+    }
+  }
+  if (const auto* buffs = reg.try_get<fl::ecs::components::TimedBuffs>(member)) {
+    for (const auto& effect : buffs->effects) {
+      resource_lines.push_back(text("BUFF " +
+                                    std::string(fl::consumables::display_name(effect.kind)) +
+                                    " +" + std::to_string(effect.magnitude) + " | " +
+                                    std::to_string(effect.remaining_beats /
+                                                   fl::primitives::WorldClock::kBeatsPerSecond) +
+                                    "s remaining"));
+    }
+  }
+  for (const auto item : party.items()) {
+    if (const auto* consumable = reg.try_get<fl::ecs::components::Consumable>(item))
+      resource_lines.push_back(text("ITEM " +
+                                    std::string(fl::consumables::display_name(consumable->kind)) +
+                                    " ×" + std::to_string(consumable->quantity)));
   }
 
   Elements gear;
@@ -138,7 +177,8 @@ ftxui::Element CharacterOverlay::Render() {
             std::to_string(stats.resistances.magical) + "/" +
             std::to_string(stats.resistances.fire) + "/" + std::to_string(stats.resistances.ice) +
             "/" + std::to_string(stats.resistances.lightning)),
-       separator(), vbox(std::move(skills)), vbox(std::move(learned_skills)), separator(),
+       separator(), vbox(std::move(resource_lines)), separator(), vbox(std::move(skills)),
+       vbox(std::move(learned_skills)), separator(),
        vbox(std::move(gear)), separator(),
        paragraph(message_.empty() ? "Affinity changes are immediate only at a town encounter "
                                     "boundary; combat remains live behind this overlay."

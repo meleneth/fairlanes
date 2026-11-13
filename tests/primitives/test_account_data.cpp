@@ -5,6 +5,8 @@
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
+#include "fl/ecs/components/combat_resources.hpp"
+#include "fl/ecs/components/timed_buffs.hpp"
 #include "fl/events/party_bus.hpp"
 #include "fl/fsm/party_loop.hpp"
 #include "fl/grand_central.hpp"
@@ -179,6 +181,11 @@ TEST_CASE("Account commits idle roster transfers without moving character develo
   xp.xp_ = 777;
   xp.level_ = 4;
   source.members().front().grimoire().learn(fl::skills::SkillId::Brace);
+  auto& resources = ctx.reg().get<fl::ecs::components::CombatResources>(member);
+  resources.set(fl::resources::CombatResource::Adrenaline, 7);
+  ctx.reg().emplace<fl::ecs::components::TimedBuffs>(
+      member, fl::ecs::components::TimedBuffs{{fl::ecs::components::TimedBuff{
+                  fl::consumables::TimedBuffKind::Attack, 3, 10, 200, 190}}});
   const auto closet = assignment.closet_entity_id();
   int committed = 0;
   fl::events::ScopedPartyListener committed_sub{
@@ -197,6 +204,10 @@ TEST_CASE("Account commits idle roster transfers without moving character develo
   REQUIRE(xp.xp_ == 777);
   REQUIRE(xp.level_ == 4);
   REQUIRE(destination.members().back().grimoire().knows(fl::skills::SkillId::Brace));
+  REQUIRE(ctx.reg().get<fl::ecs::components::CombatResources>(member)
+              .get(fl::resources::CombatResource::Adrenaline)
+              .current == 7);
+  REQUIRE(ctx.reg().get<fl::ecs::components::TimedBuffs>(member).effects.size() == 1);
   REQUIRE(committed == 1);
 }
 

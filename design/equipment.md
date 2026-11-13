@@ -106,6 +106,11 @@ currently equipped items without permanently copying their bonuses onto the
 character. Thump reads effective Attack, and damage resolution reads effective
 Armor and resistances. Unique content can declare explicit modifiers.
 
+**Decided:** Temporary flask effects modify the same authoritative effective
+combat stats as equipment without becoming equipment or permanently altering
+base stats. Their ownership, duration, and replacement rules are defined in
+[resources and consumables](resources-and-consumables.md).
+
 **Implemented first slice:** Ordinary Origin drops receive deterministic,
 biome-weighted persistent modifiers and follow the biome's separate acquisition
 weights. Three-item upgrades require matching provenance and preserve the

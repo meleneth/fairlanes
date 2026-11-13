@@ -15,6 +15,13 @@ visual :void_ripple
 visual :starfire
 visual :observe
 
+consumable :healing_potion, display: "Healing Potion", magnitude: 12
+consumable :adrenaline_potion, display: "Adrenaline Potion", magnitude: 6
+consumable :reflex_potion, display: "Reflex Potion", magnitude: 6
+consumable :attack_flask, display: "Attack Flask", magnitude: 3, duration_seconds: 120
+consumable :armor_flask, display: "Armor Flask", magnitude: 3, duration_seconds: 120
+consumable :tempo_flask, display: "Tempo Flask", magnitude: 20, duration_seconds: 120
+
 status :poison,
        display: "Poison",
        component: "Poison",
@@ -324,6 +331,20 @@ neutral_bases = {observe: 0, flee: 65, clearbell: 0, pack_howl: 25, battle_focus
 neutral_policy.each { |id| skill_scaling id, affinity: :neutral, stat: :none, dimension: :neutral, base: neutral_bases.fetch(id), affinity_percent: 0 }
 skill_scaling :root_leech, affinity: :neutral, stat: :attack, dimension: :damage,
               base: 6, numerator: 1, denominator: 2, cap: 25, affinity_percent: 0
+
+# First character-resource demonstrations. Evaluation reads the pre-cost cast
+# snapshot; coefficients are deliberately provisional balance data.
+skill_scaling :thump_around, affinity: :plate, stat: :none, dimension: :damage,
+              base: 1, resource: :adrenaline, resource_source: :current,
+              resource_numerator: 1, resource_denominator: 1, resource_cap: 6
+skill_scaling :venom_needle, affinity: :leather, stat: :attack, dimension: :damage,
+              base: 4, numerator: 1, denominator: 2, cap: 30,
+              resource: :reflexes, resource_source: :current_percent,
+              resource_numerator: 1, resource_denominator: 20, resource_cap: 5
+skill_resources :thump, resource: :adrenaline, generate_on_hit: 2
+skill_resources :thump_around, resource: :adrenaline, cost: 4
+skill_resources :brace, resource: :reflexes, restore_on_resolution: 3
+skill_resources :web_snare, resource: :reflexes, cost: 4
 
 # Remaining elemental and cross-cycle attacks deliberately have stat scaling but
 # no Origin armor preference.
@@ -647,9 +668,9 @@ end
   reboot_pulse: "Restore 4 HP to each living ally, capped at maximum HP. Does not cleanse statuses.",
   cinderburst: "Detonate an existing burn on one enemy for 8 fire damage, consuming the burn. Requires the burn to still be present when the blast lands.",
   observe: "Spend 12 beats observing, dealing 0 damage. Equipping Observe enables learning from other combatants; its rank caps learnable skill ranks. Observe itself is learned in order, at most 1 rank above the equipped rank, without a chance roll. Combat learning is kept on victory or raid summoning. Learning acquired during a raid is kept on shared victory, even for wiped parties, and lost on shared defeat. Other combat learning is lost on a party wipe.",
-  brace: "Arm a combat-local Brace on the user. The next landed direct physical hit is reduced by 35% plus 2 percentage points per effective Armor, capped at 70%, then Brace is spent. Misses, periodic damage, and nonphysical hits do not spend it.",
+  brace: "Arm a combat-local Brace on the user and restore 3 Reflexes, capped by capacity. The next landed direct physical hit is reduced by 35% plus 2 percentage points per effective Armor, capped at 70%, then Brace is spent. Misses, periodic damage, and nonphysical hits do not spend it.",
   flee: "Attempt to leave combat. The escape attempt has a 65% success chance outside raids and 0% in raids.",
-  thump: "Deal 1-5 base physical damage to 1 enemy with a blunt attack at rank 1, plus 3 damage per additional rank and the attacker's flat Attack once. Physical resistance applies before percentage status modifiers; the target's flat Armor then reduces the physical portion before the minimum 1 damage floor. Hit at beat 26 + 2 x (rank - 1); finish at beat 31 + 3 x (rank - 1). Higher ranks hit harder but take longer.",
+  thump: "Deal 1-5 base physical damage to 1 enemy with a blunt attack at rank 1, plus 3 damage per additional rank and the attacker's flat Attack once. A landed damaging hit generates 2 Adrenaline, capped by capacity. Physical resistance applies before percentage status modifiers; the target's flat Armor then reduces the physical portion before the minimum 1 damage floor. Hit at beat 26 + 2 x (rank - 1); finish at beat 31 + 3 x (rank - 1). Higher ranks hit harder but take longer.",
   eviscerate: "Inflict Dire Bleed on 1 enemy: they bleed to death unless it is stopped. Every 3 seconds, starting 3 seconds after application, deal physical damage equal to 10% of their maximum HP at application (rounded down, minimum 1); matching Plate affinity increases each tick by 20% with integer rounding. Periodic damage bypasses flat Attack and Armor. No timeout and no initial hit. Cleanse, target death or leaving combat clears it; source death or removal stops it at the next tick. Reapplication replaces the bleed and restarts its timer.",
   poison: "Poison 1 enemy for 1 magical damage every 3 seconds, starting 3 seconds after application. Base duration is 27 seconds (9 ticks), increased by half effective Armor up to 20 seconds; matching Cloth affinity then increases duration by 20% with integer rounding. No initial hit. Cleanse, target death or leaving combat clears it; source death or removal stops further ticks. Reapplication replaces the poison and restarts its timer.",
   cold_snap: "Freeze 1 enemy, stopping combat readiness. Base duration is 30 seconds, increased by half effective Armor up to 20 seconds; matching Cloth affinity then increases duration by 20% with integer rounding. No initial damage. Casting again while they are frozen clears Freeze and shatters them for ice damage equal to 50% of their maximum HP (rounded down, minimum 1). Freeze can be cleansed and ends on death or leaving combat.",
@@ -673,7 +694,9 @@ end
   blue_screen: "Make every living enemy skip 1 turn. Each stun expires when consumed or after 12 seconds, whichever comes first. Does not apply Silence.",
   pack_howl: "Make the enemy team 25% more vulnerable to damage for 24 seconds.",
   shell_guard: "Reduce incoming damage to the user by 35% for 30 seconds.",
-  web_snare: "Reduce 1 enemy's readiness charge rate by 25 percentage points for 30 seconds. Replaces existing Slow.",
+  web_snare: "Spend 4 Reflexes when the action begins, then reduce 1 enemy's readiness charge rate by 25 percentage points for 30 seconds. Replaces existing Slow. It is unavailable below 4 Reflexes.",
+  thump_around: "Spend 4 Adrenaline when the action begins. Deal 1-5 physical damage to every living enemy, plus up to 6 damage from the pre-cost current Adrenaline snapshot; matching Plate affinity adds 20% after that bonus.",
+  venom_needle: "Deal 4 poison damage to 1 enemy, plus half effective Attack (maximum 30) and up to 5 damage from the current percentage of Reflex capacity. Matching Leather affinity adds 20% after those bonuses.",
   gnat_cloud: "Give the enemy team a 30% miss chance on damage, including damage ticks, for 24 seconds. Uses the larger of this chance and Blind; they do not add together.",
   burrow: "Reduce incoming damage to the user by 45% for 30 seconds.",
   battle_focus: "Make the enemy team 15% more vulnerable to damage for 24 seconds.",

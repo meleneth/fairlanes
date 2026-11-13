@@ -105,7 +105,8 @@ int Thump::thump(fl::context::AttackCtx&& ctx, SkillKey skill) {
   int dmg = static_cast<int>(std::floor(dealt + 0.5));
   dmg = std::max(0, dmg);
   if (dmg > 0)
-    dmg = fl::skills::evaluate_scaling(ctx.reg(), ctx.attacker(), definition(skill).scaling, dmg)
+    dmg = fl::skills::evaluate_scaling(ctx.reg(), ctx.attacker(), definition(skill).scaling, dmg,
+                                       skill)
               .total;
   ctx.damage().physical = dmg;
   ctx.set_hit_kind(fl::primitives::HitKind::Direct);

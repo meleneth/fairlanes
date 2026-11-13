@@ -7,6 +7,7 @@
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/timed_buffs.hpp"
 #include "fl/loot/equipment_slot.hpp"
 
 namespace fl::ecs::systems {
@@ -18,11 +19,23 @@ struct EffectiveCombatStats {
   int armor;
   int max_hp;
   fl::primitives::Resistances resistances;
+  int atb_charge_rate_percent{100};
 };
 
 inline EffectiveCombatStats effective_combat_stats(entt::registry& reg, entt::entity actor) {
   const auto& base = reg.get<fl::ecs::components::Stats>(actor);
-  EffectiveCombatStats result{base.attack_, base.armor_, base.max_hp_, base.resistances_};
+  EffectiveCombatStats result{base.attack_, base.armor_, base.max_hp_, base.resistances_, 100};
+  if (const auto* buffs = reg.try_get<fl::ecs::components::TimedBuffs>(actor)) {
+    for (const auto& effect : buffs->effects) {
+      switch (effect.kind) {
+      case fl::consumables::TimedBuffKind::Attack: result.attack += effect.magnitude; break;
+      case fl::consumables::TimedBuffKind::Armor: result.armor += effect.magnitude; break;
+      case fl::consumables::TimedBuffKind::AtbChargeRate:
+        result.atb_charge_rate_percent += effect.magnitude;
+        break;
+      }
+    }
+  }
   const auto* member = reg.try_get<fl::ecs::components::PartyMember>(actor);
   if (!member) return result;
   for (const auto slot : fl::loot::kEquipmentSlots) {

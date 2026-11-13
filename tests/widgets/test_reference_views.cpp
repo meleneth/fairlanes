@@ -37,6 +37,20 @@ TEST_CASE("Libram hides unwitnessed names and descriptions", "[discovery][widget
   REQUIRE(text.find("Eviscerate") == std::string::npos);
 }
 
+TEST_CASE("Libram resource policy and combat evaluator share selected-character values",
+          "[discovery][widgets][resources]") {
+  fl::GrandCentral game{1, 1, 1};
+  auto& party = game.accounts()[0].party(0);
+  auto& journal = game.accounts()[0].discoveries();
+  journal.witness(fl::skills::SkillId::ThumpAround);
+  fl::widgets::LibramView view{journal, fl::skills::SkillId::ThumpAround, &party};
+  const auto text = render(view);
+  REQUIRE(text.find("cost 4 Adrenaline") != std::string::npos);
+  REQUIRE(text.find("pre-cost snapshot") != std::string::npos);
+  REQUIRE(text.find("UNAVAILABLE: needs 4 Adrenaline (has 0)") != std::string::npos);
+  REQUIRE(text.find("Current damage: 1") != std::string::npos);
+}
+
 TEST_CASE("Bestiary links only observed monster skills", "[discovery][widgets]") {
   using fl::monster::MonsterKind;
   using fl::skills::SkillId;

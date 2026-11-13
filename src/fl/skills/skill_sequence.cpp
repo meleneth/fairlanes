@@ -16,6 +16,7 @@
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/ecs/systems/combat_status_system.hpp"
+#include "fl/ecs/systems/combat_resource_system.hpp"
 #include "fl/ecs/systems/dire_bleed_system.hpp"
 #include "fl/ecs/systems/effective_combat_stats.hpp"
 #include "fl/ecs/systems/take_damage.hpp"
@@ -108,7 +109,7 @@ int apply_damage_skill(fl::context::EncounterCtx& party_ctx, entt::entity attack
     auto attack = fl::context::AttackCtx::make_attack(party_ctx, attacker, target);
     attack.damage().physical =
         evaluate_scaling(party_ctx.reg(), attacker, definition(skill).scaling,
-                         definition(skill).effect_damage)
+                         definition(skill).effect_damage, skill)
             .total;
     damage = fl::ecs::systems::TakeDamage::commit(attack);
   } else {
@@ -116,6 +117,7 @@ int apply_damage_skill(fl::context::EncounterCtx& party_ctx, entt::entity attack
     damage = thump.thump(fl::context::AttackCtx::make_attack(party_ctx, attacker, target), skill);
   }
   if (damage > 0 && party_ctx.reg().valid(target)) {
+    fl::ecs::systems::CombatResourceSystem::resolve_skill(party_ctx, attacker, target, skill, true);
     party_ctx.encounter().combatant_bus(target).emit(
         fl::events::CombatantEvent{fl::events::SkillHitLanded{attacker, target, skill, damage}});
   }
@@ -133,7 +135,7 @@ void apply_status_detonation(fl::context::EncounterCtx& ctx, entt::entity attack
     return;
   auto attack = fl::context::AttackCtx::make_attack(ctx, attacker, target);
   attack.damage().fire =
-      evaluate_scaling(ctx.reg(), attacker, entry.scaling, entry.effect_damage).total;
+      evaluate_scaling(ctx.reg(), attacker, entry.scaling, entry.effect_damage, skill).total;
   const int dealt = fl::ecs::systems::TakeDamage::commit(attack);
   ctx.log().append_markup(
       fmt::format("[ability]({}) detonated for [error]({}) damage.", display_name(skill), dealt));
@@ -202,21 +204,25 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
   using fl::ecs::components::FieldDebuffKind;
   using fl::ecs::systems::CombatStatusSystem;
   const auto scaled = [&](int base) {
-    return evaluate_scaling(party_ctx.reg(), attacker, definition(skill).scaling, base).total;
+    return evaluate_scaling(party_ctx.reg(), attacker, definition(skill).scaling, base, skill).total;
   };
   const int base_effect = definition(skill).scaling.base_effect;
 
   switch (skill.base) {
   case SkillId::Brace: {
     const int mitigation =
-        evaluate_scaling(party_ctx.reg(), attacker, definition(skill).scaling, base_effect).total;
-    CombatStatusSystem::apply_status(party_ctx, scheduler,
-                                     {.kind = CombatStatusKind::Brace,
-                                      .name = display_name(skill),
-                                      .source = attacker,
-                                      .target = attacker,
-                                      .value = mitigation,
-                                      .negative = false});
+        evaluate_scaling(party_ctx.reg(), attacker, definition(skill).scaling, base_effect, skill)
+            .total;
+    const bool applied = CombatStatusSystem::apply_status(party_ctx, scheduler,
+                                                          {.kind = CombatStatusKind::Brace,
+                                                           .name = display_name(skill),
+                                                           .source = attacker,
+                                                           .target = attacker,
+                                                           .value = mitigation,
+                                                           .negative = false});
+    if (applied)
+      fl::ecs::systems::CombatResourceSystem::resolve_skill(party_ctx, attacker, attacker, skill,
+                                                            false);
     return;
   }
   case SkillId::ShellGuard:
@@ -281,8 +287,8 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
     CombatStatusSystem::drain(party_ctx, attacker, target, damage, 50, display_name(skill));
     return;
   }
-  case SkillId::WebSnare:
-    CombatStatusSystem::apply_status(
+  case SkillId::WebSnare: {
+    const bool applied = CombatStatusSystem::apply_status(
         party_ctx, scheduler,
         {.kind = CombatStatusKind::Slow,
          .name = display_name(skill),
@@ -290,8 +296,13 @@ void apply_wired_skill_effect(fl::context::EncounterCtx& party_ctx,
          .target = target,
          .duration_seconds = 30,
          .value =
-             evaluate_scaling(party_ctx.reg(), attacker, definition(skill).scaling, 25).total});
+             evaluate_scaling(party_ctx.reg(), attacker, definition(skill).scaling, 25, skill)
+                 .total});
+    if (applied)
+      fl::ecs::systems::CombatResourceSystem::resolve_skill(party_ctx, attacker, target, skill,
+                                                            false);
     return;
+  }
   case SkillId::BlueScreen: {
     auto targets = opposing_alive_targets(party_ctx, attacker);
     if (targets.empty() && target != entt::null) {
@@ -481,7 +492,7 @@ int apply_healing(fl::context::EncounterCtx& party_ctx, entt::entity healer, ent
   }
 
   heal_amount =
-      evaluate_scaling(party_ctx.reg(), healer, definition(skill).scaling, heal_amount).total;
+      evaluate_scaling(party_ctx.reg(), healer, definition(skill).scaling, heal_amount, skill).total;
   const int before = target_stats->hp_;
   target_stats->hp_ =
       std::min(fl::ecs::systems::effective_combat_stats(party_ctx.reg(), target).max_hp,
@@ -503,6 +514,7 @@ SkillSequencer::SkillSequencer(fl::context::EncounterCtx& party_ctx, Scheduler& 
                                FinishTurnFn finish_turn)
     : party_ctx_(party_ctx), scheduler_(scheduler),
       finish_turn_([&party_ctx, finish_turn = std::move(finish_turn)](entt::entity caster) {
+        fl::ecs::systems::CombatResourceSystem::finish_skill(party_ctx.reg(), caster);
         party_ctx.encounter().combatant_bus(caster).emit(
             fl::events::CombatantEvent{fl::events::SkillCastFinished{caster}});
         finish_turn(caster);
@@ -510,6 +522,10 @@ SkillSequencer::SkillSequencer(fl::context::EncounterCtx& party_ctx, Scheduler& 
 
 void SkillSequencer::schedule(entt::entity attacker, entt::entity target, SkillKey skill) {
   ZoneScopedN("SkillSequencer::schedule");
+  if (!fl::ecs::systems::CombatResourceSystem::begin_skill(party_ctx_, attacker, skill)) {
+    finish_turn_(attacker);
+    return;
+  }
   party_ctx_.encounter().combatant_bus(attacker).emit(
       fl::events::CombatantEvent{fl::events::SkillCastStarted{attacker, skill}});
   party_ctx_.encounter().release_projectile_cover(attacker, skill);
@@ -636,7 +652,7 @@ void SkillSequencer::schedule_eviscerate(entt::entity attacker, entt::entity tar
                             definition(SkillId::Eviscerate).scaling.base_effect / 100);
         const int scaled_damage =
             evaluate_scaling(party_ctx.reg(), attacker, definition(SkillId::Eviscerate).scaling,
-                             base_damage)
+                             base_damage, SkillId::Eviscerate)
                 .total;
         fl::ecs::systems::DireBleedSystem::apply(party_ctx, scheduler, attacker, target,
                                                  scaled_damage);
@@ -662,7 +678,7 @@ void SkillSequencer::schedule_poison(entt::entity attacker, entt::entity target)
       [&party_ctx = party_ctx_, finish_turn, attacker, target] {
         const int duration =
             evaluate_scaling(party_ctx.reg(), attacker, definition(SkillId::Poison).scaling,
-                             definition(SkillId::Poison).scaling.base_effect)
+                             definition(SkillId::Poison).scaling.base_effect, SkillId::Poison)
                 .total;
         party_ctx.encounter().combatant_bus(target).emit(
             fl::events::CombatantEvent{fl::events::PoisonApplied{attacker, target, 1, duration}});
@@ -687,7 +703,7 @@ void SkillSequencer::schedule_cold_snap(entt::entity attacker, entt::entity targ
       [&party_ctx = party_ctx_, finish_turn, attacker, target] {
         const int duration =
             evaluate_scaling(party_ctx.reg(), attacker, definition(SkillId::ColdSnap).scaling,
-                             definition(SkillId::ColdSnap).scaling.base_effect)
+                             definition(SkillId::ColdSnap).scaling.base_effect, SkillId::ColdSnap)
                 .total;
         party_ctx.encounter().combatant_bus(target).emit(
             fl::events::CombatantEvent{fl::events::FreezeApplied{attacker, target, duration}});

@@ -7,6 +7,17 @@ RSpec.describe FairlanesContent::Validator do
     expect(described_class.new(declarations).validate).to be_empty
   end
 
+  it "rejects incomplete and malformed consumable declarations" do
+    declarations = build(:declaration_set)
+    declarations.consumables.reject! { |entry| entry.id == :tempo_flask }
+    declarations.consumables.find { |entry| entry.id == :healing_potion }.duration_seconds = 10
+
+    expect(described_class.new(declarations).validate).to include(
+      a_string_starting_with("consumables must declare exactly"),
+      "consumable healing_potion potion cannot have a duration"
+    )
+  end
+
   it "requires explicit Origin affinity and skill scaling declarations" do
     declarations = build(:declaration_set)
     declarations.skills.first.scaling = nil

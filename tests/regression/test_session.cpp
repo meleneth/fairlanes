@@ -2,6 +2,8 @@
 #include <nlohmann/json.hpp>
 
 #include <ranges>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "fl/generated/regression_content.hpp"
@@ -52,11 +54,46 @@ TEST_CASE("Seeded regression fights repeat their ordered events", "[regression][
   REQUIRE(telemetry.at("version") == 1);
   REQUIRE(telemetry.at("actions").at("attempted").get<int>() > 0);
   REQUIRE(telemetry.at("progress").at("hp_lost").get<int>() > 0);
-  REQUIRE(telemetry.at("resources").at("available") == false);
+  REQUIRE(telemetry.at("resources").at("available") == true);
+  REQUIRE(telemetry.at("resources").at("resource_ids") ==
+          nlohmann::json::array({"adrenaline", "reflexes"}));
 }
 
 TEST_CASE("Overdrive changes pacing without changing gameplay events", "[regression][overdrive]") {
   REQUIRE(completed_recording(1).at("events") == completed_recording(8).at("events"));
+}
+
+TEST_CASE("Paired resource and consumable fixtures expose causal telemetry",
+          "[regression][resources][consumables]") {
+  auto run = [](std::string fixture, std::string variant, std::uint64_t seed,
+                std::uint64_t cap) {
+    fl::regression::Session session{{std::move(fixture), seed, cap, 0, std::move(variant)}};
+    while (!session.finished()) session.advance_beat();
+    return session.recording().at("result");
+  };
+
+  const auto empty = run("origin_resource_chain", "empty_adrenaline", 17, 5000);
+  const auto full = run("origin_resource_chain", "full_adrenaline", 17, 5000);
+  REQUIRE(empty.at("outgoing_damage").get<int>() < full.at("outgoing_damage").get<int>());
+  REQUIRE(empty.at("telemetry").at("actors").at(0).at("resources").at("adrenaline").at(
+              "generated") > 0);
+  REQUIRE(empty.at("telemetry").at("actors").at(0).at("resources").at("adrenaline").at(
+              "spent") > 0);
+  REQUIRE(full.at("telemetry").at("actors").at(0).at("resources").at("adrenaline").at(
+              "spent") > 0);
+
+  const auto low = run("origin_reflex_scaling", "low_reflexes", 23, 2400);
+  const auto high = run("origin_reflex_scaling", "high_reflexes", 23, 2400);
+  REQUIRE(low.at("outgoing_damage").get<int>() < high.at("outgoing_damage").get<int>());
+  REQUIRE(low.at("telemetry").at("actors").at(0).at("resource_bonus_total").get<int>() <
+          high.at("telemetry").at("actors").at(0).at("resource_bonus_total").get<int>());
+
+  const auto healing = run("origin_consumable_survival", "with_healing", 31, 3200);
+  const auto flask = run("origin_consumable_survival", "with_attack_flask", 31, 3200);
+  REQUIRE(healing.at("telemetry").at("actors").at(0).at("consumables_used") > 0);
+  REQUIRE(healing.at("telemetry").at("actors").at(0).at("healing_received") > 0);
+  REQUIRE(flask.at("telemetry").at("actors").at(0).at("flask_applications") == 1);
+  REQUIRE(flask.at("telemetry").at("consumable_inventory").empty());
 }
 
 TEST_CASE("Rendering the combat view does not consume gameplay randomness",

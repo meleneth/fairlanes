@@ -42,6 +42,12 @@ player has exactly one mutable active armor affinity. It may be changed in town
 and is equipment/strategy state, not innate identity; see
 [equipment](equipment.md) for the affinity disciplines and transition contract.
 
+**Decided:** Every character can hold any defined combat resource. Resources
+are mutable character state, not a class, affinity, skill list, or innate role.
+A character with no resource-dependent skills continues to act normally. See
+[resources and consumables](resources-and-consumables.md) for lifecycle and
+action semantics.
+
 ## Skills
 
 **Decided:** Characters acquire skills through observation and the existing

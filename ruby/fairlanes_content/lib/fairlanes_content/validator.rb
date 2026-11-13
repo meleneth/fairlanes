@@ -28,6 +28,10 @@ module FairlanesContent
     COMBAT_AFFINITIES = Set[:neutral, :cloth, :leather, :plate].freeze
     SCALING_STATS = Set[:none, :attack, :armor].freeze
     SCALING_DIMENSIONS = Set[:neutral, :damage, :healing, :mitigation, :control, :accuracy, :timing].freeze
+    COMBAT_RESOURCES = Set[:adrenaline, :reflexes].freeze
+    RESOURCE_SCALING_SOURCES = Set[:none, :current, :current_percent, :maximum].freeze
+    CONSUMABLE_IDS = Set[:healing_potion, :adrenaline_potion, :reflex_potion,
+                         :attack_flask, :armor_flask, :tempo_flask].freeze
     GEAR_TIERS = Set[:worn, :plain, :sturdy, :fine, :excellent,
                      :masterwork, :mythic].freeze
     RESISTANCE_CHANNELS = Set[:physical, :magical, :fire, :ice, :lightning].freeze
@@ -85,6 +89,7 @@ module FairlanesContent
       validate_monsters(errors)
       validate_decision_rules(errors)
       validate_gear(errors)
+      validate_consumables(errors)
       validate_floor_content(errors)
       validate_regressions(errors)
       validate_biome_plans(errors)
@@ -259,6 +264,22 @@ module FairlanesContent
       end
     end
 
+    def validate_consumables(errors)
+      ids = declarations.consumables.map(&:id)
+      unless ids.to_set == CONSUMABLE_IDS && ids.uniq.size == ids.size
+        errors << "consumables must declare exactly #{CONSUMABLE_IDS.to_a.sort.join(', ')}"
+      end
+      declarations.consumables.each do |entry|
+        prefix = "consumable #{entry.id}"
+        errors << "#{prefix} has no display name" if entry.display.to_s.empty?
+        errors << "#{prefix} has invalid magnitude" unless positive_integer?(entry.magnitude)
+        errors << "#{prefix} has invalid duration" unless non_negative_integer?(entry.duration_seconds)
+        flask = entry.id.to_s.end_with?("_flask")
+        errors << "#{prefix} needs a duration" if flask && !entry.duration_seconds.to_i.positive?
+        errors << "#{prefix} potion cannot have a duration" if !flask && entry.duration_seconds != 0
+      end
+    end
+
     def validate_floor_content(errors)
       monsters = declarations.monsters.map(&:id).to_set
       pools = declarations.encounter_pools.map(&:id).to_set
@@ -413,7 +434,7 @@ module FairlanesContent
         errors << "#{prefix} has duplicate variants" unless variant_ids.uniq.size == variant_ids.size
         variants.each do |variant|
           unless variant.is_a?(Hash) &&
-                 (variant.keys - %i[id equipped_item generated_equipment skill_overrides observe_members next_skill expected_wins assertions classification_expectations]).empty?
+                 (variant.keys - %i[id equipped_item generated_equipment skill_overrides secondary_skills observe_members next_skill expected_wins assertions classification_expectations starting_resources consumables prepared_flask]).empty?
             errors << "#{prefix} variant has unknown fields"
           end
           errors << "#{prefix} has invalid variant id" unless stable_id?(variant[:id])
@@ -436,6 +457,32 @@ module FairlanesContent
               declarations.skills.any? { |entry| entry.id == skill }
           end
             errors << "#{prefix} has invalid skill overrides"
+          end
+          secondary = variant.fetch(:secondary_skills, {})
+          unless secondary.is_a?(Hash) && secondary.all? do |index, skill|
+            index.is_a?(Integer) && (0...scenario.party.size).cover?(index) &&
+              declarations.skills.any? { |entry| entry.id == skill }
+          end
+            errors << "#{prefix} has invalid secondary skills"
+          end
+          starting = variant.fetch(:starting_resources, {})
+          unless starting.is_a?(Hash) && starting.all? do |index, pools|
+            index.is_a?(Integer) && (0...scenario.party.size).cover?(index) && pools.is_a?(Hash) &&
+              (pools.keys - %i[adrenaline reflexes]).empty? &&
+              pools.values.all? { |amount| non_negative_integer?(amount) && amount <= 10 }
+          end
+            errors << "#{prefix} has invalid starting resources"
+          end
+          consumables = variant.fetch(:consumables, {})
+          valid_consumables = %i[healing_potion adrenaline_potion reflex_potion attack_flask armor_flask tempo_flask]
+          unless consumables.is_a?(Hash) && consumables.all? do |kind, quantity|
+            valid_consumables.include?(kind) && non_negative_integer?(quantity)
+          end
+            errors << "#{prefix} has invalid consumables"
+          end
+          prepared_flask = variant[:prepared_flask]
+          if prepared_flask && !%i[attack_flask armor_flask tempo_flask].include?(prepared_flask)
+            errors << "#{prefix} has invalid prepared flask"
           end
           observers = variant.fetch(:observe_members, [])
           unless observers.is_a?(Array) && observers.uniq == observers &&
@@ -561,7 +608,7 @@ module FairlanesContent
       declarations.skills.each do |skill|
         scaling = skill.scaling
         unless scaling.is_a?(Hash) &&
-               (scaling.keys - %i[affinity stat dimension base numerator denominator cap affinity_percent]).empty?
+               (scaling.keys - %i[affinity stat dimension base numerator denominator cap affinity_percent resource resource_source resource_numerator resource_denominator resource_cap]).empty?
           errors << "skill #{skill.id} is missing an explicit scaling policy"
         else
           errors << "skill #{skill.id} has invalid affinity" unless COMBAT_AFFINITIES.include?(scaling[:affinity])
@@ -571,6 +618,21 @@ module FairlanesContent
           %i[base numerator cap affinity_percent].each do |field|
             errors << "skill #{skill.id} has invalid scaling #{field}" unless non_negative_integer?(scaling[field])
           end
+          errors << "skill #{skill.id} has invalid resource scaling identity" unless COMBAT_RESOURCES.include?(scaling[:resource])
+          errors << "skill #{skill.id} has invalid resource scaling source" unless RESOURCE_SCALING_SOURCES.include?(scaling[:resource_source])
+          errors << "skill #{skill.id} has invalid resource scaling denominator" unless positive_integer?(scaling[:resource_denominator])
+          %i[resource_numerator resource_cap].each do |field|
+            errors << "skill #{skill.id} has invalid #{field}" unless non_negative_integer?(scaling[field])
+          end
+        end
+        resources = skill.resources
+        unless resources.is_a?(Hash) &&
+               (resources.keys - %i[resource cost generate_on_hit restore_on_resolution target_resource target_delta]).empty? &&
+               COMBAT_RESOURCES.include?(resources[:resource]) &&
+               COMBAT_RESOURCES.include?(resources[:target_resource]) &&
+               %i[cost generate_on_hit restore_on_resolution].all? { |field| non_negative_integer?(resources[field]) } &&
+               resources[:target_delta].is_a?(Integer)
+          errors << "skill #{skill.id} has invalid resource policy"
         end
         if skill.execution == :status_detonation
           unless %i[shield haste burn blind silence slow stun].include?(skill.consumes_status)

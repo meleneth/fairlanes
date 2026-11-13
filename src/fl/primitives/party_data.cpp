@@ -7,10 +7,12 @@
 #include "fl/ecs/components/color_override.hpp"
 #include "fl/ecs/components/combat_affinity.hpp"
 #include "fl/ecs/components/party_member.hpp"
+#include "fl/ecs/components/combat_resources.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/components/visual_effects.hpp"
 #include "fl/ecs/systems/effective_combat_stats.hpp"
+#include "fl/ecs/systems/consumable_system.hpp"
 #include "fl/ecs/systems/grant_xp_to_party.hpp"
 #include "fl/ecs/systems/loot_drop.hpp"
 #include "fl/ecs/systems/manual_equipment.hpp"
@@ -220,6 +222,7 @@ entt::entity PartyData::recruit_member(std::string name) {
   member.hook_level_progression(reg);
   reg.emplace<fl::ecs::components::TrackXP>(id, party_ctx_.entity_context(id), 0);
   reg.emplace<fl::ecs::components::ActiveCombatAffinity>(id);
+  reg.emplace<fl::ecs::components::CombatResources>(id);
   reg.emplace<fl::ecs::components::PartyMember>(id, party_ctx_.entity_context(id), member.name(),
                                                 party_id_, member);
   party_bus_.emit(fl::events::PartyEvent{fl::events::MemberJoined{id}});
@@ -236,6 +239,8 @@ entt::entity PartyData::recruit_origin_member(std::string name) {
   members_.back().grimoire().learn(fl::skills::SkillId::Thump);
   party_ctx_.reg().get<fl::ecs::components::PartyMember>(hero).equip_known_skill(
       fl::skills::SkillId::Thump);
+  if (members_.size() == 1)
+    fl::ecs::systems::ConsumableSystem::grant_starter_pack(party_ctx_);
   return hero;
 }
 

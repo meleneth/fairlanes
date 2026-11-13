@@ -46,6 +46,7 @@ module FairlanesContent
         "fl/generated/monster_registration.hpp" => renderer.monster_registration_hpp,
         "fl/generated/monster_registration.cpp" => renderer.monster_registration_cpp,
         "fl/generated/gear_content.hpp" => renderer.gear_content_hpp,
+        "fl/generated/consumable_content.hpp" => renderer.consumable_content_hpp,
         "fl/generated/floor_content.hpp" => renderer.floor_content_hpp,
         "fl/generated/regression_content.hpp" => renderer.regression_content_hpp,
         "fl/generated/recruitment_content.hpp" => renderer.recruitment_content_hpp,

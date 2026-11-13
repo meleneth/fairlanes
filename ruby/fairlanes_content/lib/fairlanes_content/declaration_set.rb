@@ -8,7 +8,7 @@ module FairlanesContent
     attr_reader :visuals, :skills, :random_combat_skills, :monsters, :statuses,
                 :gears, :encounter_pools, :tower_patterns, :biomes, :regressions, :biome_plans,
                 :recruitment_opportunities, :story_events, :objectives, :dialogues, :autoplay_routes,
-                :origin_auto_regressions, :equipment_profiles
+                :origin_auto_regressions, :equipment_profiles, :consumables
 
     def self.load_file(path)
       new.tap { |set| set.load_file(path) }
@@ -21,6 +21,7 @@ module FairlanesContent
       @monsters = []
       @statuses = []
       @gears = []
+      @consumables = []
       @equipment_profiles = []
       @encounter_pools = []
       @tower_patterns = []
@@ -67,7 +68,9 @@ module FairlanesContent
         description: description,
         consumes_status: consumes_status,
         effect_damage: effect_damage,
-        scaling: nil
+        scaling: nil,
+        resources: {resource: :adrenaline, cost: 0, generate_on_hit: 0,
+                    restore_on_resolution: 0, target_resource: :adrenaline, target_delta: 0}
       )
     end
 
@@ -113,13 +116,29 @@ module FairlanesContent
     end
 
     def skill_scaling(id, affinity:, stat:, dimension:, numerator: 0, denominator: 1,
-                      cap: 0, affinity_percent: 20, base: nil)
+                      cap: 0, affinity_percent: 20, base: nil, resource: :adrenaline,
+                      resource_source: :none, resource_numerator: 0,
+                      resource_denominator: 1, resource_cap: 0)
       entry = skills.find { |skill| skill.id == id }
       raise ArgumentError, "Unknown skill #{id}" unless entry
       entry.scaling = {affinity: affinity, stat: stat, dimension: dimension,
                        base: base.nil? ? entry.effect_damage : base,
                        numerator: numerator, denominator: denominator, cap: cap,
-                       affinity_percent: affinity_percent}
+                       affinity_percent: affinity_percent, resource: resource,
+                       resource_source: resource_source,
+                       resource_numerator: resource_numerator,
+                       resource_denominator: resource_denominator,
+                       resource_cap: resource_cap}
+    end
+
+    def skill_resources(id, resource:, cost: 0, generate_on_hit: 0,
+                        restore_on_resolution: 0, target_resource: :adrenaline,
+                        target_delta: 0)
+      entry = skills.find { |skill| skill.id == id }
+      raise ArgumentError, "Unknown skill #{id}" unless entry
+      entry.resources = {resource: resource, cost: cost, generate_on_hit: generate_on_hit,
+                         restore_on_resolution: restore_on_resolution,
+                         target_resource: target_resource, target_delta: target_delta}
     end
 
     def monster_affinities(id, *affinities)
@@ -150,6 +169,11 @@ module FairlanesContent
       gears << Gear.new(id: id, display: display, slot: slot,
                         armor_kind: armor_kind, tier: tier, weight: weight,
                         modifiers: modifiers)
+    end
+
+    def consumable(id, display:, magnitude:, duration_seconds: 0)
+      consumables << Consumable.new(id: id, display: display, magnitude: magnitude,
+                                    duration_seconds: duration_seconds)
     end
 
     def equipment_profile(biome, weights:, kinds:, armor_kinds:)
@@ -240,6 +264,8 @@ module FairlanesContent
       statuses.freeze
       gears.each(&:freeze)
       gears.freeze
+      consumables.each(&:freeze)
+      consumables.freeze
       equipment_profiles.each(&:freeze)
       equipment_profiles.freeze
       encounter_pools.each(&:freeze)

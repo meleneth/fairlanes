@@ -21,6 +21,7 @@
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/systems/special_festival_event.hpp"
+#include "fl/ecs/systems/consumable_system.hpp"
 #include "fl/ecs/systems/visual_resolver.hpp"
 #include "fl/generated/ftxer_composition_root.hpp"
 #include "fl/monsters/register_monsters.hpp"
@@ -88,8 +89,11 @@ void GrandCentral::_create_initial_accounts() {
         ++player_index;
       }
 
-      if (!story_mode_ || !party_data.members().empty())
+      if (!story_mode_ || !party_data.members().empty()) {
         fl::ecs::systems::SpecialFestivalEvent::grant_starting_drops(party_data.party_ctx());
+        if (record_progress_)
+          fl::ecs::systems::ConsumableSystem::grant_starter_pack(party_data.party_ctx());
+      }
     }
     account_data.enable_roster_transfers();
   }
@@ -225,6 +229,8 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
             ZoneScopedN("HeadlessBeatDispatch");
             std::scoped_lock lock(frame_mutex_);
             world_clock_.advance_beat();
+            fl::ecs::systems::ConsumableSystem::expire_timed_buffs(
+                reg_, world_clock_.elapsed_beats());
             ++elapsed_beats;
             gc_beat_bus_.emit(seerin::Beat{});
           }
@@ -320,6 +326,8 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
         ZoneScopedN("BeatDispatch");
         std::scoped_lock lock(frame_mutex_);
         world_clock_.advance_beat();
+        fl::ecs::systems::ConsumableSystem::expire_timed_buffs(reg_,
+                                                               world_clock_.elapsed_beats());
         ++elapsed_beats;
         gc_beat_bus_.emit(seerin::Beat{});
         if (opts.after_beat && !opts.after_beat()) {
@@ -340,6 +348,7 @@ void GrandCentral::main_loop(GrandCentralRunOptions opts) {
 void GrandCentral::advance_beat() {
   std::scoped_lock lock(frame_mutex_);
   world_clock_.advance_beat();
+  fl::ecs::systems::ConsumableSystem::expire_timed_buffs(reg_, world_clock_.elapsed_beats());
   gc_beat_bus_.emit(seerin::Beat{});
 }
 

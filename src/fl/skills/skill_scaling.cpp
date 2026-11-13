@@ -4,6 +4,8 @@
 #include <fmt/format.h>
 
 #include "fl/ecs/components/combat_affinity.hpp"
+#include "fl/ecs/components/combat_resources.hpp"
+#include "fl/ecs/components/resource_cast_snapshot.hpp"
 #include "fl/ecs/systems/effective_combat_stats.hpp"
 
 namespace fl::skills {
@@ -20,7 +22,8 @@ bool affinity_matches(entt::registry& reg, entt::entity actor,
 } // namespace
 
 SkillScalingResult evaluate_scaling(entt::registry& reg, entt::entity actor,
-                                    const SkillScalingRule& rule, int base) noexcept {
+                                    const SkillScalingRule& rule, int base,
+                                    std::optional<SkillKey> skill) noexcept {
   SkillScalingResult result{.base = base};
   if (!reg.valid(actor)) {
     result.total = base;
@@ -32,7 +35,29 @@ SkillScalingResult evaluate_scaling(entt::registry& reg, entt::entity actor,
                                                      : 0;
   if (rule.denominator > 0)
     result.stat_bonus = std::clamp(stat * rule.numerator / rule.denominator, 0, rule.maximum_bonus);
-  const int subtotal = std::max(0, base + result.stat_bonus);
+  int resource_value = 0;
+  if (rule.resource_source != ResourceScalingSource::None) {
+    int current = 0;
+    int maximum = 0;
+    if (const auto* snapshot = reg.try_get<fl::ecs::components::ResourceCastSnapshot>(actor);
+        snapshot && (!skill || snapshot->skill == *skill)) {
+      current = snapshot->current[fl::resources::index(rule.resource)];
+      maximum = snapshot->maximum[fl::resources::index(rule.resource)];
+    } else if (const auto* resources =
+                   reg.try_get<fl::ecs::components::CombatResources>(actor)) {
+      current = resources->get(rule.resource).current;
+      maximum = resources->get(rule.resource).maximum;
+    }
+    resource_value = rule.resource_source == ResourceScalingSource::Current       ? current
+                     : rule.resource_source == ResourceScalingSource::Maximum     ? maximum
+                     : maximum > 0 ? current * 100 / maximum
+                                   : 0;
+    if (rule.resource_denominator > 0)
+      result.resource_bonus =
+          std::clamp(resource_value * rule.resource_numerator / rule.resource_denominator, 0,
+                     rule.resource_maximum_bonus);
+  }
+  const int subtotal = std::max(0, base + result.stat_bonus + result.resource_bonus);
   if (affinity_matches(reg, actor, rule.affinity))
     result.affinity_bonus = subtotal * rule.affinity_percent / 100;
   result.total = std::max(0, subtotal + result.affinity_bonus);
@@ -45,9 +70,21 @@ std::string describe_scaling(const SkillScalingRule& rule) {
   const auto stat = rule.stat == ScalingStat::Attack  ? "Attack"
                     : rule.stat == ScalingStat::Armor ? "Armor"
                                                       : "none";
-  return fmt::format("= base {} + {}×{}/{} (MAX {})  × {} affinity +{}%", rule.base_effect, stat,
-                     rule.numerator, rule.denominator, rule.maximum_bonus,
-                     fl::primitives::to_string(rule.affinity), rule.affinity_percent);
+  auto description = fmt::format("= base {} + {}×{}/{} (MAX {})", rule.base_effect, stat,
+                                 rule.numerator, rule.denominator, rule.maximum_bonus);
+  if (rule.resource_source != ResourceScalingSource::None) {
+    const auto source = rule.resource_source == ResourceScalingSource::Current ? "current"
+                        : rule.resource_source == ResourceScalingSource::CurrentPercent
+                            ? "current %"
+                            : "maximum";
+    description += fmt::format(" + {} {}×{}/{} (MAX {})",
+                               fl::resources::display_name(rule.resource), source,
+                               rule.resource_numerator, rule.resource_denominator,
+                               rule.resource_maximum_bonus);
+  }
+  description += fmt::format(" × {} affinity +{}%", fl::primitives::to_string(rule.affinity),
+                             rule.affinity_percent);
+  return description;
 }
 
 std::string_view to_string(ScalingDimension dimension) noexcept {

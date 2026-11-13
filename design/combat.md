@@ -29,6 +29,14 @@ including damage, mitigation, accuracy, control duration or magnitude, timing,
 and healing. Non-numeric skills explicitly declare a neutral policy. Exact
 coefficients and caps are experimental implementation data.
 
+**Decided:** Skills may declaratively generate, restore, spend, target, or scale
+from character resources. Resource identity, capacity, current amount,
+generation, cost, and scaling remain independent. Resource-dependent scaling
+uses the pre-expenditure cast snapshot unless a skill explicitly declares a
+different order. Eligibility, expenditure, and resolution use the same
+authoritative action lifecycle for players and monsters; see
+[resources and consumables](resources-and-consumables.md).
+
 **Decided:** Defensive mechanics have domains of effectiveness. No single
 defensive mechanism must answer every threat. Significant encounters should
 permit more than one viable solution through preparation, party construction,

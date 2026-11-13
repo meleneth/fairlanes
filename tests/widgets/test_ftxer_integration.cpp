@@ -94,6 +94,9 @@ TEST_CASE("Character overlay preserves the active battle and live simulation",
   REQUIRE(open.find("Stormbreak Company") != std::string::npos);
   REQUIRE(open.find("MAX") != std::string::npos);
   REQUIRE(open.find("1 Cloth (control)") != std::string::npos);
+  REQUIRE(open.find("Adrenaline 0/10") != std::string::npos);
+  REQUIRE(open.find("Reflexes 10/10") != std::string::npos);
+  REQUIRE(open.find("Healing Potion ×4") != std::string::npos);
   const auto before = game.world_clock().elapsed_beats();
   game.advance_beat();
   REQUIRE(game.world_clock().elapsed_beats() == before + 1);

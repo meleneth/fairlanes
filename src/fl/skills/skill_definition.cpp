@@ -1,5 +1,7 @@
 #include "fl/skills/skill_definition.hpp"
 
+#include <fmt/format.h>
+
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
@@ -42,6 +44,27 @@ bool has_definition(SkillKey skill) noexcept {
 
 std::span<const SkillDefinition* const> all_definitions() noexcept {
   return generated_content::all_definitions();
+}
+
+std::string describe_resource_policy(const SkillResourcePolicy& policy) {
+  std::string result;
+  const auto append = [&result](std::string text) {
+    if (!result.empty()) result += " · ";
+    result += std::move(text);
+  };
+  if (policy.cost > 0)
+    append(fmt::format("cost {} {}", policy.cost,
+                       fl::resources::display_name(policy.resource)));
+  if (policy.generate_on_hit > 0)
+    append(fmt::format("+{} {} on landed hit", policy.generate_on_hit,
+                       fl::resources::display_name(policy.resource)));
+  if (policy.restore_on_resolution > 0)
+    append(fmt::format("+{} {} on resolution", policy.restore_on_resolution,
+                       fl::resources::display_name(policy.resource)));
+  if (policy.target_delta != 0)
+    append(fmt::format("target {:+} {}", policy.target_delta,
+                       fl::resources::display_name(policy.target_resource)));
+  return result.empty() ? "no resource interaction" : result;
 }
 
 std::string_view name(SkillKey skill) noexcept {

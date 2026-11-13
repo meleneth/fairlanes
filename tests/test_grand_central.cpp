@@ -7,6 +7,7 @@
 #include "fl/context.hpp"
 #include "fl/ecs/components/closet.hpp"
 #include "fl/ecs/components/equipment.hpp"
+#include "fl/ecs/components/consumable.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/systems/special_festival_event.hpp"
 #include "fl/grand_central.hpp"
@@ -115,12 +116,17 @@ TEST_CASE("GrandCentral starts each party with festival drops", "[grand_central]
   fl::GrandCentral gc{1, 2, 0};
 
   for (auto& party : gc.accounts().front().parties()) {
-    REQUIRE(party.items().size() == fl::ecs::systems::SpecialFestivalEvent::kDropsPerParty);
+    REQUIRE(party.items().size() == fl::ecs::systems::SpecialFestivalEvent::kDropsPerParty + 6);
     REQUIRE(party.log().size() == 2);
 
     bool has_weapon = false;
     bool has_jewelry = false;
+    int consumable_kinds = 0;
     for (auto item : party.items()) {
+      if (gc.reg().all_of<fl::ecs::components::Consumable>(item)) {
+        ++consumable_kinds;
+        continue;
+      }
       const auto& equipment = gc.reg().get<fl::ecs::components::Equipment>(item);
       has_weapon = has_weapon || equipment.slot() == fl::loot::EquipmentSlot::mainhand ||
                    equipment.slot() == fl::loot::EquipmentSlot::offhand ||
@@ -132,6 +138,7 @@ TEST_CASE("GrandCentral starts each party with festival drops", "[grand_central]
 
     REQUIRE(has_weapon);
     REQUIRE(has_jewelry);
+    REQUIRE(consumable_kinds == 6);
   }
 }
 
