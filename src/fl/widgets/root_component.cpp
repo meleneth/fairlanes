@@ -18,6 +18,7 @@
 #include "libram_view.hpp"
 #include "party_battle_screen.hpp"
 #include "party_view.hpp"
+#include "production_view.hpp"
 #include "raid_view.hpp"
 #include "root_chrome.hpp"
 #include "story_screen.hpp"
@@ -248,6 +249,10 @@ ftxui::Component RootComponent::make_objectives() {
 }
 ftxui::Component RootComponent::make_village() {
   return make_story_screen(true);
+}
+ftxui::Component RootComponent::make_production() {
+  if (raid_locked() || ctx_.account_data().parties().empty()) return {};
+  return ftxui::Make<ProductionView>(ctx_, commands_.party_index());
 }
 
 ftxui::Component RootComponent::make_console_overlay() {

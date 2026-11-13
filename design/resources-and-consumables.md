@@ -88,3 +88,8 @@ waste, and flask application/expiration.
 The exact starting pools, potion magnitudes, flask bonuses and durations,
 autonomous thresholds, and skill coefficients are **Unresolved balance
 experiments**, not settled design values.
+
+**Decided:** Alchemy recipes produce these same finite potion and flask item
+types. Crafting changes acquisition and provenance, never their authoritative
+combat effects or duration semantics. See
+[professions and production](professions-and-production.md).

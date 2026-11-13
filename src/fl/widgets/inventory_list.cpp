@@ -6,6 +6,7 @@
 
 #include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/consumable.hpp"
+#include "fl/ecs/components/crafted_provenance.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/raid_trinket.hpp"
 #include "fl/ecs/components/stats.hpp"
@@ -160,6 +161,12 @@ ftxui::Element InventoryList::render_party_inventory() {
     } else if (auto* stats = reg_.try_get<fl::ecs::components::Stats>(item)) {
       line = text(stats->name_);
     }
+    if (const auto* crafted = reg_.try_get<fl::ecs::components::CraftedProvenance>(item))
+      line = hbox({std::move(line),
+                   text(" | crafted by " + crafted->crafter_name + " (" +
+                        std::string(fl::economy::display_name(crafted->profession)) + " " +
+                        std::to_string(crafted->proficiency) + ")") |
+                       dim});
     if (i == item_cursor_) {
       line = line | inverted | focusPosition(0, i);
     }

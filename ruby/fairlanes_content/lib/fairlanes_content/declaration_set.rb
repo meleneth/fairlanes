@@ -8,7 +8,7 @@ module FairlanesContent
     attr_reader :visuals, :skills, :random_combat_skills, :monsters, :statuses,
                 :gears, :encounter_pools, :tower_patterns, :biomes, :regressions, :biome_plans,
                 :recruitment_opportunities, :story_events, :objectives, :dialogues, :autoplay_routes,
-                :origin_auto_regressions, :equipment_profiles, :consumables
+                :origin_auto_regressions, :equipment_profiles, :consumables, :materials, :recipes
 
     def self.load_file(path)
       new.tap { |set| set.load_file(path) }
@@ -22,6 +22,8 @@ module FairlanesContent
       @statuses = []
       @gears = []
       @consumables = []
+      @materials = []
+      @recipes = []
       @equipment_profiles = []
       @encounter_pools = []
       @tower_patterns = []
@@ -70,7 +72,8 @@ module FairlanesContent
         effect_damage: effect_damage,
         scaling: nil,
         resources: {resource: :adrenaline, cost: 0, generate_on_hit: 0,
-                    restore_on_resolution: 0, target_resource: :adrenaline, target_delta: 0}
+                    restore_on_resolution: 0, target_resource: :adrenaline, target_delta: 0},
+        study: nil
       )
     end
 
@@ -141,6 +144,13 @@ module FairlanesContent
                          target_resource: target_resource, target_delta: target_delta}
     end
 
+    def skill_study(id, duration_seconds:, required_proficiency: 0)
+      entry = skills.find { |skill| skill.id == id }
+      raise ArgumentError, "Unknown skill #{id}" unless entry
+      entry.study = {duration_seconds: duration_seconds,
+                     required_proficiency: required_proficiency}
+    end
+
     def monster_affinities(id, *affinities)
       entry = monsters.find { |monster| monster.id == id }
       raise ArgumentError, "Unknown monster #{id}" unless entry
@@ -174,6 +184,22 @@ module FairlanesContent
     def consumable(id, display:, magnitude:, duration_seconds: 0)
       consumables << Consumable.new(id: id, display: display, magnitude: magnitude,
                                     duration_seconds: duration_seconds)
+    end
+
+    def material(id, display:, biome:, profession:, tier:, duration_seconds:, quantity:,
+                 experience:)
+      materials << Material.new(id: id, display: display, biome: biome,
+                                profession: profession, tier: tier,
+                                duration_seconds: duration_seconds, quantity: quantity,
+                                experience: experience)
+    end
+
+    def recipe(id, display:, profession:, required_proficiency:, duration_seconds:,
+               experience:, inputs:, output:)
+      recipes << Recipe.new(id: id, display: display, profession: profession,
+                            required_proficiency: required_proficiency,
+                            duration_seconds: duration_seconds, experience: experience,
+                            inputs: inputs, output: output)
     end
 
     def equipment_profile(biome, weights:, kinds:, armor_kinds:)

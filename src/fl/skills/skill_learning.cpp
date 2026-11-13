@@ -7,9 +7,11 @@
 
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/skill_study.hpp"
 #include "fl/primitives/party_data.hpp"
 #include "fl/primitives/random_hub.hpp"
 #include "fl/skills/grimoire.hpp"
+#include "fl/skills/skill_definition.hpp"
 #include "fl/widgets/fancy_log.hpp"
 
 namespace fl::skills {
@@ -93,6 +95,7 @@ void append_blocked_learning_log(fl::context::PartyCtx& party_ctx,
                     stats.name_, display_name(skill)));
     return;
   case LearnObservedSkillResult::Learned:
+  case LearnObservedSkillResult::StudyRequired:
   case LearnObservedSkillResult::SameEntity:
   case LearnObservedSkillResult::MissingObserver:
   case LearnObservedSkillResult::ObserverDead:
@@ -144,6 +147,15 @@ LearnObservedSkillResult evaluate_observed_skill_learning(const ObserveLearningC
 }
 
 LearnObservedSkillResult apply_observed_skill_learning(ObserveLearningCtx& ctx) {
+  if (definition(ctx.skill).study.required) {
+    auto& study = ctx.party_ctx.reg().get_or_emplace<fl::ecs::components::SkillStudy>(ctx.observer);
+    if (!study.discover(ctx.skill)) return LearnObservedSkillResult::StudyRequired;
+    ctx.party_ctx.party_data().watch_skill_study_candidate_this_combat(ctx.observer, ctx.skill);
+    ctx.party_ctx.log().append_markup(
+        fmt::format("[player_name]({}) observed [ability]({}); extended study is now available.",
+                    ctx.stats->name_, display_name(ctx.skill)));
+    return LearnObservedSkillResult::StudyRequired;
+  }
   auto& grimoire = ctx.party_member->member_data().grimoire();
   if (!grimoire.learn(ctx.skill)) {
     return LearnObservedSkillResult::AlreadyKnown;
@@ -190,8 +202,9 @@ LearnObservedSkillResult learn_observed_skill_result_with_roll(fl::context::Part
 
 bool learn_observed_skill_with_roll(fl::context::PartyCtx& party_ctx, entt::entity observer,
                                     entt::entity user, SkillKey skill, int roll) {
-  return learn_observed_skill_result_with_roll(party_ctx, observer, user, skill, roll) ==
-         LearnObservedSkillResult::Learned;
+  const auto result = learn_observed_skill_result_with_roll(party_ctx, observer, user, skill, roll);
+  return result == LearnObservedSkillResult::Learned ||
+         result == LearnObservedSkillResult::StudyRequired;
 }
 
 bool maybe_teach_observed_skill(fl::context::PartyCtx& party_ctx, entt::entity observer,

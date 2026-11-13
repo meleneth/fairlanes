@@ -15,6 +15,7 @@ FAIRLANES_UI = FTXer.integration :fairlanes, namespace: "fl::generated::ftxer" d
   screen :bestiary
   screen :objectives
   screen :village
+  screen :production
   initial :party_battle
 
   console toggle: "`"
@@ -25,9 +26,10 @@ FAIRLANES_UI = FTXer.integration :fairlanes, namespace: "fl::generated::ftxer" d
   overlay :character_management
   empty_back opens: :quit_confirmation
 
-  key "l", navigate: :libram, on: %i[raid party account_battle party_battle libram bestiary objectives village]
-  key "b", navigate: :bestiary, on: %i[raid party account_battle party_battle libram bestiary objectives village]
+  key "l", navigate: :libram, on: %i[raid party account_battle party_battle libram bestiary objectives village production]
+  key "b", navigate: :bestiary, on: %i[raid party account_battle party_battle libram bestiary objectives village production]
   key "o", navigate: :objectives
+  key "p", navigate: :production, on: %i[party account_battle party_battle objectives village]
   key "v", navigate: :village, on: %i[party party_battle]
   key "v", navigate: :village, on: :objectives, after: %i[party party_battle]
   key "a", action: :toggle_autoplay
@@ -53,9 +55,9 @@ FAIRLANES_UI = FTXer.integration :fairlanes, namespace: "fl::generated::ftxer" d
   key "}", action: :next_account, refresh: true
   key "'", action: :next_account, refresh: true
   key "enter", navigate: :party_battle, on: :raid
-  key "escape", back: true, on: %i[party objectives village], screen_first: true
+  key "escape", back: true, on: %i[party objectives village production], screen_first: true
   key "escape", back: true, on: %i[raid account_battle party_battle effect_gallery libram bestiary]
-  key "q", back: true, on: %i[party objectives village], screen_first: true
+  key "q", back: true, on: %i[party objectives village production], screen_first: true
   key "q", back: true, on: %i[raid account_battle party_battle effect_gallery libram bestiary]
 end
 

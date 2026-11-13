@@ -13,6 +13,7 @@
 
 #include "fl/fwd.hpp"
 #include "fl/primitives/discovery_journal.hpp"
+#include "fl/primitives/account_economy.hpp"
 #include "fl/primitives/member_data.hpp"
 #include "fl/primitives/moon_calendar.hpp"
 #include "fl/primitives/raid_data.hpp"
@@ -118,6 +119,8 @@ public:
   const TowerBalance& tower_balance() const noexcept {
     return tower_balance_;
   }
+  AccountEconomy& economy() noexcept { return economy_; }
+  const AccountEconomy& economy() const noexcept { return economy_; }
   MemberData& create_character(entt::entity member_id, std::string name);
   void enable_roster_transfers();
   bool request_roster_transfer(fl::context::AccountCtx ctx, entt::entity member,
@@ -149,6 +152,7 @@ private:
   std::deque<MemberData> characters_;
   std::deque<PartyData> parties_{}; // owned parties
   DiscoveryJournal discoveries_;
+  AccountEconomy economy_;
   std::unique_ptr<DiscoveryJournalListener> discovery_listener_;
   std::unique_ptr<fl::events::RaidBus> raid_bus_{std::make_unique<fl::events::RaidBus>()};
   std::unique_ptr<RaidStatistics> statistics_;

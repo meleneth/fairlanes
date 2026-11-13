@@ -44,6 +44,9 @@ ftxui::Component FtxerUiAdapter::makeObjectives() {
 ftxui::Component FtxerUiAdapter::makeVillage() {
   return root_->make_village();
 }
+ftxui::Component FtxerUiAdapter::makeProduction() {
+  return root_->make_production();
+}
 ftxui::Component FtxerUiAdapter::makeConsoleOverlay() {
   return root_->make_console_overlay();
 }

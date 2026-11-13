@@ -33,6 +33,8 @@ home rather than restating a divergent copy.
 - [Combat](combat.md): established combat-design principles and teaching roles.
 - [Resources and consumables](resources-and-consumables.md): character combat
   resources, potion action semantics, and world-time flask effects.
+- [Professions and production](professions-and-production.md): character
+  expertise, party work assignments, account materials, crafting, and study.
 - [Cycles and biomes](cycles-and-biomes.md): cycle and tower structure, biome
   relationships, and cross-biome gates.
 

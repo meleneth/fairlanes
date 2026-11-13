@@ -10,7 +10,7 @@
 
 namespace fl::generated::ftxer {
 
-enum class ScreenId { Raid, Party, AccountBattle, PartyBattle, EffectGallery, Libram, Bestiary, Objectives, Village };
+enum class ScreenId { Raid, Party, AccountBattle, PartyBattle, EffectGallery, Libram, Bestiary, Objectives, Village, Production };
 enum class OverlayId { Console, QuitConfirmation, AutoplayConfirmation, SandboxConfirmation, KeybindHelp, CharacterManagement };
 
 struct ShellCallbacks {
@@ -34,6 +34,7 @@ class ExternalUiAdapter {
   virtual ftxui::Component makeBestiary() = 0;
   virtual ftxui::Component makeObjectives() = 0;
   virtual ftxui::Component makeVillage() = 0;
+  virtual ftxui::Component makeProduction() = 0;
   virtual ftxui::Component makeConsoleOverlay() = 0;
   virtual ftxui::Component makeQuitConfirmationOverlay() = 0;
   virtual ftxui::Component makeAutoplayConfirmationOverlay() = 0;

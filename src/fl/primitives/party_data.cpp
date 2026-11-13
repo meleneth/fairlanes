@@ -7,6 +7,8 @@
 #include "fl/ecs/components/color_override.hpp"
 #include "fl/ecs/components/combat_affinity.hpp"
 #include "fl/ecs/components/party_member.hpp"
+#include "fl/ecs/components/profession_expertise.hpp"
+#include "fl/ecs/components/skill_study.hpp"
 #include "fl/ecs/components/combat_resources.hpp"
 #include "fl/ecs/components/stats.hpp"
 #include "fl/ecs/components/track_xp.hpp"
@@ -223,6 +225,8 @@ entt::entity PartyData::recruit_member(std::string name) {
   reg.emplace<fl::ecs::components::TrackXP>(id, party_ctx_.entity_context(id), 0);
   reg.emplace<fl::ecs::components::ActiveCombatAffinity>(id);
   reg.emplace<fl::ecs::components::CombatResources>(id);
+  reg.emplace<fl::ecs::components::ProfessionExpertise>(id);
+  reg.emplace<fl::ecs::components::SkillStudy>(id);
   reg.emplace<fl::ecs::components::PartyMember>(id, party_ctx_.entity_context(id), member.name(),
                                                 party_id_, member);
   party_bus_.emit(fl::events::PartyEvent{fl::events::MemberJoined{id}});
@@ -362,6 +366,7 @@ void PartyData::cleanup_encounter() {
   encounter_data_.reset();
   apply_pending_tower_destination();
   apply_pending_farming_plan();
+  apply_pending_activity();
   party_bus_.emit(fl::events::PartyEvent{fl::events::PartyEncounterBoundary{party_id_}});
 }
 
@@ -394,11 +399,23 @@ void PartyData::resolve_raid(bool victory) {
 }
 
 void PartyData::watch_skill_learned_this_combat(entt::entity member, fl::skills::SkillKey skill) {
+  watch_skill_progress_this_combat(member, skill, false);
+}
+
+void PartyData::watch_skill_study_candidate_this_combat(entt::entity member,
+                                                        fl::skills::SkillKey skill) {
+  watch_skill_progress_this_combat(member, skill, true);
+}
+
+void PartyData::watch_skill_progress_this_combat(entt::entity member,
+                                                 fl::skills::SkillKey skill,
+                                                 bool study_candidate) {
   if (!in_combat()) {
     return;
   }
 
-  pending_learned_skills_.push_back(PendingLearnedSkill{.member = member, .skill = skill});
+  pending_learned_skills_.push_back(
+      PendingLearnedSkill{.member = member, .skill = skill, .study_candidate = study_candidate});
   auto it = std::prev(pending_learned_skills_.end());
 
   it->wipe_sub =
@@ -502,6 +519,7 @@ void PartyData::resolve_pending_learned_skill(std::list<PendingLearnedSkill>::it
 
   auto member = it->member;
   auto skill = it->skill;
+  const bool study_candidate = it->study_candidate;
 
   it->wipe_sub.reset();
   it->victory_sub.reset();
@@ -515,6 +533,11 @@ void PartyData::resolve_pending_learned_skill(std::list<PendingLearnedSkill>::it
   }
 
   auto* party_member = party_ctx_.reg().try_get<fl::ecs::components::PartyMember>(member);
+  if (study_candidate) {
+    if (auto* study = party_ctx_.reg().try_get<fl::ecs::components::SkillStudy>(member))
+      study->complete(skill);
+    return;
+  }
   if (party_member != nullptr) {
     party_member->member_data().grimoire().unlearn(skill);
     party_member->closet().unequip_skill(skill);
@@ -606,5 +629,37 @@ std::span<const entt::entity> PartyData::items() const noexcept {
 
 void PartyData::replace_items(std::vector<entt::entity> items) {
   inventory_ = std::move(items);
+}
+
+bool PartyData::request_activity(PartyActivityAssignment assignment, bool objective_driven) {
+  if (has_encounter()) {
+    pending_activity_assignment_ = std::move(assignment);
+    pending_activity_objective_driven_ = objective_driven;
+    log_->append_plain("Activity change will take effect after the current encounter.");
+    return true;
+  }
+  activity_assignment_ = std::move(assignment);
+  activity_objective_driven_ = objective_driven;
+  production_operation_.reset();
+  production_blocked_reason_.clear();
+  party_bus_.emit(fl::events::PartyEvent{
+      fl::events::PartyActivityChanged{std::string(display_name(activity_assignment_.activity))}});
+  log_->append_plain(fmt::format("Party activity: {}.", display_name(activity_assignment_.activity)));
+  return true;
+}
+
+void PartyData::apply_pending_activity() {
+  if (!pending_activity_assignment_) return;
+  auto assignment = std::move(*pending_activity_assignment_);
+  pending_activity_assignment_.reset();
+  const bool objective_driven = pending_activity_objective_driven_;
+  pending_activity_objective_driven_ = false;
+  request_activity(std::move(assignment), objective_driven);
+}
+
+void PartyData::set_production_blocked(std::string reason) {
+  if (production_blocked_reason_ == reason) return;
+  production_blocked_reason_ = std::move(reason);
+  log_->append_plain(fmt::format("Production blocked: {}.", production_blocked_reason_));
 }
 } // namespace fl::primitives

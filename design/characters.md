@@ -74,3 +74,11 @@ Account-owned character records, mutable same-account party assignment,
 account-scoped discovery, forgotten-skill history, and the dedicated Observe
 slot are **Implemented**. See
 [party progression](../docs/party-progression.md).
+
+## Professions and study
+
+**Decided:** Profession expertise and extended skill-study progress are
+persistent character development. They follow a character between parties but
+do not create a class or innate specialization. Party assignments and the
+shared account economy are governed by
+[professions and production](professions-and-production.md).

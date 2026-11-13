@@ -334,6 +334,15 @@ module FairlanesRegression
         Classifications.analyze_run(run).map { |entry| entry.merge("seed" => run.fetch("seed")) }
       end
       classification_expectations = Classifications.expectations(variant, classifications)
+      production_rows = runs.map do |run|
+        Array(run["encounters"]).last&.dig("telemetry", "production") || {}
+      end
+      production_keys = %w[materials_acquired materials_consumed products_created
+                           profession_xp_gained study_beats blocked_operations items_distributed
+                           production_beats tower_progression_beats_forgone]
+      production = production_keys.to_h do |key|
+        [key, production_rows.sum { |row| row.fetch(key, 0) }]
+      end
       all_assertions = (win_assertion.nil? || win_assertion) &&
                        semantic_assertions.all? { |assertion| assertion.fetch("passed") } &&
                        classification_expectations.all? { |expectation| expectation.fetch("passed") }
@@ -363,7 +372,8 @@ module FairlanesRegression
           "indeterminate" => classifications.count { |entry| entry["status"] == "indeterminate" }
         },
         "mechanics" => mechanics,
-        "combat" => combat
+        "combat" => combat,
+        "production" => production
       }
     end
 

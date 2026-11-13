@@ -21,6 +21,12 @@ struct SkillResourcePolicy {
   int target_delta{0};
 };
 
+struct SkillStudyPolicy {
+  bool required{false};
+  int duration_seconds{0};
+  int required_proficiency{0};
+};
+
 struct SkillDefinition {
   SkillKey key;
   std::string_view display_name;
@@ -34,6 +40,7 @@ struct SkillDefinition {
   int effect_damage{0};
   SkillScalingRule scaling{};
   SkillResourcePolicy resources{};
+  SkillStudyPolicy study{};
 };
 
 std::span<const SkillDefinition* const> all_definitions() noexcept;

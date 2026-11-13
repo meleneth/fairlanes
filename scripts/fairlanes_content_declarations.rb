@@ -22,6 +22,61 @@ consumable :attack_flask, display: "Attack Flask", magnitude: 3, duration_second
 consumable :armor_flask, display: "Armor Flask", magnitude: 3, duration_seconds: 120
 consumable :tempo_flask, display: "Tempo Flask", magnitude: 20, duration_seconds: 120
 
+material :woodland_herb, display: "Woodland Herb", biome: :origin_woodland_tower,
+         profession: :herbalism, tier: 1, duration_seconds: 20, quantity: 2, experience: 6
+material :woodland_fiber, display: "Woodland Fiber", biome: :origin_woodland_tower,
+         profession: :scavenging, tier: 1, duration_seconds: 20, quantity: 2, experience: 6
+material :woodland_hide, display: "Woodland Hide", biome: :origin_woodland_tower,
+         profession: :scavenging, tier: 1, duration_seconds: 25, quantity: 2, experience: 7
+material :plains_bloom, display: "Plains Bloom", biome: :origin_plains_tower,
+         profession: :herbalism, tier: 2, duration_seconds: 25, quantity: 2, experience: 8
+material :plains_leather, display: "Plains Leather", biome: :origin_plains_tower,
+         profession: :scavenging, tier: 2, duration_seconds: 30, quantity: 2, experience: 9
+material :swamp_reagent, display: "Swamp Reagent", biome: :origin_murky_swamp_tower,
+         profession: :herbalism, tier: 3, duration_seconds: 35, quantity: 2, experience: 11
+material :cave_ore, display: "Cave Ore", biome: :origin_caves_tower,
+         profession: :mining, tier: 4, duration_seconds: 40, quantity: 2, experience: 13
+material :desert_salt, display: "Desert Salt", biome: :origin_desert_tower,
+         profession: :mining, tier: 5, duration_seconds: 45, quantity: 2, experience: 15
+
+recipe :healing_potion, display: "Healing Potion", profession: :alchemy,
+       required_proficiency: 0, duration_seconds: 30, experience: 8,
+       inputs: {woodland_herb: 2}, output: {kind: :consumable, id: :healing_potion, quantity: 1}
+recipe :adrenaline_potion, display: "Adrenaline Potion", profession: :alchemy,
+       required_proficiency: 2, duration_seconds: 35, experience: 10,
+       inputs: {plains_bloom: 2}, output: {kind: :consumable, id: :adrenaline_potion, quantity: 1}
+recipe :reflex_potion, display: "Reflex Potion", profession: :alchemy,
+       required_proficiency: 2, duration_seconds: 35, experience: 10,
+       inputs: {woodland_herb: 1, plains_bloom: 1},
+       output: {kind: :consumable, id: :reflex_potion, quantity: 1}
+recipe :attack_flask, display: "Attack Flask", profession: :alchemy,
+       required_proficiency: 5, duration_seconds: 50, experience: 14,
+       inputs: {swamp_reagent: 2, cave_ore: 1},
+       output: {kind: :consumable, id: :attack_flask, quantity: 1}
+recipe :armor_flask, display: "Armor Flask", profession: :alchemy,
+       required_proficiency: 5, duration_seconds: 50, experience: 14,
+       inputs: {cave_ore: 2}, output: {kind: :consumable, id: :armor_flask, quantity: 1}
+recipe :cloth_chest, display: "Woven Cloth Chest", profession: :tailoring,
+       required_proficiency: 0, duration_seconds: 40, experience: 10,
+       inputs: {woodland_fiber: 3},
+       output: {kind: :equipment, slot: :chest, armor_kind: :cloth, tier: :plain,
+                biome: :origin_woodland_tower}
+recipe :leather_chest, display: "Worked Leather Chest", profession: :leatherworking,
+       required_proficiency: 0, duration_seconds: 40, experience: 10,
+       inputs: {woodland_hide: 3},
+       output: {kind: :equipment, slot: :chest, armor_kind: :leather, tier: :plain,
+                biome: :origin_woodland_tower}
+recipe :plate_chest, display: "Forged Plate Chest", profession: :smithing,
+       required_proficiency: 0, duration_seconds: 45, experience: 12,
+       inputs: {cave_ore: 3},
+       output: {kind: :equipment, slot: :chest, armor_kind: :plate, tier: :plain,
+                biome: :origin_caves_tower}
+recipe :ore_hammer, display: "Cave Ore Hammer", profession: :smithing,
+       required_proficiency: 0, duration_seconds: 45, experience: 12,
+       inputs: {cave_ore: 3},
+       output: {kind: :equipment, slot: :mainhand, armor_kind: :none, tier: :plain,
+                biome: :origin_caves_tower}
+
 status :poison,
        display: "Poison",
        component: "Poison",
@@ -64,6 +119,8 @@ skill :eviscerate,
       execution: :eviscerate,
       tags: %i[physical slashing bleed melee enemy damage],
       declarative_shape: :handwritten_behavior
+
+skill_study :eviscerate, duration_seconds: 120, required_proficiency: 0
 
 skill :poison,
       learn_chance_percent: 5,

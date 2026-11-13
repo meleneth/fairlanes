@@ -188,6 +188,12 @@ flask application/expiration. The paired `origin_resource_chain`,
 otherwise identical resource starts, healing inventory, and Attack-flask
 preparation. These differences are observations, not balance assertions.
 
+Production experiments additionally report materials acquired and consumed,
+products created, profession XP, study beats, blocked operations, inventory
+distribution, combat consumption, and tower beats forgone while a party works
+outside combat. These are causal observations rather than combat correctness
+assertions.
+
 Future classifications still need authoritative opportunity counts for
 distinguishing temporary from sustained starvation, resource time-series high
 water marks for `resource_runaway`, attribution ratios for

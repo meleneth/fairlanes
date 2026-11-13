@@ -9,6 +9,7 @@ namespace fl::skills {
 
 enum class LearnObservedSkillResult {
   Learned,
+  StudyRequired,
   SameEntity,
   MissingObserver,
   ObserverDead,

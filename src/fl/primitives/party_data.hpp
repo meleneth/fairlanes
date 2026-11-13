@@ -24,6 +24,7 @@
 #include "fl/primitives/encounter_data.hpp"
 #include "fl/primitives/encounter_mode.hpp"
 #include "fl/primitives/farming_plan.hpp"
+#include "fl/primitives/party_activity.hpp"
 #include "fl/primitives/world_clock.hpp"
 #include "fl/skills/skill.hpp"
 #include "fl/widgets/fancy_log.hpp"
@@ -283,6 +284,8 @@ public:
     raid_encounter_ = nullptr;
   }
   void watch_skill_learned_this_combat(entt::entity member, fl::skills::SkillKey skill);
+  void watch_skill_study_candidate_this_combat(entt::entity member,
+                                               fl::skills::SkillKey skill);
   bool drop_skill(entt::entity member, std::size_t slot_index);
   struct TeacherEncounter {
     std::string biome_id;
@@ -349,6 +352,23 @@ public:
   std::span<const entt::entity> items() const noexcept;
   void replace_items(std::vector<entt::entity> items);
 
+  const PartyActivityAssignment& activity_assignment() const noexcept { return activity_assignment_; }
+  const std::optional<ProductionOperation>& production_operation() const noexcept {
+    return production_operation_;
+  }
+  std::optional<ProductionOperation>& production_operation() noexcept {
+    return production_operation_;
+  }
+  std::string_view production_blocked_reason() const noexcept { return production_blocked_reason_; }
+  bool request_activity(PartyActivityAssignment assignment, bool objective_driven = false);
+  bool activity_objective_driven() const noexcept { return activity_objective_driven_; }
+  void set_production_blocked(std::string reason);
+  void clear_production_blocked() noexcept { production_blocked_reason_.clear(); }
+  bool advances_combat() const noexcept {
+    return activity_assignment_.activity == PartyActivity::CombatProgression ||
+           activity_assignment_.activity == PartyActivity::TargetedFarming;
+  }
+
 private:
   entt::entity party_id_{entt::null};
   std::string name_;
@@ -362,6 +382,12 @@ private:
   PartyRoster members_;
   seerin::AtbEngine atb_;
   std::vector<entt::entity> inventory_;
+  PartyActivityAssignment activity_assignment_{};
+  std::optional<PartyActivityAssignment> pending_activity_assignment_;
+  bool pending_activity_objective_driven_{false};
+  std::optional<ProductionOperation> production_operation_;
+  std::string production_blocked_reason_;
+  bool activity_objective_driven_{false};
   GrimoireDiscipline grimoire_discipline_{GrimoireDiscipline::Brawn};
   FarmingPlan farming_plan_{make_farming_plan(GrimoireDiscipline::Brawn, FarmFocus::Brawn)};
   ProgressionControlMode progression_control_mode_{ProgressionControlMode::Manual};
@@ -416,6 +442,7 @@ private:
   struct PendingLearnedSkill {
     entt::entity member{entt::null};
     fl::skills::SkillKey skill{fl::skills::SkillId::Observe};
+    bool study_candidate{false};
     fl::events::ScopedPartyListener wipe_sub{};
     fl::events::ScopedPartyListener victory_sub{};
     fl::events::ScopedPartyListener returned_to_town_sub{};
@@ -433,10 +460,13 @@ private:
   void apply_pending_tower_destination();
   void commit_farming_plan(FarmingPlan plan);
   void apply_pending_farming_plan();
+  void apply_pending_activity();
   void clear_combat_visuals();
   void restore_observe_to_open_first_slots();
 
   void resolve_pending_learned_skill(std::list<PendingLearnedSkill>::iterator it, bool keep_skill);
+  void watch_skill_progress_this_combat(entt::entity member, fl::skills::SkillKey skill,
+                                        bool study_candidate);
 };
 
 } // namespace fl::primitives

@@ -732,6 +732,18 @@ operations, and `entity/handle.hpp` for constructed handles. Avoid the umbrella
 `entt/entt.hpp`. Keep content identifier enums separate from ECS/status/rendering
 implementations so generated metadata remains cheap to compile.
 
+## Profession economy
+
+Characters own `ProfessionExpertise` and `SkillStudy`; parties own one
+`PartyActivity` assignment; `AccountEconomy` owns shared materials, finished
+products, and production objectives. `ProductionSystem` advances gathering,
+crafting, and study from the existing account `WorldClock`, with committed
+recipe inputs consumed once when an operation begins. Crafted equipment reuses
+the normal equipment builder and records creator/material provenance. Ordinary
+Observe learning remains immediate, while only Ruby-declared advanced skills
+enter study. The generated production catalog and the canonical contract live
+in `design/professions-and-production.md`.
+
 Native GCC/Clang builds default to `FAIRLANES_ENABLE_ENGINE_PCH=ON`. The shared
 engine PCH contains only stable third-party headers; generated metadata skips it.
 Keep direct includes complete and never add game headers to this PCH. Libraries

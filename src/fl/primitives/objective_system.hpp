@@ -13,6 +13,7 @@
 namespace fl::primitives {
 
 struct RecruitmentOpportunity;
+struct ProductionObjective;
 
 // Save-wide story state for the first playable account. Facts are dispatched
 // through a bus; generated objectives observe fact IDs, while effects remain
@@ -37,6 +38,8 @@ public:
   void request_purchase(std::string_view item_id);
   void request_recruitment(std::string_view opportunity_id);
   const std::vector<RecruitmentOpportunity>& recruitment_opportunities() const;
+  void set_production_objective(ProductionObjective objective);
+  const ProductionObjective* production_objective() const;
   bool autoplay_enabled() const noexcept {
     return autoplay_enabled_;
   }

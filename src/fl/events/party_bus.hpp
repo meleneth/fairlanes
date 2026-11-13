@@ -15,6 +15,9 @@
 #include "fl/resources/combat_resource.hpp"
 #include "fl/skills/skill.hpp"
 #include "fl/consumables/consumable_kind.hpp"
+#include "fl/economy/material.hpp"
+#include "fl/economy/profession.hpp"
+#include "fl/economy/recipe.hpp"
 #include "sr/variant_bus.hpp"
 
 namespace fl::events {
@@ -128,6 +131,36 @@ struct EquipmentEquipped {
   entt::entity item{entt::null};
   entt::entity previous{entt::null};
 };
+struct PartyActivityChanged {
+  std::string activity;
+};
+struct MaterialGathered {
+  entt::entity worker{entt::null};
+  fl::economy::Material material{fl::economy::Material::WoodlandHerb};
+  int quantity{0};
+  int duration_beats{0};
+};
+struct MaterialsConsumed {
+  fl::economy::RecipeId recipe{fl::economy::RecipeId::HealingPotion};
+  int quantity{0};
+};
+struct ProductCrafted {
+  entt::entity worker{entt::null};
+  fl::economy::RecipeId recipe{fl::economy::RecipeId::HealingPotion};
+  entt::entity item{entt::null};
+};
+struct ProfessionExperienceGained {
+  entt::entity worker{entt::null};
+  fl::economy::Profession profession{fl::economy::Profession::Herbalism};
+  int amount{0};
+};
+struct SkillStudyCompleted {
+  entt::entity student{entt::null};
+  fl::skills::SkillKey skill{fl::skills::SkillId::Observe};
+};
+struct ProductionBlocked {
+  std::string reason;
+};
 
 using PartyEvent = std::variant<
     PartyCreated, MemberJoined, PartyWiped, PartyVictory, PartyEncounterBoundary, TowerFloorCleared,
@@ -137,7 +170,9 @@ using PartyEvent = std::variant<
     BiomeUnlocked, CycleUnlocked, PartyCombatStarted, PartyLeftCombat, PartyReturnToTownRequested,
     PartyReturnedToTown, PartySummonedToRaid, PartyRaidResolved, PartyGainedXP, PartyGainedLevel,
     PartyHealed, PartyRevitalizeRequested, LootDropRequested, PartyTick, MonsterEncountered,
-    SkillWitnessed, EquipmentEquipRequested, EquipmentEquipped>;
+    SkillWitnessed, EquipmentEquipRequested, EquipmentEquipped, PartyActivityChanged,
+    MaterialGathered, MaterialsConsumed, ProductCrafted, ProfessionExperienceGained,
+    SkillStudyCompleted, ProductionBlocked>;
 
 using PartyBus = seerin::VariantBus<PartyEvent>;
 

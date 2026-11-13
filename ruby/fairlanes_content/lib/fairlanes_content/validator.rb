@@ -32,6 +32,13 @@ module FairlanesContent
     RESOURCE_SCALING_SOURCES = Set[:none, :current, :current_percent, :maximum].freeze
     CONSUMABLE_IDS = Set[:healing_potion, :adrenaline_potion, :reflex_potion,
                          :attack_flask, :armor_flask, :tempo_flask].freeze
+    PROFESSIONS = Set[:herbalism, :mining, :scavenging, :alchemy, :smithing,
+                      :leatherworking, :tailoring, :study].freeze
+    MATERIAL_IDS = Set[:woodland_herb, :woodland_fiber, :woodland_hide, :plains_bloom,
+                       :plains_leather, :swamp_reagent, :cave_ore, :desert_salt].freeze
+    RECIPE_IDS = Set[:healing_potion, :adrenaline_potion, :reflex_potion, :attack_flask,
+                     :armor_flask, :cloth_chest, :leather_chest, :plate_chest,
+                     :ore_hammer].freeze
     GEAR_TIERS = Set[:worn, :plain, :sturdy, :fine, :excellent,
                      :masterwork, :mythic].freeze
     RESISTANCE_CHANNELS = Set[:physical, :magical, :fire, :ice, :lightning].freeze
@@ -90,6 +97,7 @@ module FairlanesContent
       validate_decision_rules(errors)
       validate_gear(errors)
       validate_consumables(errors)
+      validate_production(errors)
       validate_floor_content(errors)
       validate_regressions(errors)
       validate_biome_plans(errors)
@@ -101,6 +109,54 @@ module FairlanesContent
     private
 
     attr_reader :declarations
+
+    def validate_production(errors)
+      material_ids = declarations.materials.map(&:id)
+      return if material_ids.empty? && declarations.recipes.empty?
+      errors << "materials must declare exactly #{MATERIAL_IDS.to_a.sort.join(', ')}" unless
+        Set.new(material_ids) == MATERIAL_IDS && material_ids.uniq == material_ids
+      declarations.materials.each do |entry|
+        prefix = "material #{entry.id}"
+        errors << "#{prefix} has invalid display" if entry.display.to_s.empty?
+        errors << "#{prefix} has invalid biome" unless declarations.biomes.any? { |b| b.id == entry.biome }
+        errors << "#{prefix} has invalid gathering profession" unless
+          %i[herbalism mining scavenging].include?(entry.profession)
+        errors << "#{prefix} has invalid numeric policy" unless
+          [entry.tier, entry.duration_seconds, entry.quantity, entry.experience].all? do |value|
+            value.is_a?(Integer) && value.positive?
+          end
+      end
+      recipe_ids = declarations.recipes.map(&:id)
+      errors << "recipes must declare exactly #{RECIPE_IDS.to_a.sort.join(', ')}" unless
+        Set.new(recipe_ids) == RECIPE_IDS && recipe_ids.uniq == recipe_ids
+      declarations.recipes.each do |entry|
+        prefix = "recipe #{entry.id}"
+        errors << "#{prefix} has invalid production profession" unless
+          %i[alchemy smithing leatherworking tailoring].include?(entry.profession)
+        errors << "#{prefix} has invalid numeric policy" unless
+          entry.required_proficiency.is_a?(Integer) && entry.required_proficiency >= 0 &&
+          entry.duration_seconds.is_a?(Integer) && entry.duration_seconds.positive? &&
+          entry.experience.is_a?(Integer) && entry.experience.positive?
+        errors << "#{prefix} has invalid inputs" unless entry.inputs.is_a?(Hash) &&
+          !entry.inputs.empty? && entry.inputs.all? { |id, quantity| MATERIAL_IDS.include?(id) && quantity.is_a?(Integer) && quantity.positive? }
+        output = entry.output
+        valid_output = output.is_a?(Hash) && %i[consumable equipment].include?(output[:kind])
+        if valid_output && output[:kind] == :consumable
+          valid_output = CONSUMABLE_IDS.include?(output[:id]) &&
+                         output.fetch(:quantity, 1).is_a?(Integer) && output.fetch(:quantity, 1).positive?
+        elsif valid_output
+          valid_output = GEAR_SLOTS.include?(output[:slot]) && ARMOR_KINDS.include?(output[:armor_kind]) &&
+                         GEAR_TIERS.include?(output[:tier]) && declarations.biomes.any? { |b| b.id == output[:biome] }
+        end
+        errors << "#{prefix} has invalid output" unless valid_output
+      end
+      declarations.skills.each do |skill|
+        next unless skill.study
+        errors << "skill #{skill.id} has invalid study policy" unless
+          skill.study[:duration_seconds].is_a?(Integer) && skill.study[:duration_seconds].positive? &&
+          skill.study[:required_proficiency].is_a?(Integer) && skill.study[:required_proficiency] >= 0
+      end
+    end
 
     def validate_story(errors)
       events = declarations.story_events.map(&:id)

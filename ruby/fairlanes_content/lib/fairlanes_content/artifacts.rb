@@ -47,6 +47,7 @@ module FairlanesContent
         "fl/generated/monster_registration.cpp" => renderer.monster_registration_cpp,
         "fl/generated/gear_content.hpp" => renderer.gear_content_hpp,
         "fl/generated/consumable_content.hpp" => renderer.consumable_content_hpp,
+        "fl/generated/production_content.hpp" => renderer.production_content_hpp,
         "fl/generated/floor_content.hpp" => renderer.floor_content_hpp,
         "fl/generated/regression_content.hpp" => renderer.regression_content_hpp,
         "fl/generated/recruitment_content.hpp" => renderer.recruitment_content_hpp,
@@ -194,6 +195,9 @@ module FairlanesContent
         random_combat_skills
         monsters
         gear
+        consumables
+        materials
+        recipes
         encounter_pools
         tower_patterns
         biomes
@@ -217,6 +221,9 @@ module FairlanesContent
       end
       errors << "manifest monsters must be an array" unless manifest["monsters"].is_a?(Array)
       errors << "manifest gear must be an array" unless manifest["gear"].is_a?(Array)
+      errors << "manifest consumables must be an array" unless manifest["consumables"].is_a?(Array)
+      errors << "manifest materials must be an array" unless manifest["materials"].is_a?(Array)
+      errors << "manifest recipes must be an array" unless manifest["recipes"].is_a?(Array)
       errors << "manifest encounter_pools must be an array" unless manifest["encounter_pools"].is_a?(Array)
       errors << "manifest tower_patterns must be an array" unless manifest["tower_patterns"].is_a?(Array)
       errors << "manifest biomes must be an array" unless manifest["biomes"].is_a?(Array)

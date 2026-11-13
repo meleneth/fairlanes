@@ -129,6 +129,12 @@ is larger. Tier breaks ties only when modifier value is otherwise equal.
 Choosing among non-dominating build alternatives remains a manual decision; the
 policy does not yet understand equipped skills or strategy.
 
+**Decided:** Professions are the intended primary long-term source of ordinary
+equipment. Crafted items use this same builder, tier eligibility, affinity,
+modifier, provenance, and inventory model; crafting does not introduce a
+second equipment-stat system. Exceptional finished drops remain possible. See
+[professions and production](professions-and-production.md).
+
 The following remain **Unresolved** design or experimental balance work:
 
 - the long-term stat vocabulary and any distinction between primary and derived

@@ -91,6 +91,14 @@ const std::vector<RecruitmentOpportunity>& ObjectiveSystem::recruitment_opportun
   return account_.account_data().recruitment_opportunities();
 }
 
+void ObjectiveSystem::set_production_objective(ProductionObjective objective) {
+  account_.account_data().economy().set_objective(std::move(objective));
+}
+
+const ProductionObjective* ObjectiveSystem::production_objective() const {
+  return account_.account_data().economy().objective();
+}
+
 void ObjectiveSystem::receive(std::string_view event_id) {
   if (event_id == "recruit_angry_fellow" && !active("recruit_first_hero")) return;
   if (event_id == "recruit_second_hero" && !active("recruit_second_hero")) return;

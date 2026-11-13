@@ -49,6 +49,7 @@ public:
   ftxui::Component make_bestiary();
   ftxui::Component make_objectives();
   ftxui::Component make_village();
+  ftxui::Component make_production();
 
   ftxui::Component make_console_overlay();
   ftxui::Component make_quit_confirmation_overlay();

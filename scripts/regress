@@ -27,6 +27,10 @@ def print_experiment(report, seed_breakdown: false)
     resist = stats.fetch("resistances")
     puts "    damage dealt=#{number(combat['mean_damage_dealt'])} received=#{number(combat['mean_damage_received'])}"
     puts "    effective atk=#{number(stats['attack'])} armor=#{number(stats['armor'])} hp=#{number(stats['max_hp'])} resist=P#{number(resist['physical'])}/M#{number(resist['magical'])}/F#{number(resist['fire'])}/I#{number(resist['ice'])}/L#{number(resist['lightning'])}"
+    production = variant.fetch("production", {})
+    if production.values.any?(&:positive?)
+      puts "    production materials=+#{production.fetch('materials_acquired', 0)}/-#{production.fetch('materials_consumed', 0)} products=#{production.fetch('products_created', 0)} xp=#{production.fetch('profession_xp_gained', 0)} study_beats=#{production.fetch('study_beats', 0)} blocked=#{production.fetch('blocked_operations', 0)} distributed=#{production.fetch('items_distributed', 0)} opportunity_beats=#{production.fetch('tower_progression_beats_forgone', 0)}"
+    end
     combat.fetch("monsters", []).each do |monster|
       monster_stats = monster.fetch("stats")
       monster_resist = monster_stats.fetch("resistances")

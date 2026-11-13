@@ -6,6 +6,7 @@
 #include "fl/ecs/components/is_party.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/track_xp.hpp"
+#include "fl/ecs/systems/production_system.hpp"
 #include "fl/generated/monster_content.hpp"
 #include "fl/generated/recruitment_content.hpp"
 #include "fl/primitives/hero_names.hpp"
@@ -60,7 +61,14 @@ void AccountData::advance_beat(fl::context::AccountCtx ctx, bool enable_visitors
   if (enable_visitors && try_start_visitor(ctx)) return;
   calendar_->advance_beat();
   if (enable_visitors && try_start_visitor(ctx)) return;
-  for (auto& party : parties_) party.advance_beat();
+  fl::ecs::systems::ProductionSystem::evaluate_objective(ctx);
+  for (auto& party : parties_) {
+    if (party.advances_combat())
+      party.advance_beat();
+    else
+      fl::ecs::systems::ProductionSystem::advance(ctx.party_context(party),
+                                                  calendar_->elapsed_beats());
+  }
   resolve_recruitment_events(ctx);
 }
 

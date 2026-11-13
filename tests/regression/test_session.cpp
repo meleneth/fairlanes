@@ -57,6 +57,9 @@ TEST_CASE("Seeded regression fights repeat their ordered events", "[regression][
   REQUIRE(telemetry.at("resources").at("available") == true);
   REQUIRE(telemetry.at("resources").at("resource_ids") ==
           nlohmann::json::array({"adrenaline", "reflexes"}));
+  REQUIRE(telemetry.at("production").contains("materials_acquired"));
+  REQUIRE(telemetry.at("production").at("materials_acquired") == 0);
+  REQUIRE(telemetry.at("production").at("materials_consumed") == 0);
 }
 
 TEST_CASE("Overdrive changes pacing without changing gameplay events", "[regression][overdrive]") {

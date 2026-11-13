@@ -329,6 +329,7 @@ struct Session::Impl {
            {"resource_scaled_effects", actor->resource_scaled_effects},
            {"resource_bonus_total", actor->resource_bonus_total}});
     }
+    const auto& production = game.accounts().front().economy().metrics();
     return {{"schema", "fairlanes-combat-telemetry"},
             {"version", 1},
             {"duration_uwu", duration},
@@ -344,6 +345,17 @@ struct Session::Impl {
               {"productive", telemetry.productive_actions},
               {"nonproductive", telemetry.completed_actions - telemetry.productive_actions}}},
             {"consumable_inventory", std::move(consumable_inventory)},
+            {"production",
+             {{"materials_acquired", production.materials_acquired},
+              {"materials_consumed", production.materials_consumed},
+              {"products_created", production.products_created},
+              {"profession_xp_gained", production.profession_xp_gained},
+              {"study_beats", production.study_beats},
+              {"blocked_operations", production.blocked_operations},
+              {"items_distributed", production.items_distributed},
+              {"production_beats", production.production_beats},
+              {"tower_progression_beats_forgone",
+               production.tower_progression_beats_forgone}}},
             {"actors", std::move(actor_rows)},
             {"resources",
              {{"available", true},
@@ -1208,6 +1220,9 @@ std::optional<std::string> Session::first_divergence(const nlohmann::json& expec
     auto comparable_result = impl_->recording.at("result");
     if (expected.contains("result") && !expected.at("result").contains("telemetry"))
       comparable_result.erase("telemetry");
+    else if (expected.contains("result") && expected.at("result").contains("telemetry") &&
+             !expected.at("result").at("telemetry").contains("production"))
+      comparable_result["telemetry"].erase("production");
     if (!expected.contains("result") || expected.at("result") != comparable_result) {
       return "terminal result differs: expected " + expected.value("result", Json{}).dump() +
              ", got " + comparable_result.dump();
@@ -1220,6 +1235,8 @@ std::optional<std::string> Session::first_divergence(const nlohmann::json& expec
              index < comparable_encounters.size() && index < expected_encounters.size(); ++index) {
           if (!expected_encounters[index].contains("telemetry"))
             comparable_encounters[index].erase("telemetry");
+          else if (!expected_encounters[index].at("telemetry").contains("production"))
+            comparable_encounters[index]["telemetry"].erase("production");
         }
       }
       if (!expected.contains("encounter_results") ||

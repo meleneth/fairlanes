@@ -102,3 +102,11 @@ identity HP remains the base of the HP curve. Exact curves are experimental.
 
 Victory-only, living-participant eligibility and independent per-character
 calculation are **Implemented** without an underlevel bonus.
+
+## Production opportunity cost
+
+**Decided:** A party assigned to gathering, crafting, study, or idle work does
+not simultaneously advance its tower frontier. Production uses the account's
+simulated world time, making specialization an explicit progression tradeoff.
+Profession progression is separate from combat level and is owned by
+[professions and production](professions-and-production.md).

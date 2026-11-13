@@ -18,6 +18,22 @@ RSpec.describe FairlanesContent::Validator do
     )
   end
 
+
+  it "rejects incomplete production catalogs and malformed recipes" do
+    declarations = build(:declaration_set)
+    declarations.material :woodland_herb, display: "Woodland Herb", biome: :missing_biome,
+                          profession: :alchemy, tier: 0, duration_seconds: 0,
+                          quantity: 0, experience: 0
+    declarations.recipe :healing_potion, display: "Healing Potion", profession: :herbalism,
+                        required_proficiency: -1, duration_seconds: 0, experience: 0,
+                        inputs: {missing: 0}, output: {kind: :consumable, id: :missing}
+    errors = described_class.new(declarations).validate
+    expect(errors).to include(a_string_matching(/materials must declare exactly/),
+                              a_string_matching(/recipes must declare exactly/),
+                              a_string_matching(/invalid gathering profession/),
+                              a_string_matching(/invalid output/))
+  end
+
   it "requires explicit Origin affinity and skill scaling declarations" do
     declarations = build(:declaration_set)
     declarations.skills.first.scaling = nil

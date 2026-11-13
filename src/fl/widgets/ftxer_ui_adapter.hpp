@@ -23,6 +23,7 @@ public:
   ftxui::Component makeBestiary() override;
   ftxui::Component makeObjectives() override;
   ftxui::Component makeVillage() override;
+  ftxui::Component makeProduction() override;
   ftxui::Component makeConsoleOverlay() override;
   ftxui::Component makeQuitConfirmationOverlay() override;
   ftxui::Component makeAutoplayConfirmationOverlay() override;

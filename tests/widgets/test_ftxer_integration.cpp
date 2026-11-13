@@ -11,6 +11,7 @@
 #include "fl/events/party_bus.hpp"
 #include "fl/generated/ftxer_composition_root.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/primitives/party_activity.hpp"
 #include "fl/widgets/ftxer_ui_adapter.hpp"
 #include "fl/widgets/root_component.hpp"
 
@@ -74,6 +75,28 @@ TEST_CASE("FTXer root owns navigation and preserves the previous battle",
   REQUIRE(root.composition->OnEvent(ftxui::Event::Escape));
   REQUIRE(root.composition->current_screen() == fl::generated::ftxer::ScreenId::PartyBattle);
   REQUIRE(render(root.component).find("Stormbreak Company") != std::string::npos);
+}
+
+TEST_CASE("FTXer production screen assigns real party activities",
+          "[ftxer][integration][production]") {
+  fl::GrandCentral game{1, 1, 1};
+  auto root = make_root(game);
+
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Character("p")));
+  REQUIRE(root.composition->current_screen() == fl::generated::ftxer::ScreenId::Production);
+  const auto output = render(root.component, 140, 48);
+  REQUIRE(output.find("Production - Stormbreak Company") != std::string::npos);
+  REQUIRE(output.find("Character expertise") != std::string::npos);
+  REQUIRE(output.find("Woodland Herb") == std::string::npos);
+
+  REQUIRE(root.composition->OnEvent(ftxui::Event::ArrowRight));
+  REQUIRE(root.composition->OnEvent(ftxui::Event::ArrowRight));
+  REQUIRE(render(root.component, 140, 48).find("Woodland Herb") != std::string::npos);
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Return));
+  REQUIRE(game.accounts().front().party(0).activity_assignment().activity ==
+          fl::primitives::PartyActivity::Gathering);
+  REQUIRE(root.composition->OnEvent(ftxui::Event::Escape));
+  REQUIRE(root.composition->current_screen() == fl::generated::ftxer::ScreenId::PartyBattle);
 }
 
 TEST_CASE("Character overlay preserves the active battle and live simulation",
