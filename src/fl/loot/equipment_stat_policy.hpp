@@ -22,6 +22,8 @@ struct EquipmentBudgetRange {
 }
 [[nodiscard]] int equipment_stat_budget(const fl::ecs::components::Equipment& item) noexcept;
 [[nodiscard]] int equipment_combat_value(const fl::ecs::components::Equipment& item) noexcept;
+[[nodiscard]] int minimum_generated_combat_value(EquipmentSlot slot, Tier tier,
+                                                 std::string_view biome_id) noexcept;
 
 void apply_ordinary_equipment_stats(EquipmentBuilder& item, fl::primitives::RandomHub& rng,
                                     std::string_view biome_id, std::string_view stream_name);

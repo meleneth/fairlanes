@@ -1,6 +1,6 @@
 #pragma once
 
-#include <array>
+#include <map>
 #include <optional>
 #include <span>
 #include <string>
@@ -23,10 +23,13 @@ struct ProductionObjective {
   ProductionObjectiveKind kind{ProductionObjectiveKind::MaterialStockpile};
   std::optional<fl::economy::Material> material;
   std::optional<fl::consumables::ConsumableKind> consumable;
+  std::optional<fl::economy::RecipeId> equipment_recipe;
+  entt::entity equipment_recipient{entt::null};
   entt::entity student{entt::null};
   fl::skills::SkillKey skill{fl::skills::SkillId::Observe};
   int target_quantity{0};
   bool completed{false};
+  bool equipment_attempted{false};
   std::string blocked_reason;
 };
 
@@ -45,7 +48,8 @@ struct ProductionMetrics {
 class AccountEconomy {
 public:
   [[nodiscard]] int material_count(fl::economy::Material material) const noexcept {
-    return materials_[static_cast<std::size_t>(material)];
+    const auto found = materials_.find(material);
+    return found == materials_.end() ? 0 : found->second;
   }
   void add_material(fl::economy::Material material, int quantity) noexcept;
   [[nodiscard]] bool has_material(fl::economy::Material material, int quantity) const noexcept;
@@ -66,7 +70,8 @@ public:
   const ProductionMetrics& metrics() const noexcept { return metrics_; }
 
 private:
-  std::array<int, static_cast<std::size_t>(fl::economy::Material::Count)> materials_{};
+  // Material IDs are stable generated values, not dense declaration ordinals.
+  std::map<fl::economy::Material, int> materials_;
   std::vector<entt::entity> items_;
   std::optional<ProductionObjective> objective_;
   ProductionMetrics metrics_{};

@@ -276,6 +276,46 @@ source is compiled into `fairlanes_tests`. The generated Markdown balance report
 effect gallery metadata, JSON manifest, and manifest schema are for review and
 tooling.
 
+### Extending equipment production without C++
+
+Materials and recipes are open content catalogs. For example, the live DSL
+declares `woodland_thread` and `threaded_gloves` entirely in
+`scripts/fairlanes_content_declarations.rb`:
+
+```ruby
+material :woodland_thread, display: "Woodland Thread",
+         biome: :origin_woodland_tower, profession: :scavenging,
+         tier: 1, duration_seconds: 20, quantity: 2, experience: 6
+
+recipe :threaded_gloves, display: "Threaded Cloth Gloves",
+       profession: :tailoring, required_proficiency: 0,
+       duration_seconds: 35, experience: 9,
+       inputs: {woodland_thread: 2},
+       output: {kind: :equipment, slot: :gloves, armor_kind: :cloth,
+                tier: :plain, biome: :origin_woodland_tower}
+```
+
+The generator creates stable typed material and recipe IDs, validates the input
+reference and all closed mechanical categories, and emits the runtime recipe.
+Crafted equipment automatically uses the declared biome, tier, and slot with the
+shared generated stat policy. Every declared equipment recipe is considered by
+autonomous equipment-improvement objectives; no separate C++ registration is
+required.
+
+Validate this workflow with `bundle exec rspec` in `ruby/fairlanes_content`,
+then `scripts/build --test` and representative `scripts/regress compare`
+fixtures. Stable IDs are text-backed and order-independent. Unknown IDs fail
+lookup instead of being interpreted as enum ordinals. There is currently no
+disk save format; when persistence is added it must serialize these stable text
+IDs, not underlying numeric values.
+
+Equipment policy uses named `equipment_tier_policy`, `equipment_stat_policy`,
+`equipment_default_stat_weights`, `equipment_slot_stat_weights`, and
+`equipment_autonomy_policy` declarations. The generated tables are balance
+data. Spending budgets, deterministic rounding, random-stream ownership,
+atomic input commitment, worker eligibility, and exactly-once completion remain
+C++ invariants.
+
 Special gear declarations carry stable IDs, names, slots, armor kinds, tiers,
 loot weights, and optional `modifiers: {resistances: {channel: percent}}` values.
 The two migrated specials are emitted into the existing `global_loot_table()`

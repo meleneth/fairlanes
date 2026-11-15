@@ -8,7 +8,10 @@ module FairlanesContent
     attr_reader :visuals, :skills, :random_combat_skills, :monsters, :statuses,
                 :gears, :encounter_pools, :tower_patterns, :biomes, :regressions, :biome_plans,
                 :recruitment_opportunities, :story_events, :objectives, :dialogues, :autoplay_routes,
-                :origin_auto_regressions, :equipment_profiles, :consumables, :materials, :recipes
+                :origin_auto_regressions, :equipment_profiles, :equipment_tier_policies,
+                :equipment_stat_policies, :equipment_slot_policies,
+                :equipment_default_weights, :minimum_autonomous_equipment_improvement,
+                :consumables, :materials, :recipes
 
     def self.load_file(path)
       new.tap { |set| set.load_file(path) }
@@ -25,6 +28,11 @@ module FairlanesContent
       @materials = []
       @recipes = []
       @equipment_profiles = []
+      @equipment_tier_policies = []
+      @equipment_stat_policies = []
+      @equipment_slot_policies = []
+      @equipment_default_weights = nil
+      @minimum_autonomous_equipment_improvement = nil
       @encounter_pools = []
       @tower_patterns = []
       @biomes = []
@@ -187,11 +195,12 @@ module FairlanesContent
     end
 
     def material(id, display:, biome:, profession:, tier:, duration_seconds:, quantity:,
-                 experience:)
+                 experience:, combat_drop_quantity: 0)
       materials << Material.new(id: id, display: display, biome: biome,
                                 profession: profession, tier: tier,
                                 duration_seconds: duration_seconds, quantity: quantity,
-                                experience: experience)
+                                experience: experience,
+                                combat_drop_quantity: combat_drop_quantity)
     end
 
     def recipe(id, display:, profession:, required_proficiency:, duration_seconds:,
@@ -205,6 +214,31 @@ module FairlanesContent
     def equipment_profile(biome, weights:, kinds:, armor_kinds:)
       equipment_profiles << EquipmentProfile.new(biome: biome, weights: weights, kinds: kinds,
                                                   armor_kinds: armor_kinds)
+    end
+
+    def equipment_tier_policy(tier, minimum_budget:, maximum_budget:, minimum_level:)
+      equipment_tier_policies << EquipmentTierPolicy.new(
+        tier: tier, minimum_budget: minimum_budget, maximum_budget: maximum_budget,
+        minimum_level: minimum_level)
+    end
+
+    def equipment_stat_policy(stat, budget_cost:, allocation_yield:,
+                              combat_value_coefficient:)
+      equipment_stat_policies << EquipmentStatPolicy.new(
+        stat: stat, budget_cost: budget_cost, allocation_yield: allocation_yield,
+        combat_value_coefficient: combat_value_coefficient)
+    end
+
+    def equipment_default_stat_weights(weights)
+      @equipment_default_weights = weights
+    end
+
+    def equipment_slot_stat_weights(slot, weights:)
+      equipment_slot_policies << EquipmentSlotPolicy.new(slot: slot, weights: weights)
+    end
+
+    def equipment_autonomy_policy(minimum_combat_value_improvement:)
+      @minimum_autonomous_equipment_improvement = minimum_combat_value_improvement
     end
 
     def encounter_pool(id, lineups:)
@@ -294,6 +328,13 @@ module FairlanesContent
       consumables.freeze
       equipment_profiles.each(&:freeze)
       equipment_profiles.freeze
+      equipment_tier_policies.each(&:freeze)
+      equipment_tier_policies.freeze
+      equipment_stat_policies.each(&:freeze)
+      equipment_stat_policies.freeze
+      equipment_slot_policies.each(&:freeze)
+      equipment_slot_policies.freeze
+      equipment_default_weights&.freeze
       encounter_pools.each(&:freeze)
       encounter_pools.freeze
       tower_patterns.each(&:freeze)

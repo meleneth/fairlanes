@@ -7,13 +7,17 @@
 
 #include <fmt/format.h>
 
+#include "fl/ecs/components/combat_affinity.hpp"
 #include "fl/ecs/components/consumable.hpp"
 #include "fl/ecs/components/crafted_provenance.hpp"
+#include "fl/ecs/components/equipment.hpp"
 #include "fl/ecs/components/party_member.hpp"
 #include "fl/ecs/components/profession_expertise.hpp"
 #include "fl/ecs/components/skill_study.hpp"
 #include "fl/ecs/components/stats.hpp"
+#include "fl/ecs/components/track_xp.hpp"
 #include "fl/ecs/systems/consumable_system.hpp"
+#include "fl/generated/equipment_policy.hpp"
 #include "fl/generated/production_content.hpp"
 #include "fl/loot/equipment_builder.hpp"
 #include "fl/loot/equipment_stat_policy.hpp"
@@ -80,6 +84,103 @@ bool commit_inputs(fl::context::PartyCtx ctx, const RecipeDefinition& recipe) {
   }
   ctx.bus().emit(fl::events::PartyEvent{fl::events::MaterialsConsumed{recipe.id, total}});
   return true;
+}
+
+bool armor_compatible(entt::registry& reg, entt::entity member,
+                      fl::loot::ArmorKind armor_kind) {
+  if (armor_kind == fl::loot::ArmorKind::none) return true;
+  const auto* affinity = reg.try_get<fl::ecs::components::ActiveCombatAffinity>(member);
+  if (!affinity) return false;
+  switch (affinity->value) {
+  case fl::primitives::CombatAffinity::Cloth: return armor_kind == fl::loot::ArmorKind::cloth;
+  case fl::primitives::CombatAffinity::Leather:
+    return armor_kind == fl::loot::ArmorKind::leather;
+  case fl::primitives::CombatAffinity::Plate: return armor_kind == fl::loot::ArmorKind::plate;
+  case fl::primitives::CombatAffinity::Neutral: return false;
+  }
+  return false;
+}
+
+struct EquipmentCraftCandidate {
+  const RecipeDefinition* recipe{};
+  entt::entity recipient{entt::null};
+  int improvement{0};
+  bool inputs_ready{false};
+};
+
+bool ranks_before(const EquipmentCraftCandidate& candidate,
+                  const EquipmentCraftCandidate& current) {
+  if (candidate.improvement != current.improvement)
+    return candidate.improvement > current.improvement;
+  if (candidate.inputs_ready != current.inputs_ready) return candidate.inputs_ready;
+  if (candidate.recipe->duration_seconds != current.recipe->duration_seconds)
+    return candidate.recipe->duration_seconds < current.recipe->duration_seconds;
+  const auto candidate_id = fl::economy::stable_id(candidate.recipe->id);
+  const auto current_id = fl::economy::stable_id(current.recipe->id);
+  if (candidate_id != current_id) return candidate_id < current_id;
+  return entt::to_integral(candidate.recipient) < entt::to_integral(current.recipient);
+}
+
+std::optional<EquipmentCraftCandidate> best_equipment_candidate(fl::context::PartyCtx ctx,
+                                                                std::string& blocked_reason) {
+  std::optional<EquipmentCraftCandidate> best;
+  bool saw_equipment_recipe = false;
+  bool saw_crafter = false;
+  bool saw_compatible = false;
+  bool saw_accessible_inputs = false;
+  for (const auto& recipe : fl::economy::generated_content::kRecipes) {
+    if (recipe.product_kind != fl::economy::generated_content::ProductKind::Equipment) continue;
+    saw_equipment_recipe = true;
+    if (choose_worker(ctx, recipe.profession, recipe.required_proficiency) == entt::null) continue;
+    saw_crafter = true;
+
+    bool inputs_accessible = true;
+    bool inputs_ready = true;
+    for (const auto& input : recipe.inputs) {
+      if (ctx.account_data().economy().has_material(input.material, input.quantity)) continue;
+      inputs_ready = false;
+      const auto* material = fl::economy::generated_content::definition(input.material);
+      if (!material || !ctx.party_data().biome_unlocked(material->biome_id) ||
+          choose_worker(ctx, material->profession, 0) == entt::null) {
+        inputs_accessible = false;
+        break;
+      }
+    }
+    if (!inputs_accessible) continue;
+    saw_accessible_inputs = true;
+
+    for (const auto& member_data : ctx.party_data().members()) {
+      const auto member = member_data.member_id();
+      const auto* party_member = ctx.reg().try_get<fl::ecs::components::PartyMember>(member);
+      const auto* stats = ctx.reg().try_get<fl::ecs::components::Stats>(member);
+      if (!party_member || !stats || !stats->is_alive() ||
+          !armor_compatible(ctx.reg(), member, recipe.armor_kind))
+        continue;
+      const auto* xp = ctx.reg().try_get<fl::ecs::components::TrackXP>(member);
+      if (fl::loot::equipment_minimum_level(recipe.tier) > (xp ? xp->level_ : 1)) continue;
+      saw_compatible = true;
+      const auto current_id = party_member->closet().equipped_item(recipe.slot);
+      const auto* current = current_id == entt::null
+                                ? nullptr
+                                : ctx.reg().try_get<fl::ecs::components::Equipment>(current_id);
+      const int current_value = current ? fl::loot::equipment_combat_value(*current) : 0;
+      const int improvement = fl::loot::minimum_generated_combat_value(
+                                  recipe.slot, recipe.tier, recipe.biome_id) -
+                              current_value;
+      if (improvement <
+          fl::loot::generated_content::kMinimumAutonomousEquipmentImprovement)
+        continue;
+      EquipmentCraftCandidate candidate{&recipe, member, improvement, inputs_ready};
+      if (!best || ranks_before(candidate, *best)) best = candidate;
+    }
+  }
+  if (best) return best;
+  if (!saw_equipment_recipe) blocked_reason = "no declared equipment recipes";
+  else if (!saw_crafter) blocked_reason = "no eligible equipment crafter";
+  else if (!saw_accessible_inputs) blocked_reason = "required equipment materials are unavailable";
+  else if (!saw_compatible) blocked_reason = "no compatible equipment recipient";
+  else blocked_reason = "no meaningful craftable equipment improvement";
+  return std::nullopt;
 }
 
 void start_gathering(fl::context::PartyCtx ctx, std::uint64_t world_beat) {
@@ -188,7 +289,7 @@ entt::entity create_product(fl::context::PartyCtx ctx, const RecipeDefinition& r
   std::vector<fl::ecs::components::MaterialAmount> materials;
   for (const auto& input : recipe.inputs) materials.push_back({input.material, input.quantity});
   ctx.reg().emplace<fl::ecs::components::CraftedProvenance>(
-      item, worker, stats ? stats->name_ : "Unknown", recipe.profession, proficiency,
+      item, worker, stats ? stats->name_ : "Unknown", recipe.profession, recipe.id, proficiency,
       std::move(materials));
   return item;
 }
@@ -199,6 +300,10 @@ void complete_crafting(fl::context::PartyCtx ctx,
   if (!recipe) return;
   const auto item = create_product(ctx, *recipe, operation.worker, operation.started_world_beat);
   ctx.account_data().economy().deposit_item(item);
+  if (auto* objective = ctx.account_data().economy().objective();
+      objective && objective->kind == fl::primitives::ProductionObjectiveKind::CraftedEquipment &&
+      objective->equipment_recipe == recipe->id)
+    objective->equipment_attempted = true;
   grant_xp(ctx, operation.worker, recipe->profession, recipe->experience,
            recipe->required_proficiency + 10);
   ctx.bus().emit(fl::events::PartyEvent{
@@ -309,8 +414,20 @@ void ProductionSystem::evaluate_objective(fl::context::AccountCtx ctx) {
   }
 
   if (objective->kind == fl::primitives::ProductionObjectiveKind::CraftedEquipment) {
-    const auto* recipe =
-        fl::economy::generated_content::definition(fl::economy::RecipeId::ClothChest);
+    if (objective->equipment_attempted) {
+      economy.set_blocked("crafted result was not a meaningful equipment improvement");
+      return;
+    }
+    auto party_ctx = ctx.party_context(*candidate);
+    std::string reason;
+    const auto selected = best_equipment_candidate(party_ctx, reason);
+    if (!selected) {
+      economy.set_blocked(std::move(reason));
+      return;
+    }
+    const auto* recipe = selected->recipe;
+    objective->equipment_recipe = recipe->id;
+    objective->equipment_recipient = selected->recipient;
     for (const auto& input : recipe->inputs) {
       if (economy.has_material(input.material, input.quantity)) continue;
       const auto* material = fl::economy::generated_content::definition(input.material);

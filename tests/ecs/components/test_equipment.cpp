@@ -182,6 +182,26 @@ TEST_CASE("Tier budget ranges increase and biome weights change distributions",
   REQUIRE(desert_profile->kinds.weapon == 75);
 }
 
+TEST_CASE("Generated equipment policy preserves established valuation coefficients",
+          "[loot][equipment][stats][policy]") {
+  fl::loot::EquipmentBuilder item{.slot = fl::loot::EquipmentSlot::chest,
+                                  .armor_kind = fl::loot::ArmorKind::cloth,
+                                  .tier = fl::loot::Tier::plain,
+                                  .name = "Policy fixture",
+                                  .resistances = {.physical = 5},
+                                  .attack = 1,
+                                  .armor = 2,
+                                  .max_hp = 3};
+  entt::registry reg;
+  const auto entity = item.create(reg);
+  const auto& equipment = reg.get<fl::ecs::components::Equipment>(entity);
+  REQUIRE(fl::loot::equipment_stat_budget(equipment) == 5);
+  REQUIRE(fl::loot::equipment_combat_value(equipment) == 29);
+  REQUIRE(fl::loot::minimum_generated_combat_value(fl::loot::EquipmentSlot::chest,
+                                                   fl::loot::Tier::plain,
+                                                   "origin_woodland_tower") == 10);
+}
+
 TEST_CASE("Equipment upgrades preserve provenance and specialization in a higher budget",
           "[loot][equipment][upgrade]") {
   entt::registry reg;

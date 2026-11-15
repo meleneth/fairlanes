@@ -6,13 +6,17 @@
 
 #include "fl/ecs/components/consumable.hpp"
 #include "fl/ecs/components/crafted_provenance.hpp"
+#include "fl/ecs/components/equipment.hpp"
+#include "fl/ecs/components/party_member.hpp"
+#include "fl/generated/equipment_policy.hpp"
+#include "fl/loot/equipment_stat_policy.hpp"
 #include "fl/primitives/party_data.hpp"
 
 namespace fl::primitives {
 
 void AccountEconomy::add_material(fl::economy::Material material, int quantity) noexcept {
   if (quantity <= 0) return;
-  materials_[static_cast<std::size_t>(material)] += quantity;
+  materials_[material] += quantity;
   metrics_.materials_acquired += quantity;
 }
 
@@ -22,7 +26,7 @@ bool AccountEconomy::has_material(fl::economy::Material material, int quantity) 
 
 bool AccountEconomy::consume_material(fl::economy::Material material, int quantity) noexcept {
   if (quantity < 0 || !has_material(material, quantity)) return false;
-  materials_[static_cast<std::size_t>(material)] -= quantity;
+  materials_[material] -= quantity;
   metrics_.materials_consumed += quantity;
   return true;
 }
@@ -67,10 +71,26 @@ void AccountEconomy::reevaluate_objective(const entt::registry& reg) {
     break;
   }
   case ProductionObjectiveKind::CraftedEquipment:
-    objective.completed = std::ranges::any_of(items_, [&](entt::entity item) {
-      return reg.all_of<fl::ecs::components::CraftedProvenance>(item) &&
-             !reg.all_of<fl::ecs::components::Consumable>(item);
-    });
+    if (objective.equipment_recipe && objective.equipment_recipient != entt::null &&
+        reg.valid(objective.equipment_recipient)) {
+      const auto* member =
+          reg.try_get<fl::ecs::components::PartyMember>(objective.equipment_recipient);
+      objective.completed =
+          member && std::ranges::any_of(items_, [&](entt::entity item) {
+            const auto* provenance = reg.try_get<fl::ecs::components::CraftedProvenance>(item);
+            const auto* equipment = reg.try_get<fl::ecs::components::Equipment>(item);
+            if (!provenance || !equipment || provenance->recipe != objective.equipment_recipe)
+              return false;
+            const auto current_id = member->closet().equipped_item(equipment->slot());
+            const auto* current = current_id == entt::null
+                                      ? nullptr
+                                      : reg.try_get<fl::ecs::components::Equipment>(current_id);
+            const int current_value = current ? fl::loot::equipment_combat_value(*current) : 0;
+            return fl::loot::equipment_combat_value(*equipment) >=
+                   current_value +
+                       fl::loot::generated_content::kMinimumAutonomousEquipmentImprovement;
+          });
+    }
     break;
   case ProductionObjectiveKind::SkillStudy:
     // Completion is committed by ProductionSystem after the Grimoire learns it.

@@ -34,14 +34,11 @@ module FairlanesContent
                          :attack_flask, :armor_flask, :tempo_flask].freeze
     PROFESSIONS = Set[:herbalism, :mining, :scavenging, :alchemy, :smithing,
                       :leatherworking, :tailoring, :study].freeze
-    MATERIAL_IDS = Set[:woodland_herb, :woodland_fiber, :woodland_hide, :plains_bloom,
-                       :plains_leather, :swamp_reagent, :cave_ore, :desert_salt].freeze
-    RECIPE_IDS = Set[:healing_potion, :adrenaline_potion, :reflex_potion, :attack_flask,
-                     :armor_flask, :cloth_chest, :leather_chest, :plate_chest,
-                     :ore_hammer].freeze
     GEAR_TIERS = Set[:worn, :plain, :sturdy, :fine, :excellent,
                      :masterwork, :mythic].freeze
     RESISTANCE_CHANNELS = Set[:physical, :magical, :fire, :ice, :lightning].freeze
+    EQUIPMENT_STATS = Set[:attack, :armor, :max_hp, :physical, :magical,
+                          :fire, :ice, :lightning].freeze
     STORY_LOCATIONS = Set[:pub, :village].freeze
     VALID_EXECUTIONS = Set[
       :thump_like, :eviscerate, :poison, :cold_snap, :flame_strike,
@@ -96,6 +93,7 @@ module FairlanesContent
       validate_monsters(errors)
       validate_decision_rules(errors)
       validate_gear(errors)
+      validate_equipment_policy(errors)
       validate_consumables(errors)
       validate_production(errors)
       validate_floor_content(errors)
@@ -113,8 +111,12 @@ module FairlanesContent
     def validate_production(errors)
       material_ids = declarations.materials.map(&:id)
       return if material_ids.empty? && declarations.recipes.empty?
-      errors << "materials must declare exactly #{MATERIAL_IDS.to_a.sort.join(', ')}" unless
-        Set.new(material_ids) == MATERIAL_IDS && material_ids.uniq == material_ids
+      errors << "duplicate material ids" unless material_ids.uniq == material_ids
+      errors << "duplicate generated material C++ ids" unless
+        material_ids.map { |id| generated_cpp_name(id) }.uniq.size == material_ids.size
+      material_ids.each do |id|
+        errors << "material #{id} has invalid stable id" unless stable_id?(id)
+      end
       declarations.materials.each do |entry|
         prefix = "material #{entry.id}"
         errors << "#{prefix} has invalid display" if entry.display.to_s.empty?
@@ -125,10 +127,22 @@ module FairlanesContent
           [entry.tier, entry.duration_seconds, entry.quantity, entry.experience].all? do |value|
             value.is_a?(Integer) && value.positive?
           end
+        errors << "#{prefix} has invalid combat drop quantity" unless
+          non_negative_integer?(entry.combat_drop_quantity)
+      end
+      declarations.materials.group_by(&:biome).each do |biome, entries|
+        drops = entries.count { |entry| entry.combat_drop_quantity.to_i.positive? }
+        errors << "biome #{biome} has multiple combat material drops" if drops > 1
       end
       recipe_ids = declarations.recipes.map(&:id)
-      errors << "recipes must declare exactly #{RECIPE_IDS.to_a.sort.join(', ')}" unless
-        Set.new(recipe_ids) == RECIPE_IDS && recipe_ids.uniq == recipe_ids
+      errors << "duplicate recipe ids" unless recipe_ids.uniq == recipe_ids
+      errors << "duplicate generated recipe C++ ids" unless
+        recipe_ids.map { |id| generated_cpp_name(id) }.uniq.size == recipe_ids.size
+      recipe_ids.each do |id|
+        errors << "recipe #{id} has invalid stable id" unless stable_id?(id)
+      end
+      validate_stable_hashes(material_ids, "material", errors)
+      validate_stable_hashes(recipe_ids, "recipe", errors)
       declarations.recipes.each do |entry|
         prefix = "recipe #{entry.id}"
         errors << "#{prefix} has invalid production profession" unless
@@ -138,7 +152,9 @@ module FairlanesContent
           entry.duration_seconds.is_a?(Integer) && entry.duration_seconds.positive? &&
           entry.experience.is_a?(Integer) && entry.experience.positive?
         errors << "#{prefix} has invalid inputs" unless entry.inputs.is_a?(Hash) &&
-          !entry.inputs.empty? && entry.inputs.all? { |id, quantity| MATERIAL_IDS.include?(id) && quantity.is_a?(Integer) && quantity.positive? }
+          !entry.inputs.empty? && entry.inputs.all? do |id, quantity|
+            material_ids.include?(id) && quantity.is_a?(Integer) && quantity.positive?
+          end
         output = entry.output
         valid_output = output.is_a?(Hash) && %i[consumable equipment].include?(output[:kind])
         if valid_output && output[:kind] == :consumable
@@ -156,6 +172,84 @@ module FairlanesContent
           skill.study[:duration_seconds].is_a?(Integer) && skill.study[:duration_seconds].positive? &&
           skill.study[:required_proficiency].is_a?(Integer) && skill.study[:required_proficiency] >= 0
       end
+    end
+
+    def validate_equipment_policy(errors)
+      tiers = declarations.equipment_tier_policies
+      stats = declarations.equipment_stat_policies
+      slots = declarations.equipment_slot_policies
+      policy_present = !tiers.empty? || !stats.empty? || !slots.empty? ||
+                       !declarations.equipment_default_weights.nil? ||
+                       !declarations.minimum_autonomous_equipment_improvement.nil?
+      return unless policy_present || !declarations.equipment_profiles.empty?
+
+      validate_exact_policy_ids(tiers.map(&:tier), GEAR_TIERS, "equipment tier", errors)
+      validate_exact_policy_ids(stats.map(&:stat), EQUIPMENT_STATS, "equipment stat", errors)
+      validate_exact_policy_ids(slots.map(&:slot), GEAR_SLOTS, "equipment slot", errors)
+
+      tiers.each do |entry|
+        prefix = "equipment tier #{entry.tier}"
+        errors << "#{prefix} has invalid budget range" unless
+          positive_integer?(entry.minimum_budget) && positive_integer?(entry.maximum_budget) &&
+          entry.minimum_budget <= entry.maximum_budget
+        errors << "#{prefix} has invalid minimum level" unless positive_integer?(entry.minimum_level)
+      end
+      stats.each do |entry|
+        prefix = "equipment stat #{entry.stat}"
+        errors << "#{prefix} has invalid budget cost" unless positive_integer?(entry.budget_cost)
+        errors << "#{prefix} has invalid allocation yield" unless positive_integer?(entry.allocation_yield)
+        errors << "#{prefix} has invalid combat-value coefficient" unless
+          non_negative_integer?(entry.combat_value_coefficient)
+      end
+      validate_stat_weights(declarations.equipment_default_weights,
+                            "equipment default stat weights", errors)
+      slots.each do |entry|
+        validate_stat_weights(entry.weights, "equipment slot #{entry.slot} stat weights", errors)
+      end
+      errors << "equipment autonomy policy has invalid minimum improvement" unless
+        positive_integer?(declarations.minimum_autonomous_equipment_improvement)
+    end
+
+    def validate_exact_policy_ids(actual, expected, label, errors)
+      missing = expected - actual
+      unknown = actual - expected.to_a
+      duplicates = actual.tally.select { |_id, count| count > 1 }.keys
+      errors << "#{label} policy is missing #{missing.to_a.sort.join(', ')}" unless missing.empty?
+      errors << "#{label} policy has unknown ids #{unknown.sort.join(', ')}" unless unknown.empty?
+      errors << "#{label} policy has duplicate ids #{duplicates.sort.join(', ')}" unless duplicates.empty?
+    end
+
+    def validate_stat_weights(weights, prefix, errors)
+      unless weights.is_a?(Hash)
+        errors << "#{prefix} must be a hash"
+        return
+      end
+      unknown = weights.keys - EQUIPMENT_STATS.to_a
+      missing = EQUIPMENT_STATS - weights.keys
+      errors << "#{prefix} has unknown stats #{unknown.sort.join(', ')}" unless unknown.empty?
+      errors << "#{prefix} is missing stats #{missing.to_a.sort.join(', ')}" unless missing.empty?
+      weights.each do |stat, weight|
+        errors << "#{prefix} has invalid #{stat} weight" unless non_negative_integer?(weight)
+      end
+      errors << "#{prefix} has no positive weights" unless
+        weights.values.any? { |weight| weight.is_a?(Integer) && weight.positive? }
+    end
+
+    def validate_stable_hashes(ids, label, errors)
+      collisions = ids.group_by { |id| stable_hash(id) }.values.select { |group| group.size > 1 }
+      collisions.each do |group|
+        errors << "#{label} stable-id hash collision: #{group.sort.join(', ')}"
+      end
+    end
+
+    def stable_hash(id)
+      id.to_s.each_byte.reduce(2_166_136_261) do |hash, byte|
+        ((hash ^ byte) * 16_777_619) & 0xffff_ffff
+      end
+    end
+
+    def generated_cpp_name(id)
+      id.to_s.split("_").map(&:capitalize).join
     end
 
     def validate_story(errors)
@@ -302,6 +396,9 @@ module FairlanesContent
           errors << "#{prefix} has unsupported stat weights"
           next
         end
+        missing_stats = profile_stats - profile.weights.keys
+        errors << "#{prefix} is missing stat weights #{missing_stats.join(', ')}" unless
+          missing_stats.empty?
         profile.weights.each do |stat, weight|
           errors << "#{prefix} has invalid #{stat} weight" unless non_negative_integer?(weight) && weight <= 1000
         end
@@ -311,6 +408,8 @@ module FairlanesContent
           values = profile.public_send(field)
           if !values.is_a?(Hash) || (values.keys - keys).any?
             errors << "#{prefix} has unsupported #{field} weights"
+          elsif (keys - values.keys).any?
+            errors << "#{prefix} is missing #{field} weights #{(keys - values.keys).join(', ')}"
           elsif values.values.any? { |weight| !non_negative_integer?(weight) }
             errors << "#{prefix} has invalid #{field} weights"
           elsif keys.sum { |key| values.fetch(key, 0) } != total

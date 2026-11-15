@@ -15,6 +15,50 @@ visual :void_ripple
 visual :starfire
 visual :observe
 
+# Equipment balance is content policy. EquipmentStat remains a closed C++
+# mechanical category; these declarations define how each category is budgeted
+# and valued without changing the deterministic allocation algorithms.
+equipment_tier_policy :worn, minimum_budget: 1, maximum_budget: 2, minimum_level: 1
+equipment_tier_policy :plain, minimum_budget: 2, maximum_budget: 4, minimum_level: 1
+equipment_tier_policy :sturdy, minimum_budget: 4, maximum_budget: 6, minimum_level: 10
+equipment_tier_policy :fine, minimum_budget: 6, maximum_budget: 9, minimum_level: 25
+equipment_tier_policy :excellent, minimum_budget: 9, maximum_budget: 13, minimum_level: 40
+equipment_tier_policy :masterwork, minimum_budget: 13, maximum_budget: 18, minimum_level: 55
+equipment_tier_policy :mythic, minimum_budget: 18, maximum_budget: 24, minimum_level: 75
+
+equipment_stat_policy :attack, budget_cost: 1, allocation_yield: 1,
+                      combat_value_coefficient: 6
+equipment_stat_policy :armor, budget_cost: 1, allocation_yield: 1,
+                      combat_value_coefficient: 6
+equipment_stat_policy :max_hp, budget_cost: 1, allocation_yield: 3,
+                      combat_value_coefficient: 2
+%i[physical magical fire ice lightning].each do |stat|
+  equipment_stat_policy stat, budget_cost: 1, allocation_yield: 5,
+                        combat_value_coefficient: 1
+end
+
+equipment_default_stat_weights attack: 30, armor: 30, max_hp: 35, physical: 15,
+                               magical: 15, fire: 15, ice: 15, lightning: 15
+weapon_weights = {attack: 100, armor: 5, max_hp: 20, physical: 5,
+                  magical: 5, fire: 5, ice: 5, lightning: 5}
+armor_weights = {attack: 10, armor: 100, max_hp: 70, physical: 45,
+                 magical: 45, fire: 45, ice: 45, lightning: 45}
+cape_weights = {attack: 20, armor: 60, max_hp: 60, physical: 80,
+                magical: 80, fire: 80, ice: 80, lightning: 80}
+jewelry_weights = {attack: 60, armor: 45, max_hp: 70, physical: 70,
+                   magical: 70, fire: 70, ice: 70, lightning: 70}
+%i[mainhand offhand knife].each do |slot|
+  equipment_slot_stat_weights slot, weights: weapon_weights
+end
+%i[chest helm pants belt boots gloves sleeves].each do |slot|
+  equipment_slot_stat_weights slot, weights: armor_weights
+end
+equipment_slot_stat_weights :cape, weights: cape_weights
+%i[necklace ring_1 ring_2].each do |slot|
+  equipment_slot_stat_weights slot, weights: jewelry_weights
+end
+equipment_autonomy_policy minimum_combat_value_improvement: 5
+
 consumable :healing_potion, display: "Healing Potion", magnitude: 12
 consumable :adrenaline_potion, display: "Adrenaline Potion", magnitude: 6
 consumable :reflex_potion, display: "Reflex Potion", magnitude: 6
@@ -26,18 +70,25 @@ material :woodland_herb, display: "Woodland Herb", biome: :origin_woodland_tower
          profession: :herbalism, tier: 1, duration_seconds: 20, quantity: 2, experience: 6
 material :woodland_fiber, display: "Woodland Fiber", biome: :origin_woodland_tower,
          profession: :scavenging, tier: 1, duration_seconds: 20, quantity: 2, experience: 6
+material :woodland_thread, display: "Woodland Thread", biome: :origin_woodland_tower,
+         profession: :scavenging, tier: 1, duration_seconds: 20, quantity: 2, experience: 6
 material :woodland_hide, display: "Woodland Hide", biome: :origin_woodland_tower,
-         profession: :scavenging, tier: 1, duration_seconds: 25, quantity: 2, experience: 7
+         profession: :scavenging, tier: 1, duration_seconds: 25, quantity: 2, experience: 7,
+         combat_drop_quantity: 1
 material :plains_bloom, display: "Plains Bloom", biome: :origin_plains_tower,
          profession: :herbalism, tier: 2, duration_seconds: 25, quantity: 2, experience: 8
 material :plains_leather, display: "Plains Leather", biome: :origin_plains_tower,
-         profession: :scavenging, tier: 2, duration_seconds: 30, quantity: 2, experience: 9
+         profession: :scavenging, tier: 2, duration_seconds: 30, quantity: 2, experience: 9,
+         combat_drop_quantity: 1
 material :swamp_reagent, display: "Swamp Reagent", biome: :origin_murky_swamp_tower,
-         profession: :herbalism, tier: 3, duration_seconds: 35, quantity: 2, experience: 11
+         profession: :herbalism, tier: 3, duration_seconds: 35, quantity: 2, experience: 11,
+         combat_drop_quantity: 1
 material :cave_ore, display: "Cave Ore", biome: :origin_caves_tower,
-         profession: :mining, tier: 4, duration_seconds: 40, quantity: 2, experience: 13
+         profession: :mining, tier: 4, duration_seconds: 40, quantity: 2, experience: 13,
+         combat_drop_quantity: 1
 material :desert_salt, display: "Desert Salt", biome: :origin_desert_tower,
-         profession: :mining, tier: 5, duration_seconds: 45, quantity: 2, experience: 15
+         profession: :mining, tier: 5, duration_seconds: 45, quantity: 2, experience: 15,
+         combat_drop_quantity: 1
 
 recipe :healing_potion, display: "Healing Potion", profession: :alchemy,
        required_proficiency: 0, duration_seconds: 30, experience: 8,
@@ -60,6 +111,11 @@ recipe :cloth_chest, display: "Woven Cloth Chest", profession: :tailoring,
        required_proficiency: 0, duration_seconds: 40, experience: 10,
        inputs: {woodland_fiber: 3},
        output: {kind: :equipment, slot: :chest, armor_kind: :cloth, tier: :plain,
+                biome: :origin_woodland_tower}
+recipe :threaded_gloves, display: "Threaded Cloth Gloves", profession: :tailoring,
+       required_proficiency: 0, duration_seconds: 35, experience: 9,
+       inputs: {woodland_thread: 2},
+       output: {kind: :equipment, slot: :gloves, armor_kind: :cloth, tier: :plain,
                 biome: :origin_woodland_tower}
 recipe :leather_chest, display: "Worked Leather Chest", profession: :leatherworking,
        required_proficiency: 0, duration_seconds: 40, experience: 10,

@@ -12,8 +12,8 @@ Generated artifacts currently provide runtime skill/resource/study metadata C++,
 | Random combat skills | 71 | Ruby DSL generated C++ random combat table |
 | Status declarations | 3 | Ruby DSL generated C++ status metadata table |
 | Consumable definitions | 6 | Ruby DSL generated C++ consumable table |
-| Material definitions | 8 | Ruby DSL generated C++ production table |
-| Recipe definitions | 9 | Ruby DSL generated C++ production table |
+| Material definitions | 9 | Ruby DSL generated C++ production table |
+| Recipe definitions | 10 | Ruby DSL generated C++ production table |
 | Monster declarations | 72 | Ruby DSL generated C++ monster topology table |
 | Common woodland monsters | 69 | Ruby DSL generated C++ encounter pool |
 | Rare woodland monsters | 1 | Ruby DSL generated C++ encounter pool |
@@ -148,18 +148,44 @@ Coefficients are experimental. `Neutral` is an explicit mechanically neutral aff
 | Armor Flask | 3 | 120s |
 | Tempo Flask | 20 | 120s |
 
+## Equipment Balance Policy
+
+| Tier | Budget | Minimum level |
+| --- | ---: | ---: |
+| worn | 1-2 | 1 |
+| plain | 2-4 | 1 |
+| sturdy | 4-6 | 10 |
+| fine | 6-9 | 25 |
+| excellent | 9-13 | 40 |
+| masterwork | 13-18 | 55 |
+| mythic | 18-24 | 75 |
+
+| Stat | Budget cost | Allocation yield | Combat value |
+| --- | ---: | ---: | ---: |
+| attack | 1 | 1 | 6 |
+| armor | 1 | 1 | 6 |
+| max_hp | 1 | 3 | 2 |
+| physical | 1 | 5 | 1 |
+| magical | 1 | 5 | 1 |
+| fire | 1 | 5 | 1 |
+| ice | 1 | 5 | 1 |
+| lightning | 1 | 5 | 1 |
+
+Minimum autonomous improvement: 5 combat value.
+
 ## Materials and Recipes
 
-| Material | Biome | Profession | Tier | Duration | Yield | XP |
-| --- | --- | --- | ---: | ---: | ---: | ---: |
-| Woodland Herb | origin_woodland_tower | herbalism | 1 | 20s | 2 | 6 |
-| Woodland Fiber | origin_woodland_tower | scavenging | 1 | 20s | 2 | 6 |
-| Woodland Hide | origin_woodland_tower | scavenging | 1 | 25s | 2 | 7 |
-| Plains Bloom | origin_plains_tower | herbalism | 2 | 25s | 2 | 8 |
-| Plains Leather | origin_plains_tower | scavenging | 2 | 30s | 2 | 9 |
-| Swamp Reagent | origin_murky_swamp_tower | herbalism | 3 | 35s | 2 | 11 |
-| Cave Ore | origin_caves_tower | mining | 4 | 40s | 2 | 13 |
-| Desert Salt | origin_desert_tower | mining | 5 | 45s | 2 | 15 |
+| Material | Biome | Profession | Tier | Duration | Yield | Combat drop | XP |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Woodland Herb | origin_woodland_tower | herbalism | 1 | 20s | 2 | 0 | 6 |
+| Woodland Fiber | origin_woodland_tower | scavenging | 1 | 20s | 2 | 0 | 6 |
+| Woodland Thread | origin_woodland_tower | scavenging | 1 | 20s | 2 | 0 | 6 |
+| Woodland Hide | origin_woodland_tower | scavenging | 1 | 25s | 2 | 1 | 7 |
+| Plains Bloom | origin_plains_tower | herbalism | 2 | 25s | 2 | 0 | 8 |
+| Plains Leather | origin_plains_tower | scavenging | 2 | 30s | 2 | 1 | 9 |
+| Swamp Reagent | origin_murky_swamp_tower | herbalism | 3 | 35s | 2 | 1 | 11 |
+| Cave Ore | origin_caves_tower | mining | 4 | 40s | 2 | 1 | 13 |
+| Desert Salt | origin_desert_tower | mining | 5 | 45s | 2 | 1 | 15 |
 
 | Recipe | Profession | Required | Duration | Inputs | Output | XP |
 | --- | --- | ---: | ---: | --- | --- | ---: |
@@ -169,6 +195,7 @@ Coefficients are experimental. `Neutral` is an explicit mechanically neutral aff
 | Attack Flask | alchemy | 5 | 50s | swamp_reagent ×2, cave_ore ×1 | attack_flask | 14 |
 | Armor Flask | alchemy | 5 | 50s | cave_ore ×2 | armor_flask | 14 |
 | Woven Cloth Chest | tailoring | 0 | 40s | woodland_fiber ×3 | equipment | 10 |
+| Threaded Cloth Gloves | tailoring | 0 | 35s | woodland_thread ×2 | equipment | 9 |
 | Worked Leather Chest | leatherworking | 0 | 40s | woodland_hide ×3 | equipment | 10 |
 | Forged Plate Chest | smithing | 0 | 45s | cave_ore ×3 | equipment | 12 |
 | Cave Ore Hammer | smithing | 0 | 45s | cave_ore ×3 | equipment | 12 |

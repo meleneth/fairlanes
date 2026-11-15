@@ -129,6 +129,16 @@ is larger. Tier breaks ties only when modifier value is otherwise equal.
 Choosing among non-dominating build alternatives remains a manual decision; the
 policy does not yet understand equipped skills or strategy.
 
+**Implemented declarative policy:** The Ruby content declarations are the sole
+source for tier budget ranges, tier level requirements, default and per-slot
+allocation weights, stat budget costs and yields, combat-value coefficients,
+and the minimum autonomous-crafting improvement. Code generation emits immutable
+typed tables. C++ still owns deterministic weighted selection, budget spending,
+rounding, upgrade allocation, valuation arithmetic, eligibility enforcement,
+and random-stream use. `EquipmentStat`, `EquipmentSlot`, `Tier`, and `ArmorKind`
+remain closed mechanical vocabularies: adding one changes engine behavior and is
+not the same operation as adding content.
+
 **Decided:** Professions are the intended primary long-term source of ordinary
 equipment. Crafted items use this same builder, tier eligibility, affinity,
 modifier, provenance, and inventory model; crafting does not introduce a

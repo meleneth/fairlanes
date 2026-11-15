@@ -74,6 +74,23 @@ manual assignment.
 the same operations as manual assignments. Multiple parties progress
 independently from the account's single beat loop.
 
+**Implemented extensibility boundary:** Material and recipe identities are
+generated from Ruby stable IDs. Their explicit 32-bit values are derived from
+stable text rather than declaration position, generation rejects collisions and
+broken cross-references, and runtime telemetry uses the same text identity.
+Adding or reordering a material or recipe therefore does not renumber
+established content. The account material store accepts these sparse typed IDs.
+Professions, consumable behavior kinds, equipment slots, armor kinds, tiers, and
+equipment stats remain closed because each selects C++ mechanics.
+
+Autonomous equipment objectives rank every declared craftable equipment recipe
+against compatible party members. Ranking uses generated conservative combat
+value, current equipment, material readiness and access, crafter proficiency,
+production time, stable recipe ID, and stable member order. It crafts only a
+generated minimum meaningful improvement and records the chosen recipient and
+recipe on the objective. The result remains in account inventory until
+explicitly distributed; autonomous selection does not bypass ownership.
+
 Character transfer preservation and screen continuity are **Implemented**. A
 disk save/load format does not yet exist; serializing expertise, assignments,
 operations, account inventory, committed inputs, and study progress remains

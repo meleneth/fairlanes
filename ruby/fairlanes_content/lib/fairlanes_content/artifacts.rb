@@ -48,6 +48,8 @@ module FairlanesContent
         "fl/generated/gear_content.hpp" => renderer.gear_content_hpp,
         "fl/generated/consumable_content.hpp" => renderer.consumable_content_hpp,
         "fl/generated/production_content.hpp" => renderer.production_content_hpp,
+        "fl/generated/production_ids.hpp" => renderer.production_ids_hpp,
+        "fl/generated/equipment_policy.hpp" => renderer.equipment_policy_hpp,
         "fl/generated/floor_content.hpp" => renderer.floor_content_hpp,
         "fl/generated/regression_content.hpp" => renderer.regression_content_hpp,
         "fl/generated/recruitment_content.hpp" => renderer.recruitment_content_hpp,

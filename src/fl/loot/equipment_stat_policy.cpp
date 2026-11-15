@@ -3,54 +3,39 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <limits>
 #include <numeric>
 #include <string>
 
+#include "fl/generated/equipment_policy.hpp"
 #include "fl/generated/gear_content.hpp"
+#include "fl/loot/equipment_stat.hpp"
 
 namespace fl::loot {
 namespace {
 
-enum class Stat : std::size_t {
-  attack,
-  armor,
-  max_hp,
-  physical,
-  magical,
-  fire,
-  ice,
-  lightning,
-  count,
-};
+using Weights = std::array<int, kEquipmentStats.size()>;
 
-using Weights = std::array<int, static_cast<std::size_t>(Stat::count)>;
-
-constexpr Weights kNeutralWeights{30, 30, 35, 15, 15, 15, 15, 15};
-constexpr Weights kWeaponSlotWeights{100, 5, 20, 5, 5, 5, 5, 5};
-constexpr Weights kArmorSlotWeights{10, 100, 70, 45, 45, 45, 45, 45};
-constexpr Weights kCapeSlotWeights{20, 60, 60, 80, 80, 80, 80, 80};
-constexpr Weights kJewelrySlotWeights{60, 45, 70, 70, 70, 70, 70, 70};
-
-bool is_weapon(EquipmentSlot slot) {
-  return slot == EquipmentSlot::mainhand || slot == EquipmentSlot::offhand ||
-         slot == EquipmentSlot::knife;
+const generated_content::EquipmentStatPolicy& stat_policy(EquipmentStat stat) {
+  const auto* policy = generated_content::equipment_stat_policy(stat);
+  assert(policy != nullptr);
+  return *policy;
 }
 
-bool is_jewelry(EquipmentSlot slot) {
-  return slot == EquipmentSlot::necklace || slot == EquipmentSlot::ring_1 ||
-         slot == EquipmentSlot::ring_2;
+const generated_content::EquipmentTierPolicy& tier_policy(Tier tier) {
+  const auto* policy = generated_content::equipment_tier_policy(tier);
+  assert(policy != nullptr);
+  return *policy;
 }
 
-const Weights& slot_weights(EquipmentSlot slot) {
-  if (is_weapon(slot)) return kWeaponSlotWeights;
-  if (is_jewelry(slot)) return kJewelrySlotWeights;
-  if (slot == EquipmentSlot::cape) return kCapeSlotWeights;
-  return kArmorSlotWeights;
+Weights weights_from(const generated_content::EquipmentStatWeights& weights) {
+  return {weights.attack,  weights.armor, weights.max_hp, weights.physical,
+          weights.magical, weights.fire,  weights.ice,    weights.lightning};
 }
 
 Weights biome_weights(std::string_view biome_id) {
   const auto* profile = generated_content::equipment_profile(biome_id);
-  if (profile == nullptr) return kNeutralWeights;
+  if (profile == nullptr) return weights_from(generated_content::kDefaultEquipmentStatWeights);
   const auto& weights = profile->weights;
   return {weights.attack,  weights.armor, weights.max_hp, weights.physical,
           weights.magical, weights.fire,  weights.ice,    weights.lightning};
@@ -58,118 +43,187 @@ Weights biome_weights(std::string_view biome_id) {
 
 Weights combined_weights(EquipmentSlot slot, std::string_view biome_id) {
   auto result = biome_weights(biome_id);
-  const auto& allowed = slot_weights(slot);
+  const auto* slot_policy = generated_content::equipment_slot_policy(slot);
+  assert(slot_policy != nullptr);
+  const auto allowed = weights_from(slot_policy->weights);
   for (std::size_t i = 0; i < result.size(); ++i) result[i] *= allowed[i];
   return result;
 }
 
-void add_stat(EquipmentBuilder& item, Stat stat, int units = 1) {
+void add_stat(EquipmentBuilder& item, EquipmentStat stat, int allocations = 1) {
+  const int amount = stat_policy(stat).allocation_yield * allocations;
   switch (stat) {
-  case Stat::attack: item.attack += units; break;
-  case Stat::armor: item.armor += units; break;
-  case Stat::max_hp: item.max_hp += 3 * units; break;
-  case Stat::physical: item.resistances.physical += 5 * units; break;
-  case Stat::magical: item.resistances.magical += 5 * units; break;
-  case Stat::fire: item.resistances.fire += 5 * units; break;
-  case Stat::ice: item.resistances.ice += 5 * units; break;
-  case Stat::lightning: item.resistances.lightning += 5 * units; break;
-  case Stat::count: break;
+  case EquipmentStat::attack: item.attack += amount; break;
+  case EquipmentStat::armor: item.armor += amount; break;
+  case EquipmentStat::max_hp: item.max_hp += amount; break;
+  case EquipmentStat::physical: item.resistances.physical += amount; break;
+  case EquipmentStat::magical: item.resistances.magical += amount; break;
+  case EquipmentStat::fire: item.resistances.fire += amount; break;
+  case EquipmentStat::ice: item.resistances.ice += amount; break;
+  case EquipmentStat::lightning: item.resistances.lightning += amount; break;
   }
 }
 
-Stat roll_stat(fl::primitives::RandomStream& random, const Weights& weights) {
-  const int total = std::accumulate(weights.begin(), weights.end(), 0);
+int stat_amount(const fl::ecs::components::Equipment& item, EquipmentStat stat) {
+  switch (stat) {
+  case EquipmentStat::attack: return item.attack();
+  case EquipmentStat::armor: return item.armor();
+  case EquipmentStat::max_hp: return item.max_hp();
+  case EquipmentStat::physical: return item.resistances().physical;
+  case EquipmentStat::magical: return item.resistances().magical;
+  case EquipmentStat::fire: return item.resistances().fire;
+  case EquipmentStat::ice: return item.resistances().ice;
+  case EquipmentStat::lightning: return item.resistances().lightning;
+  }
+  return 0;
+}
+
+EquipmentStat roll_stat(fl::primitives::RandomStream& random, const Weights& weights,
+                        int remaining_budget) {
+  Weights eligible = weights;
+  for (std::size_t i = 0; i < eligible.size(); ++i)
+    if (stat_policy(kEquipmentStats[i]).budget_cost > remaining_budget) eligible[i] = 0;
+  const int total = std::accumulate(eligible.begin(), eligible.end(), 0);
   assert(total > 0);
   const int rolled = random.uniform_int(1, total);
   int cursor = 0;
-  for (std::size_t i = 0; i < weights.size(); ++i) {
-    cursor += weights[i];
-    if (rolled <= cursor) return static_cast<Stat>(i);
+  for (std::size_t i = 0; i < eligible.size(); ++i) {
+    cursor += eligible[i];
+    if (rolled <= cursor) return kEquipmentStats[i];
   }
-  return Stat::max_hp;
+  return EquipmentStat::max_hp;
 }
 
-Weights stat_units(const fl::ecs::components::Equipment& item) {
-  const auto& r = item.resistances();
-  return {item.attack(), item.armor(), item.max_hp() / 3, r.physical / 5,
-          r.magical / 5, r.fire / 5,   r.ice / 5,         r.lightning / 5};
+Weights stat_budget_units(const fl::ecs::components::Equipment& item) {
+  Weights result{};
+  for (std::size_t i = 0; i < result.size(); ++i) {
+    const auto& policy = stat_policy(kEquipmentStats[i]);
+    result[i] =
+        stat_amount(item, kEquipmentStats[i]) / policy.allocation_yield * policy.budget_cost;
+  }
+  return result;
+}
+
+bool unit_costs_are_one() {
+  return std::ranges::all_of(kEquipmentStats,
+                             [](auto stat) { return stat_policy(stat).budget_cost == 1; });
 }
 
 void allocate_proportionally(EquipmentBuilder& result, const Weights& source, int budget) {
   const int source_total = std::accumulate(source.begin(), source.end(), 0);
   if (source_total <= 0) return;
 
-  struct Remainder {
-    std::size_t stat;
-    int remainder;
-  };
-  std::array<Remainder, static_cast<std::size_t>(Stat::count)> remainders{};
-  int allocated = 0;
-  for (std::size_t i = 0; i < source.size(); ++i) {
-    const int numerator = source[i] * budget;
-    const int units = numerator / source_total;
-    add_stat(result, static_cast<Stat>(i), units);
-    allocated += units;
-    remainders[i] = {i, numerator % source_total};
+  if (unit_costs_are_one()) {
+    struct Remainder {
+      std::size_t stat;
+      int remainder;
+    };
+    std::array<Remainder, kEquipmentStats.size()> remainders{};
+    int allocated = 0;
+    for (std::size_t i = 0; i < source.size(); ++i) {
+      const int numerator = source[i] * budget;
+      const int units = numerator / source_total;
+      add_stat(result, kEquipmentStats[i], units);
+      allocated += units;
+      remainders[i] = {i, numerator % source_total};
+    }
+    std::stable_sort(remainders.begin(), remainders.end(), [](const auto& lhs, const auto& rhs) {
+      return lhs.remainder > rhs.remainder;
+    });
+    for (int i = allocated; i < budget; ++i)
+      add_stat(result, kEquipmentStats[remainders[static_cast<std::size_t>(i - allocated)].stat]);
+    return;
   }
-  std::stable_sort(remainders.begin(), remainders.end(),
-                   [](const auto& lhs, const auto& rhs) { return lhs.remainder > rhs.remainder; });
-  for (int i = allocated; i < budget; ++i)
-    add_stat(result, static_cast<Stat>(remainders[static_cast<std::size_t>(i - allocated)].stat));
+
+  // Spending and rounding are deterministic engine mechanics even when costs
+  // are content policy. An unspendable remainder is valid.
+  Weights spent{};
+  int remaining = budget;
+  while (remaining > 0) {
+    std::size_t best = source.size();
+    long long best_deficit = std::numeric_limits<long long>::min();
+    for (std::size_t i = 0; i < source.size(); ++i) {
+      const int cost = stat_policy(kEquipmentStats[i]).budget_cost;
+      if (source[i] <= 0 || cost > remaining) continue;
+      const long long deficit = static_cast<long long>(source[i]) * budget -
+                                static_cast<long long>(spent[i]) * source_total;
+      if (deficit > best_deficit) {
+        best = i;
+        best_deficit = deficit;
+      }
+    }
+    if (best == source.size()) break;
+    const int cost = stat_policy(kEquipmentStats[best]).budget_cost;
+    add_stat(result, kEquipmentStats[best]);
+    spent[best] += cost;
+    remaining -= cost;
+  }
 }
 
 int roll_budget(fl::primitives::RandomStream& random, Tier tier) {
-  const auto range = equipment_tier_budget_range(tier);
-  return random.uniform_int(range.minimum, range.maximum);
+  const auto& policy = tier_policy(tier);
+  return random.uniform_int(policy.minimum_budget, policy.maximum_budget);
+}
+
+void allocate_randomly(EquipmentBuilder& item, fl::primitives::RandomStream& random,
+                       const Weights& weights, int budget) {
+  int remaining = budget;
+  while (remaining > 0) {
+    bool affordable = false;
+    for (std::size_t i = 0; i < weights.size(); ++i)
+      affordable = affordable ||
+                   (weights[i] > 0 && stat_policy(kEquipmentStats[i]).budget_cost <= remaining);
+    if (!affordable) break;
+    const auto stat = roll_stat(random, weights, remaining);
+    add_stat(item, stat);
+    remaining -= stat_policy(stat).budget_cost;
+  }
 }
 
 } // namespace
 
 EquipmentBudgetRange equipment_tier_budget_range(Tier tier) noexcept {
-  switch (tier) {
-  case Tier::worn: return {1, 2};
-  case Tier::plain: return {2, 4};
-  case Tier::sturdy: return {4, 6};
-  case Tier::fine: return {6, 9};
-  case Tier::excellent: return {9, 13};
-  case Tier::masterwork: return {13, 18};
-  case Tier::mythic: return {18, 24};
-  }
-  return {1, 2};
+  const auto& policy = tier_policy(tier);
+  return {policy.minimum_budget, policy.maximum_budget};
 }
 
 int equipment_minimum_level(Tier tier) noexcept {
-  switch (tier) {
-  case Tier::worn:
-  case Tier::plain: return 1;
-  case Tier::sturdy: return 10;
-  case Tier::fine: return 25;
-  case Tier::excellent: return 40;
-  case Tier::masterwork: return 55;
-  case Tier::mythic: return 75;
-  }
-  return 1;
+  return tier_policy(tier).minimum_level;
 }
 
 int equipment_stat_budget(const fl::ecs::components::Equipment& item) noexcept {
-  const auto& r = item.resistances();
-  return item.attack() + item.armor() + item.max_hp() / 3 + r.physical / 5 + r.magical / 5 +
-         r.fire / 5 + r.ice / 5 + r.lightning / 5;
+  const auto units = stat_budget_units(item);
+  return std::accumulate(units.begin(), units.end(), 0);
 }
 
 int equipment_combat_value(const fl::ecs::components::Equipment& item) noexcept {
-  const auto& r = item.resistances();
-  return item.attack() * 6 + item.armor() * 6 + item.max_hp() * 2 + r.physical + r.magical +
-         r.fire + r.ice + r.lightning;
+  int result = 0;
+  for (const auto stat : kEquipmentStats)
+    result += stat_amount(item, stat) * stat_policy(stat).combat_value_coefficient;
+  return result;
+}
+
+int minimum_generated_combat_value(EquipmentSlot slot, Tier tier,
+                                   std::string_view biome_id) noexcept {
+  const auto weights = combined_weights(slot, biome_id);
+  int minimum_per_budget = std::numeric_limits<int>::max();
+  for (std::size_t i = 0; i < weights.size(); ++i) {
+    if (weights[i] <= 0) continue;
+    const auto& policy = stat_policy(kEquipmentStats[i]);
+    const int allocation_value = policy.allocation_yield * policy.combat_value_coefficient;
+    minimum_per_budget = std::min(minimum_per_budget, allocation_value / policy.budget_cost);
+  }
+  return minimum_per_budget == std::numeric_limits<int>::max()
+             ? 0
+             : minimum_per_budget * tier_policy(tier).minimum_budget;
 }
 
 void apply_ordinary_equipment_stats(EquipmentBuilder& item, fl::primitives::RandomHub& rng,
                                     std::string_view biome_id, std::string_view stream_name) {
   item.biome_id = std::string{biome_id};
-  const auto weights = combined_weights(item.slot, biome_id);
   auto random = rng.stream(stream_name);
-  const int budget = roll_budget(random, item.tier);
-  for (int unit = 0; unit < budget; ++unit) add_stat(item, roll_stat(random, weights));
+  allocate_randomly(item, random, combined_weights(item.slot, biome_id),
+                    roll_budget(random, item.tier));
 }
 
 EquipmentBuilder upgraded_equipment_builder(const fl::ecs::components::Equipment& first,
@@ -185,17 +239,17 @@ EquipmentBuilder upgraded_equipment_builder(const fl::ecs::components::Equipment
                           .tier = target_tier,
                           .name = {},
                           .biome_id = std::string{first.biome_id()}};
-  auto source = stat_units(first);
-  const auto second_units = stat_units(second);
-  const auto third_units = stat_units(third);
+  auto source = stat_budget_units(first);
+  const auto second_units = stat_budget_units(second);
+  const auto third_units = stat_budget_units(third);
   for (std::size_t i = 0; i < source.size(); ++i) source[i] += second_units[i] + third_units[i];
   auto random = rng.stream(stream_name);
   const int target_budget = roll_budget(random, target_tier);
   if (std::accumulate(source.begin(), source.end(), 0) > 0) {
     allocate_proportionally(result, source, target_budget);
   } else {
-    const auto weights = combined_weights(result.slot, first.biome_id());
-    for (int unit = 0; unit < target_budget; ++unit) add_stat(result, roll_stat(random, weights));
+    allocate_randomly(result, random, combined_weights(result.slot, first.biome_id()),
+                      target_budget);
   }
   return result;
 }

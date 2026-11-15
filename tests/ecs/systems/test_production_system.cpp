@@ -16,6 +16,7 @@
 #include "fl/economy/profession.hpp"
 #include "fl/economy/recipe.hpp"
 #include "fl/grand_central.hpp"
+#include "fl/loot/equipment_builder.hpp"
 #include "fl/primitives/account_economy.hpp"
 #include "fl/primitives/encounter_builder.hpp"
 #include "fl/primitives/party_activity.hpp"
@@ -203,6 +204,51 @@ TEST_CASE("Crafted equipment keeps deterministic stats, identity, crafter, and m
            after.resistances.lightning != before.resistances.lightning));
 }
 
+TEST_CASE("Ruby-only material and recipe additions retain stable identity and production behavior",
+          "[production][extensibility][identity]") {
+  STATIC_REQUIRE(fl::economy::stable_id(fl::economy::Material::WoodlandThread) ==
+                 std::string_view{"woodland_thread"});
+  STATIC_REQUIRE(fl::economy::stable_id(fl::economy::RecipeId::ThreadedGloves) ==
+                 std::string_view{"threaded_gloves"});
+  STATIC_REQUIRE(fl::economy::material_from_stable_id("woodland_thread") ==
+                 fl::economy::Material::WoodlandThread);
+  STATIC_REQUIRE(fl::economy::recipe_from_stable_id("threaded_gloves") ==
+                 fl::economy::RecipeId::ThreadedGloves);
+  STATIC_REQUIRE_FALSE(fl::economy::material_from_stable_id("unknown_material"));
+  STATIC_REQUIRE(fl::economy::material_from_stable_id("woodland_herb") ==
+                 fl::economy::Material::WoodlandHerb);
+  STATIC_REQUIRE(fl::economy::recipe_from_stable_id("healing_potion") ==
+                 fl::economy::RecipeId::HealingPotion);
+
+  fl::GrandCentral game{1, 1, 1, false, false, 778};
+  auto account = game.account_context(0);
+  auto& party = account.account_data().party(0);
+  const auto worker = party.members().front().member_id();
+  party.request_activity(gather(fl::economy::Material::WoodlandThread,
+                                fl::economy::Profession::Scavenging,
+                                "origin_woodland_tower"));
+  advance(game, fl::primitives::WorldClock::beats_from_seconds(20) + 2);
+  REQUIRE(account.account_data().economy().material_count(
+              fl::economy::Material::WoodlandThread) == 2);
+
+  party.request_activity(
+      craft(fl::economy::RecipeId::ThreadedGloves, fl::economy::Profession::Tailoring));
+  advance(game, fl::primitives::WorldClock::beats_from_seconds(35) + 2);
+  REQUIRE(account.account_data().economy().material_count(
+              fl::economy::Material::WoodlandThread) == 0);
+  REQUIRE(account.account_data().economy().items().size() == 1);
+  const auto item = account.account_data().economy().items().front();
+  const auto& equipment = game.reg().get<fl::ecs::components::Equipment>(item);
+  const auto& provenance = game.reg().get<fl::ecs::components::CraftedProvenance>(item);
+  REQUIRE(equipment.slot() == fl::loot::EquipmentSlot::gloves);
+  REQUIRE(equipment.armor_kind() == fl::loot::ArmorKind::cloth);
+  REQUIRE(provenance.recipe == fl::economy::RecipeId::ThreadedGloves);
+  REQUIRE(provenance.crafter == worker);
+  REQUIRE(provenance.materials.front().material == fl::economy::Material::WoodlandThread);
+  REQUIRE(game.reg().get<fl::ecs::components::ProfessionExpertise>(worker).xp(
+              fl::economy::Profession::Tailoring) == 9);
+}
+
 TEST_CASE("Account inventory distributes crafted healing across cooperating parties",
           "[production][longitudinal][cooperation]") {
   fl::GrandCentral game{1, 2, 1, false, false, 103};
@@ -351,6 +397,7 @@ TEST_CASE("Autonomous production maintains a stockpile and reports stable locked
   objective = account.account_data().economy().objective();
   REQUIRE(objective);
   REQUIRE(objective->completed);
+  REQUIRE(objective->equipment_recipe == fl::economy::RecipeId::ThreadedGloves);
   REQUIRE(std::ranges::any_of(account.account_data().economy().items(), [&](entt::entity item) {
     return game.reg().all_of<fl::ecs::components::Equipment,
                              fl::ecs::components::CraftedProvenance>(item);
@@ -366,4 +413,43 @@ TEST_CASE("Autonomous production maintains a stockpile and reports stable locked
   REQUIRE_FALSE(objective->completed);
   REQUIRE_FALSE(objective->blocked_reason.empty());
   REQUIRE(account.account_data().economy().metrics().blocked_operations == 1);
+}
+
+TEST_CASE("Autonomous equipment improvement stops when no meaningful candidate exists",
+          "[production][objective][equipment][blocked]") {
+  fl::GrandCentral game{1, 1, 1, false, false, 108};
+  auto account = game.account_context(0);
+  auto& party = account.account_data().party(0);
+  const auto hero = party.members().front().member_id();
+  auto& closet = game.reg().get<fl::ecs::components::PartyMember>(hero).closet();
+  auto equip_strong = [&](fl::loot::EquipmentSlot slot, fl::loot::ArmorKind armor_kind) {
+    const auto item = fl::loot::EquipmentBuilder{.slot = slot,
+                                                 .armor_kind = armor_kind,
+                                                 .tier = fl::loot::Tier::plain,
+                                                 .name = "Strong fixture",
+                                                 .attack = 100}
+                          .create(game.reg());
+    closet.equipped_item(slot) = item;
+  };
+  equip_strong(fl::loot::EquipmentSlot::chest, fl::loot::ArmorKind::cloth);
+  equip_strong(fl::loot::EquipmentSlot::gloves, fl::loot::ArmorKind::cloth);
+  equip_strong(fl::loot::EquipmentSlot::mainhand, fl::loot::ArmorKind::none);
+
+  party.set_progression_control_mode(fl::primitives::ProgressionControlMode::Auto);
+  party.request_activity(idle());
+  account.account_data().economy().set_objective(
+      {.kind = fl::primitives::ProductionObjectiveKind::CraftedEquipment});
+  advance(game, 3);
+  const auto* objective = account.account_data().economy().objective();
+  REQUIRE(objective);
+  REQUIRE_FALSE(objective->completed);
+  REQUIRE(objective->blocked_reason == "no meaningful craftable equipment improvement");
+  REQUIRE_FALSE(party.production_operation());
+
+  game.reg().remove<fl::ecs::components::ProfessionExpertise>(hero);
+  account.account_data().economy().set_objective(
+      {.kind = fl::primitives::ProductionObjectiveKind::CraftedEquipment});
+  advance(game, 3);
+  objective = account.account_data().economy().objective();
+  REQUIRE(objective->blocked_reason == "no eligible equipment crafter");
 }

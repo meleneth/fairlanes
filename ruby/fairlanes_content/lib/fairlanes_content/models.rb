@@ -23,10 +23,15 @@ module FairlanesContent
   Gear = Struct.new(:id, :display, :slot, :armor_kind, :tier, :weight, :modifiers, keyword_init: true)
   Consumable = Struct.new(:id, :display, :magnitude, :duration_seconds, keyword_init: true)
   Material = Struct.new(:id, :display, :biome, :profession, :tier, :duration_seconds,
-                        :quantity, :experience, keyword_init: true)
+                        :quantity, :experience, :combat_drop_quantity, keyword_init: true)
   Recipe = Struct.new(:id, :display, :profession, :required_proficiency, :duration_seconds,
                       :experience, :inputs, :output, keyword_init: true)
   EquipmentProfile = Struct.new(:biome, :weights, :kinds, :armor_kinds, keyword_init: true)
+  EquipmentTierPolicy = Struct.new(:tier, :minimum_budget, :maximum_budget, :minimum_level,
+                                   keyword_init: true)
+  EquipmentStatPolicy = Struct.new(:stat, :budget_cost, :allocation_yield,
+                                   :combat_value_coefficient, keyword_init: true)
+  EquipmentSlotPolicy = Struct.new(:slot, :weights, keyword_init: true)
   EncounterPool = Struct.new(:id, :lineups, keyword_init: true)
   FloorBand = Struct.new(:from, :to, :pool, keyword_init: true)
   FloorOverride = Struct.new(
