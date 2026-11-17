@@ -217,7 +217,7 @@ component builder loads legacy `resistances` JSON values and ignores `mp` and
 Skill declarations also supply libram descriptions and status-detonation
 metadata. Monster declarations may supply ordered `decision_rules` (or use
 `monster_rules` to attach them after a shared declaration table). See
-[Libram, bestiary, and monster decisions](../libram-bestiary-plan.md) for the
+[Libram, bestiary, and monster decisions](https://github.com/meleneth/fairlanes/blob/main/docs/libram-bestiary-plan.md) for the
 rule contract, examples, and milestone order.
 
 Generator code lives in the local `ruby/fairlanes_content` gem.
@@ -390,4 +390,4 @@ Configure with `-DFAIRLANES_ENABLE_ENGINE_PCH=OFF` to disable the added engine P
 or `-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON` to disable every CMake PCH. Keep source
 includes correct with PCH off. When profiling actual header cost, use
 `scripts/profile_compile_times.py --without-pch`; per-source PCH timings exclude
-its creation cost. See [the measured report](../compile-time-profile.md).
+its creation cost. See [the measured report](https://github.com/meleneth/fairlanes/blob/main/docs/compile-time-profile.md).
